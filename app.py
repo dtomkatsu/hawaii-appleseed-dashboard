@@ -91,22 +91,35 @@ def load_geojson(file_path):
             f.write(f"Error loading {file_path}: {str(e)}\n")
         return None
 
-def style_function(feature):
-    """Style function for the GeoJSON layers"""
+def get_layer_color(layer_name):
+    """Get a distinct color for each layer type"""
+    colors = {
+        'State': '#3186cc',
+        'Counties': '#31a354',
+        'State House Districts': '#756bb1',
+        'State Senate Districts': '#e6550d'
+    }
+    return colors.get(layer_name, '#3186cc')
+
+def style_function(feature, layer_name):
+    """Style function for GeoJSON layers with distinct colors"""
     return {
-        'fillColor': '#ffaf00',
+        'fillColor': get_layer_color(layer_name),
         'color': 'black',
         'weight': 1,
-        'fillOpacity': 0.2,
+        'fillOpacity': 0.6,  # Increased fill opacity
+        'opacity': 0.8,
+        'dashArray': '5, 5' if 'Districts' in layer_name else None  # Add dash for districts
     }
 
-def highlight_function(feature):
+def highlight_function(feature, layer_name):
     """Highlight function for GeoJSON layers"""
     return {
-        'fillColor': '#ffaf00',
-        'color': 'black',
-        'weight': 2,
-        'fillOpacity': 0.5,
+        'fillColor': '#ff0000',  # Red highlight on hover
+        'color': 'yellow',
+        'weight': 3,
+        'fillOpacity': 0.8,
+        'opacity': 1
     }
 
 def create_map():
@@ -128,7 +141,7 @@ def create_map():
         folium.TileLayer(
             'OpenStreetMap',
             name='OpenStreetMap',
-            attr='© OpenStreetMap contributors'
+            attr='&copy; OpenStreetMap contributors'
         ).add_to(m)
         
         # Create a FeatureGroup for each layer
@@ -145,42 +158,58 @@ def create_map():
                     logger.info(f"Creating GeoJSON layer for {layer_name}")
                     geojson_data = gdf.to_json()
                     
-                    # Different colors for different layers
-                    colors = {
-                        'State Boundary': 'red',
-                        'County Boundaries': 'blue',
-                        'House Districts': 'green',
-                        'Senate Districts': 'purple'
-                    }
+                    # Get the appropriate name field and create tooltip fields/aliases
+                    tooltip_fields = []
+                    tooltip_aliases = []
                     
-                    # Create a feature group for the layer
-                    fg = folium.FeatureGroup(name=layer_name)
+                    # Add common fields we want to show in tooltips
+                    if 'name' in gdf.columns:
+                        tooltip_fields.append('name')
+                        tooltip_aliases.append('Name')
+                    if 'county_name' in gdf.columns:
+                        tooltip_fields.append('county_name')
+                        tooltip_aliases.append('County')
+                    if 'state_house' in gdf.columns:
+                        tooltip_fields.append('state_house')
+                        tooltip_aliases.append('District')
+                    if 'state_senate' in gdf.columns:
+                        tooltip_fields.append('state_senate')
+                        tooltip_aliases.append('District')
                     
-                    folium.GeoJson(
-                        geojson_data,
+                    # If no specific fields found, use the first few columns
+                    if not tooltip_fields and len(gdf.columns) > 0:
+                        for i, col in enumerate(gdf.columns[:3]):  # Limit to first 3 columns
+                            if col != 'geometry':
+                                tooltip_fields.append(col)
+                                tooltip_aliases.append(str(col).replace('_', ' ').title())
+                    
+                    # Create GeoJSON layer with enhanced tooltip
+                    geojson_layer = folium.GeoJson(
+                        data=geojson_data,
                         name=layer_name,
-                        style_function=lambda x, name=layer_name: {
-                            'fillColor': colors.get(name, '#ff7800'),
-                            'color': 'black',
-                            'weight': 1,
-                            'fillOpacity': 0.4,
-                            'opacity': 0.7
-                        },
+                        style_function=lambda x, name=layer_name: style_function(x, name),
+                        highlight_function=lambda x, name=layer_name: highlight_function(x, name),
                         tooltip=folium.GeoJsonTooltip(
-                            fields=[col for col in gdf.columns if col != 'geometry'],
-                            aliases=[col.replace('_', ' ').title() for col in gdf.columns if col != 'geometry'],
+                            fields=tooltip_fields,
+                            aliases=tooltip_aliases,
                             localize=True,
                             sticky=True,
                             labels=True,
                             style="""
                                 background-color: #F0EFEF;
-                                border: 1px solid gray;
+                                border: 2px solid black;
                                 border-radius: 3px;
-                                padding: 2px;
-                                font-size: 12px;
-                            """
-                        )
-                    ).add_to(fg)
+                                box-shadow: 3px 3px 4px gray;
+                                font-size: 14px;
+                                padding: 5px;
+                            """,
+                            max_width=800,
+                        ) if tooltip_fields else None
+                    )
+                    
+                    # Create a feature group for the layer
+                    fg = folium.FeatureGroup(name=layer_name)
+                    geojson_layer.add_to(fg)
                     
                     # Add the feature group to the map
                     fg.add_to(m)
