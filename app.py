@@ -9,8 +9,14 @@ import os
 from pathlib import Path
 import json
 
-# Add the data directory to the path
-DATA_DIR = Path(r"C:\Users\dtomk\CascadeProjects\hawaii-acs-dashboard-new\data\processed\tiger")
+# Define paths to GeoJSON files
+DATA_DIR = Path("data/Processed GeoJsons")
+GEOJSON_FILES = {
+    'State': DATA_DIR / 'hawaii_state_boundary.geojson',
+    'Counties': DATA_DIR / 'hawaii_county_boundaries.geojson',
+    'State House Districts': DATA_DIR / 'hawaii_house_districts.geojson',
+    'State Senate Districts': DATA_DIR / 'hawaii_senate_districts.geojson'
+}
 
 # Configure logging
 logging.basicConfig(
@@ -19,11 +25,11 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def load_geopackage(file_path):
-    """Load a GeoPackage file"""
+def load_geojson(file_path):
+    """Load a GeoJSON file"""
     try:
         gdf = gpd.read_file(file_path)
-        # Convert to WGS84 (EPSG:4326) if needed
+        # Ensure consistent CRS (WGS84 - EPSG:4326)
         if gdf.crs and gdf.crs.to_epsg() != 4326:
             gdf = gdf.to_crs(epsg=4326)
         return gdf
@@ -55,25 +61,18 @@ def create_map():
         # Center on Hawaii
         m = folium.Map(location=[20.7984, -156.3319], zoom_start=7, tiles='CartoDB positron')
         
-        # Load and add layers
-        layers = {
-            'State': 'hawaii_state.gpkg',
-            'Counties': 'hawaii_county.gpkg',
-            'State House Districts': 'hawaii_sldl.gpkg',
-            'State Senate Districts': 'hawaii_sldu.gpkg'
-        }
-        
         # Create a FeatureGroup for each layer
-        for layer_name, file_name in layers.items():
-            file_path = DATA_DIR / file_name
+        for layer_name, file_path in GEOJSON_FILES.items():
             if file_path.exists():
-                gdf = load_geopackage(file_path)
+                gdf = load_geojson(file_path)
                 if gdf is not None:
                     # Convert to GeoJSON
                     geojson_data = json.loads(gdf.to_json())
                     
                     # Create a feature group for the layer
-                    fg = folium.FeatureGroup(name=layer_name, show=False)
+                    # Show state and counties by default, hide others
+                    show_layer = layer_name in ['State', 'Counties']
+                    fg = folium.FeatureGroup(name=layer_name, show=show_layer)
                     
                     # Add the GeoJSON to the feature group
                     folium.GeoJson(
@@ -110,7 +109,12 @@ def create_map():
                 logging.warning(f"File not found: {file_path}")
         
         # Add layer control
-        folium.LayerControl(collapsed=False).add_to(m)
+        folium.LayerControl(
+            collapsed=True,
+            position='topright',
+            overlay=True,
+            control=True
+        ).add_to(m)
             
         return m
     except Exception as e:

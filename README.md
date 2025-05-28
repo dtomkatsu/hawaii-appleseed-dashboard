@@ -11,22 +11,41 @@ An interactive data visualization dashboard for Hawaii Appleseed built with Stre
 
 ## 🚀 Setup
 
-1. Activate the virtual environment:
-   ```bash
-   .\venv\Scripts\activate
+### Automatic Virtual Environment Activation (Recommended)
+
+1. **Windows PowerShell**:
+   - Simply right-click in the project folder and select "Open in Terminal" or "Open in Integrated Terminal" (VSCode).
+   - The virtual environment will activate automatically.
+
+2. **Manual Activation**:
+   ```powershell
+   # In PowerShell
+   .\Activate.ps1
    ```
 
-2. Install dependencies:
+   Or if using Command Prompt:
+   ```cmd
+   venv\Scripts\activate
+   ```
+
+3. Install dependencies (if not already installed):
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Run the Streamlit application:
+4. Run the Streamlit application:
    ```bash
    streamlit run app.py
    ```
 
-4. The app will open automatically in your default web browser at `http://localhost:8501`
+5. The app will open automatically in your default web browser at `http://localhost:8501`
+
+### Note for Cascade Users
+- The virtual environment will automatically activate when you open a terminal in the project directory.
+- If you get a permission error, you may need to change the execution policy first:
+  ```powershell
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+  ```
 
 ## Project Structure
 
