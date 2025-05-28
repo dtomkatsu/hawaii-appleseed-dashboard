@@ -1,40 +1,94 @@
 import streamlit as st
 import folium
 from streamlit_folium import folium_static, st_folium
+from folium.plugins import Fullscreen, MeasureControl
 import geopandas as gpd
 import pandas as pd
 import numpy as np
 import logging
 import os
+import traceback
 from pathlib import Path
 import json
+import sys
+
+# Configure logging with debug file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Create a dedicated debug log file
+debug_logger = logging.getLogger('debug')
+debug_logger.setLevel(logging.DEBUG)
+debug_file_handler = logging.FileHandler('debug.log')
+debug_file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+debug_logger.addHandler(debug_file_handler)
+
+# Log system information
+debug_logger.info(f"Python version: {sys.version}")
+debug_logger.info(f"Folium version: {folium.__version__}")
+debug_logger.info(f"GeoPandas version: {gpd.__version__}")
+debug_logger.info(f"Starting application at {logging.Formatter().formatTime(logging.LogRecord('', 0, '', 0, '', (), None, None))}")
+
+# Function to log errors to debug file
+def log_error(message, exception=None):
+    """Log error to debug file with traceback"""
+    debug_logger.error(message)
+    if exception:
+        debug_logger.error(traceback.format_exc())
+        with open('debug.log', 'a') as f:
+            f.write(f"\n{message}\n{traceback.format_exc()}\n")
+
 
 # Define paths to GeoJSON files
 DATA_DIR = Path("data/Processed GeoJsons")
 GEOJSON_FILES = {
     'State': DATA_DIR / 'hawaii_state_boundary.geojson',
     'Counties': DATA_DIR / 'hawaii_county_boundaries.geojson',
-    'State House Districts': DATA_DIR / 'hawaii_house_districts.geojson',
-    'State Senate Districts': DATA_DIR / 'hawaii_senate_districts.geojson'
+    'State House Districts': DATA_DIR / 'Hawaii_State_House_Districts_2022.geojson',
+    'State Senate Districts': DATA_DIR / 'Hawaii_State_Senate_Districts_2022.geojson'
 }
 
-# Configure logging
-logging.basicConfig(
-    filename='debug.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
+# Function to load GeoJSON files
 def load_geojson(file_path):
-    """Load a GeoJSON file"""
+    """Load GeoJSON file into GeoDataFrame"""
     try:
+        if not file_path.exists():
+            logger.warning(f"File not found: {file_path}")
+            return None
+            
+        logger.info(f"Loading GeoJSON file: {file_path}")
         gdf = gpd.read_file(file_path)
-        # Ensure consistent CRS (WGS84 - EPSG:4326)
-        if gdf.crs and gdf.crs.to_epsg() != 4326:
+        
+        if gdf.empty:
+            logger.warning(f"Empty GeoDataFrame: {file_path}")
+            return None
+            
+        # Ensure the CRS is EPSG:4326 (WGS84)
+        if gdf.crs is None:
+            logger.warning(f"No CRS found in {file_path}, assuming WGS84")
+            gdf.crs = 'EPSG:4326'
+        elif gdf.crs.to_epsg() != 4326:
+            logger.info(f"Converting CRS from {gdf.crs} to EPSG:4326")
             gdf = gdf.to_crs(epsg=4326)
+            
+        # Log some information about the loaded data
+        logger.info(f"Loaded {len(gdf)} features from {file_path}")
+        logger.info(f"Columns: {list(gdf.columns)}")
+            
         return gdf
+        
     except Exception as e:
-        logging.error(f"Error loading {file_path}: {str(e)}", exc_info=True)
+        logger.error(f"Error loading {file_path}: {str(e)}", exc_info=True)
+        # Create a debug log file for errors
+        with open('debug.log', 'a') as f:
+            f.write(f"Error loading {file_path}: {str(e)}\n")
         return None
 
 def style_function(feature):
@@ -56,70 +110,121 @@ def highlight_function(feature):
     }
 
 def create_map():
-    """Create a base map with TIGER/Line layers"""
+    """Create a base map with geographic layers"""
     try:
-        # Center on Hawaii
-        m = folium.Map(location=[20.7984, -156.3319], zoom_start=7, tiles='CartoDB positron')
+        logger.info("Initializing map...")
+        # Initialize a simpler map with CartoDB Positron as base layer
+        m = folium.Map(
+            location=[20.7984, -156.3319],
+            zoom_start=7,
+            tiles='CartoDB Positron',
+            min_zoom=6,
+            max_zoom=18,
+            control_scale=True,
+            prefer_canvas=True
+        )
+        
+        # Add additional tile layers with proper attribution
+        folium.TileLayer(
+            'OpenStreetMap',
+            name='OpenStreetMap',
+            attr='© OpenStreetMap contributors'
+        ).add_to(m)
         
         # Create a FeatureGroup for each layer
         for layer_name, file_path in GEOJSON_FILES.items():
-            if file_path.exists():
+            try:
+                logger.info(f"Loading layer: {layer_name} from {file_path}")
                 gdf = load_geojson(file_path)
-                if gdf is not None:
-                    # Convert to GeoJSON
-                    geojson_data = json.loads(gdf.to_json())
+                if gdf is not None and not gdf.empty:
+                    # Simplify geometry for better performance
+                    logger.info(f"Simplifying geometry for {layer_name}")
+                    gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.001, preserve_topology=True)
+                    
+                    # Create GeoJson layer with better styling
+                    logger.info(f"Creating GeoJSON layer for {layer_name}")
+                    geojson_data = gdf.to_json()
+                    
+                    # Different colors for different layers
+                    colors = {
+                        'State Boundary': 'red',
+                        'County Boundaries': 'blue',
+                        'House Districts': 'green',
+                        'Senate Districts': 'purple'
+                    }
                     
                     # Create a feature group for the layer
-                    # Show state and counties by default, hide others
-                    show_layer = layer_name in ['State', 'Counties']
-                    fg = folium.FeatureGroup(name=layer_name, show=show_layer)
+                    fg = folium.FeatureGroup(name=layer_name)
                     
-                    # Add the GeoJSON to the feature group
                     folium.GeoJson(
                         geojson_data,
                         name=layer_name,
-                        style_function=style_function,
-                        highlight_function=highlight_function,
+                        style_function=lambda x, name=layer_name: {
+                            'fillColor': colors.get(name, '#ff7800'),
+                            'color': 'black',
+                            'weight': 1,
+                            'fillOpacity': 0.4,
+                            'opacity': 0.7
+                        },
                         tooltip=folium.GeoJsonTooltip(
                             fields=[col for col in gdf.columns if col != 'geometry'],
-                            aliases=[col.capitalize() for col in gdf.columns if col != 'geometry'],
+                            aliases=[col.replace('_', ' ').title() for col in gdf.columns if col != 'geometry'],
                             localize=True,
                             sticky=True,
                             labels=True,
                             style="""
                                 background-color: #F0EFEF;
-                                border: 1px solid black;
+                                border: 1px solid gray;
                                 border-radius: 3px;
-                                box-shadow: 3px;
-                            """,
-                            max_width=300,
-                        ),
-                        popup=folium.GeoJsonPopup(
-                            fields=[col for col in gdf.columns if col != 'geometry'],
-                            aliases=[col.capitalize() for col in gdf.columns if col != 'geometry'],
-                            localize=True,
-                            labels=True,
-                            style="width: 300px;"
+                                padding: 2px;
+                                font-size: 12px;
+                            """
                         )
                     ).add_to(fg)
                     
                     # Add the feature group to the map
                     fg.add_to(m)
-            else:
-                logging.warning(f"File not found: {file_path}")
+                    logger.info(f"Successfully added layer: {layer_name}")
+                else:
+                    logger.warning(f"Empty or invalid GeoDataFrame for {layer_name}")
+                    st.warning(f"Could not load layer: {layer_name}")
+                    
+            except Exception as e:
+                error_msg = f"Error adding layer {layer_name}: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                st.error(f"Error loading layer: {layer_name}. See logs for details.")
         
         # Add layer control
-        folium.LayerControl(
-            collapsed=True,
-            position='topright',
-            overlay=True,
-            control=True
+        folium.LayerControl(position='topright', collapsed=False).add_to(m)
+        
+        # Add fullscreen button
+        Fullscreen(
+            position="topleft",
+            title="Full Screen",
+            title_cancel="Exit Full Screen",
+            force_separate_button=True
         ).add_to(m)
-            
+        
+        # Add measure control
+        measure = MeasureControl()
+        measure.add_to(m)
+        
+        # Fit bounds to show all features
+        m.fit_bounds(m.get_bounds())
+        
+        logger.info("Map creation completed successfully")
         return m
+        
     except Exception as e:
-        logging.error(f"Error creating map: {str(e)}", exc_info=True)
-        return None
+        logger.error(f"Error in create_map: {str(e)}", exc_info=True)
+        # Return a basic map with error message
+        error_map = folium.Map(location=[20.7984, -156.3319], zoom_start=7)
+        folium.Marker(
+            location=[20.7984, -156.3319],
+            popup="Error loading map layers. Check the logs for details.",
+            icon=folium.Icon(color='red', icon='warning')
+        ).add_to(error_map)
+        return error_map
 
 def main():
     # Page config
@@ -127,6 +232,27 @@ def main():
         page_title="Hawaii Appleseed Data Dashboard",
         page_icon="🌺",
         layout="wide"
+    )
+    
+    # Add custom CSS to make the map fill the screen
+    st.markdown(
+        """
+        <style>
+        .main .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        #root > div:nth-child(1) > div > div > div > div > section > div {
+            padding: 0rem 1rem 0rem 1rem;
+        }
+        .stApp {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Title and description
@@ -173,13 +299,15 @@ def main():
     st.markdown("---")
     st.header("Map Layers")
     st.markdown("""
-    The map includes the following TIGER/Line layers:
+    The map includes the following geographic layers:
     - **State**: Hawaii state boundary
-    - **Counties**: County boundaries
-    - **State House Districts**: Hawaii State House legislative districts
-    - **State Senate Districts**: Hawaii State Senate legislative districts
+    - **Counties**: County boundaries (2022)
+    - **State House Districts**: Hawaii State House legislative districts (2022)
+    - **State Senate Districts**: Hawaii State Senate legislative districts (2022)
     
     Click the layers icon in the top-right corner of the map to toggle layers on/off.
+    
+    Note: Legislative districts are based on 2022 redistricting data.
     """)
 
 if __name__ == "__main__":
