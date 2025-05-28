@@ -152,13 +152,6 @@ def create_map():
             
             debug_file.write("Base map initialized\n")
             
-            # Add additional tile layers with proper attribution
-            folium.TileLayer(
-                'OpenStreetMap',
-                name='OpenStreetMap',
-                attr='&copy; OpenStreetMap contributors'
-            ).add_to(m)
-            
             # Track bounds of all features to calculate proper zoom
             min_lat, min_lon = 90, 180
             max_lat, max_lon = -90, -180
@@ -181,9 +174,8 @@ def create_map():
                         
                         debug_file.write(f"Layer bounds: {bounds}\n")
                         
-                        # Simplify geometry for better performance
-                        logger.info(f"Simplifying geometry for {layer_name}")
-                        gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.001, preserve_topology=True)
+                        # Keep original geometry without simplification
+                        logger.info(f"Using original geometry for {layer_name}")
                         
                         # Create GeoJson layer with better styling
                         logger.info(f"Creating GeoJSON layer for {layer_name}")
