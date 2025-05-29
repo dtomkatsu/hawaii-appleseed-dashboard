@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 import logging
 from typing import Dict, Optional, Union
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -132,18 +133,92 @@ class DataLoader:
         """
         logger.debug(f"Standardizing GeoJSON IDs for {geo_level} level")
         
-        # Map of geo levels to their ID fields
-        id_field_map = {
-            'state': ('state_fips', 'GEOID'),
-            'county': ('county_fips', 'GEOID'),
-            'house': ('house_id', 'GEOID'),
-            'senate': ('senate_id', 'GEOID')
+        # Create logs directory if it doesn't exist
+        logs_dir = Path(self.base_dir) / 'logs'
+        logs_dir.mkdir(exist_ok=True)
+        debug_log = logs_dir / 'id_conversion.log'
+        
+        # Write header to debug log
+        with open(debug_log, 'a') as f:
+            f.write(f"\n\n==== ID Conversion for {geo_level} at {datetime.datetime.now()} ====\n")
+        
+        # Load the CSV data to check against
+        csv_data = self.load_acs_data(geo_level)
+        if csv_data is not None:
+            csv_ids = csv_data['geoid'].astype(str).tolist()
+            with open(debug_log, 'a') as f:
+                f.write(f"CSV IDs (first 5): {csv_ids[:5]}\n")
+                f.write(f"CSV columns: {list(csv_data.columns)}\n")
+        else:
+            csv_ids = []
+            with open(debug_log, 'a') as f:
+                f.write(f"No CSV data found for {geo_level}\n")
+        
+        # Map of geo levels to their ID fields and conversion functions
+        id_config = {
+            'state': {
+                'source_field': 'state_fips',
+                'target_field': 'GEOID',
+                'converter': lambda x: '15'  # Hawaii state FIPS code
+            },
+            'county': {
+                'source_field': 'county',
+                'target_field': 'GEOID',
+                'converter': lambda x: '15' + str(x).zfill(3)  # 15 + 3-digit county FIPS
+            },
+            'house': {
+                'source_field': 'state_house',
+                'target_field': 'GEOID',
+                'converter': lambda x: '15' + str(x).replace('H', '').zfill(3)  # Convert H01 to 15001
+            },
+            'senate': {
+                'source_field': 'state_senate',
+                'target_field': 'GEOID',
+                'converter': lambda x: '15' + str(x).replace('S', '').zfill(3)  # Convert S01 to 15001
+            }
         }
         
-        source_field, target_field = id_field_map.get(geo_level, (None, None))
-        if not source_field or not target_field:
-            logger.warning(f"No ID field mapping found for geo_level: {geo_level}")
+        # Special case handling for each geo level
+        if geo_level == 'house':
+            # Try to find the right source field by checking what's available
+            features = geojson_data.get('features', [])
+            if features:
+                props = features[0].get('properties', {})
+                with open(debug_log, 'a') as f:
+                    f.write(f"House district properties: {list(props.keys())}\n")
+                
+                # Check for different possible field names
+                for field in ['state_house', 'STATE_HOUSE', 'house_id', 'HOUSE_ID', 'DISTRICT', 'district']:
+                    if field in props:
+                        id_config['house']['source_field'] = field
+                        with open(debug_log, 'a') as f:
+                            f.write(f"Using source field '{field}' for house districts\n")
+                        break
+        
+        elif geo_level == 'senate':
+            # Try to find the right source field by checking what's available
+            features = geojson_data.get('features', [])
+            if features:
+                props = features[0].get('properties', {})
+                with open(debug_log, 'a') as f:
+                    f.write(f"Senate district properties: {list(props.keys())}\n")
+                
+                # Check for different possible field names
+                for field in ['state_senate', 'STATE_SENATE', 'senate_id', 'SENATE_ID', 'DISTRICT', 'district']:
+                    if field in props:
+                        id_config['senate']['source_field'] = field
+                        with open(debug_log, 'a') as f:
+                            f.write(f"Using source field '{field}' for senate districts\n")
+                        break
+        
+        config = id_config.get(geo_level)
+        if not config:
+            logger.warning(f"No ID configuration found for geo_level: {geo_level}")
             return geojson_data
+            
+        source_field = config['source_field']
+        target_field = config['target_field']
+        converter = config['converter']
         
         logger.debug(f"Mapping {source_field} -> {target_field} for {geo_level}")
         
@@ -152,24 +227,62 @@ class DataLoader:
         if features:
             sample_props = features[0].get('properties', {})
             logger.debug(f"Sample feature properties: {list(sample_props.keys())}")
+            with open(debug_log, 'a') as f:
+                f.write(f"Sample feature properties: {list(sample_props.keys())}\n")
             
         # Track if we found and modified any features
         modified_count = 0
+        converted_ids = []
         
-        # Update each feature's properties
+        # Update each feature's properties with the standardized ID
         for feature in features:
             props = feature.get('properties', {})
             if source_field in props:
-                props[target_field] = str(props[source_field])
-                modified_count += 1
-                
+                try:
+                    # Convert the source ID to the target format
+                    source_id = props[source_field]
+                    target_id = converter(source_id)
+                    props[target_field] = target_id
+                    
+                    # Also add a 'geoid' field to match CSV directly
+                    props['geoid'] = target_id
+                    
+                    modified_count += 1
+                    converted_ids.append(target_id)
+                    
+                    # Log the first few conversions for debugging
+                    if modified_count <= 5:
+                        logger.debug(f"Converted {source_field}={source_id} -> {target_field}={target_id}")
+                        with open(debug_log, 'a') as f:
+                            f.write(f"Converted {source_field}={source_id} -> {target_field}={target_id}\n")
+                except Exception as e:
+                    logger.error(f"Error converting ID for {geo_level} with {source_field}={props.get(source_field)}: {str(e)}")
+                    with open(debug_log, 'a') as f:
+                        f.write(f"ERROR: {str(e)} when converting {source_field}={props.get(source_field)}\n")
+        
         logger.debug(f"Standardized {modified_count} features by adding {target_field}")
+        with open(debug_log, 'a') as f:
+            f.write(f"Standardized {modified_count} features by adding {target_field}\n")
+        
+        # Check for matches between converted IDs and CSV IDs
+        matches = set(converted_ids).intersection(set(csv_ids))
+        with open(debug_log, 'a') as f:
+            f.write(f"Matches between GeoJSON and CSV: {len(matches)} out of {len(converted_ids)} features\n")
+            f.write(f"Converted IDs (first 5): {converted_ids[:5]}\n")
+            if len(matches) > 0:
+                f.write(f"Matching IDs (first 5): {list(matches)[:5]}\n")
+            else:
+                f.write("NO MATCHES FOUND!\n")
         
         # Verify the first feature has the new field
         if features and modified_count > 0:
             sample_props = features[0].get('properties', {})
             logger.debug(f"First feature now has properties: {list(sample_props.keys())}")
-                
+            with open(debug_log, 'a') as f:
+                f.write(f"First feature now has properties: {list(sample_props.keys())}\n")
+                f.write(f"First feature GEOID: {sample_props.get(target_field, 'Not found')}\n")
+                f.write(f"First feature geoid: {sample_props.get('geoid', 'Not found')}\n")
+        
         return geojson_data
         
     def get_geojson_path(self, geo_level: str) -> Optional[Path]:

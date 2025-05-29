@@ -253,11 +253,27 @@ class MapBuilder:
                         if self.selected_variable in df.columns:
                             max_value = df[self.selected_variable].max()
                             
+                            # Create a debug log file for data matching
+                            debug_log_path = Path(self.base_dir) / 'logs' / 'data_match.log'
+                            debug_log_path.parent.mkdir(exist_ok=True)
+                            
+                            with open(debug_log_path, 'a') as debug_file:
+                                debug_file.write(f"\n\n==== Data Matching for {geo_level} at {datetime.now()} ====\n")
+                                debug_file.write(f"CSV data: {len(df)} rows\n")
+                                debug_file.write(f"CSV columns: {list(df.columns)}\n")
+                                debug_file.write(f"Selected variable: {self.selected_variable}\n")
+                                
+                                # Log the first few rows of CSV data
+                                debug_file.write("CSV data sample:\n")
+                                for i in range(min(5, len(df))):
+                                    row = df.iloc[i]
+                                    debug_file.write(f"  Row {i+1}: geoid={row.get('geoid', 'N/A')}, {self.selected_variable}={row.get(self.selected_variable, 'N/A')}\n")
+                            
                             # Create a mapping from geoid to value with multiple key formats for matching
                             for _, row in df.iterrows():
                                 if 'geoid' in row and self.selected_variable in row:
                                     # Get the geoid as string
-                                    geoid_str = str(row['geoid'])
+                                    geoid_str = str(row['geoid']).strip()
                                     value = row[self.selected_variable]
                                     
                                     # Store the value with multiple key formats for flexible matching
@@ -271,6 +287,20 @@ class MapBuilder:
                                     color_data[geoid_str.lstrip('0')] = value
                                     if len(geoid_str) > 2 and geoid_str.startswith('15'):
                                         color_data[geoid_str[2:].lstrip('0')] = value
+                                        
+                                    # For house and senate districts, also store with H or S prefix
+                                    if geo_level == 'house' and len(geoid_str) >= 5:
+                                        district_num = geoid_str[-3:].lstrip('0')
+                                        color_data[f'H{district_num}'] = value
+                                        
+                                    if geo_level == 'senate' and len(geoid_str) >= 5:
+                                        district_num = geoid_str[-3:].lstrip('0')
+                                        color_data[f'S{district_num}'] = value
+                                        
+                                    # Store numeric district ID
+                                    if geo_level in ['house', 'senate'] and len(geoid_str) >= 5:
+                                        district_num = geoid_str[-3:].lstrip('0')
+                                        color_data[district_num] = value
                             
                             # Log the first few entries in color_data for debugging
                             logger.debug(f"Color data keys: {list(color_data.keys())[:10]}")
@@ -290,24 +320,91 @@ class MapBuilder:
                                 debug_file.write(f"\n[{geo_level}] Selected variable: {self.selected_variable}")
                                 debug_file.write(f"\n[{geo_level}] Max value: {max_value}\n")
                         
+                        # Create a debug log file for style function
+                        style_debug_path = Path(self.base_dir) / 'logs' / 'style_function.log'
+                        style_debug_path.parent.mkdir(exist_ok=True)
+                        
+                        with open(style_debug_path, 'a') as debug_file:
+                            debug_file.write(f"\n\n==== Style Function for {geo_level} at {datetime.now()} ====\n")
+                            debug_file.write(f"Color data keys (sample): {list(color_data.keys())[:10]}\n")
+                            debug_file.write(f"ID field: {id_field}\n")
+                        
                         # Create style function for normal state
                         def style_function(feature):
-                            # Get the feature ID from the GeoJSON
-                            feature_id = str(feature['properties'].get(id_field, ''))
+                            # Get the feature properties
+                            props = feature.get('properties', {})
+                            
+                            # Get various ID formats from the feature
+                            feature_id = str(props.get(id_field, '')).strip()
+                            geoid = str(props.get('geoid', '')).strip()
+                            house_id = str(props.get('house_id', '')).strip()
+                            senate_id = str(props.get('senate_id', '')).strip()
+                            state_house = str(props.get('state_house', '')).strip()
+                            state_senate = str(props.get('state_senate', '')).strip()
                             
                             # Try different ID formats to match with CSV data
-                            potential_ids = [
-                                feature_id,                  # Original ID
-                                feature_id.lstrip('0'),     # Without leading zeros
-                                feature_id[-5:] if len(feature_id) > 5 else feature_id  # Last 5 digits
-                            ]
+                            potential_ids = []
+                            
+                            # Add all possible IDs
+                            if feature_id:
+                                potential_ids.append(feature_id)                  # Original ID
+                                potential_ids.append(feature_id.lstrip('0'))      # Without leading zeros
+                            
+                            if geoid:
+                                potential_ids.append(geoid)                        # Direct geoid match
+                            
+                            # For house districts
+                            if geo_level == 'house':
+                                if house_id:
+                                    potential_ids.append(str(house_id))            # House ID
+                                    potential_ids.append(f'15{str(house_id).zfill(3)}')  # FIPS format
+                                if state_house:
+                                    potential_ids.append(state_house)               # State house (e.g., H01)
+                                    if state_house.startswith('H'):
+                                        district_num = state_house[1:].lstrip('0')  # Extract number from H01
+                                        potential_ids.append(district_num)          # Just the number
+                                        potential_ids.append(f'15{state_house[1:].zfill(3)}')  # FIPS format
+                            
+                            # For senate districts
+                            elif geo_level == 'senate':
+                                if senate_id:
+                                    potential_ids.append(str(senate_id))            # Senate ID
+                                    potential_ids.append(f'15{str(senate_id).zfill(3)}')  # FIPS format
+                                if state_senate:
+                                    potential_ids.append(state_senate)               # State senate (e.g., S01)
+                                    if state_senate.startswith('S'):
+                                        district_num = state_senate[1:].lstrip('0')  # Extract number from S01
+                                        potential_ids.append(district_num)          # Just the number
+                                        potential_ids.append(f'15{state_senate[1:].zfill(3)}')  # FIPS format
+                            
+                            # Remove duplicates and empty strings
+                            potential_ids = [pid for pid in potential_ids if pid]
+                            potential_ids = list(dict.fromkeys(potential_ids))  # Remove duplicates while preserving order
                             
                             # Try to find a match in the color data
                             matched_id = None
+                            matched_value = None
+                            
                             for pid in potential_ids:
                                 if pid in color_data:
                                     matched_id = pid
+                                    matched_value = color_data[pid]
                                     break
+                            
+                            # Log the first few features for debugging
+                            if len(potential_ids) > 0 and (feature_id in ['1', '2', '3', '4', '5'] or 
+                                                          (state_house and state_house in ['H01', 'H02', 'H03', 'H04', 'H05']) or
+                                                          (state_senate and state_senate in ['S01', 'S02', 'S03', 'S04', 'S05'])):
+                                debug_msg = f"Feature: ID={feature_id}, Potential IDs={potential_ids}, Matched: {matched_id is not None}"
+                                if matched_id:
+                                    debug_msg += f", Value: {matched_value}"
+                                logger.debug(debug_msg)
+                                
+                                with open(style_debug_path, 'a') as debug_file:
+                                    debug_file.write(f"Feature: {feature_id}\n")
+                                    debug_file.write(f"  Properties: {props}\n")
+                                    debug_file.write(f"  Potential IDs: {potential_ids}\n")
+                                    debug_file.write(f"  Matched: {matched_id is not None}, ID: {matched_id}, Value: {matched_value}\n")
                             
                             if matched_id:
                                 value = color_data[matched_id]
@@ -369,23 +466,77 @@ class MapBuilder:
                         
                         # Add mouseover/mouseout events for hover effects
                         try:
-                            # Only use the name field for tooltips to avoid errors with missing fields
-                            geo_layer.add_child(
-                                folium.features.GeoJsonTooltip(
-                                    fields=[name_field],
-                                    aliases=['Name:'],
-                                    style=(
-                                        'background-color: white;'
-                                        'border: 1px solid black;'
-                                        'border-radius: 3px;'
-                                        'box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);'
-                                        'padding: 5px;'
-                                        'font-size: 12px;'
-                                    ),
-                                    sticky=True
-                                )
+                            # Create a custom tooltip that shows both the name and the selected variable
+                            def get_tooltip_content(feature):
+                                props = feature.get('properties', {})
+                                feature_id = str(props.get(id_field, '')).strip()
+                                region_name = props.get(name_field, 'Unknown')
+                                
+                                # Try to find a match in the color data
+                                potential_ids = [
+                                    feature_id,
+                                    feature_id.lstrip('0'),
+                                    feature_id[-5:] if len(feature_id) > 5 else feature_id
+                                ]
+                                
+                                matched_id = None
+                                for pid in potential_ids:
+                                    if pid in color_data:
+                                        matched_id = pid
+                                        break
+                                
+                                # Format the value
+                                if matched_id and matched_id in color_data:
+                                    value = color_data[matched_id]
+                                    var_name = self.available_variables.get(self.selected_variable, self.selected_variable)
+                                    
+                                    if self.selected_variable in ['poverty_rate', 'bachelors_rate', 'renter_rate']:
+                                        formatted_value = f"{value:.1f}%"
+                                    elif self.selected_variable == 'median_income':
+                                        formatted_value = f"${value:,.0f}"
+                                    else:
+                                        formatted_value = f"{value:,}"
+                                    
+                                    return (f"<div style='font-family: Arial; padding: 5px;'>"
+                                           f"<div style='font-weight: bold;'>{region_name}</div>"
+                                           f"<div>{var_name}: {formatted_value}</div>"
+                                           "</div>")
+                                
+                                return f"<div style='font-family: Arial; padding: 5px;'>{region_name}<br>No data available</div>"
+                            
+                            # Add the tooltip to the layer
+                            tooltip = folium.GeoJsonTooltip(
+                                fields=[],  # We're using a custom formatter instead
+                                aliases=[],
+                                style=(
+                                    'background-color: white;'
+                                    'border: 1px solid black;'
+                                    'border-radius: 3px;'
+                                    'box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);'
+                                    'padding: 8px;'
+                                    'font-size: 12px;'
+                                    'min-width: 150px;'
+                                    'max-width: 300px;'
+                                ),
+                                sticky=True,
+                                localize=True
                             )
-                            logger.debug(f"Added tooltip for layer: {layer_name} with field: {name_field}")
+                            
+                            # Use a field that actually exists in the data
+                            # First, ensure 'tooltip' field exists in all features
+                            for feature in geojson_data['features']:
+                                if 'tooltip' not in feature['properties']:
+                                    feature['properties']['tooltip'] = get_tooltip_content(feature)
+                            
+                            # Now set up the tooltip with a field we know exists
+                            tooltip.fields = ['tooltip']
+                            tooltip.aliases = ['']  # No alias needed since we're using the content directly
+                            tooltip.style = tooltip.style
+                            
+                            # Add the tooltip to the layer
+                            geo_layer.add_child(tooltip)
+                            
+                            logger.debug(f"Added custom tooltip for layer: {layer_name}")
                         except Exception as e:
                             logger.error(f"Error adding tooltip: {str(e)}")
                             # Continue without tooltip if there's an error
@@ -410,31 +561,48 @@ class MapBuilder:
                                     matched_id = pid
                                     break
                             
-                            # Create popup content
-                            popup_content = f"<div style='font-family: Arial; padding: 5px;'>"
-                            popup_content += f"<h4 style='margin-bottom: 5px;'>{region_name}</h4>"
+                            # Create popup content with more detailed information
+                            popup_content = f"<div style='font-family: Arial; padding: 10px; max-width: 300px;'>"
+                            popup_content += f"<h4 style='margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #eee;'>{region_name}</h4>"
                             
                             # Add variable value if available
-                            if matched_id:
+                            if matched_id and matched_id in color_data:
                                 value = color_data[matched_id]
                                 var_name = self.available_variables.get(self.selected_variable, self.selected_variable)
                                 
                                 # Format the value based on variable type
                                 if self.selected_variable in ['poverty_rate', 'bachelors_rate', 'renter_rate']:
                                     formatted_value = f"{value:.1f}%"
+                                    # Add a color indicator for poverty rate
+                                    if self.selected_variable == 'poverty_rate':
+                                        normalized = value / max_value if max_value > 0 else 0
+                                        r = 255
+                                        g = int(255 * (1 - normalized * 0.8))
+                                        b = int(100 * (1 - normalized))
+                                        popup_content += f"<div style='margin: 5px 0;'><b>{var_name}:</b> "
+                                        popup_content += f"<span style='display: inline-block; width: 12px; height: 12px; background-color: rgb({r},{g},{b}); margin-right: 5px; border: 1px solid #333;'></span>"
+                                        popup_content += f"{formatted_value}</div>"
+                                    else:
+                                        popup_content += f"<div style='margin: 5px 0;'><b>{var_name}:</b> {formatted_value}</div>"
                                 elif self.selected_variable == 'median_income':
                                     formatted_value = f"${value:,.0f}"
+                                    popup_content += f"<div style='margin: 5px 0;'><b>{var_name}:</b> {formatted_value}</div>"
                                 else:
                                     formatted_value = f"{value:,}"
-                                    
-                                popup_content += f"<div><b>{var_name}:</b> {formatted_value}</div>"
+                                    popup_content += f"<div style='margin: 5px 0;'><b>{var_name}:</b> {formatted_value}</div>"
+                                
+                                # Add additional context for poverty rate
+                                if self.selected_variable == 'poverty_rate' and 'poverty_total' in feature['properties']:
+                                    popup_content += f"<div style='margin: 5px 0; font-size: 0.9em; color: #555;'>{feature['properties']['poverty_total']:,} people in poverty</div>"
+                                
                             else:
-                                popup_content += f"<div>No data available for {self.selected_variable}</div>"
+                                popup_content += f"<div style='margin: 5px 0; color: #999;'>No data available for {self.selected_variable}</div>"
                             
+                            popup_content += "<div style='margin-top: 10px; font-size: 0.8em; color: #777;'>Click for more details</div>"
                             popup_content += "</div>"
                             
-                            # Create a simple popup for this feature
-                            folium.Popup(popup_content, max_width=300).add_to(geo_layer)
+                            # Create a popup for this feature
+                            folium.Popup(popup_content, max_width=350).add_to(geo_layer)
                         
                         logger.debug(f"Successfully added GeoJSON layer with tooltips for {layer_name} to the map")
                     except Exception as e:
