@@ -15,7 +15,6 @@ from pathlib import Path
 import numpy as np
 import warnings
 import traceback
-from urllib.parse import urlencode, quote
 
 warnings.filterwarnings('ignore', category=UserWarning)
 
@@ -29,17 +28,19 @@ logger = logging.getLogger(__name__)
 class ACSDataFetcher:
     """Fetches ACS data from the Census API directly."""
     
-    def __init__(self, api_key: str = None, year: int = 2023):
+    def __init__(self, api_key: str = None, year: int = 2019):
         """Initialize the ACS data fetcher.
         
         Args:
             api_key: Census API key
-            year: ACS year (default: 2023)
+            year: ACS year (default: 2019)
         """
-        # Set the API key
-        self.api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"  # Directly using the provided API key
+        # Get API key from environment variable if not provided
+        self.api_key = api_key or os.environ.get('CENSUS_API_KEY')
         
-        # Set up API URL and year
+        if not self.api_key:
+            raise ValueError("Census API key is required. Set the CENSUS_API_KEY environment variable.")
+            
         self.year = year
         self.base_url = f"https://api.census.gov/data/{self.year}/acs/acs5"
         
@@ -54,48 +55,8 @@ class ACSDataFetcher:
         self.logs_dir.mkdir(exist_ok=True, parents=True)
         self.debug_log_file = self.logs_dir / "census_api_debug.log"
         
-        # Log initialization
-        with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-            f.write(f"\n--- Initializing ACSDataFetcher for {self.year} ACS 5-year estimates ---\n")
-            f.write(f"Base URL: {self.base_url}\n")
-        
         # Test the connection
         self._test_connection()
-        
-        # Validate and format the API key
-        self.api_key = self._validate_api_key(api_key_value)
-        
-        # Log initialization
-        with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-            f.write(f"\n--- Initializing ACSDataFetcher for {self.year} ACS 5-year estimates ---\n")
-            f.write(f"Base URL: {self.base_url}\n")
-        
-        # Test the connection
-        self._test_connection()
-    
-    def _validate_api_key(self, api_key: str) -> str:
-        """Validate and format the Census API key.
-        
-        Args:
-            api_key: The API key to validate
-            
-        Returns:
-            The validated and formatted API key
-            
-        Raises:
-            ValueError: If the API key is invalid
-        """
-        # Remove any whitespace
-        api_key = api_key.strip()
-        
-        # Check if the API key is empty
-        if not api_key:
-            raise ValueError("Census API key cannot be empty")
-            
-        # Log that we're using a valid API key (without showing the key)
-        logger.info(f"Using Census API key: {api_key[:4]}...{api_key[-4:] if len(api_key) > 8 else ''}")
-        
-        return api_key
     
     def _test_connection(self) -> None:
         """Test the connection to the Census API.
@@ -105,33 +66,23 @@ class ACSDataFetcher:
         """
         try:
             # Make a simple request to test the API key
-            params = {
-                'get': 'NAME',
-                'for': 'state:*',
-                'key': self.api_key
-            }
-            response = requests.get(self.base_url, params=params)
+            test_url = f"{self.base_url}?get=NAME&for=state:*&key={self.api_key}"
+            response = requests.get(test_url)
             response.raise_for_status()
-            
-            # Parse the response to ensure it's valid
-            data = response.json()
             
             # Log successful connection
             logger.info(f"Successfully connected to ACS {self.year} 5-year estimates API")
-            logger.info(f"Found {len(data)-1} states in the response")  # -1 for header row
             
             # Log the response to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                f.write("Test connection successful\n")
-                f.write(f"Found {len(data)-1} states in the response\n")
-                f.write(f"First state: {data[1] if len(data) > 1 else 'No data'}\n")
+            with open(self.debug_log_file, 'w') as f:
+                f.write(f"Test connection response: {response.text}\n")
                 
         except Exception as e:
             error_msg = f"Failed to connect to Census API: {str(e)}"
             logger.error(error_msg)
             
             # Log the error to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"Connection error: {error_msg}\n")
                 
             raise ConnectionError(error_msg) from e
@@ -182,65 +133,46 @@ class ACSDataFetcher:
             get_params = ['NAME'] + variables
             get_str = ','.join(get_params)
             
-            # Build the URL parameters based on level
-            params = {
-                'get': get_str,
-                'key': self.api_key
-            }
-            
+            # Build the geography part of the request based on level
             if level == 'county':
                 # For county level
+                for_clause = f"county:*"
+                in_clause = f"state:{state}"
+                
                 if county:
                     # If specific county is requested
-                    params['for'] = f"county:{county}"
-                else:
-                    params['for'] = "county:*"
-                params['in'] = f"state:{state}"
+                    for_clause = f"county:{county}"
             
             elif level == 'tract':
                 # For tract level
-                params['for'] = "tract:*"
+                for_clause = f"tract:*"
+                
                 if county:
-                    params['in'] = f"state:{state} county:{county}"
+                    in_clause = f"state:{state}&in=county:{county}"
                 else:
-                    params['in'] = f"state:{state}"
+                    in_clause = f"state:{state}"
             
             elif level == 'block group':
                 # For block group level
-                params['for'] = "block group:*"
+                for_clause = f"block group:*"
+                
                 if county:
-                    params['in'] = f"state:{state} county:{county} tract:*"
+                    in_clause = f"state:{state}&in=county:{county}&in=tract:*"
                 else:
-                    params['in'] = f"state:{state} tract:*"
+                    in_clause = f"state:{state}&in=tract:*"
             
             elif level == 'state_lower':
                 # For state house districts
-                params['for'] = "legislative district (lower chamber):*"
-                params['in'] = f"state:{state}"
+                for_clause = f"state legislative district (lower chamber):*"
+                in_clause = f"state:{state}"
             
             elif level == 'state_upper':
                 # For state senate districts
-                params['for'] = "legislative district (upper chamber):*"
-                params['in'] = f"state:{state}"
+                for_clause = f"state legislative district (upper chamber):*"
+                in_clause = f"state:{state}"
             
-            # Make the API request with parameters
-            # The requests library will handle URL encoding automatically
-            response = requests.get(self.base_url, params=params)
-            response.raise_for_status()
-            
-            # Log the request URL (with key redacted) for debugging
-            safe_params = params.copy()
-            if 'key' in safe_params:
-                safe_params['key'] = 'REDACTED'
-            logger.debug(f"API request: {self.base_url}?{urlencode(safe_params, safe=':,')}")
-            
-            # Parse the JSON response
-            data = response.json()
-            
-            # Log the response to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                f.write(f"API request successful. Response has {len(data)} rows.\n")
-                f.write(f"First row: {data[0] if data else 'No data'}\n")
+            # Build the full URL
+            url = f"{self.base_url}?get={get_str}&for={for_clause}&{in_clause}&key={self.api_key}"
             
             # Log the request (without API key for security)
             logger.info(f"Fetching ACS data for {len(variables)} variables at {level} level")
@@ -248,38 +180,18 @@ class ACSDataFetcher:
             logger.debug(f"API URL: {safe_url}")
             
             # Log to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"API request: {safe_url}\n")
             
             # Make the request
             response = requests.get(url)
             response.raise_for_status()
             
-            # Log the raw response content for debugging
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                f.write(f"Raw API response status code: {response.status_code}\n")
-                f.write(f"Raw API response headers: {response.headers}\n")
-                f.write(f"Raw API response content (first 500 chars): {response.text[:500]}\n")
-            
-            # Check if the response is valid JSON
-            try:
-                data = response.json()
-            except Exception as e:
-                logger.error(f"Error parsing JSON response: {str(e)}")
-                with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                    f.write(f"Error parsing JSON: {str(e)}\n")
-                    
-                # The API key might be invalid or the request might be malformed
-                # Let's check if there's an error message in the response
-                if "Invalid API key" in response.text:
-                    raise ValueError("Invalid Census API key provided")
-                elif "error" in response.text.lower():
-                    raise ValueError(f"Census API error: {response.text}")
-                else:
-                    raise ValueError(f"Failed to parse Census API response: {str(e)}. Check the debug log for details.")
+            # Parse the response
+            data = response.json()
             
             # Log response to debug file (first few rows)
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"API response (first 2 rows): {data[:2]}\n")
             
             # First row contains headers
@@ -340,7 +252,7 @@ class ACSDataFetcher:
             df = df.rename(columns=rename_cols)
             
             # Log to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"Final DataFrame columns: {df.columns.tolist()}\n")
                 f.write(f"DataFrame shape: {df.shape}\n")
                 if not df.empty:
@@ -352,7 +264,7 @@ class ACSDataFetcher:
             logger.error(f"Error fetching ACS data: {str(e)}", exc_info=True)
             
             # Log detailed error to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"Error in get_acs_data: {str(e)}\n")
                 f.write(traceback.format_exc())
                 
@@ -385,13 +297,13 @@ class ACSDataFetcher:
                     
             elif level == 'state_lower':
                 # For state house districts, GEOID is STATE + SLDL (state legislative district lower)
-                if 'state' in df.columns and 'legislative district (lower chamber)' in df.columns:
-                    df['geoid'] = df['state'] + df['legislative district (lower chamber)'].str.zfill(3)
+                if 'state' in df.columns and 'state legislative district (lower chamber)' in df.columns:
+                    df['geoid'] = df['state'] + df['state legislative district (lower chamber)'].str.zfill(3)
                     
             elif level == 'state_upper':
                 # For state senate districts, GEOID is STATE + SLDU (state legislative district upper)
-                if 'state' in df.columns and 'legislative district (upper chamber)' in df.columns:
-                    df['geoid'] = df['state'] + df['legislative district (upper chamber)'].str.zfill(3)
+                if 'state' in df.columns and 'state legislative district (upper chamber)' in df.columns:
+                    df['geoid'] = df['state'] + df['state legislative district (upper chamber)'].str.zfill(3)
                     
             # Reorder columns to put GEOID first if it was successfully added
             if 'geoid' in df.columns:
@@ -405,7 +317,7 @@ class ACSDataFetcher:
             logger.error(f"Error adding simple GEOID: {str(e)}")
             
             # Log to debug file
-            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+            with open(self.debug_log_file, 'a') as f:
                 f.write(f"Error adding simple GEOID: {str(e)}\n")
                 f.write(f"DataFrame columns: {df.columns.tolist()}\n")
                 f.write(traceback.format_exc())

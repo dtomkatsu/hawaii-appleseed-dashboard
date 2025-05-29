@@ -36,9 +36,12 @@ class ACSDataFetcher:
             api_key: Census API key
             year: ACS year (default: 2023)
         """
-        # Set the API key
-        self.api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"  # Directly using the provided API key
+        # Get API key from environment variable if not provided
+        api_key_value = api_key or os.environ.get('CENSUS_API_KEY')
         
+        if not api_key_value:
+            raise ValueError("Census API key is required. Set the CENSUS_API_KEY environment variable.")
+            
         # Set up API URL and year
         self.year = year
         self.base_url = f"https://api.census.gov/data/{self.year}/acs/acs5"
@@ -53,14 +56,6 @@ class ACSDataFetcher:
         self.logs_dir = Path("logs")
         self.logs_dir.mkdir(exist_ok=True, parents=True)
         self.debug_log_file = self.logs_dir / "census_api_debug.log"
-        
-        # Log initialization
-        with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-            f.write(f"\n--- Initializing ACSDataFetcher for {self.year} ACS 5-year estimates ---\n")
-            f.write(f"Base URL: {self.base_url}\n")
-        
-        # Test the connection
-        self._test_connection()
         
         # Validate and format the API key
         self.api_key = self._validate_api_key(api_key_value)
@@ -105,26 +100,18 @@ class ACSDataFetcher:
         """
         try:
             # Make a simple request to test the API key
-            params = {
-                'get': 'NAME',
-                'for': 'state:*',
-                'key': self.api_key
-            }
-            response = requests.get(self.base_url, params=params)
+            test_url = f"{self.base_url}?get=NAME&for=state:*&key={self.api_key}"
+            response = requests.get(test_url)
             response.raise_for_status()
-            
-            # Parse the response to ensure it's valid
-            data = response.json()
             
             # Log successful connection
             logger.info(f"Successfully connected to ACS {self.year} 5-year estimates API")
-            logger.info(f"Found {len(data)-1} states in the response")  # -1 for header row
             
             # Log the response to debug file
             with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                f.write("Test connection successful\n")
-                f.write(f"Found {len(data)-1} states in the response\n")
-                f.write(f"First state: {data[1] if len(data) > 1 else 'No data'}\n")
+                f.write(f"Test connection successful\n")
+                # Only write the first 100 characters to avoid encoding issues
+                f.write(f"Response preview: {response.text[:100]}...\n")
                 
         except Exception as e:
             error_msg = f"Failed to connect to Census API: {str(e)}"
@@ -223,24 +210,20 @@ class ACSDataFetcher:
                 params['for'] = "legislative district (upper chamber):*"
                 params['in'] = f"state:{state}"
             
-            # Make the API request with parameters
-            # The requests library will handle URL encoding automatically
-            response = requests.get(self.base_url, params=params)
-            response.raise_for_status()
+            # Build the URL using proper URL encoding
+            # Handle special characters in parameters
+            for key, value in params.items():
+                if key != 'key' and isinstance(value, str):
+                    # Replace spaces with %20 in geography parameters
+                    if ' ' in value and key in ['for', 'in']:
+                        params[key] = value.replace(' ', '%20')
             
-            # Log the request URL (with key redacted) for debugging
-            safe_params = params.copy()
-            if 'key' in safe_params:
-                safe_params['key'] = 'REDACTED'
-            logger.debug(f"API request: {self.base_url}?{urlencode(safe_params, safe=':,')}")
+            # Build the URL with proper encoding
+            url = f"{self.base_url}?{urlencode(params, safe=':,')}"
             
-            # Parse the JSON response
-            data = response.json()
-            
-            # Log the response to debug file
+            # Log the URL construction for debugging
             with open(self.debug_log_file, 'a', encoding='utf-8') as f:
-                f.write(f"API request successful. Response has {len(data)} rows.\n")
-                f.write(f"First row: {data[0] if data else 'No data'}\n")
+                f.write(f"URL construction: {self.base_url}?{urlencode({k: v for k, v in params.items() if k != 'key'}, safe=':,')}\n")
             
             # Log the request (without API key for security)
             logger.info(f"Fetching ACS data for {len(variables)} variables at {level} level")
