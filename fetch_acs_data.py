@@ -141,6 +141,78 @@ class ACSScraper:
         logger.info(f"Saved state house district data to {output_file}")
         
         return df
+        
+    def fetch_state_senate_districts(self) -> Optional[pd.DataFrame]:
+        """Fetch data for all state senate districts in Hawaii."""
+        logger.info("Fetching state senate district data...")
+        
+        # Build the query
+        params = {
+            'get': ','.join(['NAME'] + list(self.variables.keys())),
+            'for': 'state legislative district (upper chamber):*',
+            'in': 'state:15'
+        }
+        
+        # Fetch the data
+        data = self.fetch_data(params)
+        if not data:
+            return None
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(data)
+        
+        # Rename columns
+        rename_cols = {k: v for k, v in self.variables.items() if k in df.columns}
+        df = df.rename(columns=rename_cols)
+        
+        # Clean up district numbers and create GEOID (state + district number)
+        df['district'] = df['state legislative district (upper chamber)'].astype(str).str.zfill(2)
+        df['geoid'] = df['state'] + df['district']
+        
+        # Calculate derived metrics
+        df = self._calculate_metrics(df)
+        
+        # Save to CSV
+        output_file = self.output_dir / 'hawaii_senate_districts_acs_2023.csv'
+        df.to_csv(output_file, index=False)
+        logger.info(f"Saved state senate district data to {output_file}")
+        
+        return df
+        
+    def fetch_state_data(self) -> Optional[pd.DataFrame]:
+        """Fetch data for the entire state of Hawaii."""
+        logger.info("Fetching state-level data...")
+        
+        # Build the query
+        params = {
+            'get': ','.join(['NAME'] + list(self.variables.keys())),
+            'for': 'state:15'
+        }
+        
+        # Fetch the data
+        data = self.fetch_data(params)
+        if not data:
+            return None
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(data)
+        
+        # Rename columns
+        rename_cols = {k: v for k, v in self.variables.items() if k in df.columns}
+        df = df.rename(columns=rename_cols)
+        
+        # Add GEOID (state FIPS code)
+        df['geoid'] = df['state']
+        
+        # Calculate derived metrics
+        df = self._calculate_metrics(df)
+        
+        # Save to CSV
+        output_file = self.output_dir / 'hawaii_state_acs_2023.csv'
+        df.to_csv(output_file, index=False)
+        logger.info(f"Saved state-level data to {output_file}")
+        
+        return df
     
     def _calculate_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate derived metrics from the raw data."""
@@ -172,6 +244,12 @@ def main():
     scraper = ACSScraper(api_key=api_key, year=2023)
     
     try:
+        # Fetch and save state-level data
+        state_df = scraper.fetch_state_data()
+        if state_df is not None:
+            print("\nState Data:")
+            print(state_df[['NAME', 'poverty_rate', 'median_income']].to_string(index=False))
+        
         # Fetch and save county data
         county_df = scraper.fetch_counties()
         if county_df is not None:
@@ -183,6 +261,12 @@ def main():
         if house_df is not None:
             print("\nState House District Data:")
             print(house_df[['NAME', 'poverty_rate', 'median_income']].to_string(index=False))
+            
+        # Fetch and save state senate district data
+        senate_df = scraper.fetch_state_senate_districts()
+        if senate_df is not None:
+            print("\nState Senate District Data:")
+            print(senate_df[['NAME', 'poverty_rate', 'median_income']].to_string(index=False))
         
         logger.info("\nAll data fetched and saved successfully!")
         
