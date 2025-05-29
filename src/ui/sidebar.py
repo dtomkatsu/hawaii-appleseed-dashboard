@@ -15,23 +15,36 @@ def create_sidebar() -> Dict[str, Any]:
     st.sidebar.title("Hawaii Appleseed Dashboard")
     
     # Layer selection
-    st.sidebar.subheader("Map Layers")
+    st.sidebar.markdown("### Map Layer")
+    layer_options = [
+        'State Boundary',
+        'County Boundaries',
+        'State House Districts',
+        'State Senate Districts'
+    ]
+    
+    # Initialize session state for active layer
+    if 'active_layer' not in st.session_state:
+        st.session_state.active_layer = 'State Boundary'
+    
+    # Radio button for layer selection
     active_layer = st.sidebar.radio(
-        "Select Layer",
-        options=['State', 'Counties', 'State House Districts', 'State Senate Districts'],
-        index=0
+        "Select a layer to display:",
+        options=layer_options,
+        index=layer_options.index(st.session_state.active_layer),
+        key="layer_selector"
     )
     
-    # Map settings
-    st.sidebar.subheader("Map Settings")
-    show_legend = st.sidebar.checkbox("Show Legend", value=True)
+    # Update session state
+    st.session_state.active_layer = active_layer
     
-    # Debug options
-    if st.sidebar.checkbox("Show Debug Info", value=False):
-        debug_info = True
+    # Map settings
+    st.sidebar.markdown("---")
+    show_legend = st.sidebar.checkbox("Show Legend", value=True)
+    debug_info = st.sidebar.checkbox("Show Debug Info", value=False)
+    
+    if debug_info:
         st.sidebar.warning("Debug mode is enabled")
-    else:
-        debug_info = False
     
     # About section
     st.sidebar.markdown("---")

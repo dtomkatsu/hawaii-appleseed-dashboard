@@ -26,7 +26,7 @@ logger.addHandler(file_handler)
 
 def create_map_view(debug_info: bool = False) -> None:
     """
-    Create and display a map view with layer controls and variable selection in the sidebar.
+    Create and display a map view with the selected layer and variable.
     """
     try:
         logger.debug("Starting map view creation")
@@ -55,52 +55,17 @@ def create_map_view(debug_info: bool = False) -> None:
         # Update session state
         st.session_state.selected_variable = selected_variable
         
-        # Add layer controls to the sidebar
-        st.sidebar.markdown("### Map Layers")
-        
-        # Use checkboxes for multiple layer selection
-        st.sidebar.markdown("**Select layers to display:**")
-        
-        # Default layers to show
-        if 'active_layers' not in st.session_state:
-            st.session_state.active_layers = ['State Boundary']
-        
-        # Layer options with default visibility
-        layer_options = {
-            'State Boundary': st.sidebar.checkbox(
-                'State Boundary', 
-                value='State Boundary' in st.session_state.active_layers,
-                key='state_layer'
-            ),
-            'County Boundaries': st.sidebar.checkbox(
-                'County Boundaries',
-                value='County Boundaries' in st.session_state.active_layers,
-                key='county_layer'
-            ),
-            'State House Districts': st.sidebar.checkbox(
-                'State House Districts',
-                value='State House Districts' in st.session_state.active_layers,
-                key='house_layer'
-            ),
-            'State Senate Districts': st.sidebar.checkbox(
-                'State Senate Districts',
-                value='State Senate Districts' in st.session_state.active_layers,
-                key='senate_layer'
-            )
-        }
-        
-        # Update active layers based on checkboxes
-        active_layers = [layer for layer, active in layer_options.items() if active]
-        st.session_state.active_layers = active_layers
+        # Get the active layer from session state (set by sidebar)
+        active_layer = st.session_state.get('active_layer', 'State Boundary')
         
         # Create a container for the map
         with st.container():
-            # Display selected variable info
-            st.markdown(f"### Map View: {available_variables[selected_variable]}")
+            # Display selected layer and variable info
+            st.markdown(f"### {active_layer}: {available_variables[selected_variable]}")
             
-            # Create the map builder with active layers and selected variable
+            # Create the map builder with the active layer and selected variable
             logger.debug(f"Creating map builder with variable: {selected_variable}")
-            map_builder = MapBuilder(active_layers=active_layers, selected_variable=selected_variable)
+            map_builder = MapBuilder(active_layers=[active_layer], selected_variable=selected_variable)
             
             # Create the map
             logger.debug("Building map")
