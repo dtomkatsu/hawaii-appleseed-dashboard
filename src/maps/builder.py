@@ -6,8 +6,10 @@ import json
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
+from datetime import datetime
 
 from src.data.data_loader import DataLoader
+from src.debug_log import log_layer_selection, log_geojson_loading, log_error
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,10 @@ class MapBuilder:
         self.base_dir = Path(__file__).parent.parent.parent
         self.feature_groups: Dict[str, folium.FeatureGroup] = {}
         self.data_loader = DataLoader()
+        
+        # Log active layers for debugging
+        logger.debug(f"MapBuilder initialized with active_layers: {self.active_layers}")
+        logger.debug(f"MapBuilder initialized with selected_variable: {self.selected_variable}")
         
         # Initialize the map object early
         self._init_map()
@@ -109,6 +115,8 @@ class MapBuilder:
             geo_level: Geographic level ('state', 'county', 'house', 'senate')
             layer_name: Display name for the layer
         """
+        logger.debug(f"_add_choropleth_layer called for geo_level={geo_level}, layer_name={layer_name}")
+        
         if self.m is None:
             logger.error("Cannot add choropleth layer: Map object is None")
             return
@@ -119,10 +127,22 @@ class MapBuilder:
             # Get the GeoJSON path
             geojson_path = self.data_loader.get_geojson_path(geo_level)
             if not geojson_path:
-                logger.error(f"No GeoJSON path found for {geo_level}")
+                error_msg = f"No GeoJSON path found for {geo_level}"
+                logger.error(error_msg)
+                log_error(error_msg, source=f"MapBuilder._add_choropleth_layer({geo_level})")
                 return
                 
             logger.debug(f"Found GeoJSON at: {geojson_path}")
+            
+            # Log GeoJSON loading attempt
+            if not Path(geojson_path).exists():
+                error_msg = f"GeoJSON file not found: {geojson_path}"
+                logger.error(error_msg)
+                log_geojson_loading(geo_level, str(geojson_path), success=False, error=error_msg)
+                return
+            
+            # Log successful GeoJSON path resolution
+            log_geojson_loading(geo_level, str(geojson_path), success=True)
             
             # Load the data
             df = self.data_loader.get_data(geo_level)
@@ -142,8 +162,32 @@ class MapBuilder:
             # Add the GeoJSON data to the map
             try:
                 # Load GeoJSON file
-                with open(geojson_path, 'r', encoding='utf-8') as f:
-                    geojson_data = json.load(f)
+                try:
+                    with open(geojson_path, 'r', encoding='utf-8') as f:
+                        geojson_data = json.load(f)
+                    
+                    # Log successful GeoJSON loading
+                    feature_count = len(geojson_data.get('features', []))
+                    logger.debug(f"Successfully loaded GeoJSON with {feature_count} features for {geo_level}")
+                    
+                    # Log the first feature for debugging
+                    if feature_count > 0:
+                        first_feature = geojson_data['features'][0]
+                        logger.debug(f"First feature properties: {first_feature.get('properties', {})}")
+                        
+                    # Use enhanced logging
+                    log_geojson_loading(
+                        geo_level, 
+                        str(geojson_path), 
+                        success=True, 
+                        error=None
+                    )
+                except Exception as e:
+                    error_msg = f"Error loading GeoJSON file: {str(e)}"
+                    logger.error(error_msg)
+                    log_error(error_msg, exception=e, source=f"MapBuilder._add_choropleth_layer({geo_level})")
+                    log_geojson_loading(geo_level, str(geojson_path), success=False, error=str(e))
+                    return
                 
                 # Standardize the GeoJSON IDs to match CSV data
                 geo_level_short = geo_level.lower().split()[0]  # 'State Boundary' -> 'state'
@@ -246,14 +290,12 @@ class MapBuilder:
                                 debug_file.write(f"\n[{geo_level}] Selected variable: {self.selected_variable}")
                                 debug_file.write(f"\n[{geo_level}] Max value: {max_value}\n")
                         
-                        # Create a simple style function
+                        # Create style function for normal state
                         def style_function(feature):
                             # Get the feature ID from the GeoJSON
                             feature_id = str(feature['properties'].get(id_field, ''))
-                            logger.debug(f"Styling feature with ID: {feature_id}")
                             
                             # Try different ID formats to match with CSV data
-                            # This handles potential format differences (e.g., leading zeros, state prefixes)
                             potential_ids = [
                                 feature_id,                  # Original ID
                                 feature_id.lstrip('0'),     # Without leading zeros
@@ -277,8 +319,6 @@ class MapBuilder:
                                 g = int(255 * (1 - normalized * 0.8))
                                 b = int(100 * (1 - normalized))
                                 
-                                logger.debug(f"Found match for ID {feature_id} → {matched_id}: value={value}, color=rgb({r},{g},{b})")
-                                
                                 return {
                                     'fillColor': f'rgb({r},{g},{b})',
                                     'color': '#000000',
@@ -286,7 +326,6 @@ class MapBuilder:
                                     'fillOpacity': 0.7
                                 }
                             else:
-                                logger.debug(f"No match found for ID {feature_id} in color_data keys: {list(color_data.keys())[:5]}...")
                                 return {
                                     'fillColor': '#cccccc',
                                     'color': '#000000',
@@ -294,14 +333,18 @@ class MapBuilder:
                                     'fillOpacity': 0.3
                                 }
                         
-                        # Create a simple GeoJSON layer
-                        geo_layer = folium.GeoJson(
-                            data=geojson_data,
-                            name=layer_name,
-                            style_function=style_function
-                        ).add_to(self.m)
+                        # Create highlight function for hover state
+                        def highlight_function(feature):
+                            base_style = style_function(feature)
+                            return {
+                                'fillColor': base_style['fillColor'],
+                                'color': '#ffff00',  # Yellow border on hover
+                                'weight': 3,         # Thicker border on hover
+                                'fillOpacity': 0.9,   # More opaque on hover
+                                'dashArray': '3'      # Dashed border
+                            }
                         
-                        # Add a simple popup with region name
+                        # Define name field mapping for different geographic levels
                         name_field_map = {
                             'state': 'state_name',
                             'county': 'county_name',
@@ -309,8 +352,43 @@ class MapBuilder:
                             'senate': 'senate_name'
                         }
                         
+                        # Get the appropriate name field for this geographic level
                         geo_level_short = geo_level.lower().split()[0]
                         name_field = name_field_map.get(geo_level_short, 'GEOID')
+                        logger.debug(f"Using name_field: {name_field} for geo_level: {geo_level_short}")
+                        
+                        # Create a GeoJSON layer with hover effects
+                        geo_layer = folium.GeoJson(
+                            data=geojson_data,
+                            name=layer_name,
+                            style_function=style_function,
+                            highlight_function=highlight_function,
+                            control=True,
+                            smooth_factor=1.0
+                        ).add_to(self.m)
+                        
+                        # Add mouseover/mouseout events for hover effects
+                        try:
+                            # Only use the name field for tooltips to avoid errors with missing fields
+                            geo_layer.add_child(
+                                folium.features.GeoJsonTooltip(
+                                    fields=[name_field],
+                                    aliases=['Name:'],
+                                    style=(
+                                        'background-color: white;'
+                                        'border: 1px solid black;'
+                                        'border-radius: 3px;'
+                                        'box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);'
+                                        'padding: 5px;'
+                                        'font-size: 12px;'
+                                    ),
+                                    sticky=True
+                                )
+                            )
+                            logger.debug(f"Added tooltip for layer: {layer_name} with field: {name_field}")
+                        except Exception as e:
+                            logger.error(f"Error adding tooltip: {str(e)}")
+                            # Continue without tooltip if there's an error
                         
                         # Process each feature and add individual popups
                         for feature in geojson_data['features']:
@@ -425,29 +503,50 @@ class MapBuilder:
     
     def _add_state_boundary(self) -> None:
         """Add Hawaii state boundary to the map with hover highlighting."""
+        logger.debug("Adding STATE boundary layer")
+        log_layer_selection('State Boundary', 'MapBuilder._add_state_boundary')
         self._add_choropleth_layer('state', 'State Boundary')
         
     def _add_county_boundaries(self) -> None:
         """Add county boundaries to the map with ACS data."""
+        logger.debug("Adding COUNTY boundaries layer")
+        log_layer_selection('County Boundaries', 'MapBuilder._add_county_boundaries')
         self._add_choropleth_layer('county', 'County Boundaries')
         
     def _add_house_districts(self) -> None:
         """Add state house districts to the map with ACS data."""
+        logger.debug("Adding HOUSE districts layer")
+        log_layer_selection('State House Districts', 'MapBuilder._add_house_districts')
         self._add_choropleth_layer('house', 'State House Districts')
         
     def _add_state_senate_districts(self) -> None:
         """Add state senate districts to the map with ACS data."""
+        logger.debug("Adding SENATE districts layer")
+        log_layer_selection('State Senate Districts', 'MapBuilder._add_state_senate_districts')
         self._add_choropleth_layer('senate', 'State Senate Districts')
         
     def _create_feature_groups(self) -> None:
         """Create feature groups for map layers."""
-        self.feature_groups = {
-            'State Boundary': folium.FeatureGroup(name='State Boundary', show=False),
-            'County Boundaries': folium.FeatureGroup(name='County Boundaries', show=False),
-            'State House Districts': folium.FeatureGroup(name='State House Districts', show=False),
-            'State Senate Districts': folium.FeatureGroup(name='State Senate Districts', show=False)
+        # Initialize all feature groups with visibility based on active_layers
+        self.feature_groups = {}
+        all_layers = {
+            'State Boundary': 'State Boundary',
+            'County Boundaries': 'County Boundaries',
+            'State House Districts': 'State House Districts',
+            'State Senate Districts': 'State Senate Districts'
         }
         
+        # Create feature groups and set visibility based on active_layers
+        for layer_name, display_name in all_layers.items():
+            is_visible = layer_name in (self.active_layers or [])
+            self.feature_groups[layer_name] = folium.FeatureGroup(
+                name=display_name,
+                show=is_visible
+            )
+            
+            # Log the layer creation and visibility
+            logger.debug(f"Created layer '{layer_name}': visible={is_visible}")
+            
         # Add feature groups to the map if it exists
         if self.m is not None:
             for fg in self.feature_groups.values():
@@ -477,16 +576,39 @@ class MapBuilder:
                     except Exception as e:
                         logger.error(f"Error adding feature group {name}: {str(e)}")
                 
-                # Add layers
-                logger.debug("Adding map layers...")
-                self._add_state_boundary()
-                self._add_county_boundaries()
-                self._add_house_districts()
-                self._add_state_senate_districts()
+                # Add only the active layer
+                logger.debug("Adding active layer...")
+                if self.active_layers and len(self.active_layers) > 0:
+                    active_layer = self.active_layers[0]
+                    logger.debug(f"Active layer to be added: {active_layer}")
+                    
+                    # Use enhanced logging for layer selection
+                    log_layer_selection(active_layer, source='MapBuilder.create_map')
+                    
+                    # Map layer names to their respective methods
+                    layer_methods = {
+                        'State Boundary': self._add_state_boundary,
+                        'County Boundaries': self._add_county_boundaries,
+                        'State House Districts': self._add_house_districts,
+                        'State Senate Districts': self._add_state_senate_districts
+                    }
+                    
+                    # Call the appropriate method for the active layer
+                    if active_layer in layer_methods:
+                        logger.debug(f"Calling method for layer: {active_layer}")
+                        layer_methods[active_layer]()
+                    else:
+                        error_msg = f"No method found for layer: {active_layer}"
+                        logger.error(error_msg)
+                        logger.debug(f"Available layer methods: {list(layer_methods.keys())}")
+                        log_error(error_msg, source='MapBuilder.create_map')
+                else:
+                    warning_msg = "No active layers specified, map will be empty"
+                    logger.warning(warning_msg)
+                    log_error(warning_msg, source='MapBuilder.create_map')
                 
-                # Add layer control to the map
-                logger.debug("Adding layer control...")
-                folium.LayerControl().add_to(self.m)
+                # No need for layer control since we're only showing one layer at a time
+                logger.debug("Skipping layer control for single layer view")
                 
                 logger.debug(f"Map creation complete. Feature groups: {len(self.feature_groups)}")
                 
