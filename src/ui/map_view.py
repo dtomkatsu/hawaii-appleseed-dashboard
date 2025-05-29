@@ -3,79 +3,82 @@ import streamlit as st
 import folium
 from streamlit_folium import folium_static
 import logging
-from typing import Dict, Any, Optional
+import traceback
+import os
 
 from src.maps.builder import MapBuilder
 
-logger = logging.getLogger(__name__)
+# Configure logging to write to a file
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'map_debug.log')
 
-def create_map_view(active_layer: str, debug_info: bool = False) -> None:
+# Set up file handler
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Get logger and add handler
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
+
+def create_map_view(debug_info: bool = False) -> None:
     """
-    Create and display the map view with session state for better performance.
-    
-    Args:
-        active_layer: The name of the active layer to display
-        debug_info: Whether to show debug information
+    Create and display a map view with layer controls in the sidebar.
     """
     try:
-        # Initialize session state for map if it doesn't exist
-        if 'map_object' not in st.session_state:
-            st.session_state.map_object = None
-        if 'active_layer' not in st.session_state:
-            st.session_state.active_layer = None
+        logger.debug("Starting map view creation")
+        
+        # Add layer controls to the sidebar
+        st.sidebar.markdown("### Map Layers")
+        show_state = st.sidebar.checkbox("State Boundary", value=True, key="show_state")
+        show_counties = st.sidebar.checkbox("County Boundaries", value=False, key="show_counties")
+        
+        # Determine which layers to show
+        active_layers = []
+        if show_state:
+            active_layers.append('State')
+        if show_counties:
+            active_layers.append('Counties')
         
         # Create a container for the map
-        map_container = st.container()
-        
-        with map_container:
-            # Only recreate the map if necessary
-            if (st.session_state.map_object is None or 
-                st.session_state.active_layer != active_layer):
-                
-                with st.spinner('Loading map...'):
-                    map_builder = MapBuilder(active_layer=active_layer)
-                    st.session_state.map_object = map_builder.create_map()
-                    st.session_state.active_layer = active_layer
+        with st.container():
+            st.markdown("### Map View")
             
-            m = st.session_state.map_object
+            # Create the map with active layers
+            logger.debug("Creating map builder")
+            map_builder = MapBuilder(active_layers=active_layers)
+            logger.debug("Building map")
+            m = map_builder.create_map()
             
             if m is None:
+                logger.error("Map creation failed, returned None")
                 st.error("Failed to create map. Please check the logs for details.")
                 return
             
-            # Display debug information if enabled
+            logger.debug(f"Map created successfully: {type(m).__name__}")
+            
+            # Display the map using folium_static
+            logger.debug("Displaying map with folium_static")
+            folium_static(m, width=800, height=600)
+            logger.debug("Map display complete")
+            
+            # Show debug info if enabled
             if debug_info:
                 st.markdown("### Debug Information")
-                
-                # Get map bounds from various possible attributes
-                bounds = None
-                if hasattr(m, 'used_bounds'):
-                    bounds = m.used_bounds
-                elif hasattr(m, 'hawaii_bounds'):
-                    bounds = m.hawaii_bounds
-                
-                # Create debug info dictionary
-                debug_info_dict = {
-                    "active_layer": active_layer,
+                map_info = {
                     "map_type": type(m).__name__,
-                    "map_bounds": bounds if bounds else "Not available",
-                    "layers_loaded": list(m._children.keys()) if hasattr(m, '_children') else 'No layers',
-                    "session_state_keys": list(st.session_state.keys())
+                    "center": m.location if hasattr(m, 'location') else "Unknown",
+                    "zoom": m.options.get('zoom') if hasattr(m, 'options') else "Unknown",
                 }
-                
-                # Log debug info to file
-                with open('debug.log', 'a') as f:
-                    f.write(f"\nMap Debug Info: {debug_info_dict}\n")
-                
-                # Display debug info in UI
-                st.json(debug_info_dict)
-            
-            # Display the map
-            st.markdown("### Map View")
-            folium_static(m, width=1200, height=800)
+                st.json(map_info)
+                logger.debug(f"Debug info: {map_info}")
                 
     except Exception as e:
-        logger.error(f"Error in map view: {str(e)}", exc_info=True)
+        logger.error(f"Error in map view: {str(e)}")
+        logger.error(traceback.format_exc())
         st.error(f"An error occurred while creating the map: {str(e)}")
 
 def create_data_summary() -> None:

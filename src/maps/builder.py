@@ -1,195 +1,146 @@
 """Map builder for the Hawaii Appleseed Dashboard."""
 import folium
-from folium.plugins import Fullscreen, MeasureControl
-import geopandas as gpd
 import logging
-from typing import Dict, Optional, Tuple, Any
-
-from src.data.geodata import load_geojson, get_geojson_files, get_geojson_bounds
-from src.maps.styles import get_style_function, get_highlight_function
+import traceback
+import json
+from pathlib import Path
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 class MapBuilder:
     """Builds and configures the Folium map with layers."""
     
-    def __init__(self, active_layer: str = 'State'):
-        """Initialize the map builder."""
-        self.active_layer = active_layer
-        self.geojson_files = get_geojson_files()
-        self.layers: Dict[str, folium.FeatureGroup] = {}
-        self.bounds = None
+    def __init__(self, active_layers: Optional[List[str]] = None):
+        self.active_layers = active_layers or ['State']
+        self.m = None
+        self.base_dir = Path(__file__).parent.parent.parent
+        self.feature_groups: Dict[str, folium.FeatureGroup] = {}
         
-    def create_map(self) -> Optional[folium.Map]:
-        """Create and configure the Folium map."""
+    def _add_state_boundary(self) -> None:
+        """Add Hawaii state boundary to the map."""
         try:
-            logger.info(f"Initializing map with active layer: {self.active_layer}")
+            state_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'hawaii_state_boundary.geojson'
             
-            # Define Hawaii bounds
+            if not state_geojson_path.exists():
+                logger.error(f"State boundary GeoJSON not found at {state_geojson_path}")
+                return
+                
+            # Style for the state boundary
+            style_function = lambda x: {
+                'fillColor': '#ffffff',
+                'color': '#000000',
+                'weight': 2,
+                'fillOpacity': 0.1
+            }
+            
+            # Add the GeoJSON layer to the state feature group
+            folium.GeoJson(
+                data=json.loads(state_geojson_path.read_text()),
+                style_function=style_function,
+                tooltip=folium.GeoJsonTooltip(
+                    fields=['state_name'],
+                    aliases=['State:'],
+                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
+                )
+            ).add_to(self.feature_groups['state'])
+            
+            logger.info("Successfully added state boundary layer")
+            
+        except Exception as e:
+            logger.error(f"Error adding state boundary: {str(e)}")
+            logger.error(traceback.format_exc())
+            
+    def _add_county_boundaries(self) -> None:
+        """Add county boundaries to the map."""
+        try:
+            county_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'hawaii_county_boundaries.geojson'
+            
+            if not county_geojson_path.exists():
+                logger.error(f"County boundaries GeoJSON not found at {county_geojson_path}")
+                return
+                
+            # Style for county boundaries
+            def style_function(feature):
+                return {
+                    'fillColor': '#f7f7f7',
+                    'color': '#666666',
+                    'weight': 1,
+                    'fillOpacity': 0.3,
+                    'dashArray': '5, 5'
+                }
+            
+            # Add the GeoJSON layer to the counties feature group
+            folium.GeoJson(
+                data=json.loads(county_geojson_path.read_text()),
+                style_function=style_function,
+                tooltip=folium.GeoJsonTooltip(
+                    fields=['county_name', 'county_fips'],
+                    aliases=['County: ', 'FIPS Code: '],
+                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
+                )
+            ).add_to(self.feature_groups['counties'])
+            
+            logger.info("Successfully added county boundaries layer")
+            
+        except Exception as e:
+            logger.error(f"Error adding county boundaries: {str(e)}")
+            logger.error(traceback.format_exc())
+    
+    def create_map(self) -> folium.Map:
+        """Create and return a map with configured layers."""
+        try:
+            # Define bounds for Hawaii (southwest and northeast corners)
             hawaii_bounds = [
-                [18.5, -160.5],  # min_lat, min_lon
-                [22.5, -154.5]   # max_lat, max_lon
+                [18.9, -160.2],  # Southwest coordinates
+                [22.2, -154.8]    # Northeast coordinates
             ]
             
-            # Initialize map with Hawaii bounds
+            # Create a basic map centered on Hawaii with CartoDB tiles
             self.m = folium.Map(
-                location=[20.5, -157.5],  # Center of Hawaii
-                zoom_start=7,
-                tiles='CartoDB Positron',
+                location=[20.8, -157.3],  # Center of Hawaii
+                zoom_start=7,             # Reasonable zoom level for Hawaii
+                tiles='CartoDB Positron',  # Use CartoDB Positron tiles
                 control_scale=True,
-                prefer_canvas=True,
-                zoom_control=True,
-                width='100%',
-                height='100%',
-                min_zoom=6,
-                max_zoom=14,
-                max_bounds=True
+                min_zoom=6,               # Prevent zooming out too far
+                max_bounds=True,           # Restrict panning to these bounds
+                max_bounds_viscosity=1.0,  # Strict bounds enforcement
+                prefer_canvas=True,        # Better performance
+                zoom_control=True          # Enable zoom controls
             )
             
-            # Store bounds as a public attribute
-            self.m.hawaii_bounds = hawaii_bounds
+            # Set the map bounds to Hawaii
+            self.m.fit_bounds(hawaii_bounds)
             
-            # Add controls
-            self._add_map_controls()
+            # Create feature groups for each layer type
+            self._create_feature_groups()
             
-            # Add base layers
-            self._add_base_layers()
+            # Add layers based on active layers
+            if 'State' in self.active_layers:
+                self._add_state_boundary()
+            if 'Counties' in self.active_layers:
+                self._add_county_boundaries()
             
-            # Add GeoJSON layers
-            self._add_geojson_layers()
+            # Add all feature groups to the map
+            for group in self.feature_groups.values():
+                group.add_to(self.m)
             
-            # Add layer control after all layers are added
-            folium.LayerControl(
-                position="topright",
-                collapsed=False,
-                autoZIndex=True
-            ).add_to(self.m)
-            
-            # Fit map to bounds if we have any layers
-            if self.bounds:
-                bounds_to_use = [
-                    [self.bounds[1], self.bounds[0]],  # min_lat, min_lon
-                    [self.bounds[3], self.bounds[2]]   # max_lat, max_lon
-                ]
-                self.m.fit_bounds(bounds_to_use)
-                
-                # Store the bounds in the map object for access in the UI
-                self.m.used_bounds = bounds_to_use
+            # Add layer control
+            folium.LayerControl(collapsed=False).add_to(self.m)
             
             return self.m
             
         except Exception as e:
-            logger.error(f"Error creating map: {str(e)}", exc_info=True)
+            logger.error(f"Error creating map: {str(e)}")
+            logger.error(traceback.format_exc())
             return None
+            
+    def _create_feature_groups(self) -> None:
+        """Create feature groups for different map layers."""
+        self.feature_groups = {
+            'base': folium.FeatureGroup(name='Base Map', show=True),
+            'state': folium.FeatureGroup(name='State Boundary', show='State' in self.active_layers),
+            'counties': folium.FeatureGroup(name='County Boundaries', show='Counties' in self.active_layers),
+        }
     
-    def _add_map_controls(self) -> None:
-        """Add map controls like fullscreen and measure."""
-        Fullscreen(
-            position="topleft",
-            title="Fullscreen",
-            title_cancel="Exit Fullscreen",
-            force_separate_button=True,
-        ).add_to(self.m)
-        
-        MeasureControl(position="bottomleft").add_to(self.m)
-    
-    def _add_base_layers(self) -> None:
-        """Add base map layers."""
-        # Only add CartoDB Positron as the base layer
-        folium.TileLayer(
-            'CartoDB Positron',
-            name='Light Base',
-            attr='CartoDB Positron',
-            control=False  # Don't show in layer control since it's the only option
-        ).add_to(self.m)
-    
-    def _add_geojson_layers(self) -> None:
-        """Add GeoJSON layers to the map."""
-        min_lat, min_lon = 90, 180
-        max_lat, max_lon = -90, -180
-        has_layers = False
-        
-        for layer_name, file_path in self.geojson_files.items():
-            try:
-                logger.info(f"Loading layer: {layer_name} from {file_path}")
-                gdf = load_geojson(file_path)
-                
-                if gdf is not None and not gdf.empty:
-                    # Update bounds
-                    bounds = get_geojson_bounds(gdf)
-                    min_lon = min(min_lon, bounds[0])
-                    min_lat = min(min_lat, bounds[1])
-                    max_lon = max(max_lon, bounds[2])
-                    max_lat = max(max_lat, bounds[3])
-                    
-                    # Create GeoJSON layer
-                    self._create_geojson_layer(gdf, layer_name)
-                    has_layers = True
-                    
-            except Exception as e:
-                logger.error(f"Error adding layer {layer_name}: {str(e)}", exc_info=True)
-        
-        # Store the overall bounds
-        if has_layers:
-            self.bounds = (min_lon, min_lat, max_lon, max_lat)
-    
-    def _create_geojson_layer(self, gdf: gpd.GeoDataFrame, layer_name: str) -> None:
-        """Create a GeoJSON layer from a GeoDataFrame."""
-        # Create a FeatureGroup for this layer
-        fg = folium.FeatureGroup(name=layer_name)
-        
-        # Get the GeoJSON data
-        geojson_data = gdf.to_json()
-        
-        # Create tooltip fields
-        tooltip_fields = []
-        tooltip_aliases = []
-        
-        # Add common fields we want to show in tooltips
-        if 'name' in gdf.columns:
-            tooltip_fields.append('name')
-            tooltip_aliases.append('Name')
-        if 'county_name' in gdf.columns:
-            tooltip_fields.append('county_name')
-            tooltip_aliases.append('County')
-        if 'state_house' in gdf.columns:
-            tooltip_fields.append('state_house')
-            tooltip_aliases.append('District')
-        if 'state_senate' in gdf.columns:
-            tooltip_fields.append('state_senate')
-            tooltip_aliases.append('District')
-        
-        # If no specific fields found, use the first few columns
-        if not tooltip_fields and len(gdf.columns) > 0:
-            for i, col in enumerate(gdf.columns[:3]):  # Limit to first 3 columns
-                if col != 'geometry':
-                    tooltip_fields.append(col)
-                    tooltip_aliases.append(str(col).replace('_', ' ').title())
-        
-        # Create the GeoJSON layer with enhanced styling
-        folium.GeoJson(
-            data=geojson_data,
-            name=layer_name,
-            style_function=lambda x, name=layer_name: get_style_function(name),
-            highlight_function=lambda x: get_highlight_function(),
-            tooltip=folium.GeoJsonTooltip(
-                fields=tooltip_fields,
-                aliases=tooltip_aliases,
-                localize=True,
-                sticky=True,
-                labels=True,
-                style="""
-                    background-color: #F0EFEF;
-                    border: 2px solid black;
-                    border-radius: 3px;
-                    box-shadow: 3px 3px 4px gray;
-                    font-size: 14px;
-                    padding: 5px;
-                """,
-                max_width=800
-            ) if tooltip_fields else None
-        ).add_to(fg)
-        
-        # Add the FeatureGroup to the map
-        fg.add_to(self.m)
-        self.layers[layer_name] = fg
+    # Removed unused methods to simplify the code
