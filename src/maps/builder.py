@@ -3,8 +3,11 @@ import folium
 import logging
 import traceback
 import json
+import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Any
+
+from src.data.data_loader import DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -16,199 +19,137 @@ class MapBuilder:
         self.m = None
         self.base_dir = Path(__file__).parent.parent.parent
         self.feature_groups: Dict[str, folium.FeatureGroup] = {}
+        self.data_loader = DataLoader()
         
+    def _get_choropleth_style(self, value: float, max_value: float) -> Dict[str, Any]:
+        """Get style for choropleth based on value."""
+        if pd.isna(value):
+            return {
+                'fillColor': '#999999',
+                'color': '#666666',
+                'weight': 1,
+                'fillOpacity': 0.3
+            }
+            
+        # Scale the value to 0-1 range
+        normalized = min(value / max_value, 1.0)
+        
+        # Use a color scale from green to red
+        red = int(255 * normalized)
+        green = int(255 * (1 - normalized))
+        blue = 0
+        
+        return {
+            'fillColor': f'#{red:02x}{green:02x}{blue:02x}',
+            'color': '#666666',
+            'weight': 1,
+            'fillOpacity': 0.7
+        }
+        
+    def _add_choropleth_layer(self, geo_level: str, layer_name: str) -> None:
+        """Add a choropleth layer to the map.
+        
+        Args:
+            geo_level: Geographic level ('state', 'county', 'house', 'senate')
+            layer_name: Display name for the layer
+        """
+        try:
+            logger.debug(f"Adding choropleth layer for {geo_level} as '{layer_name}'")
+            
+            # Get the GeoJSON path
+            geojson_path = self.data_loader.get_geojson_path(geo_level)
+            if not geojson_path:
+                logger.error(f"No GeoJSON path found for {geo_level}")
+                return
+            logger.debug(f"Found GeoJSON at: {geojson_path}")
+                
+            # Load the data (we'll use this for popups later)
+            df = self.data_loader.get_data(geo_level)
+            if df is None or df.empty:
+                logger.warning(f"No data found for {geo_level}, will use basic visualization")
+            else:
+                logger.debug(f"Loaded data for {geo_level}: {len(df)} rows")
+            
+            # Create a feature group for this layer
+            fg = folium.FeatureGroup(name=layer_name, show=True)
+            
+            # Add the GeoJSON data directly to the map with basic styling
+            try:
+                with open(geojson_path, 'r', encoding='utf-8') as f:
+                    geojson_data = json.load(f)
+                
+                # Get the first feature to check available properties
+                first_feature = geojson_data.get('features', [{}])[0].get('properties', {})
+                
+                # Determine which fields to show in the tooltip
+                tooltip_fields = []
+                for field in ['NAME', 'name', 'DISTRICT', 'district', 'COUNTY', 'county']:
+                    if field in first_feature:
+                        tooltip_fields.append(field)
+                
+                # Add GeoJSON to the feature group with basic styling
+                folium.GeoJson(
+                    data=geojson_data,
+                    name=layer_name,
+                    style_function=lambda feature: {
+                        'fillColor': '#ff7800',
+                        'color': '#000000',
+                        'weight': 1,
+                        'fillOpacity': 0.5
+                    },
+                    highlight_function=lambda feature: {
+                        'weight': 3,
+                        'fillOpacity': 0.7
+                    },
+                    tooltip=folium.GeoJsonTooltip(
+                        fields=tooltip_fields[:3],  # Limit to first 3 fields
+                        aliases=[f"{f.capitalize()}:" for f in tooltip_fields[:3]],
+                        style="background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;"
+                    ) if tooltip_fields else None
+                ).add_to(fg)
+                
+                logger.debug(f"Successfully added {layer_name} with {len(geojson_data.get('features', []))} features")
+                
+            except Exception as e:
+                logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
+                # Fall back to simple GeoJSON if detailed loading fails
+                folium.GeoJson(
+                    str(geojson_path),
+                    name=layer_name
+                ).add_to(fg)
+            
+            # Add the feature group to the map
+            fg.add_to(self.m)
+            self.feature_groups[layer_name] = fg
+            
+        except Exception as e:
+            logger.error(f"Error adding {layer_name} layer: {str(e)}\n{traceback.format_exc()}")
+    
     def _add_state_boundary(self) -> None:
         """Add Hawaii state boundary to the map with hover highlighting."""
-        try:
-            state_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'hawaii_state_boundary.geojson'
-            
-            if not state_geojson_path.exists():
-                logger.error(f"State boundary GeoJSON not found at {state_geojson_path}")
-                return
-            
-            # Base style
-            def style_function(feature):
-                return {
-                    'fillColor': '#ffffff',
-                    'color': '#000000',
-                    'weight': 2,
-                    'fillOpacity': 0.1
-                }
-                
-            # Create the GeoJSON layer with highlighting
-            geojson = folium.GeoJson(
-                data=json.loads(state_geojson_path.read_text()),
-                style_function=style_function,
-                highlight_function=lambda x: {
-                    'fillColor': '#ffffff',
-                    'color': '#000000',
-                    'weight': 4,
-                    'fillOpacity': 0.3
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['state_name'],
-                    aliases=['State:'],
-                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
-                ),
-                name='State Boundary'
-            )
-            
-            # Add to the feature group
-            geojson.add_to(self.feature_groups['state'])
-            logger.info("Successfully added state boundary layer")
-            
-        except Exception as e:
-            logger.error(f"Error adding state boundary: {str(e)}")
-            logger.error(traceback.format_exc())
-            
+        self._add_choropleth_layer('state', 'State Boundary')
+        
     def _add_county_boundaries(self) -> None:
-        """Add county boundaries to the map with hover highlighting."""
-        try:
-            county_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'hawaii_county_boundaries.geojson'
-            
-            if not county_geojson_path.exists():
-                logger.error(f"County boundaries GeoJSON not found at {county_geojson_path}")
-                return
-            
-            # Base style
-            def style_function(feature):
-                return {
-                    'fillColor': '#f7f7f7',
-                    'color': '#666666',
-                    'weight': 1,
-                    'fillOpacity': 0.3,
-                    'dashArray': '5, 5'
-                }
-                
-            # Highlight style
-            def highlight_function(feature):
-                return {
-                    'fillColor': '#e0e0e0',
-                    'color': '#333333',
-                    'weight': 2.5,
-                    'fillOpacity': 0.5,
-                    'dashArray': '5, 5'
-                }
-            
-            # Create the GeoJSON layer with highlighting
-            geojson = folium.GeoJson(
-                data=json.loads(county_geojson_path.read_text()),
-                style_function=style_function,
-                highlight_function=lambda x: {
-                    'fillColor': '#e0e0e0',
-                    'color': '#333333',
-                    'weight': 2.5,
-                    'fillOpacity': 0.5,
-                    'dashArray': '5, 5'
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['county_name', 'county_fips'],
-                    aliases=['County: ', 'FIPS Code: '],
-                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
-                )
-            )
-            
-            # Add to the feature group
-            geojson.add_to(self.feature_groups['counties'])
-            
-            logger.info("Successfully added county boundaries layer")
-            
-        except Exception as e:
-            logger.error(f"Error adding county boundaries: {str(e)}")
-            logger.error(traceback.format_exc())
-            
+        """Add county boundaries to the map with ACS data."""
+        self._add_choropleth_layer('county', 'County Boundaries')
+        
     def _add_house_districts(self) -> None:
-        """Add state house districts to the map with hover highlighting."""
-        try:
-            house_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'Hawaii_State_House_Districts_2022.geojson'
-            
-            if not house_geojson_path.exists():
-                logger.error(f"House districts GeoJSON not found at {house_geojson_path}")
-                return
-            
-            # Base style
-            def style_function(feature):
-                return {
-                    'fillColor': '#9ecae1',
-                    'color': '#3182bd',
-                    'weight': 1,
-                    'fillOpacity': 0.4,
-                    'dashArray': '3, 3'
-                }
-                
-            # Create the GeoJSON layer with highlighting
-            geojson = folium.GeoJson(
-                data=json.loads(house_geojson_path.read_text()),
-                style_function=style_function,
-                highlight_function=lambda x: {
-                    'fillColor': '#6baed6',
-                    'color': '#2171b5',
-                    'weight': 2.5,
-                    'fillOpacity': 0.7,
-                    'dashArray': '3, 3'
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['state_house', 'house_name'],
-                    aliases=['District: ', 'Representative: '],
-                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
-                )
-            )
-            
-            # Add to the feature group
-            geojson.add_to(self.feature_groups['house_districts'])
-            
-            logger.info("Successfully added state house districts layer")
-            
-        except Exception as e:
-            logger.error(f"Error adding house districts: {str(e)}")
-            logger.error(traceback.format_exc())
-            
-    def _add_senate_districts(self) -> None:
-        """Add state senate districts to the map with hover highlighting."""
-        try:
-            senate_geojson_path = self.base_dir / 'data' / 'Processed GeoJsons' / 'Hawaii_State_Senate_Districts_2022.geojson'
-            
-            if not senate_geojson_path.exists():
-                logger.error(f"Senate districts GeoJSON not found at {senate_geojson_path}")
-                return
-            
-            # Base style
-            def style_function(feature):
-                return {
-                    'fillColor': '#a1d99b',
-                    'color': '#31a354',
-                    'weight': 1.5,
-                    'fillOpacity': 0.3,
-                    'dashArray': '4, 4'
-                }
-                
-            # Create the GeoJSON layer with highlighting
-            geojson = folium.GeoJson(
-                data=json.loads(senate_geojson_path.read_text()),
-                style_function=style_function,
-                highlight_function=lambda x: {
-                    'fillColor': '#74c476',
-                    'color': '#238b45',
-                    'weight': 2.5,
-                    'fillOpacity': 0.6,
-                    'dashArray': '4, 4'
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['state_senate', 'senate_name'],
-                    aliases=['District: ', 'Name: '],
-                    style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 2px;")
-                )
-            )
-            
-            # Add to the feature group
-            geojson.add_to(self.feature_groups['senate_districts'])
-            
-            logger.info("Successfully added state senate districts layer")
-            
-        except Exception as e:
-            logger.error(f"Error adding senate districts: {str(e)}")
-            logger.error(traceback.format_exc())
-    
+        """Add state house districts to the map with ACS data."""
+        self._add_choropleth_layer('house', 'State House Districts')
+        
+    def _add_state_senate_districts(self) -> None:
+        """Add state senate districts to the map with ACS data."""
+        self._add_choropleth_layer('senate', 'State Senate Districts')
+        
+    def _create_feature_groups(self) -> None:
+        """Create feature groups for map layers."""
+        self.feature_groups = {
+            'State Boundary': folium.FeatureGroup(name='State Boundary', show=False),
+            'County Boundaries': folium.FeatureGroup(name='County Boundaries', show=False),
+            'State House Districts': folium.FeatureGroup(name='State House Districts', show=False),
+            'State Senate Districts': folium.FeatureGroup(name='State Senate Districts', show=False)
+        }
+        
     def create_map(self) -> folium.Map:
         """Create and return a map with configured layers."""
         try:
@@ -217,6 +158,8 @@ class MapBuilder:
                 [18.9, -160.2],  # Southwest coordinates
                 [22.2, -154.8]    # Northeast coordinates
             ]
+            
+            logger.debug(f"Active layers: {self.active_layers}")
             
             # Create a basic map centered on Hawaii with CartoDB tiles
             self.m = folium.Map(
@@ -237,28 +180,17 @@ class MapBuilder:
             # Create feature groups for each layer type
             self._create_feature_groups()
             
-            # Add layers based on active layers
-            if 'State' in self.active_layers:
-                self._add_state_boundary()
-            if 'Counties' in self.active_layers:
-                self._add_county_boundaries()
-            if 'House' in self.active_layers:
-                self._add_house_districts()
-            if 'Senate' in self.active_layers:
-                self._add_senate_districts()
+            # Always add these layers regardless of active_layers
+            # This ensures the layers are available in the map
+            self._add_state_boundary()
+            self._add_county_boundaries()
+            self._add_house_districts()
+            self._add_state_senate_districts()
             
-            # Only add the base layer and active feature groups to the map
-            self.feature_groups['base'].add_to(self.m)  # Always add base layer
+            # Add layer control to the map
+            folium.LayerControl().add_to(self.m)
             
-            # Add only the active layers
-            for layer_name, group in self.feature_groups.items():
-                if layer_name != 'base':  # Skip base layer as it's already added
-                    if layer_name in ['state', 'counties', 'house_districts', 'senate_districts']:
-                        if (layer_name == 'state' and 'State' in self.active_layers) or \
-                           (layer_name == 'counties' and 'Counties' in self.active_layers) or \
-                           (layer_name == 'house_districts' and 'House' in self.active_layers) or \
-                           (layer_name == 'senate_districts' and 'Senate' in self.active_layers):
-                            group.add_to(self.m)
+            logger.debug(f"Map created with {len(self.feature_groups)} feature groups")
             
             return self.m
             

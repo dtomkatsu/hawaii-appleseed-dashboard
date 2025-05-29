@@ -1,7 +1,7 @@
 """Map view components for the Hawaii Appleseed Dashboard."""
 import streamlit as st
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 import logging
 import traceback
 import os
@@ -34,38 +34,50 @@ def create_map_view(debug_info: bool = False) -> None:
         # Add layer controls to the sidebar
         st.sidebar.markdown("### Map Layers")
         
-        # Use radio buttons for single-layer selection
-        layer_options = [
-            "State Boundary",
-            "County Boundaries",
-            "State House Districts",
-            "State Senate Districts"
-        ]
+        # Use checkboxes for multiple layer selection
+        st.sidebar.markdown("**Select layers to display:**")
         
-        selected_layer = st.sidebar.radio(
-            "Select a layer to display:",
-            options=layer_options,
-            index=0,  # Default to State Boundary
-            key="layer_selector"
-        )
+        # Default layers to show
+        if 'active_layers' not in st.session_state:
+            st.session_state.active_layers = ['State Boundary']
         
-        # Map the selected layer to active_layers format
-        layer_mapping = {
-            "State Boundary": ["State"],
-            "County Boundaries": ["Counties"],
-            "State House Districts": ["House"],
-            "State Senate Districts": ["Senate"]
+        # Layer options with default visibility
+        layer_options = {
+            'State Boundary': st.sidebar.checkbox(
+                'State Boundary', 
+                value='State Boundary' in st.session_state.active_layers,
+                key='state_layer'
+            ),
+            'County Boundaries': st.sidebar.checkbox(
+                'County Boundaries',
+                value='County Boundaries' in st.session_state.active_layers,
+                key='county_layer'
+            ),
+            'State House Districts': st.sidebar.checkbox(
+                'State House Districts',
+                value='State House Districts' in st.session_state.active_layers,
+                key='house_layer'
+            ),
+            'State Senate Districts': st.sidebar.checkbox(
+                'State Senate Districts',
+                value='State Senate Districts' in st.session_state.active_layers,
+                key='senate_layer'
+            )
         }
         
-        active_layers = layer_mapping[selected_layer]
+        # Update active layers based on checkboxes
+        active_layers = [layer for layer, active in layer_options.items() if active]
+        st.session_state.active_layers = active_layers
         
         # Create a container for the map
         with st.container():
             st.markdown("### Map View")
             
-            # Create the map with active layers
+            # Create the map builder with active layers
             logger.debug("Creating map builder")
             map_builder = MapBuilder(active_layers=active_layers)
+            
+            # Create the map
             logger.debug("Building map")
             m = map_builder.create_map()
             
@@ -76,9 +88,9 @@ def create_map_view(debug_info: bool = False) -> None:
             
             logger.debug(f"Map created successfully: {type(m).__name__}")
             
-            # Display the map using folium_static
-            logger.debug("Displaying map with folium_static")
-            folium_static(m, width=800, height=600)
+            # Display the map using st_folium
+            logger.debug("Displaying map with st_folium")
+            st_folium(m, width=800, height=600, returned_objects=[])
             logger.debug("Map display complete")
             
             # Show debug info if enabled
