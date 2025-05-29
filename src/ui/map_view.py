@@ -26,10 +26,34 @@ logger.addHandler(file_handler)
 
 def create_map_view(debug_info: bool = False) -> None:
     """
-    Create and display a map view with layer controls in the sidebar.
+    Create and display a map view with layer controls and variable selection in the sidebar.
     """
     try:
         logger.debug("Starting map view creation")
+        
+        # Initialize data loader to get available variables
+        from src.data.data_loader import DataLoader
+        data_loader = DataLoader()
+        available_variables = data_loader.get_available_variables()
+        
+        # Add variable selection to the sidebar
+        st.sidebar.markdown("### Data Options")
+        
+        # Default variable to show
+        if 'selected_variable' not in st.session_state:
+            st.session_state.selected_variable = 'poverty_rate'
+        
+        # Create a dropdown for variable selection
+        selected_variable = st.sidebar.selectbox(
+            "Select variable to display:",
+            options=list(available_variables.keys()),
+            format_func=lambda x: available_variables[x],
+            index=list(available_variables.keys()).index(st.session_state.selected_variable),
+            key="variable_selector"
+        )
+        
+        # Update session state
+        st.session_state.selected_variable = selected_variable
         
         # Add layer controls to the sidebar
         st.sidebar.markdown("### Map Layers")
@@ -71,11 +95,12 @@ def create_map_view(debug_info: bool = False) -> None:
         
         # Create a container for the map
         with st.container():
-            st.markdown("### Map View")
+            # Display selected variable info
+            st.markdown(f"### Map View: {available_variables[selected_variable]}")
             
-            # Create the map builder with active layers
-            logger.debug("Creating map builder")
-            map_builder = MapBuilder(active_layers=active_layers)
+            # Create the map builder with active layers and selected variable
+            logger.debug(f"Creating map builder with variable: {selected_variable}")
+            map_builder = MapBuilder(active_layers=active_layers, selected_variable=selected_variable)
             
             # Create the map
             logger.debug("Building map")
@@ -88,10 +113,36 @@ def create_map_view(debug_info: bool = False) -> None:
             
             logger.debug(f"Map created successfully: {type(m).__name__}")
             
-            # Display the map using st_folium
+            # Display the map using st_folium with proper error handling
             logger.debug("Displaying map with st_folium")
-            st_folium(m, width=800, height=600, returned_objects=[])
-            logger.debug("Map display complete")
+            try:
+                # Create a container for the map
+                map_container = st.empty()
+                
+                # Display the map in the container
+                with map_container.container():
+                    st_folium(
+                        m,
+                        width=800,
+                        height=600,
+                        returned_objects=[],
+                        use_container_width=True
+                    )
+                logger.debug("Map display complete")
+                
+            except Exception as e:
+                logger.error(f"Error displaying map: {str(e)}")
+                logger.error(traceback.format_exc())
+                st.error("An error occurred while displaying the map. Please check the logs for details.")
+                
+                # Fallback: Try to display a simple map
+                try:
+                    st.warning("Falling back to basic map display...")
+                    m = folium.Map(location=[20.8, -157.3], zoom_start=7)
+                    st_folium(m, width=800, height=600)
+                except Exception as fallback_error:
+                    logger.error(f"Fallback map display failed: {str(fallback_error)}")
+                    st.error("Failed to display the map. Please try again later.")
             
             # Show debug info if enabled
             if debug_info:
