@@ -1,6 +1,10 @@
 import streamlit as st
 import logging
 import sys
+from pathlib import Path
+
+# Add src to path
+sys.path.append(str(Path(__file__).parent))
 
 # Configure logging
 logging.basicConfig(
@@ -13,40 +17,49 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import the simplified map view
+# Import views
 from src.ui.map_view import create_map_view
+from src.ui.acs_dashboard import ACSDashboard
+
+# Page config
+st.set_page_config(
+    page_title="Hawaii Appleseed Dashboard",
+    page_icon="🌺",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main .block-container {
+        max-width: 95%;
+        padding: 2rem 2rem 6rem;
+    }
+    .stButton>button {
+        width: 100%;
+    }
+    .stDownloadButton>button {
+        width: 100%;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 def main():
     """Main application function"""
-    st.set_page_config(
-        page_title="Hawaii Appleseed Dashboard",
-        page_icon="🌺",
-        layout="wide"
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio(
+        "Go to",
+        ["Map Explorer", "ACS Data Dashboard"],
+        index=0
     )
     
-    st.title("Hawaii Appleseed Dashboard")
-    
-    # Add some basic CSS for layout
-    st.markdown("""
-    <style>
-    .main .block-container {
-        max-width: 1200px;
-        padding-top: 2rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create a simple layout
-    st.subheader("Hawaii Map")
-    create_map_view(debug_info=True)
-    
-    # Add controls in a sidebar
-    st.sidebar.subheader("Controls")
-    year = st.sidebar.slider("Select Year", 2018, 2023, 2023)
-    data_type = st.sidebar.selectbox(
-        "Select Data Type",
-        ["Housing", "Education", "Economic"]
-    )
+    if page == "Map Explorer":
+        st.title("Hawaii Map Explorer")
+        create_map_view(debug_info=True)
+    elif page == "ACS Data Dashboard":
+        acs_dashboard = ACSDashboard()
+        acs_dashboard.render()
     
     # Add some basic information
     st.markdown("---")
