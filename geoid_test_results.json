@@ -1,0 +1,183 @@
+{
+  "geoid_info": {
+    "county": {
+      "source_columns": [
+        "state",
+        "county"
+      ],
+      "target_columns": [
+        "state_fips",
+        "county_fips"
+      ],
+      "format": "SSCCC",
+      "example": "15003"
+    },
+    "state_lower": {
+      "source_columns": [
+        "sldlst"
+      ],
+      "target_columns": [
+        "house_id"
+      ],
+      "format": "SSDDD",
+      "example": "15001"
+    },
+    "state_upper": {
+      "source_columns": [
+        "sldust"
+      ],
+      "target_columns": [
+        "senate_id"
+      ],
+      "format": "SSDD",
+      "example": "151"
+    },
+    "tract": {
+      "source_columns": [
+        "state",
+        "county",
+        "tract"
+      ],
+      "format": "SSCCCTTTTTT",
+      "example": "15003020100"
+    },
+    "block group": {
+      "source_columns": [
+        "state",
+        "county",
+        "tract",
+        "block group"
+      ],
+      "format": "SSCCCTTTTTTB",
+      "example": "150030201001"
+    }
+  },
+  "test_results": {
+    "county": {
+      "input": {
+        "state": "15",
+        "county": "003"
+      },
+      "geoid": "15003",
+      "length": 5
+    },
+    "tract": {
+      "input": {
+        "state": "15",
+        "county": "003",
+        "tract": "020100"
+      },
+      "geoid": "15003020100",
+      "length": 11
+    },
+    "block group": {
+      "input": {
+        "state": "15",
+        "county": "003",
+        "tract": "020100",
+        "block group": "1"
+      },
+      "geoid": "150030201001",
+      "length": 12
+    },
+    "state_lower": {
+      "input": {
+        "state": "15",
+        "sldlst": "001"
+      },
+      "geoid": "15001",
+      "length": 5
+    },
+    "state_upper": {
+      "input": {
+        "state": "15",
+        "sldust": "1"
+      },
+      "geoid": "1501",
+      "length": 4
+    }
+  },
+  "map_samples": {
+    "county": [
+      {
+        "county_name": "Hawaii",
+        "county_fips": "001",
+        "state_fips": "15"
+      },
+      {
+        "county_name": "Kauai",
+        "county_fips": "007",
+        "state_fips": "15"
+      },
+      {
+        "county_name": "Maui",
+        "county_fips": "009",
+        "state_fips": "15"
+      }
+    ],
+    "state_lower": [
+      {
+        "objectid": 1,
+        "county": "HAWAII",
+        "state_house": "H01",
+        "house_name": "State House District 1",
+        "house_id": 1,
+        "house_abbr": "1ST REP. DIST.",
+        "st_areashape": 2030577450.4258118,
+        "st_perimetershape": 298240.7945778156
+      },
+      {
+        "objectid": 2,
+        "county": "HAWAII",
+        "state_house": "H02",
+        "house_name": "State House District 2",
+        "house_id": 2,
+        "house_abbr": "2ND REP. DIST.",
+        "st_areashape": 56959517.95025719,
+        "st_perimetershape": 47936.507683859716
+      },
+      {
+        "objectid": 3,
+        "county": "HAWAII",
+        "state_house": "H03",
+        "house_name": "State House District 3",
+        "house_id": 3,
+        "house_abbr": "3RD REP. DIST.",
+        "st_areashape": 237910269.34476766,
+        "st_perimetershape": 108382.93365529712
+      }
+    ],
+    "state_upper": [
+      {
+        "objectid": 1,
+        "county": "HAWAII",
+        "state_senate": "S01",
+        "senate_name": "State Senate District 1",
+        "senate_id": 1,
+        "senate_abbr": "1ST SEN. DIST.",
+        "st_areashape": 933220048.5525568,
+        "st_perimetershape": 165687.6184777589
+      },
+      {
+        "objectid": 2,
+        "county": "HAWAII",
+        "state_senate": "S02",
+        "senate_name": "State Senate District 2",
+        "senate_id": 2,
+        "senate_abbr": "2ND SEN. DIST.",
+        "st_areashape": 1153049247.4891486,
+        "st_perimetershape": 196570.7820996911
+      },
+      {
+        "objectid": 3,
+        "county": "HAWAII",
+        "state_senate": "S03",
+        "senate_name": "State Senate District 3",
+        "senate_id": 3,
+        "senate_abbr": "3RD SEN. DIST.",
+        "st_areashape": 4131183522.1271415,
+        "st_perimetershape": 462675.9719971987
+      }
+    ]
+  }
+}
