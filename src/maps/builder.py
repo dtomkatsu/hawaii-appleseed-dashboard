@@ -209,17 +209,66 @@ class MapBuilder:
                         if self.selected_variable in df.columns:
                             max_value = df[self.selected_variable].max()
                             
-                            # Create a mapping from geoid to value
+                            # Create a mapping from geoid to value with multiple key formats for matching
                             for _, row in df.iterrows():
                                 if 'geoid' in row and self.selected_variable in row:
-                                    color_data[str(row['geoid'])] = row[self.selected_variable]
+                                    # Get the geoid as string
+                                    geoid_str = str(row['geoid'])
+                                    value = row[self.selected_variable]
+                                    
+                                    # Store the value with multiple key formats for flexible matching
+                                    color_data[geoid_str] = value  # Full ID (e.g., '15001')
+                                    
+                                    # Also store without state prefix if it exists (e.g., '001' from '15001')
+                                    if len(geoid_str) > 2 and geoid_str.startswith('15'):
+                                        color_data[geoid_str[2:]] = value
+                                    
+                                    # Also store without leading zeros (e.g., '1' from '001')
+                                    color_data[geoid_str.lstrip('0')] = value
+                                    if len(geoid_str) > 2 and geoid_str.startswith('15'):
+                                        color_data[geoid_str[2:].lstrip('0')] = value
+                            
+                            # Log the first few entries in color_data for debugging
+                            logger.debug(f"Color data keys: {list(color_data.keys())[:10]}")
+                            logger.debug(f"GeoJSON ID field: {id_field}")
+                            if geojson_data['features']:
+                                first_feature_id = geojson_data['features'][0]['properties'].get(id_field, 'Not found')
+                                logger.debug(f"First feature ID: {first_feature_id}")
+                                logger.debug(f"Is in color_data: {first_feature_id in color_data}")
+                            
+                            # Create a debug log file to track data matching
+                            debug_log_path = Path(self.base_dir) / 'logs' / 'data_match_debug.log'
+                            debug_log_path.parent.mkdir(exist_ok=True)
+                            
+                            with open(debug_log_path, 'a') as debug_file:
+                                debug_file.write(f"\n[{geo_level}] GeoJSON IDs: {[f['properties'].get(id_field, 'None') for f in geojson_data['features'][:5]]}")
+                                debug_file.write(f"\n[{geo_level}] Color data keys: {list(color_data.keys())[:10]}")
+                                debug_file.write(f"\n[{geo_level}] Selected variable: {self.selected_variable}")
+                                debug_file.write(f"\n[{geo_level}] Max value: {max_value}\n")
                         
                         # Create a simple style function
                         def style_function(feature):
+                            # Get the feature ID from the GeoJSON
                             feature_id = str(feature['properties'].get(id_field, ''))
+                            logger.debug(f"Styling feature with ID: {feature_id}")
                             
-                            if feature_id in color_data:
-                                value = color_data[feature_id]
+                            # Try different ID formats to match with CSV data
+                            # This handles potential format differences (e.g., leading zeros, state prefixes)
+                            potential_ids = [
+                                feature_id,                  # Original ID
+                                feature_id.lstrip('0'),     # Without leading zeros
+                                feature_id[-5:] if len(feature_id) > 5 else feature_id  # Last 5 digits
+                            ]
+                            
+                            # Try to find a match in the color data
+                            matched_id = None
+                            for pid in potential_ids:
+                                if pid in color_data:
+                                    matched_id = pid
+                                    break
+                            
+                            if matched_id:
+                                value = color_data[matched_id]
                                 # Normalize the value (0-1 range)
                                 normalized = value / max_value if max_value > 0 else 0
                                 
@@ -228,6 +277,8 @@ class MapBuilder:
                                 g = int(255 * (1 - normalized * 0.8))
                                 b = int(100 * (1 - normalized))
                                 
+                                logger.debug(f"Found match for ID {feature_id} → {matched_id}: value={value}, color=rgb({r},{g},{b})")
+                                
                                 return {
                                     'fillColor': f'rgb({r},{g},{b})',
                                     'color': '#000000',
@@ -235,6 +286,7 @@ class MapBuilder:
                                     'fillOpacity': 0.7
                                 }
                             else:
+                                logger.debug(f"No match found for ID {feature_id} in color_data keys: {list(color_data.keys())[:5]}...")
                                 return {
                                     'fillColor': '#cccccc',
                                     'color': '#000000',
@@ -260,17 +312,33 @@ class MapBuilder:
                         geo_level_short = geo_level.lower().split()[0]
                         name_field = name_field_map.get(geo_level_short, 'GEOID')
                         
-                        # Add a simple popup to each feature
-                        for feature in geojson_data['features']:
+                        # Create a callback function for each feature
+                        def create_popup_content(feature):
+                            # Get the feature ID from the GeoJSON
                             feature_id = str(feature['properties'].get(id_field, ''))
                             region_name = feature['properties'].get(name_field, 'Unknown')
                             
+                            # Try different ID formats to match with CSV data
+                            potential_ids = [
+                                feature_id,                  # Original ID
+                                feature_id.lstrip('0'),     # Without leading zeros
+                                feature_id[-5:] if len(feature_id) > 5 else feature_id  # Last 5 digits
+                            ]
+                            
+                            # Try to find a match in the color data
+                            matched_id = None
+                            for pid in potential_ids:
+                                if pid in color_data:
+                                    matched_id = pid
+                                    break
+                            
                             # Create popup content
-                            popup_content = f"<b>{region_name}</b>"
+                            popup_content = f"<div style='font-family: Arial; padding: 5px;'>"
+                            popup_content += f"<h4 style='margin-bottom: 5px;'>{region_name}</h4>"
                             
                             # Add variable value if available
-                            if feature_id in color_data:
-                                value = color_data[feature_id]
+                            if matched_id:
+                                value = color_data[matched_id]
                                 var_name = self.available_variables.get(self.selected_variable, self.selected_variable)
                                 
                                 # Format the value based on variable type
@@ -281,10 +349,22 @@ class MapBuilder:
                                 else:
                                     formatted_value = f"{value:,}"
                                     
-                                popup_content += f"<br>{var_name}: {formatted_value}"
+                                popup_content += f"<div><b>{var_name}:</b> {formatted_value}</div>"
+                            else:
+                                popup_content += f"<div>No data available for {self.selected_variable}</div>"
                             
-                            # Add a popup to the feature
-                            geo_layer.add_child(folium.Popup(popup_content, max_width=300))
+                            popup_content += "</div>"
+                            return popup_content
+                        
+                        # Add popups to the GeoJSON layer
+                        folium.features.GeoJsonPopup(
+                            fields=[],
+                            aliases=[],
+                            localize=True,
+                            labels=False,
+                            style="font-family: Arial; padding: 10px;",
+                            popup_function=create_popup_content
+                        ).add_to(geo_layer)
                         
                         logger.debug(f"Successfully added GeoJSON layer with tooltips for {layer_name} to the map")
                     except Exception as e:

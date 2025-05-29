@@ -39,7 +39,6 @@ def main():
         # Left column - Map View
         with col1:
             create_map_view(
-                active_layer=sidebar_config['active_layer'],
                 debug_info=sidebar_config['debug_info']
             )
         
