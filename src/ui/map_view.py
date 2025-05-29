@@ -33,15 +33,31 @@ def create_map_view(debug_info: bool = False) -> None:
         
         # Add layer controls to the sidebar
         st.sidebar.markdown("### Map Layers")
-        show_state = st.sidebar.checkbox("State Boundary", value=True, key="show_state")
-        show_counties = st.sidebar.checkbox("County Boundaries", value=False, key="show_counties")
         
-        # Determine which layers to show
-        active_layers = []
-        if show_state:
-            active_layers.append('State')
-        if show_counties:
-            active_layers.append('Counties')
+        # Use radio buttons for single-layer selection
+        layer_options = [
+            "State Boundary",
+            "County Boundaries",
+            "State House Districts",
+            "State Senate Districts"
+        ]
+        
+        selected_layer = st.sidebar.radio(
+            "Select a layer to display:",
+            options=layer_options,
+            index=0,  # Default to State Boundary
+            key="layer_selector"
+        )
+        
+        # Map the selected layer to active_layers format
+        layer_mapping = {
+            "State Boundary": ["State"],
+            "County Boundaries": ["Counties"],
+            "State House Districts": ["House"],
+            "State Senate Districts": ["Senate"]
+        }
+        
+        active_layers = layer_mapping[selected_layer]
         
         # Create a container for the map
         with st.container():
