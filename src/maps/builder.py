@@ -312,8 +312,8 @@ class MapBuilder:
                         geo_level_short = geo_level.lower().split()[0]
                         name_field = name_field_map.get(geo_level_short, 'GEOID')
                         
-                        # Create a callback function for each feature
-                        def create_popup_content(feature):
+                        # Process each feature and add individual popups
+                        for feature in geojson_data['features']:
                             # Get the feature ID from the GeoJSON
                             feature_id = str(feature['properties'].get(id_field, ''))
                             region_name = feature['properties'].get(name_field, 'Unknown')
@@ -354,17 +354,9 @@ class MapBuilder:
                                 popup_content += f"<div>No data available for {self.selected_variable}</div>"
                             
                             popup_content += "</div>"
-                            return popup_content
-                        
-                        # Add popups to the GeoJSON layer
-                        folium.features.GeoJsonPopup(
-                            fields=[],
-                            aliases=[],
-                            localize=True,
-                            labels=False,
-                            style="font-family: Arial; padding: 10px;",
-                            popup_function=create_popup_content
-                        ).add_to(geo_layer)
+                            
+                            # Create a simple popup for this feature
+                            folium.Popup(popup_content, max_width=300).add_to(geo_layer)
                         
                         logger.debug(f"Successfully added GeoJSON layer with tooltips for {layer_name} to the map")
                     except Exception as e:
