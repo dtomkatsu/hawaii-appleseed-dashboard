@@ -36,32 +36,55 @@ def create_map_view(debug_info: bool = False) -> None:
         data_loader = DataLoader()
         available_variables = data_loader.get_available_variables()
         
-        # Add variable selection to the sidebar
-        st.sidebar.markdown("### Data Options")
-        
-        # Default variable to show
+        # Default values for session state
         if 'selected_variable' not in st.session_state:
             st.session_state.selected_variable = 'poverty_rate'
+        if 'active_layer' not in st.session_state:
+            st.session_state.active_layer = 'State Boundary'
+            
+        # Layer options
+        layer_options = [
+            'State Boundary',
+            'County Boundaries',
+            'State House Districts',
+            'State Senate Districts'
+        ]
         
-        # Create a dropdown for variable selection
-        selected_variable = st.sidebar.selectbox(
-            "Select variable to display:",
-            options=list(available_variables.keys()),
-            format_func=lambda x: available_variables[x],
-            index=list(available_variables.keys()).index(st.session_state.selected_variable),
-            key="variable_selector"
-        )
-        
-        # Update session state
-        st.session_state.selected_variable = selected_variable
-        
-        # Get the active layer from session state (set by sidebar)
-        active_layer = st.session_state.get('active_layer', 'State Boundary')
+        # Ensure active_layer is in the options, default to first option if not
+        if st.session_state.active_layer not in layer_options:
+            st.session_state.active_layer = layer_options[0]
         
         # Create a container for the map
         with st.container():
+            # Create a row for the controls
+            col1, col2, col3 = st.columns([1, 1, 2])
+            
+            with col1:
+                # Layer selection dropdown
+                active_layer = st.selectbox(
+                    "Map Layer:",
+                    options=layer_options,
+                    index=layer_options.index(st.session_state.active_layer),
+                    key="layer_selector"
+                )
+                # Update session state
+                st.session_state.active_layer = active_layer
+            
+            with col2:
+                # Variable selection dropdown
+                selected_variable = st.selectbox(
+                    "Variable:",
+                    options=list(available_variables.keys()),
+                    format_func=lambda x: available_variables[x],
+                    index=list(available_variables.keys()).index(st.session_state.selected_variable),
+                    key="variable_selector"
+                )
+                # Update session state
+                st.session_state.selected_variable = selected_variable
+            
             # Display selected layer and variable info
             st.markdown(f"### {active_layer}: {available_variables[selected_variable]}")
+            st.markdown("---")
             
             # Create the map builder with the active layer and selected variable
             logger.debug(f"Creating map builder with variable: {selected_variable}")
