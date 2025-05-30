@@ -27,6 +27,7 @@ class DataLoader:
             'median_rent': 'Median Rent ($)',
             'median_home_value': 'Median Home Value ($)',
             'renter_occupied': 'Renter-Occupied Housing (%)',
+            'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
             'no_health_insurance': 'No Health Insurance (%)'
         }
         

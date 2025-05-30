@@ -39,7 +39,13 @@ class ACSScraper:
             'B15003_022E': 'bachelors_plus',
             'B15003_001E': 'pop_25_plus',
             'B25003_003E': 'renter_occupied',
-            'B25003_001E': 'total_housing_units'
+            'B25003_001E': 'total_housing_units',
+            # Gross rent as percentage of household income (GRAPI)
+            'B25070_007E': 'rent_30_34_pct',    # 30.0 to 34.9 percent
+            'B25070_008E': 'rent_35_39_pct',    # 35.0 to 39.9 percent
+            'B25070_009E': 'rent_40_49_pct',    # 40.0 to 49.9 percent
+            'B25070_010E': 'rent_50_plus_pct',  # 50.0 percent or more
+            'B25070_001E': 'rent_total_units'   # Total renter-occupied housing units
         }
     
     def fetch_data(self, params: Dict[str, Any]) -> Optional[List[Dict]]:
@@ -234,6 +240,20 @@ class ACSScraper:
         # Calculate renter rate
         if 'renter_occupied' in df.columns and 'total_housing_units' in df.columns:
             df['renter_rate'] = (df['renter_occupied'] / df['total_housing_units'] * 100).round(2)
+        
+        # Calculate rent burden (percentage of households paying 30% or more of income on rent)
+        rent_burden_cols = ['rent_30_34_pct', 'rent_35_39_pct', 'rent_40_49_pct', 'rent_50_plus_pct']
+        if all(col in df.columns for col in rent_burden_cols) and 'rent_total_units' in df.columns:
+            # Sum all households paying 30% or more of income on rent
+            df['rent_burden_households'] = df[rent_burden_cols].sum(axis=1)
+            # Calculate percentage
+            df['rent_burden_rate'] = (df['rent_burden_households'] / df['rent_total_units'] * 100).round(2)
+            
+            # Log the calculation for debugging
+            logger.debug(f"Calculated rent burden for {len(df)} areas")
+        else:
+            missing_cols = [col for col in rent_burden_cols + ['rent_total_units'] if col not in df.columns]
+            logger.warning(f"Could not calculate rent burden, missing columns: {missing_cols}")
         
         return df
 
