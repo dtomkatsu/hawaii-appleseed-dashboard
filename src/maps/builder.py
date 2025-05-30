@@ -49,18 +49,45 @@ class MapBuilder:
                 [22.2, -154.8]    # Northeast coordinates
             ]
             
-            # Create a basic map centered on Hawaii with CartoDB tiles
+            # Create a basic map centered on Hawaii with white background
             self.m = folium.Map(
                 location=[20.8, -157.3],  # Center of Hawaii
                 zoom_start=7,             # Reasonable zoom level for Hawaii
-                tiles='CartoDB Positron',  # Use CartoDB Positron tiles
+                tiles=None,               # No background tiles
                 control_scale=True,
                 min_zoom=6,               # Prevent zooming out too far
                 max_bounds=True,           # Restrict panning to these bounds
                 max_bounds_viscosity=1.0,  # Strict bounds enforcement
                 prefer_canvas=True,        # Better performance
-                zoom_control=True          # Enable zoom controls
+                zoom_control=True,         # Enable zoom controls
+                attr='Hawaii Appleseed Dashboard'
             )
+            
+            # Add custom CSS to ensure the background is white while keeping controls visible
+            css = '''
+            <style>
+                .leaflet-container {
+                    background: #fff !important;
+                }
+                .leaflet-tile-container {
+                    opacity: 0 !important;
+                }
+                .leaflet-control-zoom {
+                    display: block !important;
+                }
+            </style>
+            '''
+            self.m.get_root().header.add_child(folium.Element(css))
+            
+            # Add a transparent tile layer to satisfy folium's requirements
+            folium.TileLayer(
+                tiles='',
+                attr='Hawaii Appleseed Dashboard',
+                name='Background',
+                overlay=False,
+                control=False,
+                opacity=0
+            ).add_to(self.m)
             
             # Set the map bounds to Hawaii
             self.m.fit_bounds(hawaii_bounds)
