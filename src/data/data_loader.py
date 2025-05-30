@@ -162,9 +162,9 @@ class DataLoader:
                 'converter': lambda x: '15'  # Hawaii state FIPS code
             },
             'county': {
-                'source_field': 'county',
+                'source_field': 'county_name',
                 'target_field': 'GEOID',
-                'converter': lambda x: '15' + str(x).zfill(3)  # 15 + 3-digit county FIPS
+                'converter': lambda x: self._get_county_fips(x)  # Convert county name to FIPS
             },
             'house': {
                 'source_field': 'state_house',
@@ -247,6 +247,14 @@ class DataLoader:
                     # Also add a 'geoid' field to match CSV directly
                     props['geoid'] = target_id
                     
+                    # Special handling for Oahu/Honolulu County
+                    if geo_level == 'county' and ('oahu' in str(source_id).lower() or 'honolulu' in str(source_id).lower()):
+                        # Ensure we use the correct name and FIPS code
+                        props['county_name'] = 'Honolulu County, Hawaii'
+                        props['county_fips'] = '003'  # Without state prefix
+                        props['state_fips'] = '15'
+                        logger.debug(f"Standardized Oahu/Honolulu county name and FIPS code")
+                    
                     modified_count += 1
                     converted_ids.append(target_id)
                     
@@ -269,6 +277,29 @@ class DataLoader:
         with open(debug_log, 'a') as f:
             f.write(f"Matches between GeoJSON and CSV: {len(matches)} out of {len(converted_ids)} features\n")
             f.write(f"Converted IDs (first 5): {converted_ids[:5]}\n")
+            f.write(f"CSV IDs (first 5): {csv_ids[:5]}\n")
+            
+            # Create a detailed log file for debugging
+            debug_dir = self.base_dir / 'logs' / 'debug'
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            detailed_log = debug_dir / f'county_matching_debug_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+            
+            with open(detailed_log, 'w') as detail_f:
+                detail_f.write(f"=== County Matching Debug Log ===\n")
+                detail_f.write(f"Time: {datetime.datetime.now()}\n\n")
+                detail_f.write(f"GeoJSON IDs: {converted_ids}\n\n")
+                detail_f.write(f"CSV IDs: {csv_ids}\n\n")
+                detail_f.write(f"Matches: {list(matches)}\n\n")
+                
+                # Log any missing matches
+                missing = set(csv_ids) - set(converted_ids)
+                if missing:
+                    detail_f.write(f"Missing IDs (in CSV but not in GeoJSON): {list(missing)}\n\n")
+                
+                extra = set(converted_ids) - set(csv_ids)
+                if extra:
+                    detail_f.write(f"Extra IDs (in GeoJSON but not in CSV): {list(extra)}\n\n")
+            
             if len(matches) > 0:
                 f.write(f"Matching IDs (first 5): {list(matches)[:5]}\n")
             else:
@@ -284,6 +315,55 @@ class DataLoader:
                 f.write(f"First feature geoid: {sample_props.get('geoid', 'Not found')}\n")
         
         return geojson_data
+        
+    def _get_county_fips(self, county_name: str) -> str:
+        """
+        Convert a county name to its FIPS code with detailed logging.
+        
+        Args:
+            county_name: The name of the county as it appears in the GeoJSON
+            
+        Returns:
+            The FIPS code as a string
+        """
+        if not county_name:
+            logger.warning("Empty county name provided to _get_county_fips")
+            return '15000'  # Default FIPS code for unknown county
+            
+        county_name = str(county_name).lower()
+        logger.debug(f"Converting county name to FIPS: {county_name}")
+        
+        # Create a debug log file for county name conversions
+        debug_dir = self.base_dir / 'logs'
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        debug_log = debug_dir / 'county_fips_conversion.log'
+        
+        with open(debug_log, 'a') as f:
+            f.write(f"\n[{datetime.datetime.now()}] Converting county: '{county_name}'\n")
+        
+        # Define county name patterns and their corresponding FIPS codes
+        county_map = [
+            ('oahu', '15003'),  # Oahu is Honolulu County
+            ('honolulu', '15003'),
+            ('hawaii', '15001'),
+            ('maui', '15009'),
+            ('kauai', '15007'),
+            ('kalawao', '15005')
+        ]
+        
+        # Find the first matching pattern
+        for pattern, fips in county_map:
+            if pattern in county_name:
+                logger.debug(f"Matched county name '{county_name}' to FIPS {fips} using pattern '{pattern}'")
+                with open(debug_log, 'a') as f:
+                    f.write(f"  Matched to FIPS {fips} using pattern '{pattern}'\n")
+                return fips
+                
+        # If no match found, log a warning and return a default FIPS code
+        logger.warning(f"No FIPS code match found for county: {county_name}")
+        with open(debug_log, 'a') as f:
+            f.write(f"  WARNING: No match found for '{county_name}'\n")
+        return '15000'  # Default FIPS code for unknown county
         
     def get_geojson_path(self, geo_level: str) -> Optional[Path]:
         """
