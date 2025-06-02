@@ -125,14 +125,36 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 county_name = feature['properties'].get('county_name')
                 logger.info(f"County name from GeoJSON: {county_name}")
                 
-                # Try different formats that might match the ACS data
-                formats = [
-                    county_name,  # Original format (e.g., 'Honolulu')
-                    f"{county_name} County",  # Add 'County' suffix
-                    f"{county_name} County, Hawaii",  # Add state
-                    f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
-                    f"{county_name}, Hawaii"  # Without 'County' but with state
-                ]
+                # Set display name (special case for Oahu -> Honolulu)
+                display_name = 'Honolulu' if county_name == 'Oahu' else county_name
+                feature['properties']['display_name'] = display_name
+                
+                # Handle special case for Oahu/Honolulu data matching
+                if county_name == 'Oahu':
+                    logger.info("Special case: Oahu -> Honolulu for data matching")
+                    # Use all possible formats for data matching
+                    formats = [
+                        'Honolulu',
+                        'Honolulu County',
+                        'Honolulu County, Hawaii',
+                        '"Honolulu County, Hawaii"',
+                        'Honolulu, Hawaii',
+                        # Also keep original Oahu formats as fallback
+                        county_name,
+                        f"{county_name} County",
+                        f"{county_name} County, Hawaii",
+                        f"\"{county_name} County, Hawaii\"",
+                        f"{county_name}, Hawaii"
+                    ]
+                else:
+                    # Try different formats that might match the ACS data
+                    formats = [
+                        county_name,  # Original format (e.g., 'Hawaii')
+                        f"{county_name} County",  # Add 'County' suffix
+                        f"{county_name} County, Hawaii",  # Add state
+                        f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
+                        f"{county_name}, Hawaii"  # Without 'County' but with state
+                    ]
                 feature_id = formats  # Store all possible formats to try
             elif geo_level == 'house':
                 # Extract district number from different possible property names
@@ -191,20 +213,23 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                     # Handle both single feature_id (string) and list of possible IDs (for counties)
                     possible_ids = [feature_id] if isinstance(feature_id, str) else feature_id
                     matching_rows = None
+                    logger.info(f"Trying to match feature with {len(possible_ids)} possible IDs for geo_level: {geo_level}")
                     
-                    # Try each possible ID format until we find a match
-                    for fid in possible_ids:
-                        # Try exact match first
+                    # Debug logging for ACS data
+                    logger.info(f"ACS data contains {len(acs_data)} rows with name column '{name_col}'")
+                    logger.info(f"First few values in name column: {acs_data[name_col].head().tolist()}")
+                    
+                    for i, fid in enumerate(possible_ids):
+                        logger.info(f"Trying ID format {i+1}: '{fid}'")
                         matching_rows = acs_data[acs_data[name_col] == fid]
                         if not matching_rows.empty:
-                            logger.info(f"Found exact match for {fid}")
+                            logger.info(f"Found exact match for '{fid}'")
                             break
-                            
-                        # Try case-insensitive match if exact match fails
                         if isinstance(fid, str):
+                            logger.info(f"Trying case-insensitive match for '{fid}'")
                             matching_rows = acs_data[acs_data[name_col].str.lower() == fid.lower()]
                             if not matching_rows.empty:
-                                logger.info(f"Found case-insensitive match for {fid}")
+                                logger.info(f"Found case-insensitive match for '{fid}'")
                                 break
                     
                     if matching_rows is not None:
