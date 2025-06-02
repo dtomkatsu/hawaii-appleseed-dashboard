@@ -263,8 +263,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             selected_variable
         )
 
-def display_feature_details(feature_id, geojson_data, selected_variable):
-    """Display detailed information for the selected feature."""
+def prepare_feature_details(feature_id, geojson_data):
+    """Prepare the feature details data for display.
+    
+    Args:
+        feature_id: The ID of the feature to display details for.
+        geojson_data: The GeoJSON data containing the feature.
+        
+    Returns:
+        A dictionary containing the formatted feature details or None if the feature is not found.
+    """
     # Find the feature in the GeoJSON data
     selected_feature = None
     for feature in geojson_data['features']:
@@ -273,16 +281,71 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
             break
     
     if not selected_feature:
-        return
+        return None
     
     # Get properties
     properties = selected_feature['properties']
+    
+    # Format display values
+    feature_name = properties.get('name', properties.get('NAME', feature_id))
+    
+    # Format numeric values
+    def format_number(value, prefix='', suffix=''):
+        if isinstance(value, (int, float)):
+            return f"{prefix}{value:,}{suffix}"
+        return f"{prefix}{value}{suffix}"
+    
+    # Prepare data for each tab
+    demographics = {
+        "Population": format_number(properties.get('population', 'N/A')),
+        "White Alone (%)": format_number(properties.get('white_alone_pct', 'N/A'), suffix='%'),
+        "Asian Alone (%)": format_number(properties.get('asian_alone_pct', 'N/A'), suffix='%'),
+        "Native Hawaiian/PI (%)": format_number(properties.get('native_hawaiian_pi_pct', 'N/A'), suffix='%')
+    }
+    
+    economic = {
+        "Poverty Rate": format_number(properties.get('poverty_rate', 'N/A'), suffix='%'),
+        "Median Income": format_number(properties.get('median_income', 'N/A'), prefix='$'),
+        "Unemployment Rate": format_number(properties.get('unemployment_rate', 'N/A'), suffix='%'),
+        "SNAP Benefits (%)": format_number(properties.get('snap_benefits_pct', 'N/A'), suffix='%')
+    }
+    
+    housing = {
+        "Median Home Value": format_number(properties.get('median_home_value', 'N/A'), prefix='$'),
+        "Homeownership Rate": format_number(properties.get('homeownership_rate', 'N/A'), suffix='%'),
+        "Rent Burden (%)": format_number(properties.get('rent_burden_pct', 'N/A'), suffix='%'),
+        "Median Rent": format_number(properties.get('median_rent', 'N/A'), prefix='$')
+    }
+    
+    education_health = {
+        "College Educated (%)": format_number(properties.get('college_educated_pct', 'N/A'), suffix='%'),
+        "High School Graduate (%)": format_number(properties.get('high_school_grad_pct', 'N/A'), suffix='%'),
+        "Health Insurance Coverage (%)": format_number(properties.get('health_insurance_pct', 'N/A'), suffix='%'),
+        "Disability (%)": format_number(properties.get('disability_pct', 'N/A'), suffix='%')
+    }
+    
+    return {
+        "name": feature_name,
+        "demographics": demographics,
+        "economic": economic,
+        "housing": housing,
+        "education_health": education_health
+    }
+
+
+def display_feature_details(feature_id, geojson_data, selected_variable):
+    """Display detailed information for the selected feature."""
+    # Prepare the data
+    details = prepare_feature_details(feature_id, geojson_data)
+    
+    if not details:
+        return
     
     # Create a feature detail card
     st.markdown("### Feature Details")
     
     with st.container():
-        st.markdown(f"#### {properties.get('name', properties.get('NAME', feature_id))}")
+        st.markdown(f"#### {details['name']}")
         
         # Create tabs for different categories of data
         tab1, tab2, tab3, tab4 = st.tabs(["Demographics", "Economic", "Housing", "Education & Health"])
@@ -291,41 +354,41 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
             # Demographics tab
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Population", f"{properties.get('population', 'N/A'):,}")
-                st.metric("White Alone (%)", f"{properties.get('white_alone_pct', 'N/A')}%")
+                st.metric("Population", details['demographics']['Population'])
+                st.metric("White Alone (%)", details['demographics']['White Alone (%)'])
             with col2:
-                st.metric("Asian Alone (%)", f"{properties.get('asian_alone_pct', 'N/A')}%")
-                st.metric("Native Hawaiian/PI (%)", f"{properties.get('native_hawaiian_pi_pct', 'N/A')}%")
+                st.metric("Asian Alone (%)", details['demographics']['Asian Alone (%)'])
+                st.metric("Native Hawaiian/PI (%)", details['demographics']['Native Hawaiian/PI (%)'])
         
         with tab2:
             # Economic tab
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Poverty Rate", f"{properties.get('poverty_rate', 'N/A')}%")
-                st.metric("Median Income", f"${properties.get('median_income', 'N/A'):,}")
+                st.metric("Poverty Rate", details['economic']['Poverty Rate'])
+                st.metric("Median Income", details['economic']['Median Income'])
             with col2:
-                st.metric("Unemployment Rate", f"{properties.get('unemployment_rate', 'N/A')}%")
-                st.metric("SNAP Benefits (%)", f"{properties.get('snap_benefits_pct', 'N/A')}%")
+                st.metric("Unemployment Rate", details['economic']['Unemployment Rate'])
+                st.metric("SNAP Benefits (%)", details['economic']['SNAP Benefits (%)'])
         
         with tab3:
             # Housing tab
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Median Home Value", f"${properties.get('median_home_value', 'N/A'):,}")
-                st.metric("Homeownership Rate", f"{properties.get('homeownership_rate', 'N/A')}%")
+                st.metric("Median Home Value", details['housing']['Median Home Value'])
+                st.metric("Homeownership Rate", details['housing']['Homeownership Rate'])
             with col2:
-                st.metric("Rent Burden (%)", f"{properties.get('rent_burden_pct', 'N/A')}%")
-                st.metric("Median Rent", f"${properties.get('median_rent', 'N/A'):,}")
+                st.metric("Rent Burden (%)", details['housing']['Rent Burden (%)'])
+                st.metric("Median Rent", details['housing']['Median Rent'])
         
         with tab4:
             # Education & Health tab
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("College Educated (%)", f"{properties.get('college_educated_pct', 'N/A')}%")
-                st.metric("High School Graduate (%)", f"{properties.get('high_school_grad_pct', 'N/A')}%")
+                st.metric("College Educated (%)", details['education_health']['College Educated (%)'])
+                st.metric("High School Graduate (%)", details['education_health']['High School Graduate (%)'])
             with col2:
-                st.metric("Health Insurance Coverage (%)", f"{properties.get('health_insurance_pct', 'N/A')}%")
-                st.metric("Disability (%)", f"{properties.get('disability_pct', 'N/A')}%")
+                st.metric("Health Insurance Coverage (%)", details['education_health']['Health Insurance Coverage (%)'])
+                st.metric("Disability (%)", details['education_health']['Disability (%)'])
 
 # This function is a duplicate and has been removed
 
