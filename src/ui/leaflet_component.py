@@ -69,14 +69,16 @@ def create_leaflet_map(
                 bottom: 20px;
                 right: 10px;
                 z-index: 1000;
-                background: white;
+                background: rgba(255, 255, 255, 0.8);
                 padding: 10px;
                 border-radius: 4px;
-                box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+                box-shadow: 0 1px 5px rgba(0,0,0,0.2);
                 font-family: Arial, sans-serif;
                 font-size: 12px;
                 line-height: 1.4;
                 color: #333;
+                backdrop-filter: blur(2px);
+                border: 1px solid rgba(0,0,0,0.1);
             }}
             .legend-title {{
                 font-weight: bold;
@@ -247,32 +249,101 @@ def create_leaflet_map(
                 const grades = [0, 5, 10, 15, 20, 25, 30, 35, 40];
                 let labels = [];
                 
-                // Update the getColor function to match the new grades
+                // Update the getColor function to be dynamic based on the variable type
                 function getColor(value) {{
                     if (value === null || isNaN(value)) return '#ccc';
                     
-                    if (value >= 35) return colors[8];
-                    if (value >= 30) return colors[7];
-                    if (value >= 25) return colors[6];
-                    if (value >= 20) return colors[5];
-                    if (value >= 15) return colors[4];
-                    if (value >= 10) return colors[3];
-                    if (value >= 5) return colors[2];
-                    if (value > 0) return colors[1];
-                    return colors[0];
+                    // Normalize the value based on variable type
+                    let normalizedValue;
+                    
+                    if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
+                        // For percentages (0-100%)
+                        normalizedValue = Math.min(Math.max(value, 0), 100);
+                        const percent = normalizedValue / 100;
+                        return colors[Math.min(Math.floor(percent * 8), 8)];
+                    }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
+                        // For income values (0-200k)
+                        normalizedValue = Math.min(Math.max(value, 0), 200000);
+                        const percent = normalizedValue / 200000;
+                        return colors[Math.min(Math.floor(percent * 8), 8)];
+                    }} else {{
+                        // For counts (0-500k)
+                        normalizedValue = Math.min(Math.max(value, 0), 500000);
+                        const percent = normalizedValue / 500000;
+                        return colors[Math.min(Math.floor(percent * 8), 8)];
+                    }}
                 }}
                 
-                // Generate legend items for percentage values (poverty rate)
-                for (let i = 0; i < grades.length - 1; i++) {{
-                    const from = grades[i];
-                    const to = grades[i + 1];
-                    const isLast = i === grades.length - 2;
-                    
-                    labels.push(`
-                        <div class="legend-item">
-                            <i style="background:${getColor(from + 0.1)}"></i>
-                            ${from}%${isLast ? '+' : `-${to}%`}
-                        </div>`);
+                // Update legend title based on variable type
+                const legendTitle = document.querySelector('#{map_id}-legend .legend-title');
+                let title = '{selected_variable}'.replace(/_/g, ' ').replace(/\b\w/g, function(l) {{ return l.toUpperCase(); }});
+                
+                if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
+                    // For percentage variables
+                    title = title + ' (%)';
+                    for (let i = 0; i < grades.length - 1; i++) {{
+                        const from = grades[i];
+                        const to = grades[i + 1];
+                        const isLast = i === grades.length - 2;
+                        const color = getColor(from + 0.1);
+                        const range = isLast ? from + '%+' : from + '%-' + to + '%';
+                        
+                        labels.push('<div class="legend-item">' +
+                            '<i style="background:' + color + '"></i>' +
+                            range +
+                            '</div>');
+                    }}
+                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
+                    // For income/value variables (in dollars)
+                    title = title + ' ($)';
+                    const incomeGrades = [0, 25000, 50000, 75000, 100000, 125000, 150000, 175000, 200000];
+                    for (let i = 0; i < incomeGrades.length - 1; i++) {{
+                        const from = incomeGrades[i];
+                        const to = incomeGrades[i + 1];
+                        const isLast = i === incomeGrades.length - 2;
+                        const color = getColor(from + (to - from) / 2);
+                        let range;
+                        
+                        if (isLast) {{
+                            range = '$' + (from/1000) + 'k+';
+                        }} else {{
+                            range = '$' + (from/1000) + 'k-$' + (to/1000) + 'k';
+                        }}
+                        
+                        labels.push('<div class="legend-item">' +
+                            '<i style="background:' + color + '"></i>' +
+                            range +
+                            '</div>');
+                    }}
+                }} else {{
+                    // For count variables
+                    title = title + ' (Count)';
+                    const countGrades = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
+                    for (let i = 0; i < countGrades.length - 1; i++) {{
+                        const from = countGrades[i];
+                        const to = countGrades[i + 1];
+                        const isLast = i === countGrades.length - 2;
+                        const color = getColor(from + (to - from) / 2);
+                        let range;
+                        
+                        if (isLast) {{
+                            range = from.toLocaleString() + '+';
+                        }} else if (to >= 1000) {{
+                            range = (from/1000) + 'k-' + (to/1000) + 'k';
+                        }} else {{
+                            range = from + '-' + to;
+                        }}
+                        
+                        labels.push('<div class="legend-item">' +
+                            '<i style="background:' + color + '"></i>' +
+                            range +
+                            '</div>');
+                    }}
+                }}
+                
+                // Update the legend title
+                if (legendTitle) {{
+                    legendTitle.textContent = title;
                 }}
                 
                 legendItems.innerHTML = labels.join('');
