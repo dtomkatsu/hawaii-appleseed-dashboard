@@ -25,6 +25,10 @@ def main():
     # Set up logging
     logger = setup_logging()
     
+    # Load custom CSS
+    with open(Path(__file__).parent / "ui" / "custom.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    
     try:
         # Create sidebar and get user selections
         sidebar_config = create_sidebar()

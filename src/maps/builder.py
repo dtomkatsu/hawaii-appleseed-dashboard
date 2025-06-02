@@ -1,13 +1,17 @@
 """Map builder for the Hawaii Appleseed Dashboard."""
-import folium
 import logging
-import traceback
+import folium
+import branca.colormap as cm
 import json
+import traceback
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
-
+from typing import Dict, List, Any, Optional, Tuple, Union, Callable
+from folium.plugins import MarkerCluster
+from folium.features import GeoJsonTooltip
+from branca.element import Figure, MacroElement, Template, Element
+from jinja2 import Template as JinjaTemplate
 from src.data.data_loader import DataLoader
 from src.debug_log import log_layer_selection, log_geojson_loading, log_error
 
@@ -16,15 +20,19 @@ logger = logging.getLogger(__name__)
 class MapBuilder:
     """Build maps for the Hawaii Appleseed Dashboard."""
     
-    def __init__(self, active_layers: List[str] = None, selected_variable: str = 'poverty_rate'):
+    def __init__(self, active_layers: List[str] = None, selected_variable: str = 'poverty_rate', color_scheme: str = 'YlOrRd', show_labels: bool = True):
         """Initialize the map builder with active layers and selected variable.
         
         Args:
             active_layers: List of layer names to display
             selected_variable: Variable to use for coloring the map
+            color_scheme: Color scheme to use for choropleth maps (e.g., 'YlOrRd', 'BuGn')
+            show_labels: Whether to show labels on the map
         """
         self.active_layers = active_layers or []
         self.selected_variable = selected_variable
+        self.color_scheme = color_scheme
+        self.show_labels = show_labels
         self.m = None
         self.base_dir = Path(__file__).parent.parent.parent
         self.feature_groups: Dict[str, folium.FeatureGroup] = {}
@@ -33,6 +41,8 @@ class MapBuilder:
         # Log active layers for debugging
         logger.debug(f"MapBuilder initialized with active_layers: {self.active_layers}")
         logger.debug(f"MapBuilder initialized with selected_variable: {self.selected_variable}")
+        logger.debug(f"MapBuilder initialized with color_scheme: {self.color_scheme}")
+        logger.debug(f"MapBuilder initialized with show_labels: {self.show_labels}")
         
         # Initialize the map object early
         self._init_map()
@@ -438,13 +448,58 @@ class MapBuilder:
                                 # Normalize the value (0-1 range)
                                 normalized = value / max_value if max_value > 0 else 0
                                 
-                                # Generate color based on value (yellow to red)
-                                r = 255
-                                g = int(255 * (1 - normalized * 0.8))
-                                b = int(100 * (1 - normalized))
+                                # Generate color based on selected color scheme
+                                if self.color_scheme == 'YlOrRd':
+                                    # Yellow to Orange to Red
+                                    r = 255
+                                    g = int(255 * (1 - normalized * 0.8))
+                                    b = int(100 * (1 - normalized))
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'YlGnBu':
+                                    # Yellow to Green to Blue
+                                    r = int(255 * (1 - normalized * 0.8))
+                                    g = int(255 * (1 - normalized * 0.3))
+                                    b = int(255 * normalized)
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'BuGn':
+                                    # Blue to Green
+                                    r = int(100 * (1 - normalized))
+                                    g = int(200 * normalized + 55)
+                                    b = int(220 * (1 - normalized * 0.5) + 35)
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'Reds':
+                                    # White to Red
+                                    r = 255
+                                    g = int(255 * (1 - normalized))
+                                    b = int(255 * (1 - normalized))
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'Blues':
+                                    # White to Blue
+                                    r = int(255 * (1 - normalized))
+                                    g = int(255 * (1 - normalized))
+                                    b = 255
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'Greens':
+                                    # White to Green
+                                    r = int(255 * (1 - normalized))
+                                    g = 255
+                                    b = int(255 * (1 - normalized))
+                                    color = f'rgb({r},{g},{b})'
+                                elif self.color_scheme == 'Purples':
+                                    # White to Purple
+                                    r = int(255 * (1 - normalized * 0.5))
+                                    g = int(255 * (1 - normalized))
+                                    b = 255
+                                    color = f'rgb({r},{g},{b})'
+                                else:
+                                    # Default: Yellow to Red
+                                    r = 255
+                                    g = int(255 * (1 - normalized * 0.8))
+                                    b = int(100 * (1 - normalized))
+                                    color = f'rgb({r},{g},{b})'
                                 
                                 return {
-                                    'fillColor': f'rgb({r},{g},{b})',
+                                    'fillColor': color,
                                     'color': '#000000',
                                     'weight': 1,
                                     'fillOpacity': 0.7
@@ -491,8 +546,90 @@ class MapBuilder:
                             smooth_factor=1.0
                         ).add_to(self.m)
                         
-                        # Add mouseover/mouseout events for hover effects
+                        # Add hover effects and simple labels if show_labels is enabled
                         try:
+                            # Create a custom tooltip that shows both the name and the selected variable
+                            tooltip_html = folium.Html(
+                                """
+                                <div id="tooltip-content">
+                                    Loading...
+                                </div>
+                                """, 
+                                script=True
+                            )
+                            tooltip = folium.Tooltip(tooltip_html)
+                            geo_layer.add_child(tooltip)
+                            
+                            # Add simple labels if show_labels is enabled
+                            if self.show_labels:
+                                # Add a simple label to each feature using folium.features.GeoJsonPopup
+                                # This adds a permanent label without interfering with the hover functionality
+                                label_field = None
+                                
+                                # Determine which field to use for labels based on geographic level
+                                if geo_level.lower().startswith('state'):
+                                    label_field = 'state_name'
+                                elif geo_level.lower().startswith('county'):
+                                    label_field = 'county'
+                                elif geo_level.lower().startswith('house'):
+                                    label_field = 'house_name'
+                                elif geo_level.lower().startswith('senate'):
+                                    label_field = 'senate_name'
+                                
+                                if label_field:
+                                    # Add a script to the map that adds labels to each feature
+                                    script = f"""
+                                    <script>
+                                    document.addEventListener('DOMContentLoaded', function() {{                                        
+                                        // Wait for the map to be fully loaded
+                                        setTimeout(function() {{
+                                            // Get all path elements in the map
+                                            var paths = document.querySelectorAll('path.leaflet-interactive');
+                                            var features = {json.dumps([(f['properties'].get(label_field, ''), 
+                                                                   f['properties'].get('geoid', '')) 
+                                                                  for f in geojson_data['features']])};
+                                            
+                                            // Add a label to each feature
+                                            for (var i = 0; i < Math.min(paths.length, features.length); i++) {{
+                                                var path = paths[i];
+                                                var feature = features[i];
+                                                var labelText = feature[0];
+                                                var featureId = feature[1];
+                                                
+                                                if (labelText && labelText !== '[object Object]') {{
+                                                    // Get the center of the path
+                                                    var bbox = path.getBBox();
+                                                    var centerX = bbox.x + bbox.width/2;
+                                                    var centerY = bbox.y + bbox.height/2;
+                                                    
+                                                    // Create a label element
+                                                    var label = document.createElement('div');
+                                                    label.className = 'map-label';
+                                                    label.style.position = 'absolute';
+                                                    label.style.left = centerX + 'px';
+                                                    label.style.top = centerY + 'px';
+                                                    label.style.transform = 'translate(-50%, -50%)';
+                                                    label.style.fontSize = '10px';
+                                                    label.style.fontWeight = 'bold';
+                                                    label.style.backgroundColor = 'rgba(255,255,255,0.7)';
+                                                    label.style.padding = '2px 4px';
+                                                    label.style.borderRadius = '3px';
+                                                    label.style.zIndex = '1000';
+                                                    label.style.pointerEvents = 'none';
+                                                    label.innerHTML = labelText;
+                                                    
+                                                    // Add the label to the map
+                                                    document.querySelector('.leaflet-overlay-pane').appendChild(label);
+                                                }}
+                                            }}
+                                        }}, 1000);
+                                    }});
+                                    </script>
+                                    """
+                                    self.m.get_root().html.add_child(folium.Element(script))
+                        except Exception as e:
+                            logger.error(f"Error adding tooltip to GeoJSON layer: {str(e)}")
+                            # Continue without tooltips if there's an error
                             # Create a custom tooltip that shows both the name and the selected variable
                             def get_tooltip_content(feature):
                                 props = feature.get('properties', {})
