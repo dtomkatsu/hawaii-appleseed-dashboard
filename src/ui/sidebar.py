@@ -17,9 +17,9 @@ def create_sidebar() -> Dict[str, Any]:
     # Define layer options
     layer_options = [
         'State Boundary',
-        'County Boundaries',
-        'State House Districts',
-        'State Senate Districts'
+        'Counties',
+        'House Districts',
+        'Senate Districts'
     ]
     
     # Initialize session state for active layer if not set
@@ -44,18 +44,15 @@ def create_sidebar() -> Dict[str, Any]:
     
     # Color scheme options with descriptive names
     color_schemes = {
-        'YlOrRd': 'Yellow-Orange-Red',
-        'YlGnBu': 'Yellow-Green-Blue', 
-        'BuGn': 'Blue-Green',
-        'Reds': 'Red Scale',
-        'Blues': 'Blue Scale',
-        'Greens': 'Green Scale',
-        'Purples': 'Purple Scale'
+        'blue': 'Blue Scale',
+        'green': 'Green Scale',
+        'red': 'Red Scale',
+        'purple': 'Purple Scale'
     }
     
     # Initialize color scheme if not set
     if 'color_scheme' not in st.session_state:
-        st.session_state.color_scheme = 'YlOrRd'
+        st.session_state.color_scheme = 'blue'
     
     # Data visualization controls
     st.sidebar.markdown("### 📊 Visualization Controls")
@@ -105,7 +102,8 @@ def create_sidebar() -> Dict[str, Any]:
         label="Download Current Data (CSV)",
         data="sample,data\n1,2\n3,4",  # This would be replaced with actual data
         file_name="hawaii_appleseed_data.csv",
-        mime="text/csv"
+        mime="text/csv",
+        key="sidebar_download_button"
     )
     
     # About section

@@ -191,7 +191,7 @@ class ACSDashboard:
                         from data.acs_data import main as run_pipeline
                         run_pipeline()
                         st.success("Data pipeline completed successfully!")
-                        st.experimental_rerun()
+                        st.rerun()
                     except Exception as e:
                         st.error(f"Error running data pipeline: {str(e)}")
 
