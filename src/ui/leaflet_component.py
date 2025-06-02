@@ -59,24 +59,71 @@ def create_leaflet_map(
     
     # HTML and JavaScript for the Leaflet map
     component_html = f"""
-    <div style="height:{map_height}px; width:100%; margin-bottom:20px;">
+    <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative;">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         
+        <style>
+            .map-legend {{
+                position: absolute;
+                bottom: 20px;
+                right: 10px;
+                z-index: 1000;
+                background: white;
+                padding: 10px;
+                border-radius: 4px;
+                box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+                color: #333;
+            }}
+            .legend-title {{
+                font-weight: bold;
+                margin-bottom: 5px;
+                text-align: center;
+                font-size: 13px;
+            }}
+            .legend-item {{
+                display: flex;
+                align-items: center;
+                margin: 2px 0;
+            }}
+            .legend-item i {{
+                display: inline-block;
+                width: 20px;
+                height: 12px;
+                margin-right: 5px;
+                opacity: 0.8;
+            }}
+        </style>
+        
         <div id="{map_id}" style="height:100%; width:100%;"></div>
         <div id="{map_id}-legend" class="map-legend">
-            <div class="legend-title">Legend</div>
+            <div class="legend-title">Poverty Rate (%)</div>
             <div class="legend-items" id="{map_id}-legend-items"></div>
         </div>
         
         <script>
-            // Initialize the map
-            const map = L.map('{map_id}').setView([20.7984, -156.3319], 7);
+            // Initialize the map with a white background
+            const map = L.map('{map_id}', {{
+                zoomControl: false,
+                attributionControl: false,
+                zoomSnap: 0.1,
+                zoomDelta: 0.5,
+                zoom: 7,
+                center: [20.7984, -156.3319],
+                layers: [],
+                zoomAnimation: true,
+                fadeAnimation: true,
+                markerZoomAnimation: true
+            }});
             
-            // Add tile layer
-            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                attribution: '© OpenStreetMap contributors'
-            }}).addTo(map);
+            // Set the map's background to white
+            const mapDiv = document.getElementById('{map_id}');
+            if (mapDiv) {{
+                mapDiv.style.backgroundColor = 'white';
+            }}
             
             // Define color schemes
             const colorSchemes = {{
@@ -197,64 +244,35 @@ def create_leaflet_map(
                 legendItems.innerHTML = '';
                 
                 // Create legend items based on the variable
-                const grades = [0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20];
+                const grades = [0, 5, 10, 15, 20, 25, 30, 35, 40];
                 let labels = [];
                 
-                // Format labels based on variable type
-                if ('{selected_variable}'.includes('rate') || '{selected_variable}'.includes('pct')) {{
-                    for (let i = 0; i < grades.length; i++) {{
-                        const from = grades[i];
-                        const to = grades[i + 1];
-                        
-                        if (i === grades.length - 1) {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                ${{from}}%+
-                            </div>`);
-                        }} else {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                ${{from}}% – ${{to}}%
-                            </div>`);
-                        }}
-                    }}
-                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                    // Adjust ranges for income/value variables
-                    const incomeGrades = [0, 25000, 50000, 75000, 100000, 125000, 150000, 175000, 200000];
-                    for (let i = 0; i < incomeGrades.length; i++) {{
-                        const from = incomeGrades[i];
-                        const to = incomeGrades[i + 1];
-                        
-                        if (i === incomeGrades.length - 1) {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                $${{from.toLocaleString()}}+
-                            </div>`);
-                        }} else {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                $${{from.toLocaleString()}} – $${{to.toLocaleString()}}
-                            </div>`);
-                        }}
-                    }}
-                }} else {{
-                    // Generic legend for other variables
-                    for (let i = 0; i < grades.length; i++) {{
-                        const from = grades[i];
-                        const to = grades[i + 1];
-                        
-                        if (i === grades.length - 1) {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                ${{from}}+
-                            </div>`);
-                        }} else {{
-                            labels.push(`<div class="legend-item">
-                                <i style="background:${{colors[i]}}"></i>
-                                ${{from}} – ${{to}}
-                            </div>`);
-                        }}
-                    }}
+                // Update the getColor function to match the new grades
+                function getColor(value) {{
+                    if (value === null || isNaN(value)) return '#ccc';
+                    
+                    if (value >= 35) return colors[8];
+                    if (value >= 30) return colors[7];
+                    if (value >= 25) return colors[6];
+                    if (value >= 20) return colors[5];
+                    if (value >= 15) return colors[4];
+                    if (value >= 10) return colors[3];
+                    if (value >= 5) return colors[2];
+                    if (value > 0) return colors[1];
+                    return colors[0];
+                }}
+                
+                // Generate legend items for percentage values (poverty rate)
+                for (let i = 0; i < grades.length - 1; i++) {{
+                    const from = grades[i];
+                    const to = grades[i + 1];
+                    const isLast = i === grades.length - 2;
+                    
+                    labels.push(`
+                        <div class="legend-item">
+                            <i style="background:${getColor(from + 0.1)}"></i>
+                            ${from}%${isLast ? '+' : `-${to}%`}
+                        </div>`);
                 }}
                 
                 legendItems.innerHTML = labels.join('');
