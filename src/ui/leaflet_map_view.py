@@ -59,6 +59,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     selected_variable = st.session_state['selected_variable']
     color_scheme = st.session_state['color_scheme']
     
+    # Debug: Print the selected variable
+    logger.info(f"Selected variable: {selected_variable}")
+    logger.info(f"Active layer: {active_layer}")
+    logger.info(f"Color scheme: {color_scheme}")
+    
     # Load GeoJSON data for the selected layer
     geojson_data = load_geojson(active_layer)
     
@@ -83,6 +88,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     acs_data = data_loader.get_data(geo_level)
     
     if acs_data is not None:
+        # Debug: Print ACS data columns and first row
+        logger.info(f"ACS data columns: {acs_data.columns.tolist()}")
+        if not acs_data.empty:
+            logger.info(f"First row of ACS data: {acs_data.iloc[0].to_dict()}")
+        
         # Merge ACS data with GeoJSON
         for feature in geojson_data['features']:
             # Get the feature ID based on the geo level
@@ -91,9 +101,43 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             elif geo_level == 'county':
                 feature_id = feature['properties'].get('NAME')
             elif geo_level == 'house':
-                feature_id = f"District {feature['properties'].get('DISTRICT')}"
+                # Extract district number from different possible property names
+                district_num = None
+                if 'DISTRICT' in feature['properties']:
+                    district_num = feature['properties']['DISTRICT']
+                elif 'house_id' in feature['properties']:
+                    district_num = feature['properties']['house_id']
+                elif 'house_name' in feature['properties'] and 'District' in feature['properties']['house_name']:
+                    # Try to extract the number from the name (e.g., 'State House District 1')
+                    import re
+                    match = re.search(r'District (\d+)', feature['properties']['house_name'])
+                    if match:
+                        district_num = match.group(1)
+                
+                feature_id = f"State House District {district_num} (2022); Hawaii"
+                # Also store a simpler display name
+                feature['properties']['display_name'] = f"House District {district_num}"
+                # Debug: Log the feature ID we're looking for
+                logger.info(f"Looking for house district with NAME: {feature_id}")
             elif geo_level == 'senate':
-                feature_id = f"District {feature['properties'].get('DISTRICT')}"
+                # Extract district number from different possible property names
+                district_num = None
+                if 'DISTRICT' in feature['properties']:
+                    district_num = feature['properties']['DISTRICT']
+                elif 'senate_id' in feature['properties']:
+                    district_num = feature['properties']['senate_id']
+                elif 'senate_name' in feature['properties'] and 'District' in feature['properties']['senate_name']:
+                    # Try to extract the number from the name (e.g., 'State Senate District 1')
+                    import re
+                    match = re.search(r'District (\d+)', feature['properties']['senate_name'])
+                    if match:
+                        district_num = match.group(1)
+                
+                feature_id = f"State Senate District {district_num} (2022); Hawaii"
+                # Also store a simpler display name
+                feature['properties']['display_name'] = f"Senate District {district_num}"
+                # Debug: Log the feature ID we're looking for
+                logger.info(f"Looking for senate district with NAME: {feature_id}")
             else:
                 feature_id = None
             
@@ -102,19 +146,33 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             
             # Find matching data
             if feature_id:
+                # Debug: Print feature ID we're trying to match
+                logger.info(f"Trying to match feature_id: {feature_id}")
+                
                 # Check if 'name' column exists, otherwise try 'NAME' or create a name field
                 name_col = 'name' if 'name' in acs_data.columns else 'NAME' if 'NAME' in acs_data.columns else None
+                logger.info(f"Using name column: {name_col}")
                 
                 if name_col:
-                    matching_data = acs_data[acs_data[name_col] == feature_id].to_dict('records')
+                    # Debug: Show what we're looking for
+                    matching_rows = acs_data[acs_data[name_col] == feature_id]
+                    logger.info(f"Found {len(matching_rows)} matches for {feature_id}")
+                    if len(matching_rows) > 0:
+                        logger.info(f"Match data: {matching_rows.iloc[0].to_dict()}")
+                    matching_data = matching_rows.to_dict('records')
                 else:
                     # If no name column exists, try matching by geoid or district number
                     if 'geoid' in acs_data.columns and 'GEOID' in feature['properties']:
-                        matching_data = acs_data[acs_data['geoid'] == feature['properties']['GEOID']].to_dict('records')
+                        geoid_val = feature['properties']['GEOID']
+                        logger.info(f"Trying to match by GEOID: {geoid_val}")
+                        matching_data = acs_data[acs_data['geoid'] == geoid_val].to_dict('records')
                     elif 'district' in acs_data.columns and 'DISTRICT' in feature['properties']:
-                        matching_data = acs_data[acs_data['district'] == feature['properties']['DISTRICT']].to_dict('records')
+                        district_val = feature['properties']['DISTRICT']
+                        logger.info(f"Trying to match by DISTRICT: {district_val}")
+                        matching_data = acs_data[acs_data['district'] == district_val].to_dict('records')
                     else:
                         # No matching criteria found
+                        logger.info("No matching criteria found")
                         matching_data = []
                 
                 if matching_data:
@@ -165,13 +223,30 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.session_state['color_scheme'] = selected_color
             st.rerun()
     
+    # Create a mapping of variable names to display names
+    variable_display_names = {
+        'poverty_rate': 'Poverty Rate',
+        'median_income': 'Median Income',
+        'unemployment_rate': 'Unemployment Rate',
+        'population': 'Population',
+        'median_home_value': 'Median Home Value',
+        'college_educated_pct': 'College Educated (%)',
+        'bachelors_rate': 'Bachelors Degree Rate',
+        'renter_rate': 'Renter Rate',
+        'rent_burden_rate': 'Rent Burden Rate'
+    }
+    
+    # Get the display name for the selected variable
+    variable_display_name = variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title())
+    
     # Create the Leaflet map
     st.subheader(f"{active_layer} Map")
     clicked_feature = create_leaflet_map(
         geojson_data=geojson_data,
-        variable=selected_variable,
+        selected_variable=selected_variable,
+        variable_display_name=variable_display_name,
         color_scheme=color_scheme,
-        height=500,
+        map_height=500,
         key=f"map-{active_layer}-{selected_variable}-{color_scheme}"
     )
     
@@ -251,6 +326,8 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
             with col2:
                 st.metric("Health Insurance Coverage (%)", f"{properties.get('health_insurance_pct', 'N/A')}%")
                 st.metric("Disability (%)", f"{properties.get('disability_pct', 'N/A')}%")
+
+# This function is a duplicate and has been removed
 
 def create_data_summary():
     """Create a summary of the data."""

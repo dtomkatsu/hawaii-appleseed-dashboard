@@ -7,11 +7,34 @@ from pathlib import Path
 
 def create_leaflet_map(
     geojson_data, 
-    variable="poverty_rate", 
+    selected_variable, 
+    variable_display_name=None, 
     color_scheme="blue", 
-    height=600, 
+    map_height=500, 
     key=None
 ):
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Creating Leaflet map with variable: {selected_variable}")
+    
+    # Check if selected_variable exists in any feature properties
+    has_variable = False
+    if geojson_data and 'features' in geojson_data and len(geojson_data['features']) > 0:
+        for feature in geojson_data['features']:
+            if selected_variable in feature.get('properties', {}):
+                has_variable = True
+                logger.info(f"Found {selected_variable} in feature {feature['properties'].get('display_name', 'Unknown')}: {feature['properties'][selected_variable]}")
+                break
+        
+        if not has_variable:
+            logger.warning(f"Selected variable '{selected_variable}' not found in any feature properties")
+            # Log the first feature's properties to see what's available
+            if len(geojson_data['features']) > 0:
+                logger.info(f"Available properties in first feature: {list(geojson_data['features'][0].get('properties', {}).keys())}")
+                logger.info(f"First feature properties: {geojson_data['features'][0].get('properties', {})}")
+    else:
+        logger.warning("No features found in GeoJSON data")
     """
     Create a Leaflet map component in Streamlit.
     
@@ -36,7 +59,7 @@ def create_leaflet_map(
     
     # HTML and JavaScript for the Leaflet map
     component_html = f"""
-    <div style="height:{height}px; width:100%; margin-bottom:20px;">
+    <div style="height:{map_height}px; width:100%; margin-bottom:20px;">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         
@@ -85,7 +108,7 @@ def create_leaflet_map(
             
             // Style function for features
             function style(feature) {{
-                const value = feature.properties['{variable}'];
+                const value = feature.properties['{selected_variable}'];
                 return {{
                     fillColor: getColor(value),
                     weight: 2,
@@ -139,18 +162,23 @@ def create_leaflet_map(
                 
                 // Create popup content
                 const properties = feature.properties;
-                const name = properties.name || properties.NAME || 'Unknown';
-                const value = properties['{variable}'] || 'N/A';
+                const name = properties.display_name || properties.NAME || 'Unknown';
+                let value = properties['{selected_variable}'];
                 
                 // Format the value based on the variable type
-                let formattedValue = value;
-                if ('{variable}'.includes('rate') || '{variable}'.includes('pct')) {{
-                    formattedValue = value + '%';
-                }} else if ('{variable}'.includes('income') || '{variable}'.includes('value')) {{
-                    formattedValue = '$' + value.toLocaleString();
+                let formattedValue = 'N/A';
+                if (value !== undefined && value !== null) {{
+                    if ('{selected_variable}'.includes('rate') || '{selected_variable}'.includes('pct')) {{
+                        formattedValue = parseFloat(value).toFixed(1) + '%';
+                    }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
+                        formattedValue = '$' + parseFloat(value).toLocaleString();
+                    }} else {{
+                        formattedValue = value.toLocaleString();
+                    }}
                 }}
                 
-                layer.bindPopup(`<strong>${{name}}</strong><br>${{'{variable}'.replace('_', ' ')}}: ${{formattedValue}}<br>Click for details`);
+                const displayName = '{variable_display_name}' || '{selected_variable}'.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                layer.bindPopup(`<strong>${{name}}</strong><br>${{displayName}}: ${{formattedValue}}<br>Click for details`);
             }}
             
             // Parse GeoJSON and add to map
@@ -173,7 +201,7 @@ def create_leaflet_map(
                 let labels = [];
                 
                 // Format labels based on variable type
-                if ('{variable}'.includes('rate') || '{variable}'.includes('pct')) {{
+                if ('{selected_variable}'.includes('rate') || '{selected_variable}'.includes('pct')) {{
                     for (let i = 0; i < grades.length; i++) {{
                         const from = grades[i];
                         const to = grades[i + 1];
@@ -190,7 +218,7 @@ def create_leaflet_map(
                             </div>`);
                         }}
                     }}
-                }} else if ('{variable}'.includes('income') || '{variable}'.includes('value')) {{
+                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
                     // Adjust ranges for income/value variables
                     const incomeGrades = [0, 25000, 50000, 75000, 100000, 125000, 150000, 175000, 200000];
                     for (let i = 0; i < incomeGrades.length; i++) {{
@@ -240,6 +268,6 @@ def create_leaflet_map(
     # Use Streamlit's component functionality to render the HTML/JS
     return components.html(
         component_html,
-        height=height+50,
+        height=map_height+50,
         scrolling=False
     )
