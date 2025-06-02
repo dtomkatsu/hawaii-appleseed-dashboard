@@ -580,14 +580,66 @@ class MapBuilder:
                                     # Add a script to the map that adds labels to each feature
                                     script = f"""
                                     <script>
-                                    document.addEventListener('DOMContentLoaded', function() {{                                        
-                                        // Wait for the map to be fully loaded
-                                        setTimeout(function() {{
+                                    (function() {{
+                                        // Create a unique ID for this map instance to prevent multiple handlers
+                                        var mapId = '{geo_level}_{self.selected_variable}_{self.color_scheme}';
+                                        
+                                        // Only add the event listener once
+                                        if (window['labelAdded_' + mapId]) return;
+                                        window['labelAdded_' + mapId] = true;
+                                        
+                                        // Store features data globally to avoid re-parsing
+                                        window['features_' + mapId] = {json.dumps([(f['properties'].get(label_field, ''), 
+                                                               f['properties'].get('geoid', '')) 
+                                                              for f in geojson_data['features']])};
+                                        
+                                        // Create a throttle function to limit execution frequency
+                                        function throttle(func, limit) {{
+                                            var inThrottle;
+                                            return function() {{
+                                                var context = this, args = arguments;
+                                                if (!inThrottle) {{
+                                                    func.apply(context, args);
+                                                    inThrottle = true;
+                                                    setTimeout(function() {{
+                                                        inThrottle = false;
+                                                    }}, limit);
+                                                }}
+                                            }};
+                                        }}
+                                        
+                                        // Function to add labels
+                                        var addLabels = function() {{
+                                            // Clear existing labels first
+                                            var existingLabels = document.querySelectorAll('.map-label-' + mapId);
+                                            existingLabels.forEach(function(label) {{
+                                                if (label && label.parentNode) {{
+                                                    label.parentNode.removeChild(label);
+                                                }}
+                                            }});
+                                            
                                             // Get all path elements in the map
                                             var paths = document.querySelectorAll('path.leaflet-interactive');
-                                            var features = {json.dumps([(f['properties'].get(label_field, ''), 
-                                                                   f['properties'].get('geoid', '')) 
-                                                                  for f in geojson_data['features']])};
+                                            var features = window['features_' + mapId];
+                                            
+                                            if (!features || !paths.length) return;
+                                            
+                                            // Create a container for all labels if it doesn't exist
+                                            var labelContainer = document.getElementById('label-container-' + mapId);
+                                            if (!labelContainer) {{
+                                                labelContainer = document.createElement('div');
+                                                labelContainer.id = 'label-container-' + mapId;
+                                                labelContainer.className = 'label-container';
+                                                labelContainer.style.position = 'absolute';
+                                                labelContainer.style.top = '0';
+                                                labelContainer.style.left = '0';
+                                                labelContainer.style.pointerEvents = 'none';
+                                                labelContainer.style.zIndex = '650';
+                                                var overlayPane = document.querySelector('.leaflet-overlay-pane');
+                                                if (overlayPane && overlayPane.parentNode) {{
+                                                    overlayPane.parentNode.appendChild(labelContainer);
+                                                }}
+                                            }}
                                             
                                             // Add a label to each feature
                                             for (var i = 0; i < Math.min(paths.length, features.length); i++) {{
@@ -596,34 +648,74 @@ class MapBuilder:
                                                 var labelText = feature[0];
                                                 var featureId = feature[1];
                                                 
-                                                if (labelText && labelText !== '[object Object]') {{
-                                                    // Get the center of the path
-                                                    var bbox = path.getBBox();
-                                                    var centerX = bbox.x + bbox.width/2;
-                                                    var centerY = bbox.y + bbox.height/2;
-                                                    
-                                                    // Create a label element
-                                                    var label = document.createElement('div');
-                                                    label.className = 'map-label';
-                                                    label.style.position = 'absolute';
-                                                    label.style.left = centerX + 'px';
-                                                    label.style.top = centerY + 'px';
-                                                    label.style.transform = 'translate(-50%, -50%)';
-                                                    label.style.fontSize = '10px';
-                                                    label.style.fontWeight = 'bold';
-                                                    label.style.backgroundColor = 'rgba(255,255,255,0.7)';
-                                                    label.style.padding = '2px 4px';
-                                                    label.style.borderRadius = '3px';
-                                                    label.style.zIndex = '1000';
-                                                    label.style.pointerEvents = 'none';
-                                                    label.innerHTML = labelText;
-                                                    
-                                                    // Add the label to the map
-                                                    document.querySelector('.leaflet-overlay-pane').appendChild(label);
+                                                if (labelText && labelText !== '[object Object]' && path && path.getBBox) {{
+                                                    try {{
+                                                        // Get the center of the path
+                                                        var bbox = path.getBBox();
+                                                        var centerX = bbox.x + bbox.width/2;
+                                                        var centerY = bbox.y + bbox.height/2;
+                                                        
+                                                        // Create a label element
+                                                        var label = document.createElement('div');
+                                                        label.className = 'map-label map-label-' + mapId;
+                                                        label.setAttribute('data-feature-id', featureId || '');
+                                                        label.style.position = 'absolute';
+                                                        label.style.left = centerX + 'px';
+                                                        label.style.top = centerY + 'px';
+                                                        label.style.transform = 'translate(-50%, -50%)';
+                                                        label.style.fontSize = '10px';
+                                                        label.style.fontWeight = 'bold';
+                                                        label.style.backgroundColor = 'rgba(255,255,255,0.7)';
+                                                        label.style.padding = '2px 4px';
+                                                        label.style.borderRadius = '3px';
+                                                        label.style.pointerEvents = 'none';
+                                                        label.innerHTML = labelText;
+                                                        
+                                                        // Add the label to the container
+                                                        if (labelContainer) {{
+                                                            labelContainer.appendChild(label);
+                                                        }}
+                                                    }} catch (e) {{
+                                                        console.error('Error adding label:', e);
+                                                    }}
                                                 }}
                                             }}
-                                        }}, 1000);
-                                    }});
+                                        }};
+                                        
+                                        // Throttled version to prevent performance issues
+                                        var throttledAddLabels = throttle(addLabels, 500);
+                                        
+                                        // Add labels when DOM is loaded
+                                        if (document.readyState === 'loading') {{
+                                            document.addEventListener('DOMContentLoaded', function() {{
+                                                setTimeout(throttledAddLabels, 1000);
+                                            }});
+                                        }} else {{
+                                            setTimeout(throttledAddLabels, 1000);
+                                        }}
+                                        
+                                        // Prevent click propagation on labels
+                                        document.addEventListener('click', function(e) {{
+                                            if (e.target && e.target.classList && e.target.classList.contains('map-label-' + mapId)) {{
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                return false;
+                                            }}
+                                        }}, true);
+                                        
+                                        // Handle map zoom and pan events to update labels
+                                        var map = document.querySelector('.leaflet-container');
+                                        if (map) {{
+                                            // Use MutationObserver to detect DOM changes in the map
+                                            var observer = new MutationObserver(throttledAddLabels);
+                                            observer.observe(map, {{ childList: true, subtree: true }});
+                                            
+                                            // Also update on zoom end
+                                            map.addEventListener('mouseup', function() {{
+                                                setTimeout(throttledAddLabels, 300);
+                                            }});
+                                        }}
+                                    }})();
                                     </script>
                                     """
                                     self.m.get_root().html.add_child(folium.Element(script))
@@ -884,6 +976,48 @@ class MapBuilder:
             for fg in self.feature_groups.values():
                 fg.add_to(self.m)
         
+    def find_feature_at_point(self, lat: float, lng: float, geo_level: str) -> dict:
+        """Find the geographic feature that contains the given point.
+        
+        Args:
+            lat: Latitude of the point
+            lng: Longitude of the point
+            geo_level: Geographic level (state, county, house, senate)
+            
+        Returns:
+            dict: The feature that contains the point, or None if not found
+        """
+        import shapely.geometry as sg
+        from shapely.geometry import Point, shape
+        
+        # Create a point from the clicked coordinates
+        point = Point(lng, lat)  # GeoJSON uses (longitude, latitude) order
+        
+        # Get the GeoJSON data for the active layer
+        geojson_path = self.base_dir / 'data' / 'geojson' / f'hawaii_{geo_level}.geojson'
+        
+        try:
+            with open(geojson_path, 'r', encoding='utf-8') as f:
+                geojson_data = json.load(f)
+                
+            # Check each feature to see if it contains the point
+            for feature in geojson_data.get('features', []):
+                if feature.get('geometry'):
+                    # Convert the GeoJSON geometry to a shapely shape
+                    try:
+                        feature_shape = shape(feature['geometry'])
+                        
+                        # Check if the point is within or on the boundary of the shape
+                        if feature_shape.contains(point) or feature_shape.touches(point):
+                            return feature
+                    except Exception as e:
+                        logger.error(f"Error checking if feature contains point: {str(e)}")
+                        continue
+        except Exception as e:
+            logger.error(f"Error loading GeoJSON to find feature at point: {str(e)}")
+            
+        return None
+    
     def create_map(self) -> folium.Map:
         """Create and return a map with configured layers."""
         try:
