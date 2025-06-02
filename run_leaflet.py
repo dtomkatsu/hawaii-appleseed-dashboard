@@ -22,14 +22,20 @@ st.set_page_config(
 
 def main():
     """Main application function for the Leaflet version."""
-    # Set up logging
-    logger = setup_logging()
+    # Set up logging with debug level
+    logger = setup_logging(level=logging.DEBUG)
+    logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version with DEBUG logging")
     
     # Load custom CSS
     with open(Path(__file__).parent / "src" / "ui" / "custom.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     try:
+        # Initialize session state for county layer if not already set
+        if 'active_layer' not in st.session_state:
+            st.session_state.active_layer = 'Counties'
+            logger.info("Initializing session state with Counties layer")
+        
         # Create sidebar and get user selections
         sidebar_config = create_sidebar()
         

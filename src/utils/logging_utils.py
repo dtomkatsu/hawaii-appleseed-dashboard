@@ -9,11 +9,18 @@ from src.config import LOG_DIR
 # Ensure log directory exists
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-def setup_logging():
-    """Configure logging for the application."""
+def setup_logging(level=logging.INFO):
+    """Configure logging for the application.
+    
+    Args:
+        level: Logging level (default: logging.INFO)
+        
+    Returns:
+        Logger instance
+    """
     # Main logger
     logging.basicConfig(
-        level=logging.INFO,
+        level=level,
         format='%(asctime)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(LOG_DIR / 'app.log'),
@@ -21,6 +28,7 @@ def setup_logging():
         ]
     )
     logger = logging.getLogger(__name__)
+    logger.setLevel(level)
     
     # Debug logger
     debug_logger = logging.getLogger('debug')

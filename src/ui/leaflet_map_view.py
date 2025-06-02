@@ -92,6 +92,28 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         logger.info(f"ACS data columns: {acs_data.columns.tolist()}")
         if not acs_data.empty:
             logger.info(f"First row of ACS data: {acs_data.iloc[0].to_dict()}")
+            
+        # Special debug for county data
+        if geo_level == 'county':
+            logger.info(f"COUNTY DATA DEBUG: Full dataframe:\n{acs_data}")
+            logger.info(f"COUNTY DATA DEBUG: Column types:\n{acs_data.dtypes}")
+            if 'poverty_rate' in acs_data.columns:
+                logger.info(f"COUNTY DATA DEBUG: Poverty rate values:\n{acs_data['poverty_rate']}")
+            else:
+                logger.info(f"COUNTY DATA DEBUG: 'poverty_rate' column not found in county data")
+                logger.info(f"COUNTY DATA DEBUG: Available columns: {acs_data.columns.tolist()}")
+                
+            # Check for related columns that might be used to calculate poverty rate
+            for col in ['below_poverty', 'total_population']:
+                if col in acs_data.columns:
+                    logger.info(f"COUNTY DATA DEBUG: {col} values:\n{acs_data[col]}")
+                else:
+                    logger.info(f"COUNTY DATA DEBUG: '{col}' column not found in county data")
+                    
+            # Debug the exact format of NAME column values to help with matching
+            name_col_debug = 'name' if 'name' in acs_data.columns else 'NAME' if 'NAME' in acs_data.columns else None
+            if name_col_debug:
+                logger.info(f"COUNTY DATA DEBUG: Exact format of {name_col_debug} column values:\n{acs_data[name_col_debug].tolist()}")
         
         # Merge ACS data with GeoJSON
         for feature in geojson_data['features']:
@@ -99,7 +121,19 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if geo_level == 'state':
                 feature_id = 'Hawaii'
             elif geo_level == 'county':
-                feature_id = feature['properties'].get('NAME')
+                # Get county name from county_name property (not NAME)
+                county_name = feature['properties'].get('county_name')
+                logger.info(f"County name from GeoJSON: {county_name}")
+                
+                # Try different formats that might match the ACS data
+                formats = [
+                    county_name,  # Original format (e.g., 'Honolulu')
+                    f"{county_name} County",  # Add 'County' suffix
+                    f"{county_name} County, Hawaii",  # Add state
+                    f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
+                    f"{county_name}, Hawaii"  # Without 'County' but with state
+                ]
+                feature_id = formats  # Store all possible formats to try
             elif geo_level == 'house':
                 # Extract district number from different possible property names
                 district_num = None
@@ -154,12 +188,30 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 logger.info(f"Using name column: {name_col}")
                 
                 if name_col:
-                    # Debug: Show what we're looking for
-                    matching_rows = acs_data[acs_data[name_col] == feature_id]
-                    logger.info(f"Found {len(matching_rows)} matches for {feature_id}")
-                    if len(matching_rows) > 0:
-                        logger.info(f"Match data: {matching_rows.iloc[0].to_dict()}")
-                    matching_data = matching_rows.to_dict('records')
+                    # Handle both single feature_id (string) and list of possible IDs (for counties)
+                    possible_ids = [feature_id] if isinstance(feature_id, str) else feature_id
+                    matching_rows = None
+                    
+                    # Try each possible ID format until we find a match
+                    for fid in possible_ids:
+                        # Try exact match first
+                        matching_rows = acs_data[acs_data[name_col] == fid]
+                        if not matching_rows.empty:
+                            logger.info(f"Found exact match for {fid}")
+                            break
+                            
+                        # Try case-insensitive match if exact match fails
+                        if isinstance(fid, str):
+                            matching_rows = acs_data[acs_data[name_col].str.lower() == fid.lower()]
+                            if not matching_rows.empty:
+                                logger.info(f"Found case-insensitive match for {fid}")
+                                break
+                    
+                    if matching_rows is not None:
+                        logger.info(f"Found {len(matching_rows)} matches for {possible_ids}")
+                        if len(matching_rows) > 0:
+                            logger.info(f"Match data: {matching_rows.iloc[0].to_dict()}")
+                    matching_data = matching_rows.to_dict('records') if matching_rows is not None else []
                 else:
                     # If no name column exists, try matching by geoid or district number
                     if 'geoid' in acs_data.columns and 'GEOID' in feature['properties']:
