@@ -20,42 +20,94 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add diagnostic script
+# Add diagnostic script to identify text cutoff issues
 st.components.v1.html("""
 <script>
-// Debug script to identify border source
+// Debug script to identify text cutoff issues
 document.addEventListener('DOMContentLoaded', function() {
-    // Add red outline to help visualize elements
-    const style = document.createElement('style');
-    style.textContent = `
-        [data-baseweb="popover"] {
-            outline: 3px solid red !important;
-        }
-        [data-baseweb="popover"] * {
-            outline: 1px dashed blue !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
+    // Function to log element dimensions and styles
+    const logElementInfo = (element) => {
+        if (!element) return;
+        
+        const styles = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        
+        console.log('Element info:', {
+            tag: element.tagName,
+            class: element.className,
+            dimensions: {
+                width: rect.width,
+                height: rect.height,
+                contentHeight: element.scrollHeight,
+                padding: styles.padding,
+                margin: styles.margin,
+                border: styles.border
+            },
+            textStyles: {
+                lineHeight: styles.lineHeight,
+                fontSize: styles.fontSize,
+                fontFamily: styles.fontFamily,
+                overflow: styles.overflow,
+                textOverflow: styles.textOverflow,
+                whiteSpace: styles.whiteSpace,
+                display: styles.display,
+                alignItems: styles.alignItems,
+                justifyContent: styles.justifyContent
+            },
+            parent: element.parentElement ? {
+                tag: element.parentElement.tagName,
+                class: element.parentElement.className,
+                height: element.parentElement.offsetHeight,
+                overflow: window.getComputedStyle(element.parentElement).overflow
+            } : null
+        });
+    };
+
     // Log when dropdown opens
     document.body.addEventListener('click', function(e) {
         if (e.target.closest('[data-baseweb="select"]')) {
-            console.log('Dropdown clicked - checking styles...');
-            const popover = document.querySelector('[data-baseweb="popover"]');
-            if (popover) {
-                console.log('Popover found, checking styles...');
-                const styles = window.getComputedStyle(popover);
-                console.log('Border styles:', {
-                    border: styles.border,
-                    borderTop: styles.borderTop,
-                    borderRight: styles.borderRight,
-                    borderBottom: styles.borderBottom,
-                    borderLeft: styles.borderLeft,
-                    boxShadow: styles.boxShadow
-                });
-            }
+            setTimeout(() => {
+                const menu = document.querySelector('[data-baseweb="menu"]');
+                if (menu) {
+                    console.log('Dropdown menu found, checking dimensions...');
+                    logElementInfo(menu);
+                    
+                    // Log first menu item
+                    const firstItem = menu.querySelector('[role="option"]');
+                    if (firstItem) {
+                        console.log('First menu item:');
+                        logElementInfo(firstItem);
+                        
+                        // Log text node
+                        const textNode = firstItem.querySelector('div');
+                        if (textNode) {
+                            console.log('Text node:');
+                            logElementInfo(textNode);
+                        }
+                    }
+                }
+            }, 300);
         }
     });
+
+    // Add visual debugging
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Visual debugging */
+        [data-baseweb="menu"] {
+            outline: 2px dashed red !important;
+            overflow: visible !important;
+        }
+        [data-baseweb="menu"] [role="option"] {
+            outline: 1px solid blue !important;
+            background-color: rgba(0,0,255,0.1) !important;
+        }
+        [data-baseweb="menu"] [role="option"] > div {
+            outline: 1px solid green !important;
+            background-color: rgba(0,255,0,0.1) !important;
+        }
+    `;
+    document.head.appendChild(style);
 });
 </script>
 """, height=0)
@@ -120,19 +172,45 @@ def main():
             outline: none !important;
         }
         
-        /* Restore hover effects for menu items */
-        [data-baseweb="menu"] [role="option"] {
+        /* Target the dropdown menu container */
+        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 {
+            position: relative;
+            z-index: 1000;
+        }
+        
+        /* Target menu items and text content */
+        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div,
+        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
             transition: all 0.2s ease !important;
             opacity: 0;
             transform: translateY(-5px);
             animation: itemFadeIn 0.2s forwards;
             transform-origin: left center !important;
+            cursor: pointer;
+            padding: 12px 16px !important;
+            line-height: 1.5 !important;
+            min-height: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            overflow: visible !important;
+            white-space: normal !important;
+            text-overflow: clip !important;
+            height: auto !important;
         }
         
-        [data-baseweb="menu"] [role="option"]:hover {
+        /* Ensure text container doesn't clip content */
+        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
+            padding: 8px 16px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            height: 100% !important;
+        }
+        
+        /* Hover effect for menu items */
+        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div:hover {
             background-color: var(--hover-color, #f5f8ff) !important;
             transform: translateY(0) translateX(8px) !important;
-            padding-left: 20px !important;
+            padding-left: 24px !important;
         }
         /* Base dropdown styles */
         .stSelectbox {
