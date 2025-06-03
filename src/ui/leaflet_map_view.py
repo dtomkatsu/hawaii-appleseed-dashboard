@@ -50,7 +50,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     # Get user selections from session state or initialize them if not present
     if 'active_layer' not in st.session_state:
         st.session_state['active_layer'] = 'State Boundary'
-    if 'selected_variable' not in st.session_state:
+    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate']:
         st.session_state['selected_variable'] = 'poverty_rate'
     if 'color_scheme' not in st.session_state:
         st.session_state['color_scheme'] = 'blue'
@@ -281,7 +281,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'unemployment_rate': 'Unemployment Rate',
             'population': 'Population',
             'median_home_value': 'Median Home Value',
-            'college_educated_pct': 'College Educated'
+            'college_educated_pct': 'College Educated',
+            'rent_burden_rate': 'Housing Cost Burden'
         }
         
         selected_var = st.selectbox(
@@ -316,7 +317,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'college_educated_pct': 'College Educated (%)',
         'bachelors_rate': 'Bachelors Degree Rate',
         'renter_rate': 'Renter Rate',
-        'rent_burden_rate': 'Rent Burden Rate'
+        'rent_burden_rate': 'Housing Cost Burden (%)'
     }
     
     # Create the map
