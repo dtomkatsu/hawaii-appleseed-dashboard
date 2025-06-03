@@ -84,203 +84,42 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Add custom CSS for dropdowns
+# Add clean CSS for dropdowns
 st.markdown("""
 <style>
-    /* Base styling for select boxes */
-    .stSelectbox {
-        min-width: 200px;
-        margin: 0 4px;
-    }
-    
-    /* Dropdown trigger */
+    /* Base dropdown styles */
     .stSelectbox > div > div {
-        border: 1px solid #e0e0e0 !important;
-        border-radius: 4px !important;
-        min-height: 40px !important;
-        padding: 8px 12px !important;
+        min-height: 40px;
+        display: flex !important;
+        align-items: center !important;
     }
     
-    /* Hide blinking cursor */
-    .stSelectbox input {
-        caret-color: transparent !important;
-        cursor: default !important;
-    }
-    
-    /* Dropdown menu */
-    [data-baseweb="popover"] {
-        border-radius: 8px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* Dropdown options */
-    [data-baseweb="menu"] {
-        padding: 4px 0 !important;
-        min-width: 240px !important;
-    }
-    
+    /* Dropdown menu items */
     [data-baseweb="menu"] [role="option"] {
-        padding: 10px 16px !important;
-        white-space: nowrap !important;
+        min-height: 40px !important;
+        padding: 8px 16px !important;
+        white-space: normal !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
     }
     
-    /* Fix for dropdown text */
-    [data-baseweb="menu"] [role="option"] > div {
-        white-space: nowrap !important;
-        text-overflow: ellipsis !important;
-        overflow: hidden !important;
+    /* Ensure text is visible in dropdown */
+    [data-baseweb="menu"] {
+        background: white !important;
+        color: #000 !important;
     }
     
-    /* Remove extra borders */
-    .stSelectbox > div > div > div {
-        border: none !important;
+    /* Selected value */
+    [data-baseweb="select"] {
+        color: #000 !important;
+    }
+    
+    /* Make sure dropdown is above other elements */
+    [data-baseweb="popover"] {
+        z-index: 1000 !important;
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Add JavaScript to fix dropdown text wrapping
-st.components.v1.html("""
-<script>
-// Apply direct styling to ensure text stays on one line
-function fixDropdownText() {
-    const options = document.querySelectorAll('[data-baseweb="menu"] [role="option"]');
-    if (options.length) {
-        console.log('Debugging dropdown options...');
-        
-        options.forEach((option, index) => {
-            console.log(`Option ${index + 1} HTML:`, option.outerHTML);
-            
-            // Force single line for the option
-            option.style.whiteSpace = 'nowrap';
-            option.style.display = 'flex';
-            option.style.alignItems = 'center';
-            option.style.width = 'auto';
-            option.style.minWidth = '200px';
-            option.style.overflow = 'visible';
-            
-            // Apply to all elements within the option
-            const allElements = option.querySelectorAll('*');
-            allElements.forEach(el => {
-                el.style.whiteSpace = 'nowrap';
-                el.style.wordBreak = 'keep-all';
-                el.style.display = 'inline';
-                el.style.overflow = 'visible';
-                el.style.textOverflow = 'clip';
-                el.style.width = 'auto';
-                el.style.maxWidth = 'none';
-                el.style.flexShrink = '0';
-                el.style.wordWrap = 'normal';
-                el.style.lineHeight = '1.2';
-                el.style.padding = '0';
-                el.style.margin = '0';
-            });
-        });
-    }
-}
-
-// Run on click and after a short delay to catch dynamic content
-document.addEventListener('click', function(e) {
-    if (e.target.closest('[data-baseweb="select"]')) {
-        console.log('Dropdown clicked, applying fixes...');
-        setTimeout(fixDropdownText, 100);
-        setTimeout(fixDropdownText, 500); // Double-check after animation
-    }
-});
-
-// Also run on initial load
-setTimeout(fixDropdownText, 1000);
-</script>
-""", height=0)
-st.components.v1.html("""
-<script>
-// Debug script to identify text cutoff issues
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to log element dimensions and styles
-    const logElementInfo = (element) => {
-        if (!element) return;
-        
-        const styles = window.getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        
-        console.log('Element info:', {
-            tag: element.tagName,
-            class: element.className,
-            dimensions: {
-                width: rect.width,
-                height: rect.height,
-                contentHeight: element.scrollHeight,
-                padding: styles.padding,
-                margin: styles.margin,
-                border: styles.border
-            },
-            textStyles: {
-                lineHeight: styles.lineHeight,
-                fontSize: styles.fontSize,
-                fontFamily: styles.fontFamily,
-                overflow: styles.overflow,
-                textOverflow: styles.textOverflow,
-                whiteSpace: styles.whiteSpace,
-                display: styles.display,
-                alignItems: styles.alignItems,
-                justifyContent: styles.justifyContent
-            },
-            parent: element.parentElement ? {
-                tag: element.parentElement.tagName,
-                class: element.parentElement.className,
-                height: element.parentElement.offsetHeight,
-                overflow: window.getComputedStyle(element.parentElement).overflow
-            } : null
-        });
-    };
-
-    // Log when dropdown opens
-    document.body.addEventListener('click', function(e) {
-        if (e.target.closest('[data-baseweb="select"]')) {
-            setTimeout(() => {
-                const menu = document.querySelector('[data-baseweb="menu"]');
-                if (menu) {
-                    console.log('Dropdown menu found, checking dimensions...');
-                    logElementInfo(menu);
-                    
-                    // Log first menu item
-                    const firstItem = menu.querySelector('[role="option"]');
-                    if (firstItem) {
-                        console.log('First menu item:');
-                        logElementInfo(firstItem);
-                        
-                        // Log text node
-                        const textNode = firstItem.querySelector('div');
-                        if (textNode) {
-                            console.log('Text node:');
-                            logElementInfo(textNode);
-                        }
-                    }
-                }
-            }, 300);
-        }
-    });
-
-    // Add visual debugging
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Visual debugging */
-        [data-baseweb="menu"] {
-            outline: 2px dashed red !important;
-            overflow: visible !important;
-        }
-        [data-baseweb="menu"] [role="option"] {
-            outline: 1px solid blue !important;
-            background-color: rgba(0,0,255,0.1) !important;
-        }
-        [data-baseweb="menu"] [role="option"] > div {
-            outline: 1px solid green !important;
-            background-color: rgba(0,255,0,0.1) !important;
-        }
-    `;
-    document.head.appendChild(style);
-});
-</script>
-""", height=0)
 
 def main():
     """Main application function for the Leaflet version."""
