@@ -274,14 +274,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col2:
+        # Define variable options with display names
+        variable_options = {
+            'poverty_rate': 'Poverty Rate',
+            'median_income': 'Median Income',
+            'unemployment_rate': 'Unemployment Rate',
+            'population': 'Population',
+            'median_home_value': 'Median Home Value',
+            'college_educated_pct': 'College Educated'
+        }
+        
         selected_var = st.selectbox(
             "Data Variable",
-            [
-                'poverty_rate', 'median_income', 'unemployment_rate', 
-                'population', 'median_home_value', 'college_educated_pct'
-            ],
-            index=['poverty_rate', 'median_income', 'unemployment_rate', 
-                   'population', 'median_home_value', 'college_educated_pct'].index(selected_variable),
+            options=list(variable_options.keys()),
+            format_func=lambda x: variable_options[x],
+            index=list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0,
             key="variable_selector"
         )
         if selected_var != selected_variable:

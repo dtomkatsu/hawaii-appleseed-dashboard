@@ -28,8 +28,8 @@ def create_sidebar() -> Dict[str, Any]:
     
     # Variable options with descriptions
     variable_options = {
-        'poverty_rate': 'Poverty Rate (% below poverty threshold)',
-        'median_income': 'Median Household Income ($)',
+        'poverty_rate': 'Poverty Rate',
+        'median_income': 'Median Income',
         'median_home_value': 'Median Home Value ($)',
         'unemployment_rate': 'Unemployment Rate (%)',
         'college_educated_pct': 'Bachelor\'s Degree or Higher (%)',
