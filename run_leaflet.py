@@ -17,8 +17,72 @@ st.set_page_config(
     page_title="Hawaii Appleseed Dashboard",
     page_icon="🌴",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
+
+# Hide the sidebar and its toggle button
+st.markdown("""
+    <style>
+        /* Hide sidebar and all related elements */
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarNav"],
+        div[data-testid="stSidebarUserContent"],
+        div[data-testid="collapsedControl"],
+        div[data-testid="stToolbar"],
+        .stApp > header,
+        .stApp > div:first-child > div:first-child > div:first-child > div:first-child {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 0 !important;
+            max-height: 0 !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            z-index: -1000 !important;
+        }
+        
+        /* Adjust main content layout */
+        .stApp > div:first-child {
+            padding-top: 1rem;
+        }
+        
+        /* Remove extra padding from main content */
+        .main .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            max-width: 100% !important;
+        }
+        
+        /* Remove any remaining space where sidebar was */
+        .stApp > div:first-child > div:first-child > div:first-child {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Hide the specific sidebar toggle SVG */
+        svg.e10vaf9m1.st-emotion-cache-1f3w014.ex0cdmw0,
+        svg[viewBox="0 0 24 24"][fill="currentColor"] {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+            position: absolute !important;
+            z-index: -1000 !important;
+        }
+        
+        /* Hide the parent button if needed */
+        button[title="View app navigation"] {
+            display: none !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Add custom CSS for dropdowns
 st.markdown("""
