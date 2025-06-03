@@ -20,7 +20,167 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add diagnostic script to identify text cutoff issues
+# Add custom CSS for dropdowns
+st.markdown("""
+<style>
+    /* Remove borders and fix dropdown styling */
+    [data-baseweb="menu"],
+    [data-baseweb="popover"],
+    [data-baseweb="popover"] > div,
+    [data-baseweb="popover"] > div > div {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    /* Fix dropdown text wrapping */
+    [data-baseweb="menu"] [role="option"] {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        min-height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 0 16px !important;
+        margin: 2px 8px !important;
+        border-radius: 4px !important;
+        width: auto !important;
+        min-width: 150px !important;
+    }
+    
+    /* Style the text inside options */
+    [data-baseweb="menu"] [role="option"] > div {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        width: 100% !important;
+    }
+    
+    /* Remove all borders and fix dropdown menu */
+    [data-baseweb="menu"],
+    [data-baseweb="popover"],
+    [data-baseweb="popover"] > div {
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+        padding: 8px 0 !important;
+        min-width: 300px !important;
+        max-width: 400px !important;
+    }
+    
+    /* Style dropdown options */
+    [data-baseweb="menu"] [role="option"] {
+        min-height: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 20px !important;
+        margin: 0 8px !important;
+        border-radius: 4px !important;
+        background: white !important;
+        transition: background-color 0.2s !important;
+    }
+    
+    /* Hover effect */
+    [data-baseweb="menu"] [role="option"]:hover {
+        background: #f5f5f5 !important;
+    }
+    
+    /* Style the text inside options */
+    [data-baseweb="menu"] [role="option"] > div {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        width: 100% !important;
+        color: inherit !important;
+        pointer-events: none !important;
+        word-break: break-word !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* Ensure clickability */
+    [data-baseweb="menu"] {
+        pointer-events: auto !important;
+    }
+    
+    [data-baseweb="menu"] [role="option"] {
+        pointer-events: auto !important;
+    }
+    
+    /* Hide blinking cursor in dropdown */
+    [data-baseweb="select"] input,
+    [data-baseweb="select"] [role="combobox"],
+    [data-baseweb="select"] [aria-autocomplete="list"] {
+        caret-color: transparent !important;
+        cursor: pointer !important;
+        color: transparent !important;
+        text-shadow: 0 0 0 #000 !important;
+    }
+    
+    /* Hover effect */
+    [data-baseweb="menu"] [role="option"]:hover {
+        background: #f5f5f5 !important;
+    }
+    
+    /* Ensure proper dropdown padding */
+    [data-baseweb="select"] [role="listbox"] {
+        padding: 4px 0 !important;
+        background: transparent !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Add JavaScript to fix dropdown text wrapping
+st.components.v1.html("""
+<script>
+// Apply direct styling to ensure text stays on one line
+function fixDropdownText() {
+    const options = document.querySelectorAll('[data-baseweb="menu"] [role="option"]');
+    if (options.length) {
+        console.log('Debugging dropdown options...');
+        
+        options.forEach((option, index) => {
+            console.log(`Option ${index + 1} HTML:`, option.outerHTML);
+            
+            // Force single line for the option
+            option.style.whiteSpace = 'nowrap';
+            option.style.display = 'flex';
+            option.style.alignItems = 'center';
+            option.style.width = 'auto';
+            option.style.minWidth = '200px';
+            option.style.overflow = 'visible';
+            
+            // Apply to all elements within the option
+            const allElements = option.querySelectorAll('*');
+            allElements.forEach(el => {
+                el.style.whiteSpace = 'nowrap';
+                el.style.wordBreak = 'keep-all';
+                el.style.display = 'inline';
+                el.style.overflow = 'visible';
+                el.style.textOverflow = 'clip';
+                el.style.width = 'auto';
+                el.style.maxWidth = 'none';
+                el.style.flexShrink = '0';
+                el.style.wordWrap = 'normal';
+                el.style.lineHeight = '1.2';
+                el.style.padding = '0';
+                el.style.margin = '0';
+            });
+        });
+    }
+}
+
+// Run on click and after a short delay to catch dynamic content
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-baseweb="select"]')) {
+        console.log('Dropdown clicked, applying fixes...');
+        setTimeout(fixDropdownText, 100);
+        setTimeout(fixDropdownText, 500); // Double-check after animation
+    }
+});
+
+// Also run on initial load
+setTimeout(fixDropdownText, 1000);
+</script>
+""", height=0)
 st.components.v1.html("""
 <script>
 // Debug script to identify text cutoff issues
