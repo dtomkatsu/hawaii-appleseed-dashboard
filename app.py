@@ -42,6 +42,25 @@ st.markdown("""
     .stDownloadButton>button {
         width: 100%;
     }
+    /* Dropdown menu fixes */
+    .stSelectbox div[data-baseweb="select"] > div {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        min-height: 40px;
+    }
+    .stSelectbox div[data-baseweb="select"] > div > div {
+        line-height: 1.5 !important;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    .stSelectbox [role="listbox"] [role="option"] {
+        padding: 8px 12px !important;
+        line-height: 1.5 !important;
+    }
+    .stSelectbox [role="listbox"] {
+        max-height: 300px !important;
+        overflow-y: auto !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 

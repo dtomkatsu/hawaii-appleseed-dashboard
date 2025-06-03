@@ -30,6 +30,30 @@ def main():
     with open(Path(__file__).parent / "src" / "ui" / "custom.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
+    # Add dropdown menu fixes
+    st.markdown("""
+    <style>
+        .stSelectbox div[data-baseweb="select"] > div {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            min-height: 40px;
+        }
+        .stSelectbox div[data-baseweb="select"] > div > div {
+            line-height: 1.5 !important;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        .stSelectbox [role="listbox"] [role="option"] {
+            padding: 8px 12px !important;
+            line-height: 1.5 !important;
+        }
+        .stSelectbox [role="listbox"] {
+            max-height: 300px !important;
+            overflow-y: auto !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     try:
         # Initialize session state for county layer if not already set
         if 'active_layer' not in st.session_state:
