@@ -87,107 +87,76 @@ st.markdown("""
 # Add custom CSS for dropdowns
 st.markdown("""
 <style>
-    /* Remove borders and fix dropdown styling */
-    [data-baseweb="menu"],
-    [data-baseweb="popover"],
-    [data-baseweb="popover"] > div,
-    [data-baseweb="popover"] > div > div {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
+    /* Base dropdown styling */
+    [data-baseweb="popover"] {
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        overflow: hidden !important;
     }
     
-    /* Fix dropdown text wrapping */
+    /* Dropdown menu container */
+    [data-baseweb="menu"] {
+        padding: 4px 0 !important;
+        min-width: 250px !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+    
+    /* Dropdown options */
     [data-baseweb="menu"] [role="option"] {
-        white-space: nowrap !important;
-        overflow: visible !important;
         min-height: 40px !important;
-        display: flex !important;
-        align-items: center !important;
-        padding: 0 16px !important;
-        margin: 2px 8px !important;
+        padding: 8px 16px !important;
+        margin: 0 4px !important;
         border-radius: 4px !important;
-        width: auto !important;
-        min-width: 150px !important;
+        transition: background-color 0.15s !important;
     }
     
-    /* Style the text inside options */
-    [data-baseweb="menu"] [role="option"] > div {
-        white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        width: 100% !important;
+    /* Hover and selected states */
+    [data-baseweb="menu"] [role="option"]:hover,
+    [data-baseweb="menu"] [role="option"][aria-selected="true"] {
+        background-color: #f5f5f5 !important;
     }
     
-    /* Remove all borders and fix dropdown menu */
-    [data-baseweb="menu"],
-    [data-baseweb="popover"],
-    [data-baseweb="popover"] > div {
-        border: none !important;
-        box-shadow: none !important;
-        background: white !important;
-        padding: 8px 0 !important;
-        min-width: 300px !important;
-        max-width: 400px !important;
-    }
-    
-    /* Style dropdown options */
-    [data-baseweb="menu"] [role="option"] {
-        min-height: 50px !important;
-        display: flex !important;
-        align-items: center !important;
-        padding: 8px 20px !important;
-        margin: 0 8px !important;
-        border-radius: 4px !important;
-        background: white !important;
-        transition: background-color 0.2s !important;
-    }
-    
-    /* Hover effect */
-    [data-baseweb="menu"] [role="option"]:hover {
-        background: #f5f5f5 !important;
-    }
-    
-    /* Style the text inside options */
+    /* Text inside options */
     [data-baseweb="menu"] [role="option"] > div {
         white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        width: 100% !important;
-        color: inherit !important;
-        pointer-events: none !important;
         word-break: break-word !important;
-        line-height: 1.3 !important;
-    }
-    
-    /* Ensure clickability */
-    [data-baseweb="menu"] {
-        pointer-events: auto !important;
-    }
-    
-    [data-baseweb="menu"] [role="option"] {
-        pointer-events: auto !important;
-    }
-    
-    /* Hide blinking cursor in dropdown */
-    [data-baseweb="select"] input,
-    [data-baseweb="select"] [role="combobox"],
-    [data-baseweb="select"] [aria-autocomplete="list"] {
-        caret-color: transparent !important;
-        cursor: pointer !important;
-        color: transparent !important;
-        text-shadow: 0 0 0 #000 !important;
-    }
-    
-    /* Hover effect */
-    [data-baseweb="menu"] [role="option"]:hover {
-        background: #f5f5f5 !important;
-    }
-    
-    /* Ensure proper dropdown padding */
-    [data-baseweb="select"] [role="listbox"] {
+        line-height: 1.4 !important;
         padding: 4px 0 !important;
-        background: transparent !important;
+    }
+    
+    /* Dropdown input/combobox */
+    [data-baseweb="select"] [role="combobox"],
+    [data-baseweb="select"] input {
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Focus state */
+    [data-baseweb="select"] [role="combobox"]:focus,
+    [data-baseweb="select"] input:focus {
+        border-color: #4a90e2 !important;
+        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2) !important;
+    }
+    
+    /* Remove default browser focus outline */
+    [data-baseweb="select"] [role="combobox"]:focus-visible {
+        outline: none !important;
+    }
+    
+    /* Dropdown arrow */
+    [data-baseweb="select"] [aria-hidden="true"] {
+        color: #666 !important;
+    }
+    
+    /* Ensure proper spacing between icon and text */
+    [data-baseweb="select"] [role="option"] > div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
     }
 </style>
 """, unsafe_allow_html=True)
