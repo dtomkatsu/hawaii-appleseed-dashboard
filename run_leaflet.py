@@ -20,6 +20,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Add diagnostic script
+st.components.v1.html("""
+<script>
+// Debug script to identify border source
+document.addEventListener('DOMContentLoaded', function() {
+    // Add red outline to help visualize elements
+    const style = document.createElement('style');
+    style.textContent = `
+        [data-baseweb="popover"] {
+            outline: 3px solid red !important;
+        }
+        [data-baseweb="popover"] * {
+            outline: 1px dashed blue !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Log when dropdown opens
+    document.body.addEventListener('click', function(e) {
+        if (e.target.closest('[data-baseweb="select"]')) {
+            console.log('Dropdown clicked - checking styles...');
+            const popover = document.querySelector('[data-baseweb="popover"]');
+            if (popover) {
+                console.log('Popover found, checking styles...');
+                const styles = window.getComputedStyle(popover);
+                console.log('Border styles:', {
+                    border: styles.border,
+                    borderTop: styles.borderTop,
+                    borderRight: styles.borderRight,
+                    borderBottom: styles.borderBottom,
+                    borderLeft: styles.borderLeft,
+                    boxShadow: styles.boxShadow
+                });
+            }
+        }
+    });
+});
+</script>
+""", height=0)
+
 def main():
     """Main application function for the Leaflet version."""
     # Set up logging with debug level
@@ -29,6 +69,71 @@ def main():
     # Enhanced dropdown styling with borders and hover effects
     st.markdown("""
     <style>
+        /* Remove borders from Streamlit's generated classes */
+        .st-au,
+        .st-ax,
+        .st-av,
+        .st-aw,
+        .st-bb,
+        .st-bd,
+        .st-b8,
+        .st-b3,
+        .st-b4,
+        .st-be,
+        .st-bf,
+        .st-bg,
+        .st-bh,
+        .st-bi,
+        .st-bj,
+        .st-bk,
+        .st-bl,
+        .st-bm,
+        .st-bn,
+        .st-b1,
+        .st-bo,
+        .st-bp,
+        .st-e7,
+        .st-e8,
+        .st-e9,
+        .st-ea,
+        .st-eb,
+        .st-bv,
+        .st-bc,
+        .st-bw,
+        .st-bx,
+        .st-by,
+        .st-bz,
+        .st-c0,
+        .st-c1,
+        .st-c2,
+        .st-c3,
+        .st-c4,
+        .st-c6,
+        .st-b6,
+        .st-c7,
+        .st-c8,
+        .st-c9,
+        .st-ca,
+        .st-cb {
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+        
+        /* Restore hover effects for menu items */
+        [data-baseweb="menu"] [role="option"] {
+            transition: all 0.2s ease !important;
+            opacity: 0;
+            transform: translateY(-5px);
+            animation: itemFadeIn 0.2s forwards;
+            transform-origin: left center !important;
+        }
+        
+        [data-baseweb="menu"] [role="option"]:hover {
+            background-color: var(--hover-color, #f5f8ff) !important;
+            transform: translateY(0) translateX(8px) !important;
+            padding-left: 20px !important;
+        }
         /* Base dropdown styles */
         .stSelectbox {
             color: var(--text-color) !important;
@@ -63,11 +168,28 @@ def main():
             padding: 8px 12px;
         }
         
-        /* Dropdown menu */
+        /* Dropdown menu - remove all borders */
+        [data-baseweb="popover"],
+        [data-baseweb="popover"] *,
+        [data-baseweb="popover"]::before,
+        [data-baseweb="popover"]::after,
+        [data-baseweb="popover"] > div,
+        [data-baseweb="popover"] > div > *,
+        [data-baseweb="popover"] [role="listbox"],
+        [data-baseweb="popover"] [role="listbox"] * {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            --border-width: 0 !important;
+            border-width: 0 !important;
+            border-style: none !important;
+            border-image: none !important;
+        }
+        
+        /* Add back box-shadow to popover only */
         [data-baseweb="popover"] {
             border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            border: 1px solid var(--border-color, #e0e0e0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
         }
         
         /* Menu items */
@@ -91,6 +213,7 @@ def main():
             opacity: 0;
             transform: translateY(-5px);
             animation: itemFadeIn 0.2s forwards;
+            transform-origin: left center;
         }
         
         /* Stagger the animation for each menu item */
@@ -109,10 +232,59 @@ def main():
         
         [data-baseweb="menu"] [role="option"]:hover {
             background-color: var(--hover-color, #f5f8ff);
-            transform: translateX(4px);
+            transform: translateY(0) translateX(8px);
+            padding-left: 20px;
         }
     </style>
     """, unsafe_allow_html=True)
+    
+    # Add diagnostic script to inspect dropdown styles
+    st.markdown("""
+    <script>
+    // Run after the page loads
+    window.addEventListener('load', function() {
+        // Create a style element for our diagnostic border
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Highlight all potential border elements */
+            [data-baseweb="popover"],
+            [data-baseweb="popover"] * {
+                outline: 2px solid red !important;
+                outline-offset: -1px;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Log the computed styles of the dropdown
+        const logStyles = () => {
+            const dropdown = document.querySelector('[data-baseweb="popover"]');
+            if (dropdown) {
+                const styles = window.getComputedStyle(dropdown);
+                console.log('Dropdown styles:', {
+                    border: styles.border,
+                    outline: styles.outline,
+                    boxShadow: styles.boxShadow,
+                    borderImage: styles.borderImage,
+                    borderWidth: styles.borderWidth,
+                    borderStyle: styles.borderStyle,
+                    borderColor: styles.borderColor
+                });
+            }
+        };
+        
+        // Log styles when dropdown opens
+        document.body.addEventListener('click', function(e) {
+            if (e.target.closest('[data-baseweb="select"]')) {
+                setTimeout(logStyles, 300);
+            }
+        });
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Load additional custom CSS if needed
+    with open(Path(__file__).parent / "src" / "ui" / "custom.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     try:
         # Initialize session state for county layer if not already set
