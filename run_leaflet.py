@@ -26,30 +26,90 @@ def main():
     logger = setup_logging(level=logging.DEBUG)
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version with DEBUG logging")
     
-    # Load custom CSS
-    with open(Path(__file__).parent / "src" / "ui" / "custom.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    
-    # Add dropdown menu fixes
+    # Enhanced dropdown styling with borders and hover effects
     st.markdown("""
     <style>
-        .stSelectbox div[data-baseweb="select"] > div {
-            padding-top: 8px;
-            padding-bottom: 8px;
-            min-height: 40px;
+        /* Base dropdown styles */
+        .stSelectbox {
+            color: var(--text-color) !important;
+            margin-bottom: 1rem;
         }
-        .stSelectbox div[data-baseweb="select"] > div > div {
-            line-height: 1.5 !important;
-            padding-top: 4px;
-            padding-bottom: 4px;
+        
+        /* Dropdown container */
+        [data-baseweb="select"] {
+            min-height: 38px;
+            border: 1px solid var(--border-color, #ccc);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            background-color: var(--background-color, #fff);
         }
-        .stSelectbox [role="listbox"] [role="option"] {
-            padding: 8px 12px !important;
-            line-height: 1.5 !important;
+        
+        /* Hover state */
+        [data-baseweb="select"]:hover {
+            border-color: var(--primary-color, #4c9ffe);
+            box-shadow: 0 0 0 1px var(--primary-color, #4c9ffe);
         }
-        .stSelectbox [role="listbox"] {
-            max-height: 300px !important;
-            overflow-y: auto !important;
+        
+        /* Focus state */
+        [data-baseweb="select"]:focus-within {
+            border-color: var(--primary-color, #4c9ffe);
+            box-shadow: 0 0 0 2px rgba(76, 159, 254, 0.2);
+        }
+        
+        /* Dropdown text */
+        [data-baseweb="select"] > div > div {
+            color: var(--text-color) !important;
+            line-height: 1.5;
+            padding: 8px 12px;
+        }
+        
+        /* Dropdown menu */
+        [data-baseweb="popover"] {
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color, #e0e0e0);
+        }
+        
+        /* Menu items */
+        [data-baseweb="menu"] {
+            padding: 4px 0;
+            opacity: 0;
+            transform: translateY(-10px);
+            animation: menuFadeIn 0.2s forwards;
+        }
+        
+        @keyframes menuFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        [data-baseweb="menu"] [role="option"] {
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: translateY(-5px);
+            animation: itemFadeIn 0.2s forwards;
+        }
+        
+        /* Stagger the animation for each menu item */
+        [data-baseweb="menu"] [role="option"]:nth-child(1) { animation-delay: 0.05s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(2) { animation-delay: 0.1s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(3) { animation-delay: 0.15s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(4) { animation-delay: 0.2s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(5) { animation-delay: 0.25s; }
+        
+        @keyframes itemFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        [data-baseweb="menu"] [role="option"]:hover {
+            background-color: var(--hover-color, #f5f8ff);
+            transform: translateX(4px);
         }
     </style>
     """, unsafe_allow_html=True)
