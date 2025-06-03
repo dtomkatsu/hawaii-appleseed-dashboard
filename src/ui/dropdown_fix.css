@@ -11,6 +11,12 @@
     padding-bottom: 4px;
 }
 
+/* Hide blinking cursor in dropdown input */
+.stSelectbox input[role="combobox"] {
+    caret-color: transparent !important;
+    cursor: default !important;
+}
+
 /* Ensure dropdown items have proper spacing */
 .stSelectbox [role="listbox"] [role="option"] {
     padding: 8px 12px !important;

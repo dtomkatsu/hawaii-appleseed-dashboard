@@ -87,76 +87,53 @@ st.markdown("""
 # Add custom CSS for dropdowns
 st.markdown("""
 <style>
-    /* Base dropdown styling */
+    /* Base styling for select boxes */
+    .stSelectbox {
+        min-width: 200px;
+        margin: 0 4px;
+    }
+    
+    /* Dropdown trigger */
+    .stSelectbox > div > div {
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 4px !important;
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+    }
+    
+    /* Hide blinking cursor */
+    .stSelectbox input {
+        caret-color: transparent !important;
+        cursor: default !important;
+    }
+    
+    /* Dropdown menu */
     [data-baseweb="popover"] {
         border-radius: 8px !important;
         box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-        overflow: hidden !important;
-    }
-    
-    /* Dropdown menu container */
-    [data-baseweb="menu"] {
-        padding: 4px 0 !important;
-        min-width: 250px !important;
-        border: 1px solid #e0e0e0 !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
     }
     
     /* Dropdown options */
-    [data-baseweb="menu"] [role="option"] {
-        min-height: 40px !important;
-        padding: 8px 16px !important;
-        margin: 0 4px !important;
-        border-radius: 4px !important;
-        transition: background-color 0.15s !important;
-    }
-    
-    /* Hover and selected states */
-    [data-baseweb="menu"] [role="option"]:hover,
-    [data-baseweb="menu"] [role="option"][aria-selected="true"] {
-        background-color: #f5f5f5 !important;
-    }
-    
-    /* Text inside options */
-    [data-baseweb="menu"] [role="option"] > div {
-        white-space: normal !important;
-        word-break: break-word !important;
-        line-height: 1.4 !important;
+    [data-baseweb="menu"] {
         padding: 4px 0 !important;
+        min-width: 240px !important;
     }
     
-    /* Dropdown input/combobox */
-    [data-baseweb="select"] [role="combobox"],
-    [data-baseweb="select"] input {
-        min-height: 40px !important;
-        padding: 8px 12px !important;
-        border: 1px solid #e0e0e0 !important;
-        border-radius: 4px !important;
+    [data-baseweb="menu"] [role="option"] {
+        padding: 10px 16px !important;
+        white-space: nowrap !important;
     }
     
-    /* Focus state */
-    [data-baseweb="select"] [role="combobox"]:focus,
-    [data-baseweb="select"] input:focus {
-        border-color: #4a90e2 !important;
-        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2) !important;
+    /* Fix for dropdown text */
+    [data-baseweb="menu"] [role="option"] > div {
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
     }
     
-    /* Remove default browser focus outline */
-    [data-baseweb="select"] [role="combobox"]:focus-visible {
-        outline: none !important;
-    }
-    
-    /* Dropdown arrow */
-    [data-baseweb="select"] [aria-hidden="true"] {
-        color: #666 !important;
-    }
-    
-    /* Ensure proper spacing between icon and text */
-    [data-baseweb="select"] [role="option"] > div {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
+    /* Remove extra borders */
+    .stSelectbox > div > div > div {
+        border: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
