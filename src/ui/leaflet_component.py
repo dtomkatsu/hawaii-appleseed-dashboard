@@ -127,6 +127,43 @@ def create_leaflet_map(
                 mapDiv.style.backgroundColor = 'white';
             }}
             
+            // Add custom zoom controls
+            const zoomControl = L.control.zoom({{ position: 'topleft' }});
+            zoomControl.addTo(map);
+            
+            // Style the zoom controls
+            const zoomControlContainer = document.querySelector('.leaflet-control-zoom');
+            if (zoomControlContainer) {{
+                zoomControlContainer.style.border = 'none';
+                zoomControlContainer.style.background = 'rgba(255, 255, 255, 0.7)';
+                zoomControlContainer.style.borderRadius = '4px';
+                zoomControlContainer.style.overflow = 'hidden';
+                zoomControlContainer.style.boxShadow = '0 1px 5px rgba(0,0,0,0.2)';
+                
+                // Style the zoom buttons
+                const zoomIn = zoomControlContainer.querySelector('.leaflet-control-zoom-in');
+                const zoomOut = zoomControlContainer.querySelector('.leaflet-control-zoom-out');
+                
+                if (zoomIn && zoomOut) {{
+                    [zoomIn, zoomOut].forEach(btn => {{
+                        btn.style.background = 'rgba(255, 255, 255, 0.8)';
+                        btn.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
+                        btn.style.width = '30px';
+                        btn.style.height = '30px';
+                        btn.style.lineHeight = '30px';
+                        btn.style.fontSize = '20px';
+                        btn.style.color = '#333';
+                        btn.style.transition = 'all 0.2s';
+                        
+                        btn.onmouseover = () => {{ btn.style.background = 'rgba(255, 255, 255, 1)'; }};
+                        btn.onmouseout = () => {{ btn.style.background = 'rgba(255, 255, 255, 0.8)'; }};
+                    }});
+                    
+                    // Remove the border from the last button
+                    zoomOut.style.borderBottom = 'none';
+                }}
+            }}
+            
             // Define color schemes
             const colorSchemes = {{
                 blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
@@ -139,20 +176,32 @@ def create_leaflet_map(
             const currentColorScheme = '{color_scheme}';
             const colors = colorSchemes[currentColorScheme] || colorSchemes.blue;
             
-            // Function to get color based on value
+            // Function to get color based on value and variable type
             function getColor(value) {{
                 if (value === null || isNaN(value)) return '#ccc';
                 
-                // Adjust these thresholds based on your data
-                if (value > 20) return colors[8];
-                if (value > 17.5) return colors[7];
-                if (value > 15) return colors[6];
-                if (value > 12.5) return colors[5];
-                if (value > 10) return colors[4];
-                if (value > 7.5) return colors[3];
-                if (value > 5) return colors[2];
-                if (value > 2.5) return colors[1];
-                return colors[0];
+                // Normalize the value based on variable type
+                if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
+                    // For poverty rates (0-40% range)
+                    const maxPoverty = 40; // Cap at 40% for better color distribution
+                    let normalizedValue = Math.min(Math.max(value, 0), maxPoverty);
+                    // Apply a non-linear scale to emphasize differences in lower ranges
+                    const scaledValue = Math.pow(normalizedValue / maxPoverty, 0.5) * maxPoverty;
+                    const percent = scaledValue / maxPoverty;
+                    return colors[Math.min(Math.floor(percent * 8), 8)];
+                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
+                    // For income values (40k-120k) - adjusted for Hawaii's income range
+                    const minIncome = 40000;
+                    const maxIncome = 120000;
+                    const normalizedValue = Math.min(Math.max(value, minIncome), maxIncome);
+                    const percent = (normalizedValue - minIncome) / (maxIncome - minIncome);
+                    return colors[Math.min(Math.floor(percent * 8), 8)];
+                }} else {{
+                    // For counts (0-500k)
+                    const normalizedValue = Math.min(Math.max(value, 0), 500000);
+                    const percent = normalizedValue / 500000;
+                    return colors[Math.min(Math.floor(percent * 8), 8)];
+                }}
             }}
             
             // Style function for features
@@ -262,9 +311,11 @@ def create_leaflet_map(
                         const percent = normalizedValue / 100;
                         return colors[Math.min(Math.floor(percent * 8), 8)];
                     }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                        // For income values (0-200k)
-                        normalizedValue = Math.min(Math.max(value, 0), 200000);
-                        const percent = normalizedValue / 200000;
+                        // For income values (40k-120k) - adjusted for Hawaii's income range
+                        const minIncome = 40000;
+                        const maxIncome = 120000;
+                        normalizedValue = Math.min(Math.max(value, minIncome), maxIncome);
+                        const percent = (normalizedValue - minIncome) / (maxIncome - minIncome);
                         return colors[Math.min(Math.floor(percent * 8), 8)];
                     }} else {{
                         // For counts (0-500k)
@@ -294,9 +345,9 @@ def create_leaflet_map(
                             '</div>');
                     }}
                 }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                    // For income/value variables (in dollars)
+                    // For income/value variables (in dollars) - adjusted for Hawaii's income range
                     title = title + ' ($)';
-                    const incomeGrades = [0, 25000, 50000, 75000, 100000, 125000, 150000, 175000, 200000];
+                    const incomeGrades = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
                     for (let i = 0; i < incomeGrades.length - 1; i++) {{
                         const from = incomeGrades[i];
                         const to = incomeGrades[i + 1];
@@ -306,6 +357,9 @@ def create_leaflet_map(
                         
                         if (isLast) {{
                             range = '$' + (from/1000) + 'k+';
+                        }} else if (to - from === 10000) {{
+                            // For 10k ranges, show as single number (e.g., 50k)
+                            range = '$' + (from/1000) + 'k';
                         }} else {{
                             range = '$' + (from/1000) + 'k-$' + (to/1000) + 'k';
                         }}
