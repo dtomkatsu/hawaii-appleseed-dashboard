@@ -259,8 +259,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                         if key not in ['name', 'NAME', 'geoid', 'GEOID', 'district', 'DISTRICT']:
                             feature['properties'][key] = value
     
-    # Create map controls
-    st.subheader("Map Controls")
+    # Map controls (no title)
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -313,15 +312,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'rent_burden_rate': 'Rent Burden Rate'
     }
     
-    # Get the display name for the selected variable
-    variable_display_name = variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title())
-    
-    # Create the Leaflet map
-    st.subheader(f"{active_layer} Map")
+    # Create the map
     clicked_feature = create_leaflet_map(
         geojson_data=geojson_data,
         selected_variable=selected_variable,
-        variable_display_name=variable_display_name,
+        variable_display_name=variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title()),
         color_scheme=color_scheme,
         map_height=500,
         key=f"map-{active_layer}-{selected_variable}-{color_scheme}"

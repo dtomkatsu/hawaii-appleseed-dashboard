@@ -182,12 +182,14 @@ def create_leaflet_map(
                 
                 // Normalize the value based on variable type
                 if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
-                    // For poverty rates (0-40% range)
-                    const maxPoverty = 40; // Cap at 40% for better color distribution
-                    let normalizedValue = Math.min(Math.max(value, 0), maxPoverty);
-                    // Apply a non-linear scale to emphasize differences in lower ranges
-                    const scaledValue = Math.pow(normalizedValue / maxPoverty, 0.5) * maxPoverty;
-                    const percent = scaledValue / maxPoverty;
+                    // For poverty rates (5-25% range, typical for Hawaii)
+                    const minPoverty = 5;  // Start color gradient at 5%
+                    const maxPoverty = 25; // Cap at 25% for better color distribution
+                    // Scale value to 0-1 range based on min/max
+                    let normalizedValue = (Math.min(Math.max(value, minPoverty), maxPoverty) - minPoverty) / (maxPoverty - minPoverty);
+                    // Apply a slight curve to emphasize differences in the middle range
+                    normalizedValue = Math.pow(normalizedValue, 0.8);
+                    const percent = Math.min(Math.max(normalizedValue, 0), 1);
                     return colors[Math.min(Math.floor(percent * 8), 8)];
                 }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
                     // For income values (40k-120k) - adjusted for Hawaii's income range
@@ -209,7 +211,7 @@ def create_leaflet_map(
                 const value = feature.properties['{selected_variable}'];
                 return {{
                     fillColor: getColor(value),
-                    weight: 2,
+                    weight: 1,  
                     opacity: 1,
                     color: '#666',
                     dashArray: '',
@@ -330,14 +332,15 @@ def create_leaflet_map(
                 let title = '{selected_variable}'.replace(/_/g, ' ').replace(/\b\w/g, function(l) {{ return l.toUpperCase(); }});
                 
                 if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
-                    // For percentage variables
+                    // For poverty rates (5-25% range)
                     title = title + ' (%)';
-                    for (let i = 0; i < grades.length - 1; i++) {{
-                        const from = grades[i];
-                        const to = grades[i + 1];
-                        const isLast = i === grades.length - 2;
-                        const color = getColor(from + 0.1);
-                        const range = isLast ? from + '%+' : from + '%-' + to + '%';
+                    const povertyGrades = [5, 8, 11, 14, 17, 20, 23, 26, 29];
+                    for (let i = 0; i < povertyGrades.length - 1; i++) {{
+                        const from = povertyGrades[i];
+                        const to = povertyGrades[i + 1];
+                        const isLast = i === povertyGrades.length - 2;
+                        const color = getColor(from + 1);
+                        const range = isLast ? from + '%+' : from + '-' + to + '%';
                         
                         labels.push('<div class="legend-item">' +
                             '<i style="background:' + color + '"></i>' +
