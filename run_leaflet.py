@@ -319,6 +319,78 @@ def main():
             padding: 8px 12px;
         }
         
+        /* Dropdown menu container */
+        [data-baseweb="popover"] {
+            z-index: 1000 !important;
+            overflow: visible !important;
+            border-radius: 4px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+        
+        /* Inner popover container */
+        [data-baseweb="popover"] > div {
+            overflow: visible !important;
+            max-height: 400px !important;
+            border-radius: 4px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+        }
+        
+        /* List container */
+        [data-baseweb="popover"] ul[role="listbox"] {
+            padding: 4px 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            list-style: none !important;
+        }
+        
+        /* List item */
+        [data-baseweb="popover"] li[role="option"] {
+            position: relative !important;
+            padding: 8px 16px 8px 12px !important;
+            margin: 0 !important;
+            background: white !important;
+            border-left: 3px solid transparent !important;
+            transition: all 0.2s ease !important;
+            transform-origin: left center !important;
+            z-index: 1 !important;
+            cursor: pointer !important;
+            line-height: 1.5 !important;
+            min-height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            overflow: visible !important;
+        }
+        
+        /* Hover state */
+        [data-baseweb="popover"] li[role="option"]:hover {
+            background-color: #f5f8ff !important;
+            border-left-color: #1E88E5 !important;
+            transform: translateX(8px) !important;
+            z-index: 2 !important;
+            box-shadow: -4px 0 6px -2px rgba(30, 136, 229, 0.2) !important;
+            padding-left: 20px !important;
+        }
+        
+        /* Selected item */
+        [data-baseweb="popover"] li[aria-selected="true"] {
+            background-color: #e3f2fd !important;
+            font-weight: 500 !important;
+        }
+        
+        /* Focus state */
+        [data-baseweb="popover"] li[role="option"]:focus {
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.3) !important;
+        }
+        
+        /* Active state */
+        [data-baseweb="popover"] li[role="option"]:active {
+            background-color: #bbdefb !important;
+            transform: translateX(8px) scale(0.99) !important;
+        }
+        
         /* Dropdown menu - remove all borders */
         [data-baseweb="popover"],
         [data-baseweb="popover"] *,

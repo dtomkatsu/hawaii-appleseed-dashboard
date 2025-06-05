@@ -295,16 +295,37 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         }
         
         /* Style for dropdown options */
+        [data-baseweb="popover"] {
+            z-index: 1000 !important;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"] {
+            padding: 8px 0 !important;
+            overflow: visible !important;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"] > div {
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        
         [data-baseweb="popover"] [role="listbox"] [role="option"] {
-            padding: 8px 16px !important;
-            transition: all 0.2s ease;
-            border-left: 3px solid transparent;
+            padding: 8px 16px 8px 12px !important;
+            margin: 0 !important;
+            transition: all 0.2s ease !important;
+            border-left: 3px solid transparent !important;
+            position: relative !important;
+            left: 0 !important;
+            z-index: 1 !important;
         }
         
         [data-baseweb="popover"] [role="listbox"] [role="option"]:hover {
             background-color: #f5f5f5 !important;
-            border-left: 3px solid #1E88E5;
-            transform: translateX(4px);
+            border-left: 3px solid #1E88E5 !important;
+            transform: translateX(8px) !important;
+            z-index: 2 !important;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1) !important;
         }
         
         /* Style for selected option */
