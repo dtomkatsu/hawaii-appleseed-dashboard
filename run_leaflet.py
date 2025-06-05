@@ -322,14 +322,14 @@ def main():
         /* Dropdown menu container */
         [data-baseweb="popover"] {
             z-index: 1000 !important;
-            overflow: visible !important;
             border-radius: 4px !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            padding: 4px 0 !important;
+            margin: 0 !important;
         }
         
         /* Inner popover container */
         [data-baseweb="popover"] > div {
-            overflow: visible !important;
             max-height: 400px !important;
             border-radius: 4px !important;
             padding: 0 !important;
@@ -337,55 +337,29 @@ def main():
             border: none !important;
         }
         
-        /* Completely reset all dropdown menu styles */
-        [data-baseweb="popover"].st-emotion-cache-popper {
+        /* List container */
+        [data-baseweb="popover"] ul[role="listbox"] {
             padding: 0 !important;
             margin: 0 !important;
-        }
-        
-        /* Target the dropdown menu container */
-        [data-baseweb="popover"] > div {
-            padding: 4px 0 !important;
-            margin: 0 !important;
-            min-width: 200px !important;
-        }
-        
-        /* Target the list container */
-        [data-baseweb="popover"] ul[role="listbox"],
-        [data-baseweb="popover"] ul[role="listbox"] > div,
-        [data-baseweb="popover"] ul[role="listbox"] > div > div {
-            padding: 0 !important;
-            margin: 0 !important;
-            gap: 0 !important;
-            display: block !important;
             list-style: none !important;
         }
         
-        /* Target all list items */
+        /* List items */
         [data-baseweb="popover"] li[role="option"] {
             all: unset !important;
             display: block !important;
-            position: relative !important;
             padding: 8px 16px !important;
             margin: 0 !important;
             background: white !important;
             border-left: 3px solid transparent !important;
             transition: all 0.2s ease !important;
-            transform-origin: left center !important;
-            z-index: 1 !important;
             cursor: pointer !important;
             line-height: 1.5 !important;
             min-height: 36px !important;
-            height: 36px !important;
             box-sizing: border-box !important;
             white-space: nowrap !important;
             text-overflow: ellipsis !important;
             overflow: hidden !important;
-        }
-        
-        /* Remove any gaps between items */
-        [data-baseweb="popover"] li[role="option"] + li[role="option"] {
-            margin-top: 0 !important;
         }
         
         /* Hover state */
@@ -393,9 +367,13 @@ def main():
             background-color: #f5f8ff !important;
             border-left-color: #1E88E5 !important;
             transform: translateX(8px) !important;
-            z-index: 2 !important;
             box-shadow: -4px 0 6px -2px rgba(30, 136, 229, 0.2) !important;
             padding-left: 20px !important;
+        }
+        
+        /* Remove gaps between items */
+        [data-baseweb="popover"] li[role="option"] + li[role="option"] {
+            margin-top: 0 !important;
         }
         
         /* Selected item */
