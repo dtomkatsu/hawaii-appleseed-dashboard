@@ -146,11 +146,50 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def handle_message(message):
+    """Handle messages from the iframe."""
+    try:
+        if message.type == 'message':
+            data = message.get('data', {})
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError:
+                    return
+            
+            if data.get('type') == 'color_scheme_change':
+                new_color_scheme = data.get('color_scheme')
+                if new_color_scheme and new_color_scheme in ['blue', 'green', 'red', 'purple']:
+                    st.session_state['color_scheme'] = new_color_scheme
+                    st.rerun()
+    except Exception as e:
+        logger.error(f"Error handling message: {e}")
+
 def main():
     """Main application function for the Leaflet version."""
     # Set up logging with debug level
     logger = setup_logging(level=logging.DEBUG)
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version with DEBUG logging")
+    
+    # Add a message event listener for iframe communication
+    st.components.v1.html("""
+        <script>
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'color_scheme_change') {
+                    window.parent.postMessage({
+                        type: 'streamlit:setComponentValue',
+                        data: event.data
+                    }, '*');
+                }
+            }, false);
+        </script>
+    """, height=0)
+    
+    # Handle messages from the iframe
+    if 'color_scheme_change' in st.session_state:
+        new_color_scheme = st.session_state.pop('color_scheme_change')
+        if new_color_scheme in ['blue', 'green', 'red', 'purple']:
+            st.session_state['color_scheme'] = new_color_scheme
     
     # Enhanced dropdown styling with borders and hover effects
     st.markdown("""

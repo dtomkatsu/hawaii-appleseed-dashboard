@@ -57,6 +57,17 @@ def create_leaflet_map(
     # Create a unique ID for this map instance
     map_id = f"leaflet-map-{key}" if key else "leaflet-map"
     
+    # Color scheme options for the dropdown
+    color_schemes = {
+        'blue': 'Blue Scale',
+        'green': 'Green Scale',
+        'red': 'Red Scale',
+        'purple': 'Purple Scale'
+    }
+    
+    # Get the current color scheme from session state
+    current_color_scheme = st.session_state.get('color_scheme', 'blue')
+    
     # HTML and JavaScript for the Leaflet map
     component_html = f"""
     <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative;">
@@ -69,34 +80,73 @@ def create_leaflet_map(
                 bottom: 20px;
                 right: 10px;
                 z-index: 1000;
-                background: rgba(255, 255, 255, 0.8);
-                padding: 10px;
+                background: rgba(255, 255, 255, 0.95);
+                padding: 8px 10px 10px 10px;
                 border-radius: 4px;
                 box-shadow: 0 1px 5px rgba(0,0,0,0.2);
                 font-family: Arial, sans-serif;
-                font-size: 12px;
-                line-height: 1.4;
+                font-size: 11px;
+                line-height: 1.3;
                 color: #333;
-                backdrop-filter: blur(2px);
                 border: 1px solid rgba(0,0,0,0.1);
+                min-width: 140px;
+                max-width: 200px;
             }}
             .legend-title {{
                 font-weight: bold;
-                margin-bottom: 5px;
+                margin-bottom: 6px;
                 text-align: center;
-                font-size: 13px;
+                font-size: 12px;
             }}
             .legend-item {{
                 display: flex;
                 align-items: center;
-                margin: 2px 0;
+                margin: 3px 0;
             }}
             .legend-item i {{
                 display: inline-block;
-                width: 20px;
-                height: 12px;
-                margin-right: 5px;
-                opacity: 0.8;
+                width: 18px;
+                height: 10px;
+                margin-right: 6px;
+                opacity: 0.9;
+                border: 1px solid rgba(0,0,0,0.2);
+                border-radius: 2px;
+            }}
+            .color-scheme-selector {{
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(0,0,0,0.1);
+            }}
+            .color-scheme-selector select {{
+                width: 100%;
+                font-size: 11px;
+                padding: 4px 6px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                background-color: white;
+                margin-top: 2px;
+                height: 24px;
+                cursor: pointer;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+                background-repeat: no-repeat;
+                background-position: right 5px top 50%;
+                background-size: 10px auto;
+                padding-right: 20px;
+            }}
+            .color-scheme-selector select:focus {{
+                outline: none;
+                border-color: #4c9ffe;
+                box-shadow: 0 0 0 2px rgba(76, 159, 254, 0.2);
+            }}
+            .color-scheme-selector label {{
+                font-size: 11px;
+                font-weight: bold;
+                color: #555;
+                display: block;
+                margin-bottom: 2px;
             }}
         </style>
         
@@ -104,6 +154,15 @@ def create_leaflet_map(
         <div id="{map_id}-legend" class="map-legend">
             <div class="legend-title">Poverty Rate (%)</div>
             <div class="legend-items" id="{map_id}-legend-items"></div>
+            <div class="color-scheme-selector">
+                <label for="color-scheme-select">Color Scheme:</label>
+                <select id="color-scheme-select">
+                    <option value="blue" {'selected' if color_scheme == 'blue' else ''}>Blue Scale</option>
+                    <option value="green" {'selected' if color_scheme == 'green' else ''}>Green Scale</option>
+                    <option value="red" {'selected' if color_scheme == 'red' else ''}>Red Scale</option>
+                    <option value="purple" {'selected' if color_scheme == 'purple' else ''}>Purple Scale</option>
+                </select>
+            </div>
         </div>
         
         <script>
@@ -164,53 +223,81 @@ def create_leaflet_map(
                 }}
             }}
             
-            // Define color schemes
-            const colorSchemes = {{
-                blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
-                green: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
-                red: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
-                purple: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
-            }};
-            
-            // Get current color scheme
-            const currentColorScheme = '{color_scheme}';
-            const colors = colorSchemes[currentColorScheme] || colorSchemes.blue;
-            
-            // Function to get color based on value and variable type
-            function getColor(value) {{
-                if (value === null || isNaN(value)) return '#ccc';
+            // Function to determine color based on value and color scheme
+            function getColorForValue(value, scheme = '{color_scheme}') {{
+                // Ensure value is a number
+                value = parseFloat(value) || 0;
                 
-                // Normalize the value based on variable type
-                if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
-                    // For poverty rates (5-25% range, typical for Hawaii)
-                    const minPoverty = 5;  // Start color gradient at 5%
-                    const maxPoverty = 25; // Cap at 25% for better color distribution
-                    // Scale value to 0-1 range based on min/max
-                    let normalizedValue = (Math.min(Math.max(value, minPoverty), maxPoverty) - minPoverty) / (maxPoverty - minPoverty);
-                    // Apply a slight curve to emphasize differences in the middle range
-                    normalizedValue = Math.pow(normalizedValue, 0.8);
-                    const percent = Math.min(Math.max(normalizedValue, 0), 1);
-                    return colors[Math.min(Math.floor(percent * 8), 8)];
-                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                    // For income values (40k-120k) - adjusted for Hawaii's income range
-                    const minIncome = 40000;
-                    const maxIncome = 120000;
-                    const normalizedValue = Math.min(Math.max(value, minIncome), maxIncome);
-                    const percent = (normalizedValue - minIncome) / (maxIncome - minIncome);
-                    return colors[Math.min(Math.floor(percent * 8), 8)];
-                }} else {{
-                    // For counts (0-500k)
-                    const normalizedValue = Math.min(Math.max(value, 0), 500000);
-                    const percent = normalizedValue / 500000;
-                    return colors[Math.min(Math.floor(percent * 8), 8)];
-                }}
+                // Define color schemes with more distinct steps
+                const schemes = {{
+                    blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+                    green: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
+                    red: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
+                    purple: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
+                }};
+                
+                // Get the appropriate color scheme or default to blue
+                const colors = schemes[scheme] || schemes.blue;
+                
+                // Determine color based on value (adjust these thresholds as needed)
+                if (value >= 80) return colors[8];
+                if (value >= 70) return colors[7];
+                if (value >= 60) return colors[6];
+                if (value >= 50) return colors[5];
+                if (value >= 40) return colors[4];
+                if (value >= 30) return colors[3];
+                if (value >= 20) return colors[2];
+                if (value >= 10) return colors[1];
+                return colors[0];
             }}
+            
+            // Store the current color scheme in the window object for the map
+            window['{map_id}_color_scheme'] = '{current_color_scheme}';
+            
+            // Set up color scheme change handler
+            const colorSchemeSelect = document.getElementById('color-scheme-select');
+            if (colorSchemeSelect) {{
+                colorSchemeSelect.addEventListener('change', function(event) {{
+                    const newColorScheme = event.target.value;
+                    // Send message to Streamlit with the new color scheme
+                    window.parent.postMessage({{
+                        type: 'color_scheme_change',
+                        color_scheme: newColorScheme,
+                        map_id: '{map_id}'
+                    }}, '*');
+                    
+                    // Update the map with the new color scheme
+                    updateMapColors(map, newColorScheme);
+                }});
+            }}
+            
+            // Function to update map colors when color scheme changes
+            function updateMapColors(map, colorScheme) {{
+                if (!map) return;
+                
+                // Get all layers and update their styles
+                map.eachLayer(function(layer) {{
+                    if (layer.feature) {{
+                        const value = layer.feature.properties['{selected_variable}'];
+                        if (value !== undefined) {{
+                            const color = getColorForValue(value, colorScheme);
+                            layer.setStyle({{ fillColor: color }});
+                        }}
+                    }}
+                }});
+                
+                // Update the legend to reflect the new color scheme
+                updateLegend();
+            }}
+            
+            // Store the map instance in the window object for debugging
+            window['{map_id}'] = map;
             
             // Style function for features
             function style(feature) {{
                 const value = feature.properties['{selected_variable}'];
                 return {{
-                    fillColor: getColor(value),
+                    fillColor: getColorForValue(value),
                     weight: 1,  
                     opacity: 1,
                     color: '#666',
@@ -294,7 +381,23 @@ def create_leaflet_map(
             // Create legend
             function updateLegend() {{
                 const legendItems = document.getElementById('{map_id}-legend-items');
+                if (!legendItems) return;
+                
                 legendItems.innerHTML = '';
+                
+                // Get the current color scheme
+                const colorSchemeSelect = document.getElementById('color-scheme-select');
+                const currentScheme = colorSchemeSelect ? colorSchemeSelect.value : '{color_scheme}';
+                
+                // Define color schemes with more distinct steps
+                const schemes = {{
+                    blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+                    green: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
+                    red: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
+                    purple: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
+                }};
+                
+                const colors = schemes[currentScheme] || schemes.blue;
                 
                 // Create legend items based on the variable
                 const grades = [0, 5, 10, 15, 20, 25, 30, 35, 40];
@@ -404,6 +507,14 @@ def create_leaflet_map(
                 }}
                 
                 legendItems.innerHTML = labels.join('');
+                
+                // Update the colors in the legend items
+                const legendItemElements = legendItems.querySelectorAll('.legend-item i');
+                legendItemElements.forEach((item, i) => {{
+                    if (i < colors.length) {{
+                        item.style.backgroundColor = colors[i];
+                    }}
+                }});
             }}
             
             updateLegend();

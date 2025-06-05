@@ -260,7 +260,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                             feature['properties'][key] = value
     
     # Map controls (no title)
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         selected_layer = st.selectbox(
@@ -294,17 +294,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         )
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
-            st.rerun()
-    
-    with col3:
-        selected_color = st.selectbox(
-            "Color Scheme",
-            ['blue', 'green', 'red', 'purple'],
-            index=['blue', 'green', 'red', 'purple'].index(color_scheme),
-            key="color_selector"
-        )
-        if selected_color != color_scheme:
-            st.session_state['color_scheme'] = selected_color
             st.rerun()
     
     # Create a mapping of variable names to display names
