@@ -260,11 +260,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                             feature['properties'][key] = value
     
     # Map controls (no title)
-    col1, col2 = st.columns([1, 1])
+    col1, col2, col3, col4 = st.columns([0.5, 1.5, 0.5, 1.5])
     
     with col1:
         selected_layer = st.selectbox(
-            "Geographic Layer",
+            "Geography",
             ['State Boundary', 'Counties', 'House Districts', 'Senate Districts'],
             index=['State Boundary', 'Counties', 'House Districts', 'Senate Districts'].index(active_layer),
             key="layer_selector"
@@ -273,7 +273,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.session_state['active_layer'] = selected_layer
             st.rerun()
     
-    with col2:
+    with col4:
         # Define variable options with display names
         variable_options = {
             'poverty_rate': 'Poverty Rate',
