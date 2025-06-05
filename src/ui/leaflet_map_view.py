@@ -259,39 +259,122 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                         if key not in ['name', 'NAME', 'geoid', 'GEOID', 'district', 'DISTRICT']:
                             feature['properties'][key] = value
     
-    # Map controls (no title)
-    col1, col2, col3, col4 = st.columns([0.5, 1.5, 0.5, 1.5])
+    # Map controls with cascading dropdowns
+    st.markdown("""
+    <style>
+        /* Style for dropdown container */
+        .dropdown-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* Style for dropdown wrapper */
+        .dropdown-wrapper {
+            position: relative;
+            min-width: 200px;
+        }
+        
+        /* Style for dropdown labels */
+        .dropdown-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1E88E5;
+        }
+        
+        /* Style for dropdown hover effect */
+        .stSelectbox > div > div[data-baseweb="select"] {
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stSelectbox > div > div[data-baseweb="select"]:hover {
+            border-color: #1E88E5;
+            box-shadow: 0 0 0 1px #1E88E5;
+        }
+        
+        /* Style for dropdown options */
+        [data-baseweb="popover"] [role="listbox"] [role="option"] {
+            padding: 8px 16px !important;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"] [role="option"]:hover {
+            background-color: #f5f5f5 !important;
+            border-left: 3px solid #1E88E5;
+            transform: translateX(4px);
+        }
+        
+        /* Style for selected option */
+        [data-baseweb="popover"] [role="listbox"] [aria-selected="true"] {
+            background-color: #E3F2FD !important;
+            font-weight: 500;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create a container for the dropdowns
+    col1, col2 = st.columns([1, 3])
     
     with col1:
+        # First dropdown: Geography
+        st.markdown('<div class="dropdown-label">Geography</div>', unsafe_allow_html=True)
         selected_layer = st.selectbox(
-            "Geography",
+            "",
             ['State Boundary', 'Counties', 'House Districts', 'Senate Districts'],
             index=['State Boundary', 'Counties', 'House Districts', 'Senate Districts'].index(active_layer),
-            key="layer_selector"
+            key="layer_selector",
+            label_visibility="collapsed"
         )
+        
+        # Update session state if selection changes
         if selected_layer != active_layer:
             st.session_state['active_layer'] = selected_layer
             st.rerun()
     
-    with col4:
-        # Define variable options with display names
-        variable_options = {
-            'poverty_rate': 'Poverty Rate',
-            'median_income': 'Median Income',
-            'unemployment_rate': 'Unemployment Rate',
-            'population': 'Population',
-            'median_home_value': 'Median Home Value',
-            'college_educated_pct': 'College Educated',
-            'rent_burden_rate': 'Housing Cost Burden'
-        }
+    with col2:
+        # Second dropdown: Data Variable (depends on Geography)
+        st.markdown('<div class="dropdown-label">Data Variable</div>', unsafe_allow_html=True)
+        
+        # Define available variables based on geography
+        if active_layer == 'State Boundary':
+            variable_options = {
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'unemployment_rate': 'Unemployment Rate',
+                'population': 'Population'
+            }
+        elif active_layer == 'Counties':
+            variable_options = {
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'unemployment_rate': 'Unemployment Rate',
+                'population': 'Population',
+                'median_home_value': 'Median Home Value'
+            }
+        else:  # House and Senate Districts
+            variable_options = {
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'college_educated_pct': 'College Educated',
+                'rent_burden_rate': 'Housing Cost Burden'
+            }
+        
+        # Get the current index, defaulting to 0 if not found
+        current_index = list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0
         
         selected_var = st.selectbox(
-            "Data Variable",
+            "",
             options=list(variable_options.keys()),
             format_func=lambda x: variable_options[x],
-            index=list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0,
-            key="variable_selector"
+            index=current_index,
+            key="variable_selector",
+            label_visibility="collapsed"
         )
+        
+        # Update session state if selection changes
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
             st.rerun()
