@@ -337,18 +337,36 @@ def main():
             border: none !important;
         }
         
-        /* List container */
-        [data-baseweb="popover"] ul[role="listbox"] {
+        /* Completely reset all dropdown menu styles */
+        [data-baseweb="popover"].st-emotion-cache-popper {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Target the dropdown menu container */
+        [data-baseweb="popover"] > div {
             padding: 4px 0 !important;
             margin: 0 !important;
-            overflow: visible !important;
+            min-width: 200px !important;
+        }
+        
+        /* Target the list container */
+        [data-baseweb="popover"] ul[role="listbox"],
+        [data-baseweb="popover"] ul[role="listbox"] > div,
+        [data-baseweb="popover"] ul[role="listbox"] > div > div {
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+            display: block !important;
             list-style: none !important;
         }
         
-        /* List item */
+        /* Target all list items */
         [data-baseweb="popover"] li[role="option"] {
+            all: unset !important;
+            display: block !important;
             position: relative !important;
-            padding: 8px 16px 8px 12px !important;
+            padding: 8px 16px !important;
             margin: 0 !important;
             background: white !important;
             border-left: 3px solid transparent !important;
@@ -357,10 +375,17 @@ def main():
             z-index: 1 !important;
             cursor: pointer !important;
             line-height: 1.5 !important;
-            min-height: 40px !important;
-            display: flex !important;
-            align-items: center !important;
-            overflow: visible !important;
+            min-height: 36px !important;
+            height: 36px !important;
+            box-sizing: border-box !important;
+            white-space: nowrap !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
+        }
+        
+        /* Remove any gaps between items */
+        [data-baseweb="popover"] li[role="option"] + li[role="option"] {
+            margin-top: 0 !important;
         }
         
         /* Hover state */
