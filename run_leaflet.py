@@ -47,6 +47,31 @@ st.markdown("""
             z-index: -1000 !important;
         }
         
+        /* Make Data Variable dropdown adjust to content width */
+        .stSelectbox > div[data-baseweb="select"] > div {
+            width: auto !important;
+            min-width: 200px;  /* Minimum width to prevent it from being too narrow */
+        }
+        
+        /* Ensure the dropdown options can be as wide as needed */
+        .stSelectbox > div[data-baseweb="select"] > div > div {
+            width: auto !important;
+            max-width: 100vw;  /* Don't exceed viewport width */
+        }
+        
+        /* Make the dropdown options container adjust to content */
+        .stSelectbox > div[data-baseweb="select"] > div > div > div {
+            width: auto !important;
+            min-width: 100%;
+        }
+        
+        /* Ensure the selected value is fully visible */
+        .stSelectbox > div[data-baseweb="select"] > div > div > div > div {
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: unset;
+        }
+        
         /* Adjust main content layout */
         .stApp > div:first-child {
             padding-top: 1rem;
@@ -386,17 +411,18 @@ def main():
         st.title("Hawaii Geographic Data Explorer (Leaflet)")
         st.markdown("---")
         
-        # Create two columns for the main content
-        col1, col2 = st.columns([2, 1])
+        # Create tabs for different views
+        tab1, tab2 = st.tabs(["Map View", "Data Analysis"])
         
-        # Left column - Leaflet Map View
-        with col1:
+        # Map View Tab
+        with tab1:
             create_leaflet_map_view(
                 debug_info=sidebar_config.get('debug_info', False)
             )
         
-        # Right column - Data Summary
-        with col2:
+        # Data Analysis Tab
+        with tab2:
+            st.header("Data Analysis")
             create_data_summary()
         
     except Exception as e:

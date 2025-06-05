@@ -473,7 +473,7 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
 # This function is a duplicate and has been removed
 
 def create_data_summary():
-    """Create a summary of the data."""
+    """Create a summary of the data with a bar chart comparison."""
     st.subheader("Data Summary")
     
     # Get the active layer and selected variable
@@ -505,26 +505,65 @@ def create_data_summary():
         elif 'district' in data.columns:
             data['name'] = 'District ' + data['district'].astype(str)
     
-    if data is not None:
-        # Create summary statistics
-        st.markdown("#### Summary Statistics")
+    if data is not None and not data.empty:
+        # Create columns for summary statistics
+        col1, col2, col3 = st.columns(3)
         
-        # Calculate summary statistics
-        if 'poverty_rate' in data.columns:
-            avg_poverty = data['poverty_rate'].mean()
-            st.metric("Average Poverty Rate", f"{avg_poverty:.1f}%")
+        with col1:
+            if 'poverty_rate' in data.columns:
+                avg_poverty = data['poverty_rate'].mean()
+                st.metric("Average Poverty Rate", f"{avg_poverty:.1f}%")
         
-        if 'median_income' in data.columns:
-            avg_income = data['median_income'].mean()
-            st.metric("Average Median Income", f"${avg_income:,.0f}")
+        with col2:
+            if 'median_income' in data.columns:
+                avg_income = data['median_income'].mean()
+                st.metric("Average Median Income", f"${avg_income:,.0f}")
         
-        if 'population' in data.columns:
-            total_pop = data['population'].sum()
-            st.metric("Total Population", f"{total_pop:,}")
+        with col3:
+            if 'population' in data.columns:
+                total_pop = data['population'].sum()
+                st.metric("Total Population", f"{total_pop:,}")
         
-        # Display the data table
-        st.markdown("#### Data Table")
-        st.dataframe(data)
+        # Add some space
+        st.markdown("---")
+        
+        # Create two columns for chart and table
+        chart_col, table_col = st.columns([2, 1])
+        
+        with chart_col:
+            st.markdown(f"#### {selected_variable.replace('_', ' ').title()} Comparison")
+            
+            # Check if the selected variable exists in the data
+            if selected_variable in data.columns:
+                # Sort data by the selected variable for better visualization
+                sorted_data = data.sort_values(by=selected_variable, ascending=False)
+                
+                # Create a bar chart
+                st.bar_chart(
+                    data=sorted_data,
+                    x='name',
+                    y=selected_variable,
+                    use_container_width=True,
+                    height=400
+                )
+                
+                # Add some context about the chart
+                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}")
+            else:
+                st.warning(f"Selected variable '{selected_variable}' not found in the data.")
+        
+        with table_col:
+            st.markdown("#### Data Table")
+            # Display a scrollable table
+            st.dataframe(
+                data[[col for col in ['name', selected_variable] if col in data.columns]],
+                height=400,
+                use_container_width=True
+            )
+        
+        # Add a full-width data table below
+        st.markdown("#### Full Data Table")
+        st.dataframe(data, use_container_width=True)
         
         # Add download button
         csv = data.to_csv(index=False)
