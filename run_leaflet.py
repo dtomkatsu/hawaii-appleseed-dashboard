@@ -175,12 +175,67 @@ def main():
     st.markdown("""
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
         <style>
-            .appview-container .main .block-container {
-                padding-top: 0.5rem;
-                padding-bottom: 1rem;
+            /* Reset all vertical spacing */
+            html, body, #root, #root > div, #root > div > div,
+            .stApp, .appview-container, .main, .block-container,
+            [data-testid="stAppViewContainer"],
+            [data-testid="stSidebar"],
+            [data-testid="stSidebarContent"],
+            [data-testid="stVerticalBlock"],
+            [data-testid="stVerticalBlockBorderWrapper"] {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                min-height: 0 !important;
             }
-            .stApp {
-                margin-top: -60px;
+
+            /* Target specific Streamlit containers */
+            .stApp > div:first-child,
+            .appview-container > div:first-child,
+            [data-testid="stAppViewContainer"] > div:first-child,
+            .main > div:first-child {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            /* Remove any remaining spacing from vertical wrappers */
+            [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+            [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                gap: 0 !important;
+            }
+
+            /* Add controlled spacing between elements */
+            [data-testid="stVerticalBlock"] {
+                gap: 0.25rem !important;
+                row-gap: 0.25rem !important;
+            }
+            
+            /* Add space below the title */
+            h1 {
+                margin-bottom: 0.5rem !important;
+                padding-bottom: 0 !important;
+            }
+            
+            /* Add space above tabs */
+            [role="tablist"] {
+                margin-top: 0.5rem !important;
+            }
+            
+            /* Ensure dropdown labels have proper spacing */
+            .dropdown-label {
+                margin-bottom: 0.25rem !important;
+                display: block;
+            }
+
+            /* Hide the sidebar collapse control and its spacer */
+            [data-testid="stSidebarCollapsedControl"],
+            [data-testid="stLogoSpacer"] {
+                display: none !important;
+                height: 0 !important;
+                width: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
             header[data-testid="stHeader"] {
                 display: none;
@@ -700,7 +755,7 @@ def main():
         }
         
         # Main content area
-        st.markdown("<h1 style='color: #3a7710; margin-bottom: 0;'>Data Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='color: #3a7710; margin: 0; padding: 0; line-height: 1;'>Data Dashboard</h1>", unsafe_allow_html=True)
         
         # Apply JavaScript to ensure form labels are green
         st.markdown("""
@@ -740,8 +795,8 @@ def main():
         
         # Clean and simple dashboard without complex URL handling
         
-        # Add some space before tabs (reduced from default)
-        st.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
+        # Add minimal space before tabs
+        st.markdown("<div style='margin-top: 0.1rem;'></div>", unsafe_allow_html=True)
         
         # Create tabs for different views
         tab1, tab2 = st.tabs(["🗺️ Map View", "📊 Data Analysis"])
