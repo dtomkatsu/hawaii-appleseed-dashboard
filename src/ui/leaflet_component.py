@@ -170,6 +170,32 @@ def create_leaflet_map(
             .enhanced-popup .leaflet-popup-tip {{
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }}
+            
+            .custom-tooltip {{
+                background-color: rgba(255, 255, 255, 0.95);
+                border: 1px solid #1E88E5;
+                border-radius: 4px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+                padding: 6px 10px;
+                font-family: Arial, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+                white-space: nowrap;
+                pointer-events: none;
+            }}
+            .custom-tooltip .leaflet-tooltip-content strong {{
+                color: #1E88E5;
+                display: block;
+                margin-bottom: 2px;
+                font-size: 13px;
+            }}
+            .custom-tooltip .tooltip-data {{
+                color: #333;
+                font-weight: 500;
+            }}
+            .leaflet-tooltip-top:before {{
+                border-top-color: #1E88E5;
+            }}
         </style>
         
         <div id="{map_id}" style="height:100%; width:100%;"></div>
@@ -477,6 +503,20 @@ def create_leaflet_map(
                     maxWidth: 280,
                     minWidth: 200,
                     className: 'custom-popup enhanced-popup'
+                }});
+                
+                // Add tooltip to show data on hover
+                const tooltipContent = `<div class="leaflet-tooltip-content">
+                    <strong>${{name}}</strong><br>
+                    <span class="tooltip-data">${{displayName}}: ${{formattedValue}}</span>
+                </div>`;
+                
+                layer.bindTooltip(tooltipContent, {{
+                    permanent: false,
+                    direction: 'top',
+                    className: 'custom-tooltip',
+                    opacity: 0.9,
+                    offset: [0, -10]
                 }});
             }}
             
