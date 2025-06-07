@@ -357,10 +357,16 @@ def main():
         /* Dropdown container */
         .stSelectbox > div[data-baseweb="select"] > div {
             background-color: #f0f7e9;  /* Very light green background */
-            border: 1px solid #d1d5db;
+            border: none !important;  /* Remove borders */
             border-radius: 4px;
             padding: 0.25rem 0.5rem;
             transition: all 0.2s ease;
+        }
+        
+        /* Style the dropdown arrow */
+        .stSelectbox svg {
+            color: #2a5a0c !important;  /* Dark green arrow */
+            opacity: 0.8;
         }
         
         /* Hover and focus states for dropdowns */
@@ -368,14 +374,14 @@ def main():
         .stSelectbox > div[data-baseweb="select"].st-bb > div,
         .stSelectbox > div[data-baseweb="select"]:focus-within > div {
             background-color: #e8f3df;
-            border-color: #c0d9b0;
-            box-shadow: 0 0 0 2px rgba(42, 90, 12, 0.2);
+            border: none !important;  /* Remove borders even on hover */
+            box-shadow: none !important;  /* Remove box shadow */
         }
         
         /* Style the dropdown menu */
         .stSelectbox > div > div > div {
             background-color: #f0f7e9;  /* Light green background */
-            border: 1px solid #d1d5db;
+            border: none !important;  /* Remove borders */
             border-radius: 4px;
             padding: 0.5rem 0.75rem;
         }
