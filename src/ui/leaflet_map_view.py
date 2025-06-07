@@ -347,7 +347,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col1:
         # First dropdown: Geography
-        st.markdown('<div class="dropdown-label">Geography</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
         selected_layer = st.selectbox(
             "",
             ['State Boundary', 'Counties', 'House Districts', 'Senate Districts'],
@@ -363,7 +363,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Second dropdown: Data Variable (depends on Geography)
-        st.markdown('<div class="dropdown-label">Data Variable</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
