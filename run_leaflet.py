@@ -355,31 +355,48 @@ def main():
         }
         
         /* Dropdown container */
-        [data-baseweb="select"] {
-            min-height: 38px;
-            border: 1px solid var(--border-color, #ccc);
+        .stSelectbox > div[data-baseweb="select"] > div {
+            background-color: #f0f7e9;  /* Very light green background */
+            border: 1px solid #d1d5db;
             border-radius: 4px;
+            padding: 0.25rem 0.5rem;
             transition: all 0.2s ease;
-            background-color: var(--background-color, #fff);
         }
         
-        /* Hover state */
-        [data-baseweb="select"]:hover {
-            border-color: var(--primary-color, #4c9ffe);
-            box-shadow: 0 0 0 1px var(--primary-color, #4c9ffe);
+        /* Hover and focus states for dropdowns */
+        .stSelectbox > div[data-baseweb="select"]:hover > div,
+        .stSelectbox > div[data-baseweb="select"].st-bb > div,
+        .stSelectbox > div[data-baseweb="select"]:focus-within > div {
+            background-color: #e8f3df;
+            border-color: #c0d9b0;
+            box-shadow: 0 0 0 2px rgba(42, 90, 12, 0.2);
         }
         
-        /* Focus state */
-        [data-baseweb="select"]:focus-within {
-            border-color: var(--primary-color, #4c9ffe);
-            box-shadow: 0 0 0 2px rgba(76, 159, 254, 0.2);
+        /* Style the dropdown menu */
+        .stSelectbox > div > div > div {
+            background-color: #f0f7e9;  /* Light green background */
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
         }
         
-        /* Dropdown text */
-        [data-baseweb="select"] > div > div {
-            color: var(--text-color) !important;
-            line-height: 1.5;
-            padding: 8px 12px;
+        /* Dropdown menu items */
+        [role="option"] {
+            background-color: #f0f7e9 !important;  /* Match the light green */
+            color: #2a5a0c !important;  /* Dark green text */
+            padding: 8px 16px !important;
+            transition: background-color 0.2s ease !important;
+        }
+        
+        /* Hover state for dropdown items */
+        [role="option"]:hover {
+            background-color: #e0edd0 !important;  /* Slightly darker green on hover */
+        }
+        
+        /* Selected item in dropdown */
+        [aria-selected="true"] {
+            background-color: #d0e3c4 !important;  /* Even darker for selected */
+            font-weight: 500 !important;
         }
         
         /* Dropdown menu container */
