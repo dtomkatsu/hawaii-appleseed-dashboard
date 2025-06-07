@@ -26,7 +26,7 @@ def main():
     logger = setup_logging()
     
     # Load custom CSS
-    with open(Path(__file__).parent / "ui" / "custom.css") as f:
+    with open(Path(__file__).parent / "ui" / "enhanced_style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     try:

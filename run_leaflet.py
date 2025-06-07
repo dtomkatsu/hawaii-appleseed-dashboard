@@ -509,7 +509,7 @@ def main():
     """, unsafe_allow_html=True)
     
     # Load additional custom CSS if needed
-    with open(Path(__file__).parent / "src" / "ui" / "custom.css") as f:
+    with open(Path(__file__).parent / "src" / "ui" / "enhanced_style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     try:

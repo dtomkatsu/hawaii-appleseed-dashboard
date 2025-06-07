@@ -1,6 +1,6 @@
 /* Enhanced Custom CSS for Hawaii Appleseed Dashboard */
 
-/* Base variables - imported from reference project */
+/* ===== BASE STYLES ===== */
 :root {
   /* Colors */
   --color-background: rgba(252, 252, 249, 1);
@@ -9,46 +9,68 @@
   --color-text-secondary: rgba(98, 108, 113, 1);
   --color-primary: rgba(33, 128, 141, 1);
   --color-primary-hover: rgba(29, 116, 128, 1);
-  --color-primary-active: rgba(26, 104, 115, 1);
-  --color-secondary: rgba(94, 82, 64, 0.12);
-  --color-secondary-hover: rgba(94, 82, 64, 0.2);
-  --color-secondary-active: rgba(94, 82, 64, 0.25);
-  --color-border: rgba(94, 82, 64, 0.2);
-  --color-btn-primary-text: rgba(252, 252, 249, 1);
-  --color-card-border: rgba(94, 82, 64, 0.12);
-  --color-card-border-inner: rgba(94, 82, 64, 0.12);
-  --color-error: rgba(192, 21, 47, 1);
-  --color-success: rgba(33, 128, 141, 1);
-  --color-warning: rgba(168, 75, 47, 1);
-  --color-info: rgba(98, 108, 113, 1);
+  --color-primary-light: rgba(33, 128, 141, 0.1);
+  --color-secondary: rgba(50, 184, 198, 1);
+  --color-accent: rgba(255, 107, 107, 1);
+  --color-border: rgba(221, 221, 221, 1);
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-success: rgba(40, 167, 69, 1);
+  --color-warning: rgba(255, 193, 7, 1);
+  --color-danger: rgba(220, 53, 69, 1);
+  --color-poverty: #ff6b6b;
+  --color-income: #21808d;
+  --color-population: #8338ec;
+  --color-housing: #3a86ff;
+  
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+  --font-size-base: 1rem;
+  --line-height-base: 1.6;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* Border radius */
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  --border-radius-xl: 1rem;
   
   /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-base: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Animation */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
 }
 
-/* Data Cards Styling */
+/* ===== CARD STYLES ===== */
 .metric-card {
-    background-color: var(--color-surface);
+    background-color: #f0f2f6;
     padding: 1rem;
-    border-radius: var(--radius-base);
+    border-radius: var(--border-radius-md);
     border-left: 4px solid var(--color-primary);
     margin-bottom: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--duration-normal) var(--ease-standard);
+    box-shadow: var(--shadow);
+    transition: all var(--transition-normal);
 }
 
 .metric-card:hover {
@@ -211,4 +233,52 @@
     .stMetric [data-testid="stMetricLabel"] {
         font-size: 0.8rem !important;
     }
+}
+
+/* ===== DROPDOWN STYLES ===== */
+/* Dropdown container */
+.stSelectbox div[data-baseweb="select"] > div {
+    background-color: #f0f2f6;
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(94, 82, 64, 0.2);
+    padding: 0.25rem 0.5rem;
+    min-height: 40px;
+    transition: all var(--transition-normal);
+}
+
+/* Dropdown hover/focus states */
+.stSelectbox div[data-baseweb="select"] > div:hover {
+    border-color: var(--color-primary);
+}
+
+.stSelectbox div[data-baseweb="select"] > div:focus-within {
+    box-shadow: 0 0 0 3px rgba(33, 128, 141, 0.4);
+    border-color: var(--color-primary);
+}
+
+/* Dropdown text */
+.stSelectbox div[data-baseweb="select"] > div > div {
+    line-height: 1.5 !important;
+    padding: 4px 0;
+    color: var(--color-text) !important;
+}
+
+/* Hide blinking cursor in dropdown input */
+.stSelectbox input[role="combobox"] {
+    caret-color: transparent !important;
+    cursor: default !important;
+}
+
+/* Dropdown menu items */
+.stSelectbox [role="listbox"] [role="option"] {
+    padding: 8px 12px !important;
+    line-height: 1.5 !important;
+}
+
+/* Dropdown menu container */
+.stSelectbox [role="listbox"] {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    z-index: var(--z-index-dropdown) !important;
+    border-radius: var(--border-radius-md) !important;
 }
