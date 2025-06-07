@@ -224,8 +224,11 @@ def main():
             
             /* Ensure dropdown labels have proper spacing */
             .dropdown-label {
-                margin-bottom: 0.25rem !important;
+                margin-bottom: 0.5rem !important;
                 display: block;
+                font-weight: 500;
+                color: #2a5a0c;
+                font-family: 'Roboto', sans-serif;
             }
 
             /* Hide the sidebar collapse control and its spacer */
