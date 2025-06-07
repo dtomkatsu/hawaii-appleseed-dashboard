@@ -148,6 +148,26 @@ def create_leaflet_map(
                 display: block;
                 margin-bottom: 2px;
             }}
+            
+            .custom-popup .leaflet-popup-content {{
+                margin: 8px 10px;
+                line-height: 1.4;
+            }}
+            
+            .custom-popup button {{
+                transition: all 0.2s ease !important;
+            }}
+            
+            .custom-popup button:hover {{
+                background: #1976D2 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            }}
+            
+            .custom-popup button:active {{
+                transform: translateY(0) !important;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+            }}
         </style>
         
         <div id="{map_id}" style="height:100%; width:100%;"></div>
@@ -327,15 +347,28 @@ def create_leaflet_map(
             
             // Click handler
             function zoomToFeature(e) {{
+                // Check if click originated from popup content
+                if (e.originalEvent && e.originalEvent.target) {{
+                    const target = e.originalEvent.target;
+                    if (target.closest('.leaflet-popup-content')) {{
+                        console.log('Click originated from popup, ignoring zoom');
+                        return;
+                    }}
+                }}
+                
                 map.fitBounds(e.target.getBounds());
                 
-                // Send the clicked feature ID to Streamlit
+                // Send the clicked feature ID to Streamlit via URL parameter
                 const featureId = e.target.feature.properties.id || e.target.feature.id;
                 if (featureId) {{
-                    // Use Streamlit's setComponentValue to communicate back to Python
-                    if (window.Streamlit) {{
-                        window.Streamlit.setComponentValue(featureId);
-                    }}
+                    // Store in localStorage and trigger a page event
+                    localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
+                    
+                    // Trigger a custom event
+                    window.parent.postMessage({{
+                        type: 'feature_selected',
+                        featureId: featureId
+                    }}, '*');
                 }}
             }}
             
@@ -364,8 +397,93 @@ def create_leaflet_map(
                     }}
                 }}
                 
-                const displayName = '{variable_display_name}' || '{selected_variable}'.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                layer.bindPopup(`<strong>${{name}}</strong><br>${{displayName}}: ${{formattedValue}}<br>Click for details`);
+                const displayName = '{variable_display_name}' || '{selected_variable}'.replace('_', ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                const popupContent = `
+                    <div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4;">
+                        <strong style="font-size: 14px; color: #333;">${{name}}</strong><br>
+                        <div style="margin: 5px 0; color: #666;">${{displayName}}: ${{formattedValue}}</div>
+                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #eee;">
+                            <div id="overview-button-container-${{feature.properties.id || name}}" style="margin-top: 4px;"></div>
+                        </div>
+                        <div style="margin-top: 4px; font-size: 10px; color: #999;">
+                            Feature ID: ${{feature.properties.id || 'N/A'}}
+                        </div>
+                    </div>
+                `;
+                
+                // Bind popup with configuration
+                const popup = layer.bindPopup(popupContent, {{
+                    closeOnClick: false,
+                    autoClose: false,
+                    closeButton: true,
+                    maxWidth: 250,
+                    className: 'custom-popup'
+                }});
+                
+                // Add event listener for when popup opens to inject the button
+                layer.on('popupopen', function(e) {{
+                    const featureId = feature.properties.id || feature.properties.name || 'unknown';
+                    const containerId = `overview-button-container-${{featureId}}`;
+                    
+                    // Wait for popup to fully render, then add button
+                    setTimeout(function() {{
+                        const container = document.getElementById(containerId);
+                        if (container) {{
+                            container.innerHTML = `
+                                <button id="overview-btn-${{featureId}}" style="
+                                    background: #1E88E5; 
+                                    color: white; 
+                                    border: none; 
+                                    padding: 6px 12px; 
+                                    border-radius: 4px; 
+                                    cursor: pointer; 
+                                    font-size: 12px; 
+                                    font-weight: 500;
+                                    width: 100%;
+                                    position: relative;
+                                    z-index: 10000;
+                                ">
+                                    📊 View Full Overview →
+                                </button>
+                            `;
+                            
+                            // Add click listener that only sets localStorage flag
+                            const button = document.getElementById(`overview-btn-${{featureId}}`);
+                            if (button) {{
+                                // Simple approach - just set a flag in localStorage
+                                button.addEventListener('click', function(event) {{
+                                    console.log('Button clicked - setting localStorage flag');
+                                    
+                                    // Prevent any event propagation
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    event.stopImmediatePropagation();
+                                    
+                                    // Just set flags in localStorage - let polling handle the rest
+                                    localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
+                                    localStorage.setItem('hawaii_dashboard_tab_switch_request', 'overview');
+                                    localStorage.setItem('hawaii_dashboard_tab_switch_timestamp', Date.now().toString());
+                                    
+                                    console.log('Set tab switch request in localStorage');
+                                    return false;
+                                }}, {{ passive: false, capture: true }});
+                                
+                                // Visual feedback
+                                button.addEventListener('mousedown', function(event) {{
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    button.style.transform = 'scale(0.95)';
+                                }}, {{ passive: false, capture: true }});
+                                
+                                button.addEventListener('mouseup', function(event) {{
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    button.style.transform = 'scale(1)';
+                                }}, {{ passive: false, capture: true }});
+                            }}
+                        }}
+                    }}, 100); // Wait 100ms for popup to render
+                }});
             }}
             
             // Parse GeoJSON and add to map
@@ -432,7 +550,7 @@ def create_leaflet_map(
                 
                 // Update legend title based on variable type
                 const legendTitle = document.querySelector('#{map_id}-legend .legend-title');
-                let title = '{selected_variable}'.replace(/_/g, ' ').replace(/\b\w/g, function(l) {{ return l.toUpperCase(); }});
+                let title = '{selected_variable}'.replace(/_/g, ' ').replace(/\\b\\w/g, function(l) {{ return l.toUpperCase(); }});
                 
                 if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
                     // For poverty rates (5-25% range)
@@ -523,8 +641,11 @@ def create_leaflet_map(
     """
     
     # Use Streamlit's component functionality to render the HTML/JS
-    return components.html(
+    components.html(
         component_html,
         height=map_height+50,
         scrolling=False
     )
+    
+    # Return None since we're using localStorage and postMessage for communication
+    return None

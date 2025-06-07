@@ -155,7 +155,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                         f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
                         f"{county_name}, Hawaii"  # Without 'County' but with state
                     ]
-                feature_id = formats  # Store all possible formats to try
+                # Use the display name as the primary ID, but store formats for matching
+                feature_id = display_name
+                feature_formats = formats
             elif geo_level == 'house':
                 # Extract district number from different possible property names
                 district_num = None
@@ -210,8 +212,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 logger.info(f"Using name column: {name_col}")
                 
                 if name_col:
-                    # Handle both single feature_id (string) and list of possible IDs (for counties)
-                    possible_ids = [feature_id] if isinstance(feature_id, str) else feature_id
+                    # For counties, use the feature_formats for matching if available
+                    if geo_level == 'county' and 'feature_formats' in locals():
+                        possible_ids = feature_formats
+                    else:
+                        possible_ids = [feature_id] if isinstance(feature_id, str) else [feature_id] 
+                    
                     matching_rows = None
                     logger.info(f"Trying to match feature with {len(possible_ids)} possible IDs for geo_level: {geo_level}")
                     
@@ -414,7 +420,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     }
     
     # Create the map
-    clicked_feature = create_leaflet_map(
+    create_leaflet_map(
         geojson_data=geojson_data,
         selected_variable=selected_variable,
         variable_display_name=variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title()),
@@ -422,11 +428,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         map_height=500,
         key=f"map-{active_layer}-{selected_variable}-{color_scheme}"
     )
-    
-    # Handle clicked feature
-    if clicked_feature:
-        st.session_state['selected_feature_id'] = clicked_feature
-        logger.debug(f"Feature clicked: {clicked_feature}")
     
     # Display feature details if a feature is selected
     if 'selected_feature_id' in st.session_state and st.session_state['selected_feature_id']:
