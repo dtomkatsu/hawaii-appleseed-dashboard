@@ -425,6 +425,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         selected_variable=selected_variable,
         variable_display_name=variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title()),
         color_scheme=color_scheme,
+        active_layer=active_layer,
         map_height=500,
         key=f"map-{active_layer}-{selected_variable}-{color_scheme}"
     )

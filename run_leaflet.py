@@ -171,76 +171,18 @@ def main():
     logger = setup_logging(level=logging.DEBUG)
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version with DEBUG logging")
     
-    # Add JavaScript polling mechanism to handle localStorage-based tab switching
-    st.components.v1.html(f"""
+    # Add basic message handling for color scheme changes
+    st.components.v1.html("""
         <script>
-            let lastCheckTimestamp = 0;
-            
-            // Enhanced polling function to check for tab switch requests
-            function checkForTabSwitchRequests() {{
-                try {{
-                    const switchRequest = localStorage.getItem('hawaii_dashboard_tab_switch_request');
-                    const requestTimestamp = localStorage.getItem('hawaii_dashboard_tab_switch_timestamp');
-                    const selectedFeature = localStorage.getItem('hawaii_dashboard_selected_feature');
-                    
-                    if (switchRequest && requestTimestamp) {{
-                        const timestamp = parseInt(requestTimestamp);
-                        
-                        // Only process if this is a new request
-                        if (timestamp > lastCheckTimestamp) {{
-                            console.log('Processing tab switch request:', switchRequest, 'for feature:', selectedFeature);
-                            
-                            // Update our last check timestamp
-                            lastCheckTimestamp = timestamp;
-                            
-                            // Clear the localStorage flags
-                            localStorage.removeItem('hawaii_dashboard_tab_switch_request');
-                            localStorage.removeItem('hawaii_dashboard_tab_switch_timestamp');
-                            
-                            // Trigger the tab switch
-                            if (switchRequest === 'overview') {{
-                                const url = new URL(window.location);
-                                url.search = '';  // Clear existing params
-                                url.searchParams.set('tab', 'overview');
-                                
-                                if (selectedFeature) {{
-                                    url.searchParams.set('selected_feature', selectedFeature);
-                                    // Don't clear selected feature from localStorage yet
-                                }}
-                                
-                                url.searchParams.set('timestamp', timestamp.toString());
-                                
-                                console.log('Redirecting to:', url.toString());
-                                window.location.href = url.toString();
-                            }}
-                        }}
-                    }}
-                }} catch(e) {{
-                    console.error('Error in tab switch polling:', e);
-                }}
-            }}
-            
-            // Legacy message handling for color scheme changes
-            window.addEventListener('message', function(event) {{
-                if (event.data.type === 'color_scheme_change') {{
-                    window.parent.postMessage({{
+            // Handle color scheme changes from map
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'color_scheme_change') {
+                    window.parent.postMessage({
                         type: 'streamlit:setComponentValue',
                         data: event.data
-                    }}, '*');
-                }}
-            }}, false);
-            
-            // Start polling when page loads
-            window.addEventListener('load', function() {{
-                console.log('Starting tab switch polling...');
-                lastCheckTimestamp = Date.now() - 10000; // Allow recent requests
-                
-                // Check immediately
-                checkForTabSwitchRequests();
-                
-                // Then check every 500ms
-                setInterval(checkForTabSwitchRequests, 500);
-            }});
+                    }, '*');
+                }
+            }, false);
         </script>
     """, height=0)
     
@@ -584,353 +526,26 @@ def main():
         st.title("Hawaii Geographic Data Explorer (Leaflet)")
         st.markdown("---")
         
-        # Check URL parameters for tab and feature selection
-        query_params = st.query_params
+        # Clean and simple dashboard without complex URL handling
         
-        # Handle tab parameter
-        if 'tab' in query_params:
-            if query_params['tab'] == 'overview':
-                st.session_state.active_tab = 2
-                logger.info("Switching to Overview tab via URL parameter")
-            elif query_params['tab'] == 'analysis':
-                st.session_state.active_tab = 1
-                logger.info("Switching to Data Analysis tab via URL parameter")
-            else:
-                st.session_state.active_tab = 0
-                logger.info("Switching to Map View tab via URL parameter")
-            # Clear the parameter after processing
-            st.query_params.clear()
+        # Create tabs for different views
+        tab1, tab2 = st.tabs(["🗺️ Map View", "📊 Data Analysis"])
         
-        # Handle trigger_switch parameter (for popup link triggering)
-        if 'trigger_switch' in query_params or 'timestamp' in query_params:
-            logger.info("Tab switch triggered by popup link")
-            # Clear the parameter after processing
-            st.query_params.clear()
-        
-        # Handle selected feature parameter
-        if 'selected_feature' in query_params:
-            selected_feature = query_params['selected_feature']
-            st.session_state['selected_feature_id'] = selected_feature
-            logger.info(f"Feature selected from URL parameter: {selected_feature}")
-            # Clear localStorage via JavaScript
-            st.components.v1.html("""
-                <script>
-                    localStorage.removeItem('hawaii_dashboard_selected_feature');
-                </script>
-            """, height=0)
-        
-        # Check URL hash for tab switching
-        st.components.v1.html("""
-            <script>
-                // Check for hash-based tab switching
-                const hash = window.location.hash;
-                if (hash === '#overview-tab' || hash === '#switch-to-overview') {
-                    console.log('Hash-based tab switch detected:', hash);
-                    // Clear the hash and trigger overview tab
-                    window.location.hash = '';
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', 'overview');
-                    url.searchParams.set('trigger_switch', Date.now().toString());
-                    console.log('Redirecting to:', url.toString());
-                    window.location.replace(url.toString());
-                }
-            </script>
-        """, height=0)
-        
-        # Initialize active tab in session state if not set
-        if 'active_tab' not in st.session_state:
-            st.session_state.active_tab = 0
-        
-        # Add CSS for tab-like buttons
-        st.markdown("""
-        <style>
-            .stButton > button {
-                width: 100%;
-                border-radius: 8px 8px 0 0 !important;
-                border-bottom: none !important;
-                font-weight: 600 !important;
-                padding: 12px 16px !important;
-                margin-bottom: 0 !important;
-                transition: all 0.2s ease !important;
-            }
-            
-            .stButton > button[data-baseweb="button"]:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-            }
-            
-            .stButton > button[kind="primary"] {
-                background-color: #1E88E5 !important;
-                border-color: #1E88E5 !important;
-                color: white !important;
-                box-shadow: 0 2px 4px rgba(30, 136, 229, 0.3) !important;
-            }
-            
-            .stButton > button[kind="secondary"] {
-                background-color: #f8f9fa !important;
-                border-color: #dee2e6 !important;
-                color: #6c757d !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # Create tab selection buttons
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("🗺️ Map View", use_container_width=True, 
-                        type="primary" if st.session_state.active_tab == 0 else "secondary"):
-                st.session_state.active_tab = 0
-                st.rerun()
-        
-        with col2:
-            if st.button("📊 Data Analysis", use_container_width=True,
-                        type="primary" if st.session_state.active_tab == 1 else "secondary"):
-                st.session_state.active_tab = 1
-                st.rerun()
-        
-        with col3:
-            if st.button("📋 Overview", use_container_width=True,
-                        type="primary" if st.session_state.active_tab == 2 else "secondary"):
-                st.session_state.active_tab = 2
-                st.rerun()
-        
-        st.markdown("---")
-        
-        # Display content based on active tab
-        if st.session_state.active_tab == 0:
-            # Map View
+        # Map View Tab
+        with tab1:
             create_leaflet_map_view(
                 debug_info=sidebar_config.get('debug_info', False)
             )
-        elif st.session_state.active_tab == 1:
-            # Data Analysis
+        
+        # Data Analysis Tab
+        with tab2:
             st.header("Data Analysis")
             create_data_summary()
-        elif st.session_state.active_tab == 2:
-            # Overview
-            create_overview_tab()
         
     except Exception as e:
         error_msg = f"An unexpected error occurred: {str(e)}"
         logger.error(error_msg, exc_info=True)
         st.error(error_msg)
-
-def create_overview_tab():
-    """Create the Overview tab content."""
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    st.header("Geographic Overview")
-    
-    # Check if a feature is selected
-    if 'selected_feature_id' in st.session_state and st.session_state['selected_feature_id']:
-        feature_id = st.session_state['selected_feature_id']
-        
-        # Debug: Check the type and content of feature_id
-        logger.info(f"Feature ID type: {type(feature_id)}")
-        logger.info(f"Feature ID content: {feature_id}")
-        
-        # Ensure feature_id is a string
-        if hasattr(feature_id, '__str__') and not isinstance(feature_id, str):
-            # If it's not a string, try to convert it or get a meaningful representation
-            feature_id_str = str(feature_id)
-            logger.warning(f"Feature ID was not a string, converted to: {feature_id_str}")
-            # If it looks like a DeltaGenerator, clear it and show error
-            if 'DeltaGenerator' in feature_id_str:
-                st.error("Invalid feature selection detected. Please click on a geographic area again.")
-                del st.session_state['selected_feature_id']
-                return
-            feature_id = feature_id_str
-        
-        st.markdown("### Selected Feature Details")
-        st.write(f"**Feature ID:** {feature_id}")
-        
-        # Load the current geographic data to show details
-        from src.ui.leaflet_map_view import prepare_feature_details, load_geojson
-        
-        # Get the active layer from session state
-        active_layer = st.session_state.get('active_layer', 'Counties')
-        
-        # Load GeoJSON data for the selected layer
-        geojson_data = load_geojson(active_layer)
-        
-        if geojson_data:
-            # Get feature details using the cleaned feature_id
-            details = prepare_feature_details(feature_id, geojson_data)
-            
-            if details:
-                st.markdown(f"## {details['name']}")
-                
-                # Create summary cards
-                col1, col2, col3, col4 = st.columns(4)
-                
-                with col1:
-                    st.metric(
-                        "Population", 
-                        details['demographics']['Population']
-                    )
-                
-                with col2:
-                    st.metric(
-                        "Poverty Rate", 
-                        details['economic']['Poverty Rate']
-                    )
-                
-                with col3:
-                    st.metric(
-                        "Median Income", 
-                        details['economic']['Median Income']
-                    )
-                
-                with col4:
-                    st.metric(
-                        "Unemployment Rate", 
-                        details['economic']['Unemployment Rate']
-                    )
-                
-                st.markdown("---")
-                
-                # Display comprehensive information in expandable sections
-                with st.expander("📊 Demographics", expanded=True):
-                    for key, value in details['demographics'].items():
-                        st.write(f"**{key}:** {value}")
-                
-                with st.expander("💰 Economic Indicators"):
-                    for key, value in details['economic'].items():
-                        st.write(f"**{key}:** {value}")
-                
-                with st.expander("🏠 Housing"):
-                    for key, value in details['housing'].items():
-                        st.write(f"**{key}:** {value}")
-                
-                with st.expander("🎓 Education & Health"):
-                    for key, value in details['education_health'].items():
-                        st.write(f"**{key}:** {value}")
-            else:
-                st.warning("Could not load details for the selected feature.")
-        else:
-            st.error("Could not load geographic data.")
-    else:
-        st.info("👆 Click on a geographic area in the Map View tab to see detailed information here.")
-        
-        # Add debug section to test feature selection
-        with st.expander("🔧 Debug: Test Feature Selection", expanded=False):
-            st.write("Use this section to test the Overview functionality:")
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                if st.button("Test: Hawaii County", use_container_width=True):
-                    st.session_state['selected_feature_id'] = 'Hawaii'
-                    st.rerun()
-            
-            with col2:
-                if st.button("Test: Honolulu County", use_container_width=True):
-                    st.session_state['selected_feature_id'] = 'Honolulu'
-                    st.rerun()
-            
-            with col3:
-                if st.button("Test: Maui County", use_container_width=True):
-                    st.session_state['selected_feature_id'] = 'Maui'
-                    st.rerun()
-            
-            with col4:
-                if st.button("Test: Kauai County", use_container_width=True):
-                    st.session_state['selected_feature_id'] = 'Kauai'
-                    st.rerun()
-            
-            if st.button("Clear Selection", use_container_width=True):
-                if 'selected_feature_id' in st.session_state:
-                    del st.session_state['selected_feature_id']
-                st.rerun()
-        
-        # Add URL testing section
-        with st.expander("🔗 Debug: Test URL Switching", expanded=False):
-            st.write("Test URL-based tab switching:")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.components.v1.html("""
-                    <button onclick="testTabSwitch()" style="
-                        background: #1E88E5; 
-                        color: white; 
-                        border: none; 
-                        padding: 8px 16px; 
-                        border-radius: 4px; 
-                        cursor: pointer;
-                        width: 100%;
-                    ">
-                        🧪 Test Tab Switch (Like Popup Link)
-                    </button>
-                    
-                    <script>
-                        function testTabSwitch() {
-                            console.log('Test tab switch clicked - using new localStorage method');
-                            
-                            // Use the same mechanism as the popup button
-                            localStorage.setItem('hawaii_dashboard_selected_feature', 'Hawaii');
-                            localStorage.setItem('hawaii_dashboard_tab_switch_request', 'overview');
-                            localStorage.setItem('hawaii_dashboard_tab_switch_timestamp', Date.now().toString());
-                            
-                            console.log('Set localStorage flags for tab switch');
-                            // The polling mechanism should pick this up within 500ms
-                        }
-                    </script>
-                """, height=50)
-            
-            with col2:
-                # Test URL-based switching (simulates popup behavior)
-                st.components.v1.html("""
-                    <button onclick="testUrlSwitch()" style="
-                        background: #4CAF50; 
-                        color: white; 
-                        border: none; 
-                        padding: 8px 16px; 
-                        border-radius: 4px; 
-                        cursor: pointer;
-                        width: 100%;
-                    ">
-                        🔗 Test URL Switch (Popup Simulation)
-                    </button>
-                    
-                    <script>
-                        function testUrlSwitch() {
-                            console.log('Testing polling-based switch...');
-                            
-                            // Use the polling mechanism
-                            localStorage.setItem('hawaii_dashboard_selected_feature', 'Honolulu');
-                            localStorage.setItem('hawaii_dashboard_tab_switch_request', 'overview');
-                            localStorage.setItem('hawaii_dashboard_tab_switch_timestamp', Date.now().toString());
-                            
-                            console.log('Set localStorage flags - should switch in <500ms');
-                        }
-                    </script>
-                """, height=50)
-        
-        # Show general information about the dashboard
-        st.markdown("""
-        ### About this Dashboard
-        
-        This Hawaii Geographic Data Explorer provides detailed demographic, economic, housing, and education data 
-        for different geographic levels across Hawaii:
-        
-        - **State Boundary**: Statewide statistics for Hawaii
-        - **Counties**: Data for Hawaii's four counties (Hawaii, Honolulu, Kauai, Maui)
-        - **House Districts**: Statistics for Hawaii State House Districts
-        - **Senate Districts**: Statistics for Hawaii State Senate Districts
-        
-        ### How to Use
-        
-        1. **Map View Tab**: Select a geographic level and data variable to visualize on the map
-        2. **Data Analysis Tab**: View comparative charts and download data
-        3. **Overview Tab**: Get detailed information about selected geographic areas
-        
-        ### Data Sources
-        
-        All data is sourced from the U.S. Census Bureau's American Community Survey (ACS) 2023 estimates.
-        """)
 
 if __name__ == "__main__":
     main()

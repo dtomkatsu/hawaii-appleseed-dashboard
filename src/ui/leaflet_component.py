@@ -10,6 +10,7 @@ def create_leaflet_map(
     selected_variable, 
     variable_display_name=None, 
     color_scheme="blue", 
+    active_layer="Counties",
     map_height=500, 
     key=None
 ):
@@ -154,19 +155,20 @@ def create_leaflet_map(
                 line-height: 1.4;
             }}
             
-            .custom-popup button {{
-                transition: all 0.2s ease !important;
+            .enhanced-popup .leaflet-popup-content {{
+                margin: 10px 12px;
+                line-height: 1.4;
+                max-height: 400px;
+                overflow-y: auto;
             }}
             
-            .custom-popup button:hover {{
-                background: #1976D2 !important;
-                transform: translateY(-1px) !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            .enhanced-popup .leaflet-popup-content-wrapper {{
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }}
             
-            .custom-popup button:active {{
-                transform: translateY(0) !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+            .enhanced-popup .leaflet-popup-tip {{
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }}
         </style>
         
@@ -398,91 +400,83 @@ def create_leaflet_map(
                 }}
                 
                 const displayName = '{variable_display_name}' || '{selected_variable}'.replace('_', ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                // Create comprehensive popup content with all available data
+                let additionalData = '';
+                const props = feature.properties;
+                
+                // Add key metrics if available
+                const keyMetrics = [
+                    {{ key: 'population', label: 'Population', format: (v) => v ? v.toLocaleString() : 'N/A' }},
+                    {{ key: 'poverty_rate', label: 'Poverty Rate', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
+                    {{ key: 'median_income', label: 'Median Income', format: (v) => v ? '$' + v.toLocaleString() : 'N/A' }},
+                    {{ key: 'unemployment_rate', label: 'Unemployment Rate', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
+                    {{ key: 'college_educated_pct', label: 'College Educated', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
+                    {{ key: 'median_home_value', label: 'Median Home Value', format: (v) => v ? '$' + v.toLocaleString() : 'N/A' }}
+                ];
+                
+                let metricsHtml = '';
+                keyMetrics.forEach(metric => {{
+                    const value = props[metric.key];
+                    if (value !== undefined && value !== null) {{
+                        const isSelected = metric.key === '{selected_variable}';
+                        const bgColor = isSelected ? '#e3f2fd' : '#f9f9f9';
+                        const borderColor = isSelected ? '#1E88E5' : '#e0e0e0';
+                        const fontWeight = isSelected ? 'bold' : 'normal';
+                        
+                        metricsHtml += `
+                            <div style="
+                                background: ${{bgColor}}; 
+                                border: 1px solid ${{borderColor}}; 
+                                border-radius: 4px; 
+                                padding: 6px 8px; 
+                                margin: 3px 0;
+                                font-weight: ${{fontWeight}};
+                                ${{isSelected ? 'box-shadow: 0 1px 3px rgba(30,136,229,0.3);' : ''}}
+                            ">
+                                <div style="font-size: 11px; color: #666; margin-bottom: 2px;">${{metric.label}}</div>
+                                <div style="font-size: 13px; color: #333;">${{metric.format(value)}}</div>
+                            </div>
+                        `;
+                    }}
+                }});
+                
                 const popupContent = `
-                    <div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4;">
-                        <strong style="font-size: 14px; color: #333;">${{name}}</strong><br>
-                        <div style="margin: 5px 0; color: #666;">${{displayName}}: ${{formattedValue}}</div>
-                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #eee;">
-                            <div id="overview-button-container-${{feature.properties.id || name}}" style="margin-top: 4px;"></div>
+                    <div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; min-width: 200px;">
+                        <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1E88E5;">
+                            <strong style="font-size: 15px; color: #1E88E5;">${{name}}</strong>
                         </div>
-                        <div style="margin-top: 4px; font-size: 10px; color: #999;">
-                            Feature ID: ${{feature.properties.id || 'N/A'}}
+                        <div style="margin-bottom: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+                                📊 Currently viewing: <strong>{variable_display_name}</strong>
+                            </div>
+                            <div style="background: #1E88E5; color: white; padding: 6px 8px; border-radius: 4px; text-align: center;">
+                                <strong>${{displayName}}: ${{formattedValue}}</strong>
+                            </div>
+                        </div>
+                        ${{metricsHtml ? `
+                            <div style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
+                                <div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold;">
+                                    📋 Key Demographics & Economics
+                                </div>
+                                ${{metricsHtml}}
+                            </div>
+                        ` : ''}}
+                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #eee; text-align: center;">
+                            <div style="font-size: 10px; color: #999;">
+                                Click elsewhere to close • Data from ACS 2023
+                            </div>
                         </div>
                     </div>
                 `;
                 
-                // Bind popup with configuration
-                const popup = layer.bindPopup(popupContent, {{
+                // Bind popup with larger configuration
+                layer.bindPopup(popupContent, {{
                     closeOnClick: false,
                     autoClose: false,
                     closeButton: true,
-                    maxWidth: 250,
-                    className: 'custom-popup'
-                }});
-                
-                // Add event listener for when popup opens to inject the button
-                layer.on('popupopen', function(e) {{
-                    const featureId = feature.properties.id || feature.properties.name || 'unknown';
-                    const containerId = `overview-button-container-${{featureId}}`;
-                    
-                    // Wait for popup to fully render, then add button
-                    setTimeout(function() {{
-                        const container = document.getElementById(containerId);
-                        if (container) {{
-                            container.innerHTML = `
-                                <button id="overview-btn-${{featureId}}" style="
-                                    background: #1E88E5; 
-                                    color: white; 
-                                    border: none; 
-                                    padding: 6px 12px; 
-                                    border-radius: 4px; 
-                                    cursor: pointer; 
-                                    font-size: 12px; 
-                                    font-weight: 500;
-                                    width: 100%;
-                                    position: relative;
-                                    z-index: 10000;
-                                ">
-                                    📊 View Full Overview →
-                                </button>
-                            `;
-                            
-                            // Add click listener that only sets localStorage flag
-                            const button = document.getElementById(`overview-btn-${{featureId}}`);
-                            if (button) {{
-                                // Simple approach - just set a flag in localStorage
-                                button.addEventListener('click', function(event) {{
-                                    console.log('Button clicked - setting localStorage flag');
-                                    
-                                    // Prevent any event propagation
-                                    event.stopPropagation();
-                                    event.preventDefault();
-                                    event.stopImmediatePropagation();
-                                    
-                                    // Just set flags in localStorage - let polling handle the rest
-                                    localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
-                                    localStorage.setItem('hawaii_dashboard_tab_switch_request', 'overview');
-                                    localStorage.setItem('hawaii_dashboard_tab_switch_timestamp', Date.now().toString());
-                                    
-                                    console.log('Set tab switch request in localStorage');
-                                    return false;
-                                }}, {{ passive: false, capture: true }});
-                                
-                                // Visual feedback
-                                button.addEventListener('mousedown', function(event) {{
-                                    event.stopPropagation();
-                                    event.preventDefault();
-                                    button.style.transform = 'scale(0.95)';
-                                }}, {{ passive: false, capture: true }});
-                                
-                                button.addEventListener('mouseup', function(event) {{
-                                    event.stopPropagation();
-                                    event.preventDefault();
-                                    button.style.transform = 'scale(1)';
-                                }}, {{ passive: false, capture: true }});
-                            }}
-                        }}
-                    }}, 100); // Wait 100ms for popup to render
+                    maxWidth: 280,
+                    minWidth: 200,
+                    className: 'custom-popup enhanced-popup'
                 }});
             }}
             
