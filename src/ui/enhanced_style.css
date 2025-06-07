@@ -260,15 +260,27 @@
       }
   }
   
-  /* Target all Streamlit selectbox containers */
+  /* Target all Streamlit selectbox containers - Remove width constraints */
   .stSelectbox,
-  div[data-testid="stSelectbox"],
-  .stSelectbox > div {
-      width: 100% !important;
-      max-width: 100% !important;
+  div[data-testid="stSelectbox"] {
+      width: auto !important;
+      max-width: fit-content !important;
+      min-width: auto !important;
   }
   
-  /* Main dropdown container */
+  .stSelectbox > div {
+      width: auto !important;
+      max-width: fit-content !important;
+      min-width: auto !important;
+  }
+  
+  /* Main dropdown container - Auto width */
+  .stSelectbox > div > div[data-baseweb="select"] {
+      width: auto !important;
+      max-width: fit-content !important;
+      min-width: 120px !important; /* Minimum width for usability */
+  }
+  
   .stSelectbox > div > div[data-baseweb="select"] > div:first-child {
       background-color: #f0f2f6 !important;
       border-radius: var(--border-radius-md) !important;
@@ -277,6 +289,9 @@
       min-height: 40px !important;
       transition: all var(--transition-normal) !important;
       position: relative !important;
+      width: auto !important;
+      max-width: fit-content !important;
+      white-space: nowrap !important;
   }
   
   /* Dropdown hover state */
@@ -297,6 +312,7 @@
       color: var(--color-text) !important;
       font-size: 0.875rem !important;
       line-height: 1.5 !important;
+      white-space: nowrap !important;
   }
   
   /* Dropdown arrow */
@@ -316,7 +332,7 @@
       z-index: 9999 !important;
   }
   
-  /* Dropdown list container */
+  /* Dropdown list container - Auto width based on content */
   ul[role="listbox"],
   div[role="listbox"] {
       background-color: var(--color-surface) !important;
@@ -327,10 +343,12 @@
       overflow-y: auto !important;
       overflow-x: hidden !important;
       padding: 4px 0 !important;
-      /* Don't set position or width - let Streamlit handle it */
+      width: auto !important;
+      max-width: fit-content !important;
+      min-width: 120px !important; /* Minimum width for usability */
   }
   
-  /* Individual dropdown items */
+  /* Individual dropdown items - Auto width */
   li[role="option"],
   div[role="option"] {
       padding: 10px 16px !important;
@@ -342,6 +360,9 @@
       opacity: 0 !important;
       border-left: 4px solid transparent !important;
       margin: 2px 0 !important;
+      white-space: nowrap !important;
+      width: auto !important;
+      max-width: fit-content !important;
   }
   
   /* Stagger animation for each item */
