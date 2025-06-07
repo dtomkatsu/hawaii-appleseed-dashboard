@@ -7,9 +7,9 @@
     --color-surface: rgba(255, 255, 253, 1);
     --color-text: rgba(19, 52, 59, 1);
     --color-text-secondary: rgba(98, 108, 113, 1);
-    --color-primary: rgba(33, 128, 141, 1);
-    --color-primary-hover: rgba(29, 116, 128, 1);
-    --color-primary-light: rgba(33, 128, 141, 0.1);
+    --color-primary: #3a7710;
+    --color-primary-hover: #2d5d0c;
+    --color-primary-light: rgba(58, 119, 16, 0.1);
     --color-secondary: rgba(50, 184, 198, 1);
     --color-accent: rgba(255, 107, 107, 1);
     --color-border: rgba(221, 221, 221, 1);

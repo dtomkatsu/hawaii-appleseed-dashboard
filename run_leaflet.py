@@ -14,8 +14,8 @@ from ui.leaflet_map_view import create_leaflet_map_view, create_data_summary
 
 # Set page config
 st.set_page_config(
-    page_title="Hawaii Appleseed Dashboard",
-    page_icon="🌴",
+    page_title="Data Dashboard",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -170,6 +170,52 @@ def main():
     # Set up logging with debug level
     logger = setup_logging(level=logging.DEBUG)
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version with DEBUG logging")
+    
+    # Custom CSS for layout and typography
+    st.markdown("""
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+        <style>
+            .appview-container .main .block-container {
+                padding-top: 0.5rem;
+                padding-bottom: 1rem;
+            }
+            .stApp {
+                margin-top: -60px;
+            }
+            header[data-testid="stHeader"] {
+                display: none;
+            }
+            section[data-testid="stSidebar"],
+            div[data-testid="stSidebarNav"] {
+                padding-top: 0;
+                margin-top: 0;
+            }
+            .stApp > div:first-child {
+                margin-top: -1rem;
+            }
+            
+            /* Apply Roboto to specific elements */
+            h1, h2, h3, h4, h5, h6,
+            .stMarkdown h1, 
+            .stMarkdown h2, 
+            .stMarkdown h3,
+            .stMarkdown h4,
+            .stMarkdown h5,
+            .stMarkdown h6,
+            .stSelectbox label,
+            .stRadio label,
+            .stButton>button,
+            .stTextInput>label,
+            .stNumberInput>label,
+            .stSlider>label,
+            .stMultiSelect>label,
+            .stDateInput>label,
+            .stTimeInput>label,
+            .stFileUploader>label {
+                font-family: 'Roboto', sans-serif !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Add basic message handling for color scheme changes
     st.components.v1.html("""
@@ -523,7 +569,7 @@ def main():
         sidebar_config = create_sidebar()
         
         # Main content area
-        st.title("Hawaii Geographic Data Explorer (Leaflet)")
+        st.markdown("<h1 style='color: #3a7710;'>Data Dashboard</h1>", unsafe_allow_html=True)
         st.markdown("---")
         
         # Clean and simple dashboard without complex URL handling
