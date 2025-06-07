@@ -340,6 +340,8 @@
       overflow: hidden !important;
       animation: itemSlide 0.3s ease-out forwards !important;
       opacity: 0 !important;
+      border-left: 4px solid transparent !important;
+      margin: 2px 0 !important;
   }
   
   /* Stagger animation for each item */
@@ -362,11 +364,12 @@
   li[role="option"]:nth-child(n+9),
   div[role="option"]:nth-child(n+9) { animation-delay: 0.45s !important; }
   
-  /* Hover effect for items */
+  /* Hover effect for items - fixed to show green bar properly */
   li[role="option"]:hover,
   div[role="option"]:hover {
       background-color: var(--color-primary-light) !important;
-      padding-left: 20px !important;
+      padding-left: 24px !important;
+      border-left: 4px solid var(--color-primary) !important;
   }
   
   /* Selected item */
@@ -374,6 +377,16 @@
   div[role="option"][aria-selected="true"] {
       background-color: var(--color-primary) !important;
       color: white !important;
+      border-left: 4px solid var(--color-primary-hover) !important;
+  }
+  
+  /* Selected item on hover - maintain white text */
+  li[role="option"][aria-selected="true"]:hover,
+  div[role="option"][aria-selected="true"]:hover {
+      background-color: var(--color-primary-hover) !important;
+      color: white !important;
+      padding-left: 24px !important;
+      border-left: 4px solid var(--color-secondary) !important;
   }
   
   /* Add ripple effect on click */
