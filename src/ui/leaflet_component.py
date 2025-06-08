@@ -5,6 +5,8 @@ import json
 import logging
 from typing import Dict, Any, Optional, Union
 
+from .leaflet_legend import get_legend_js
+
 
 class LeafletMapComponent:
     """A class to handle Leaflet map creation and configuration."""
@@ -350,75 +352,8 @@ class LeafletMapComponent:
             
             map.fitBounds(geoJsonLayer.getBounds());
             
-            // Legend functionality
-            const legendManager = {{
-                update() {{
-                    const legendItems = document.getElementById(MAP_ID + '-legend-items');
-                    if (!legendItems) return;
-                    
-                    const colorSchemeSelect = document.getElementById('color-scheme-select');
-                    const currentScheme = colorSchemeSelect ? colorSchemeSelect.value : '{color_scheme}';
-                    const colors = COLOR_SCHEMES[currentScheme] || COLOR_SCHEMES.blue;
-                    
-                    let title = SELECTED_VARIABLE.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase());
-                    let labels = [];
-                    let grades;
-                    
-                    if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
-                        title += ' (%)';
-                        grades = [[5, 10], [10, 15], [15, 20], [20, 25], [25, 30], [30, 35], [35, 40], [40, '+']];
-                    }} else if (SELECTED_VARIABLE.includes('income')) {{
-                        title += ' ($)';
-                        grades = [['40k', '50k'], ['50k', '60k'], ['60k', '70k'], ['70k', '80k'], 
-                                ['80k', '90k'], ['90k', '100k'], ['100k', '110k'], ['110k', '+']];
-                    }} else {{
-                        title += ' (Count)';
-                        grades = [['0', '1k'], ['1k', '5k'], ['5k', '10k'], ['10k', '25k'], 
-                                ['25k', '50k'], ['50k', '100k'], ['100k', '250k'], ['250k', '+']];
-                    }}
-                    
-                    grades.forEach((grade, i) => {{
-                        const range = grade[1] === '+' ? grade[0] + '+' : grade[0] + '-' + grade[1];
-                        labels.push(
-                            '<div class="legend-item">' +
-                            '<i style="background:' + colors[i] + '"></i>' + range +
-                            '</div>'
-                        );
-                    }});
-                    
-                    document.querySelector('#' + MAP_ID + '-legend .legend-title').textContent = title;
-                    legendItems.innerHTML = labels.join('');
-                }},
-                
-                setupColorSchemeHandler() {{
-                    const select = document.getElementById('color-scheme-select');
-                    if (select) {{
-                        select.addEventListener('change', function(e) {{
-                            const newScheme = e.target.value;
-                            
-                            // Update map colors
-                            map.eachLayer(layer => {{
-                                if (layer.feature) {{
-                                    const value = layer.feature.properties[SELECTED_VARIABLE];
-                                    if (value !== undefined) {{
-                                        layer.setStyle({{ 
-                                            fillColor: utils.getColorForValue(value, newScheme) 
-                                        }});
-                                    }}
-                                }}
-                            }});
-                            
-                            legendManager.update();
-                            
-                            window.parent.postMessage({{
-                                type: 'color_scheme_change',
-                                color_scheme: newScheme,
-                                map_id: MAP_ID
-                            }}, '*');
-                        }});
-                    }}
-                }}
-            }};
+            // Import legend functionality
+            {get_legend_js()}
             
             // Initialize legend
             legendManager.update();
