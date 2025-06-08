@@ -371,7 +371,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'unemployment_rate': 'Unemployment Rate',
-                'population': 'Population'
+                'population': 'Population',
+                'rent_burden_rate': 'Housing Cost Burden'
             }
         elif active_layer == 'Counties':
             variable_options = {
@@ -379,7 +380,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
-                'median_home_value': 'Median Home Value'
+                'median_home_value': 'Median Home Value',
+                'rent_burden_rate': 'Housing Cost Burden'
             }
         else:  # House and Senate Districts
             variable_options = {

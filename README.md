@@ -1,13 +1,41 @@
 # Hawaii Appleseed Data Dashboard 🌺
 
-An interactive data visualization dashboard for Hawaii Appleseed built with Streamlit and Folium.
+An interactive data visualization dashboard for Hawaii Appleseed built with Streamlit and Leaflet.js.
+
+## Main Application
+
+The main application is `run_leaflet.py`, which serves as the entry point for the Leaflet-based dashboard. It provides an interactive map interface with various data visualization capabilities.
+
+### Key Components
+
+1. **Leaflet Map View** (`src/ui/leaflet_map_view.py`)
+   - Main component for rendering interactive maps
+   - Handles layer management and data visualization
+   - Supports multiple geographic levels (State, Counties, House Districts, Senate Districts)
+
+2. **Leaflet Component** (`src/ui/leaflet_component.py`)
+   - Core map rendering and interaction logic
+   - Manages color schemes and map styling
+   - Handles user interactions and events
+
+3. **Data Loading** (`src/data/data_loader.py`)
+   - Loads and processes demographic and economic data
+   - Handles GeoJSON and CSV data sources
+   - Manages data caching and retrieval
+
+4. **UI Components**
+   - `sidebar.py`: Handles user interface controls and filters
+   - `leaflet_legend.py`: Manages map legend generation
+   - `leaflet_style.css`: Custom styling for the Leaflet map components
 
 ## Features
 
-- Interactive map of Hawaii with data points
-- Real-time data visualization
-- Responsive design for all devices
-- Data filtering and exploration tools
+- Interactive choropleth maps with multiple data layers
+- Real-time data visualization with tooltips and popups
+- Responsive design that works on all devices
+- Multiple geographic levels (State, Counties, Legislative Districts)
+- Customizable color schemes and data variables
+- Detailed data exploration and comparison tools
 
 ## 🚀 Setup
 
