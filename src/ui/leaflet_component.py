@@ -316,22 +316,37 @@ class LeafletMapComponent:
                     const formattedValue = utils.formatValue(value, SELECTED_VARIABLE);
                     const metricsHtml = utils.createMetricHtml(null, props);
                     
-                    const popupContent = 
-                        '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 200px;">' +
-                        '<div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">' +
-                        '<strong style="font-size: 15px; color: #1a73e8;">' + name + '</strong>' +
-                        '</div>' +
-                        '<div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 8px;">' +
-                        '<strong>' + VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</strong>' +
-                        '</div>' +
-                        (metricsHtml ? 
-                            '<div style="border-top: 1px solid #eee; padding-top: 8px;">' +
-                            '<div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold;">Key Metrics</div>' +
-                            metricsHtml + '</div>' : '') +
-                        '</div>';
+                    // Create three columns for the popup content
+                    const popupContent = [
+                        '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 500px;">',
+                        '  <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">',
+                        '    <strong style="font-size: 15px; color: #1a73e8;">', name, '</strong>',
+                        '  </div>',
+                        '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
+                        '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
+                        '  </div>',
+                        '  <div style="display: flex; gap: 10px; margin-top: 8px;">',
+                        '    <!-- Key Metrics Column -->',
+                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
+                        '      ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
+                        '    </div>',
+                        '    <!-- SNAP Column -->',
+                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
+                        '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
+                        '    </div>',
+                        '    <!-- Tax Credits Column -->',
+                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Tax Credits</div>',
+                        '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
+                        '    </div>',
+                        '  </div>',
+                        '</div>'
+                    ].join('');
                     
                     layer.bindPopup(popupContent, {{
-                        maxWidth: 280,
+                        maxWidth: 600,
                         className: 'custom-popup'
                     }});
                     
