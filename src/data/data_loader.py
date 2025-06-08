@@ -2,8 +2,9 @@
 import pandas as pd
 from pathlib import Path
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List
 import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,19 @@ class DataLoader:
             'median_home_value': 'Median Home Value ($)',
             'renter_occupied': 'Renter-Occupied Housing (%)',
             'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
-            'no_health_insurance': 'No Health Insurance (%)'
+            'no_health_insurance': 'No Health Insurance (%)',
+            # ALICE variables
+            'alice_rate': 'ALICE Households (%)'
+        }
+        
+        # Geographic name mapping for data joining
+        self.geo_name_mapping = {
+            'county': {
+                'Honolulu': 'Oahu',  # ALICE data uses "Honolulu", GeoJSON uses "Oahu"
+                'Hawaii': 'Hawaii',
+                'Maui': 'Maui', 
+                'Kauai': 'Kauai'
+            }
         }
         
         # Load all data at initialization to avoid pipeline runs
@@ -38,6 +51,7 @@ class DataLoader:
         """Preload all data at initialization to avoid pipeline runs."""
         for geo_level in ['state', 'county', 'house', 'senate']:
             self.load_acs_data(geo_level)
+            self.load_alice_data(geo_level)
             
     def load_acs_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """
@@ -80,19 +94,252 @@ class DataLoader:
             logger.error(f"Error loading {geo_level} data: {str(e)}")
             return None
     
-    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
+    def load_alice_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """
-        Get data for a geographic level, using cache if available.
+        Load ALICE data for a specific geographic level from Excel file.
         
         Args:
             geo_level: One of 'state', 'county', 'house', or 'senate'
             
         Returns:
-            DataFrame with the data or None if not found
+            DataFrame with the loaded ALICE data or None if loading fails
         """
-        if geo_level in self.data_cache:
-            return self.data_cache[geo_level]
-        return self.load_acs_data(geo_level)
+        try:
+            # Map geo levels to Excel sheet names
+            sheet_map = {
+                'state': 'State',
+                'county': 'Counties', 
+                'house': 'House',
+                'senate': 'Senate'
+            }
+            
+            if geo_level not in sheet_map:
+                logger.error(f"Invalid geographic level for ALICE data: {geo_level}")
+                return None
+                
+            # Look for ALICE Excel file in data directory
+            alice_file_path = self.base_dir / 'data' / 'ALICE By Geography (2023).xlsx'
+            if not alice_file_path.exists():
+                logger.warning(f"ALICE data file not found: {alice_file_path}")
+                return None
+                
+            # Read the specific sheet
+            sheet_name = sheet_map[geo_level]
+            df = pd.read_excel(alice_file_path, sheet_name=sheet_name)
+            
+            logger.debug(f"Loaded ALICE {geo_level} data with columns: {list(df.columns)}")
+            logger.debug(f"ALICE {geo_level} data shape: {df.shape}")
+            
+            # Standardize column names and add geo identifier
+            df = self._standardize_alice_data(df, geo_level)
+            
+            # Cache the loaded data with ALICE prefix
+            cache_key = f"alice_{geo_level}"
+            self.data_cache[cache_key] = df
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error loading ALICE {geo_level} data: {str(e)}")
+            return None
+    
+    def _standardize_alice_data(self, df: pd.DataFrame, geo_level: str) -> pd.DataFrame:
+        """
+        Standardize ALICE data columns and add geographic identifiers.
+        
+        Args:
+            df: Raw ALICE DataFrame
+            geo_level: Geographic level
+            
+        Returns:
+            Standardized DataFrame
+        """
+        df = df.copy()
+        
+        # Rename the ALICE percentage column to a standard name
+        if 'Percentage of Households Under ALICE Threshold' in df.columns:
+            df['alice_rate'] = df['Percentage of Households Under ALICE Threshold'] * 100  # Convert to percentage
+            
+        if geo_level == 'state':
+            # For state level, add consistent naming
+            df['name'] = 'Hawaii'
+            df['display_name'] = 'Hawaii'
+            
+        elif geo_level == 'county':
+            # For counties, standardize names for joining
+            if 'County' in df.columns:
+                df['county_raw'] = df['County']
+                # Apply name mapping for consistency with GeoJSON
+                df['county_name'] = df['County'].map(
+                    lambda x: self.geo_name_mapping['county'].get(x, x)
+                )
+                df['display_name'] = df['county_name']
+                df['name'] = df['County']  # Keep original for joining with ALICE data
+                
+        elif geo_level == 'house':
+            # For house districts, ensure district numbers are integers
+            if 'District' in df.columns:
+                df['district'] = df['District'].astype(int)
+                df['house_id'] = df['District'].astype(int)
+                df['display_name'] = df['District'].apply(lambda x: f"House District {x}")
+                df['name'] = df['District'].apply(lambda x: f"State House District {x} (2022); Hawaii")
+                
+        elif geo_level == 'senate':
+            # For senate districts, ensure district numbers are integers
+            if 'Senate District' in df.columns:
+                df['district'] = df['Senate District'].astype(int)
+                df['senate_id'] = df['Senate District'].astype(int)
+                df['display_name'] = df['Senate District'].apply(lambda x: f"Senate District {x}")
+                df['name'] = df['Senate District'].apply(lambda x: f"State Senate District {x} (2022); Hawaii")
+        
+        logger.debug(f"Standardized ALICE {geo_level} data columns: {list(df.columns)}")
+        return df
+    
+    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
+        """
+        Get combined ACS and ALICE data for a geographic level.
+        
+        Args:
+            geo_level: One of 'state', 'county', 'house', or 'senate'
+            
+        Returns:
+            DataFrame with merged ACS and ALICE data or None if not found
+        """
+        # Get ACS data
+        acs_data = self.data_cache.get(geo_level)
+        if acs_data is None:
+            acs_data = self.load_acs_data(geo_level)
+        
+        # Get ALICE data
+        alice_cache_key = f"alice_{geo_level}"
+        alice_data = self.data_cache.get(alice_cache_key)
+        if alice_data is None:
+            alice_data = self.load_alice_data(geo_level)
+        
+        # If we have both datasets, merge them
+        if acs_data is not None and alice_data is not None:
+            merged_data = self._merge_datasets(acs_data, alice_data, geo_level)
+            return merged_data
+        elif acs_data is not None:
+            logger.warning(f"Only ACS data available for {geo_level}")
+            return acs_data
+        elif alice_data is not None:
+            logger.warning(f"Only ALICE data available for {geo_level}")
+            return alice_data
+        else:
+            logger.error(f"No data available for {geo_level}")
+            return None
+    
+    def _merge_datasets(self, acs_data: pd.DataFrame, alice_data: pd.DataFrame, geo_level: str) -> pd.DataFrame:
+        """
+        Merge ACS and ALICE datasets on appropriate join keys.
+        
+        Args:
+            acs_data: ACS DataFrame
+            alice_data: ALICE DataFrame
+            geo_level: Geographic level
+            
+        Returns:
+            Merged DataFrame
+        """
+        acs_df = acs_data.copy()
+        alice_df = alice_data.copy()
+        
+        logger.debug(f"Merging {geo_level} data: ACS shape {acs_df.shape}, ALICE shape {alice_df.shape}")
+        
+        # Define join strategies by geographic level
+        if geo_level == 'state':
+            # Simple merge for state level
+            merged = acs_df.copy()
+            try:
+                if 'alice_rate' in alice_df.columns and len(alice_df) > 0:
+                    merged['alice_rate'] = alice_df['alice_rate'].iloc[0]
+                else:
+                    merged['alice_rate'] = None
+            except Exception as e:
+                logger.error(f"Error merging state ALICE data: {e}")
+                merged['alice_rate'] = None
+                
+        elif geo_level == 'county':
+            # County names need special handling due to Honolulu/Oahu mismatch
+            join_key = 'NAME'
+            alice_join_key = 'name'
+            
+            # Create mapping for county names
+            county_mapping = {
+                'Honolulu County, Hawaii': ['Honolulu', 'Oahu'],
+                'Hawaii County, Hawaii': ['Hawaii'],
+                'Maui County, Hawaii': ['Maui'],
+                'Kauai County, Hawaii': ['Kauai']
+            }
+            
+            merged = acs_df.copy()
+            merged['alice_rate'] = None
+            
+            # Manual join based on county mapping
+            try:
+                for acs_idx, acs_row in acs_df.iterrows():
+                    acs_county_name = acs_row[join_key]
+                    
+                    # Find matching ALICE data
+                    for alice_idx, alice_row in alice_df.iterrows():
+                        alice_county = alice_row[alice_join_key]
+                        
+                        # Check if this ALICE county matches the ACS county
+                        if acs_county_name in county_mapping:
+                            if alice_county in county_mapping[acs_county_name]:
+                                merged.loc[acs_idx, 'alice_rate'] = alice_row['alice_rate']
+                                logger.debug(f"Matched {acs_county_name} with ALICE {alice_county}")
+                                break
+            except Exception as e:
+                logger.error(f"Error during county data merge: {e}")
+                # If merging fails, at least return the ACS data
+                pass
+                            
+        elif geo_level in ['house', 'senate']:
+            # Districts can join on district number
+            if geo_level == 'house':
+                acs_join_key = 'state legislative district (lower chamber)'
+                alice_join_key = 'district'
+            else:  # senate
+                acs_join_key = 'state legislative district (upper chamber)'
+                alice_join_key = 'district'
+            
+            # Try different possible column names for district matching
+            possible_acs_keys = [acs_join_key, 'district', 'DISTRICT']
+            actual_acs_key = None
+            
+            for key in possible_acs_keys:
+                if key in acs_df.columns:
+                    actual_acs_key = key
+                    break
+            
+            if actual_acs_key and alice_join_key in alice_df.columns:
+                try:
+                    merged = pd.merge(
+                        acs_df, 
+                        alice_df[['district', 'alice_rate']], 
+                        left_on=actual_acs_key, 
+                        right_on='district', 
+                        how='left'
+                    )
+                    logger.debug(f"Merged {geo_level} on {actual_acs_key} = {alice_join_key}")
+                except Exception as e:
+                    logger.error(f"Error merging {geo_level} data: {e}")
+                    merged = acs_df.copy()
+                    merged['alice_rate'] = None
+            else:
+                logger.warning(f"Could not find matching columns for {geo_level} merge")
+                merged = acs_df.copy()
+                merged['alice_rate'] = None
+                
+        else:
+            logger.warning(f"Unknown geo_level for merging: {geo_level}")
+            merged = acs_df.copy()
+            merged['alice_rate'] = None
+        
+        logger.debug(f"Merged data shape: {merged.shape}, columns: {list(merged.columns)}")
+        return merged
         
     def get_available_variables(self) -> Dict[str, str]:
         """
@@ -418,3 +665,126 @@ class DataLoader:
             debug_file.write(f"SUCCESS: Found GeoJSON at {geojson_path}\n")
             
         return geojson_path
+    
+    def merge_geojson_with_data(self, geojson_data: dict, geo_level: str) -> dict:
+        """
+        Enhanced method to merge GeoJSON with both ACS and ALICE data.
+        
+        Args:
+            geojson_data: GeoJSON data as dictionary
+            geo_level: Geographic level
+            
+        Returns:
+            GeoJSON data with merged attributes
+        """
+        try:
+            # Get merged ACS + ALICE data
+            data = self.get_data(geo_level)
+            if data is None:
+                logger.warning(f"No data available for merging with {geo_level} GeoJSON")
+                return geojson_data
+            
+            logger.debug(f"Merging GeoJSON with data containing columns: {list(data.columns)}")
+            
+            # Process each feature in the GeoJSON
+            for feature in geojson_data.get('features', []):
+                properties = feature.get('properties', {})
+                
+                # Find matching data based on geographic level
+                try:
+                    matching_data = self._find_matching_data(properties, data, geo_level)
+                    
+                    if matching_data is not None:
+                        # Add all data columns to the feature properties
+                        for key, value in matching_data.items():
+                            # Skip certain columns that shouldn't be in properties
+                            if key not in ['index', 'level_0'] and value is not None:
+                                # Handle pandas NaN values
+                                if pd.isna(value):
+                                    properties[key] = None
+                                else:
+                                    properties[key] = value
+                                
+                        logger.debug(f"Added {len(matching_data)} data fields to feature")
+                    else:
+                        logger.warning(f"No matching data found for feature in {geo_level}")
+                except Exception as e:
+                    logger.error(f"Error processing feature in {geo_level}: {e}")
+                    continue
+            
+            return geojson_data
+            
+        except Exception as e:
+            logger.error(f"Error in merge_geojson_with_data for {geo_level}: {e}")
+            return geojson_data
+    
+    def _find_matching_data(self, properties: dict, data: pd.DataFrame, geo_level: str) -> Optional[dict]:
+        """
+        Find matching data row for a GeoJSON feature.
+        
+        Args:
+            properties: Feature properties from GeoJSON
+            data: Data DataFrame
+            geo_level: Geographic level
+            
+        Returns:
+            Dictionary of matching data or None
+        """
+        if geo_level == 'state':
+            # State level - just return the first (and only) row
+            if len(data) > 0:
+                return data.iloc[0].to_dict()
+                
+        elif geo_level == 'county':
+            # County matching with name variations
+            county_name = properties.get('county_name', properties.get('NAME', ''))
+            
+            # Try multiple matching strategies
+            matching_strategies = [
+                ('NAME', county_name),  # Direct name match
+                ('NAME', f"{county_name} County, Hawaii"),  # Add county suffix
+            ]
+            
+            # Special case for Oahu/Honolulu
+            if 'oahu' in county_name.lower():
+                matching_strategies.extend([
+                    ('NAME', 'Honolulu County, Hawaii'),
+                    ('NAME', 'Honolulu')
+                ])
+            
+            for col, value in matching_strategies:
+                if col in data.columns:
+                    matches = data[data[col] == value]
+                    if len(matches) > 0:
+                        logger.debug(f"Matched county using {col}={value}")
+                        return matches.iloc[0].to_dict()
+            
+            # Try case-insensitive matching
+            for col, value in matching_strategies:
+                if col in data.columns:
+                    matches = data[data[col].str.lower() == value.lower()]
+                    if len(matches) > 0:
+                        logger.debug(f"Matched county using case-insensitive {col}={value}")
+                        return matches.iloc[0].to_dict()
+                        
+        elif geo_level in ['house', 'senate']:
+            # District matching by number
+            district_num = None
+            
+            # Try different ways to get district number
+            for field in ['DISTRICT', 'house_id', 'senate_id', 'district']:
+                if field in properties:
+                    district_num = properties[field]
+                    break
+            
+            if district_num is not None:
+                # Try matching on different column names
+                for col in ['district', 'state legislative district (lower chamber)', 
+                           'state legislative district (upper chamber)']:
+                    if col in data.columns:
+                        matches = data[data[col] == district_num]
+                        if len(matches) > 0:
+                            logger.debug(f"Matched {geo_level} district {district_num} using {col}")
+                            return matches.iloc[0].to_dict()
+        
+        return None

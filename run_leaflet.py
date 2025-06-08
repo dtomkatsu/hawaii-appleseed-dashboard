@@ -685,6 +685,7 @@ def main():
             'unemployment_rate': 'Unemployment Rate (%)',
             'college_educated_pct': 'Bachelor\'s Degree or Higher (%)',
             'rent_burden_rate': 'Housing Cost Burden (%)',
+            'alice_rate': 'ALICE Households (%)',
             'white_alone_pct': 'White Alone (%)',
             'asian_alone_pct': 'Asian Alone (%)',
             'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)'

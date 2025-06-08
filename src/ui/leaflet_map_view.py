@@ -50,7 +50,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     # Get user selections from session state or initialize them if not present
     if 'active_layer' not in st.session_state:
         st.session_state['active_layer'] = 'State Boundary'
-    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate']:
+    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate']:
         st.session_state['selected_variable'] = 'poverty_rate'
     if 'color_scheme' not in st.session_state:
         st.session_state['color_scheme'] = 'blue'
@@ -84,38 +84,32 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     geo_level = geo_level_map.get(active_layer, 'state')
     
-    # Get data for the current geographic level
-    acs_data = data_loader.get_data(geo_level)
+    # Get merged ACS + ALICE data for the current geographic level
+    combined_data = data_loader.get_data(geo_level)
     
-    if acs_data is not None:
-        # Debug: Print ACS data columns and first row
-        logger.info(f"ACS data columns: {acs_data.columns.tolist()}")
-        if not acs_data.empty:
-            logger.info(f"First row of ACS data: {acs_data.iloc[0].to_dict()}")
-            
-        # Special debug for county data
-        if geo_level == 'county':
-            logger.info(f"COUNTY DATA DEBUG: Full dataframe:\n{acs_data}")
-            logger.info(f"COUNTY DATA DEBUG: Column types:\n{acs_data.dtypes}")
-            if 'poverty_rate' in acs_data.columns:
-                logger.info(f"COUNTY DATA DEBUG: Poverty rate values:\n{acs_data['poverty_rate']}")
-            else:
-                logger.info(f"COUNTY DATA DEBUG: 'poverty_rate' column not found in county data")
-                logger.info(f"COUNTY DATA DEBUG: Available columns: {acs_data.columns.tolist()}")
-                
-            # Check for related columns that might be used to calculate poverty rate
-            for col in ['below_poverty', 'total_population']:
-                if col in acs_data.columns:
-                    logger.info(f"COUNTY DATA DEBUG: {col} values:\n{acs_data[col]}")
-                else:
-                    logger.info(f"COUNTY DATA DEBUG: '{col}' column not found in county data")
-                    
-            # Debug the exact format of NAME column values to help with matching
-            name_col_debug = 'name' if 'name' in acs_data.columns else 'NAME' if 'NAME' in acs_data.columns else None
-            if name_col_debug:
-                logger.info(f"COUNTY DATA DEBUG: Exact format of {name_col_debug} column values:\n{acs_data[name_col_debug].tolist()}")
+    if combined_data is not None:
+        # Debug: Print combined data columns and first row
+        logger.info(f"Combined data columns: {combined_data.columns.tolist()}")
+        if not combined_data.empty:
+            logger.info(f"First row of combined data: {combined_data.iloc[0].to_dict()}")
         
-        # Merge ACS data with GeoJSON
+        # Use the enhanced merging method from data_loader
+        geojson_data = data_loader.merge_geojson_with_data(geojson_data, geo_level)
+        
+        # Legacy debug info for counties
+        if geo_level == 'county':
+            logger.info(f"COUNTY DATA DEBUG: Full dataframe:\n{combined_data}")
+            logger.info(f"COUNTY DATA DEBUG: Column types:\n{combined_data.dtypes}")
+            if 'alice_rate' in combined_data.columns:
+                logger.info(f"COUNTY DATA DEBUG: ALICE rate values:\n{combined_data['alice_rate']}")
+            if 'poverty_rate' in combined_data.columns:
+                logger.info(f"COUNTY DATA DEBUG: Poverty rate values:\n{combined_data['poverty_rate']}")
+    else:
+        logger.warning(f"No combined data available for {geo_level}")
+        
+    # Note: The enhanced data loader now handles all the merging automatically
+    # The following legacy code is no longer needed but kept for reference
+    if False:  # Disabled legacy manual merging code
         for feature in geojson_data['features']:
             # Get the feature ID based on the geo level
             if geo_level == 'state':
@@ -372,7 +366,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'alice_rate': 'ALICE Households'
             }
         elif active_layer == 'Counties':
             variable_options = {
@@ -381,14 +376,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
                 'median_home_value': 'Median Home Value',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'alice_rate': 'ALICE Households'
             }
         else:  # House and Senate Districts
             variable_options = {
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'college_educated_pct': 'College Educated',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'alice_rate': 'ALICE Households'
             }
         
         # Get the current index, defaulting to 0 if not found
@@ -418,7 +415,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'college_educated_pct': 'College Educated (%)',
         'bachelors_rate': 'Bachelors Degree Rate',
         'renter_rate': 'Renter Rate',
-        'rent_burden_rate': 'Housing Cost Burden (%)'
+        'rent_burden_rate': 'Housing Cost Burden (%)',
+        'alice_rate': 'ALICE Households (%)'
     }
     
     # Create the map
