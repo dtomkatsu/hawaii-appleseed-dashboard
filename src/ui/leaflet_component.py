@@ -2,684 +2,544 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import json
-import os
-from pathlib import Path
+import logging
+from typing import Dict, Any, Optional, Union
 
-def create_leaflet_map(
-    geojson_data, 
-    selected_variable, 
-    variable_display_name=None, 
-    color_scheme="blue", 
-    active_layer="Counties",
-    map_height=500, 
-    key=None
-):
-    # Debug logging
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Creating Leaflet map with variable: {selected_variable}")
+
+class LeafletMapComponent:
+    """A class to handle Leaflet map creation and configuration."""
     
-    # Check if selected_variable exists in any feature properties
-    has_variable = False
-    if geojson_data and 'features' in geojson_data and len(geojson_data['features']) > 0:
-        for feature in geojson_data['features']:
-            if selected_variable in feature.get('properties', {}):
-                has_variable = True
-                logger.info(f"Found {selected_variable} in feature {feature['properties'].get('display_name', 'Unknown')}: {feature['properties'][selected_variable]}")
-                break
-        
-        if not has_variable:
-            logger.warning(f"Selected variable '{selected_variable}' not found in any feature properties")
-            # Log the first feature's properties to see what's available
-            if len(geojson_data['features']) > 0:
-                logger.info(f"Available properties in first feature: {list(geojson_data['features'][0].get('properties', {}).keys())}")
-                logger.info(f"First feature properties: {geojson_data['features'][0].get('properties', {})}")
-    else:
-        logger.warning("No features found in GeoJSON data")
-    """
-    Create a Leaflet map component in Streamlit.
-    
-    Args:
-        geojson_data: GeoJSON data to display on the map
-        variable: Variable to display (e.g., 'poverty_rate')
-        color_scheme: Color scheme for the map
-        height: Height of the map in pixels
-        key: Unique key for the component
-    
-    Returns:
-        Selected feature ID if a feature was clicked, None otherwise
-    """
-    # Convert GeoJSON to string if it's a dictionary
-    if isinstance(geojson_data, dict):
-        geojson_str = json.dumps(geojson_data)
-    else:
-        geojson_str = geojson_data
-    
-    # Create a unique ID for this map instance
-    map_id = f"leaflet-map-{key}" if key else "leaflet-map"
-    
-    # Color scheme options for the dropdown
-    color_schemes = {
-        'blue': 'Blue Scale',
-        'green': 'Green Scale',
-        'red': 'Red Scale',
-        'purple': 'Purple Scale'
+    # Color schemes for the map
+    COLOR_SCHEMES = {
+        'blue': ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+        'green': ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
+        'red': ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
+        'purple': ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
     }
     
-    # Get the current color scheme from session state
-    current_color_scheme = st.session_state.get('color_scheme', 'blue')
+    # Default metrics to display in popups
+    DEFAULT_METRICS = [
+        {'key': 'population', 'label': 'Population', 'type': 'count'},
+        {'key': 'poverty_rate', 'label': 'Poverty Rate', 'type': 'percentage'},
+        {'key': 'median_income', 'label': 'Median Income', 'type': 'currency'},
+        {'key': 'unemployment_rate', 'label': 'Unemployment Rate', 'type': 'percentage'},
+        {'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'},
+        {'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'},
+        {'key': 'alice_rate', 'label': 'ALICE Households', 'type': 'percentage'},
+        {'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}
+    ]
     
-    # HTML and JavaScript for the Leaflet map
-    component_html = f"""
-    <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative;">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+    
+    def _validate_geojson_data(self, geojson_data: Dict[str, Any], selected_variable: str) -> bool:
+        """Validate GeoJSON data and check if selected variable exists."""
+        if not geojson_data or 'features' not in geojson_data or not geojson_data['features']:
+            self.logger.warning("No features found in GeoJSON data")
+            return False
         
-        <style>
-            .map-legend {{
+        # Check if selected_variable exists in any feature properties
+        for feature in geojson_data['features']:
+            if selected_variable in feature.get('properties', {}):
+                self.logger.info(f"Found {selected_variable} in feature properties")
+                return True
+        
+        self.logger.warning(f"Selected variable '{selected_variable}' not found in feature properties")
+        # Log available properties for debugging
+        if geojson_data['features']:
+            first_feature_props = list(geojson_data['features'][0].get('properties', {}).keys())
+            self.logger.info(f"Available properties: {first_feature_props}")
+        return False
+    
+    def _format_variable_name(self, variable: str, variable_display_name: Optional[str] = None) -> str:
+        """Format variable name for display."""
+        if variable_display_name:
+            return variable_display_name
+        return variable.replace('_', ' ').title()
+    
+    def _get_css_styles(self) -> str:
+        """Return CSS styles for the map component."""
+        return """
+            .map-legend {
                 position: absolute;
                 bottom: 20px;
                 right: 10px;
                 z-index: 1000;
                 background: rgba(255, 255, 255, 0.95);
-                padding: 8px 10px 10px 10px;
-                border-radius: 4px;
-                box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-                font-family: Arial, sans-serif;
+                padding: 8px 10px;
+                border-radius: 6px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 11px;
                 line-height: 1.3;
                 color: #333;
                 border: 1px solid rgba(0,0,0,0.1);
                 min-width: 140px;
                 max-width: 200px;
-            }}
-            .legend-title {{
-                font-weight: bold;
+            }
+            .legend-title {
+                font-weight: 600;
                 margin-bottom: 6px;
                 text-align: center;
                 font-size: 12px;
-            }}
-            .legend-item {{
+                color: #1a73e8;
+            }
+            .legend-item {
                 display: flex;
                 align-items: center;
                 margin: 3px 0;
-            }}
-            .legend-item i {{
+                font-size: 10px;
+            }
+            .legend-item i {
                 display: inline-block;
                 width: 18px;
                 height: 10px;
                 margin-right: 6px;
-                opacity: 0.9;
                 border: 1px solid rgba(0,0,0,0.2);
                 border-radius: 2px;
-            }}
-            .color-scheme-selector {{
+            }
+            .color-scheme-selector {
                 margin-top: 8px;
                 padding-top: 8px;
                 border-top: 1px solid rgba(0,0,0,0.1);
-            }}
-            .color-scheme-selector select {{
+            }
+            .color-scheme-selector select {
                 width: 100%;
-                font-size: 11px;
+                font-size: 10px;
                 padding: 4px 6px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
                 background-color: white;
                 margin-top: 2px;
-                height: 24px;
                 cursor: pointer;
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                appearance: none;
-                background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-                background-repeat: no-repeat;
-                background-position: right 5px top 50%;
-                background-size: 10px auto;
-                padding-right: 20px;
-            }}
-            .color-scheme-selector select:focus {{
+                transition: border-color 0.2s;
+            }
+            .color-scheme-selector select:focus {
                 outline: none;
-                border-color: #4c9ffe;
-                box-shadow: 0 0 0 2px rgba(76, 159, 254, 0.2);
-            }}
-            .color-scheme-selector label {{
-                font-size: 11px;
-                font-weight: bold;
+                border-color: #1a73e8;
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            }
+            .color-scheme-selector label {
+                font-size: 10px;
+                font-weight: 600;
                 color: #555;
                 display: block;
                 margin-bottom: 2px;
-            }}
-            
-            .custom-popup .leaflet-popup-content {{
-                margin: 8px 10px;
-                line-height: 1.4;
-            }}
-            
-            .enhanced-popup .leaflet-popup-content {{
+            }
+            .custom-popup .leaflet-popup-content {
                 margin: 10px 12px;
                 line-height: 1.4;
-                max-height: 400px;
-                overflow-y: auto;
-            }}
-            
-            .enhanced-popup .leaflet-popup-content-wrapper {{
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            }}
-            
-            .enhanced-popup .leaflet-popup-tip {{
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }}
-            
-            .custom-tooltip {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            .custom-tooltip {
                 background-color: rgba(255, 255, 255, 0.95);
-                border: 1px solid #1E88E5;
+                border: 1px solid #1a73e8;
                 border-radius: 4px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
                 padding: 6px 10px;
-                font-family: Arial, sans-serif;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 12px;
                 line-height: 1.4;
                 white-space: nowrap;
                 pointer-events: none;
-            }}
-            .custom-tooltip .leaflet-tooltip-content strong {{
-                color: #1E88E5;
+            }
+            .custom-tooltip strong {
+                color: #1a73e8;
                 display: block;
                 margin-bottom: 2px;
                 font-size: 13px;
-            }}
-            .custom-tooltip .tooltip-data {{
+            }
+            .tooltip-data {
                 color: #333;
                 font-weight: 500;
-            }}
-            .leaflet-tooltip-top:before {{
-                border-top-color: #1E88E5;
-            }}
-        </style>
-        
-        <div id="{map_id}" style="height:100%; width:100%;"></div>
-        <div id="{map_id}-legend" class="map-legend">
-            <div class="legend-title">Poverty Rate (%)</div>
-            <div class="legend-items" id="{map_id}-legend-items"></div>
-            <div class="color-scheme-selector">
-                <label for="color-scheme-select">Color Scheme:</label>
-                <select id="color-scheme-select">
-                    <option value="blue" {'selected' if color_scheme == 'blue' else ''}>Blue Scale</option>
-                    <option value="green" {'selected' if color_scheme == 'green' else ''}>Green Scale</option>
-                    <option value="red" {'selected' if color_scheme == 'red' else ''}>Red Scale</option>
-                    <option value="purple" {'selected' if color_scheme == 'purple' else ''}>Purple Scale</option>
-                </select>
-            </div>
-        </div>
-        
-        <script>
-            // Initialize the map with a white background
-            const map = L.map('{map_id}', {{
+            }
+        """
+    
+    def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str, 
+                           variable_display_name: str, color_scheme: str) -> str:
+        """Generate JavaScript code for the map."""
+        return f"""
+        (function() {{
+            // Configuration constants
+            const MAP_CONFIG = {{
+                center: [20.7984, -156.3319],
+                zoom: 7,
+                zoomSnap: 0.1,
+                zoomDelta: 0.5
+            }};
+            
+            const COLOR_SCHEMES = {json.dumps(self.COLOR_SCHEMES)};
+            const SELECTED_VARIABLE = '{selected_variable}';
+            const VARIABLE_DISPLAY_NAME = '{variable_display_name}';
+            const MAP_ID = '{map_id}';
+            
+            // Utility functions
+            const utils = {{
+                formatValue(value, variableType) {{
+                    if (value === undefined || value === null) return 'N/A';
+                    
+                    const numValue = parseFloat(value);
+                    if (isNaN(numValue)) return 'N/A';
+                    
+                    if (variableType.includes('rate') || variableType.includes('pct')) {{
+                        return numValue.toFixed(1) + '%';
+                    }} else if (variableType.includes('income') || variableType.includes('value')) {{
+                        return '$' + numValue.toLocaleString();
+                    }}
+                    return numValue.toLocaleString();
+                }},
+                
+                getColorForValue(value, scheme = '{color_scheme}') {{
+                    const numValue = parseFloat(value) || 0;
+                    const colors = COLOR_SCHEMES[scheme] || COLOR_SCHEMES.blue;
+                    
+                    // Dynamic thresholds based on variable type
+                    let thresholds;
+                    if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
+                        thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
+                    }} else if (SELECTED_VARIABLE.includes('income')) {{
+                        thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
+                    }} else {{
+                        thresholds = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
+                    }}
+                    
+                    for (let i = thresholds.length - 1; i >= 0; i--) {{
+                        if (numValue >= thresholds[i]) {{
+                            return colors[Math.min(i, colors.length - 1)];
+                        }}
+                    }}
+                    return colors[0];
+                }},
+                
+                createMetricHtml(metrics, properties) {{
+                    const metricsConfig = {json.dumps(self.DEFAULT_METRICS)};
+                    let html = '';
+                    
+                    metricsConfig.forEach(metric => {{
+                        const value = properties[metric.key];
+                        if (value !== undefined && value !== null) {{
+                            const isSelected = metric.key === SELECTED_VARIABLE;
+                            const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
+                            const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
+                            const fontWeight = isSelected ? 'bold' : 'normal';
+                            
+                            html += 
+                                '<div style="background: ' + bgColor + '; ' +
+                                'border: 1px solid ' + borderColor + '; ' +
+                                'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
+                                'font-weight: ' + fontWeight + ';">' +
+                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
+                                metric.label + '</div>' +
+                                '<div style="font-size: 12px; color: #333;">' + 
+                                utils.formatValue(value, metric.type) + '</div>' +
+                                '</div>';
+                        }}
+                    }});
+                    return html;
+                }}
+            }};
+            
+            // Initialize map
+            const map = L.map(MAP_ID, {{
+                center: MAP_CONFIG.center,
+                zoom: MAP_CONFIG.zoom,
                 zoomControl: false,
                 attributionControl: false,
-                zoomSnap: 0.1,
-                zoomDelta: 0.5,
-                zoom: 7,
-                center: [20.7984, -156.3319],
-                layers: [],
-                zoomAnimation: true,
-                fadeAnimation: true,
-                markerZoomAnimation: true
+                zoomSnap: MAP_CONFIG.zoomSnap,
+                zoomDelta: MAP_CONFIG.zoomDelta
             }});
             
-            // Set the map's background to white
-            const mapDiv = document.getElementById('{map_id}');
-            if (mapDiv) {{
-                mapDiv.style.backgroundColor = 'white';
-            }}
+            // Set background color
+            document.getElementById(MAP_ID).style.backgroundColor = 'white';
             
-            // Add custom zoom controls
-            const zoomControl = L.control.zoom({{ position: 'topleft' }});
-            zoomControl.addTo(map);
+            // Add zoom control
+            L.control.zoom({{ position: 'topleft' }}).addTo(map);
             
-            // Style the zoom controls
-            const zoomControlContainer = document.querySelector('.leaflet-control-zoom');
-            if (zoomControlContainer) {{
-                zoomControlContainer.style.border = 'none';
-                zoomControlContainer.style.background = 'rgba(255, 255, 255, 0.7)';
-                zoomControlContainer.style.borderRadius = '4px';
-                zoomControlContainer.style.overflow = 'hidden';
-                zoomControlContainer.style.boxShadow = '0 1px 5px rgba(0,0,0,0.2)';
+            // Map interaction handlers
+            let geoJsonLayer;
+            
+            const mapHandlers = {{
+                style(feature) {{
+                    return {{
+                        fillColor: utils.getColorForValue(feature.properties[SELECTED_VARIABLE]),
+                        weight: 1,
+                        opacity: 1,
+                        color: '#666',
+                        fillOpacity: 0.7
+                    }};
+                }},
                 
-                // Style the zoom buttons
-                const zoomIn = zoomControlContainer.querySelector('.leaflet-control-zoom-in');
-                const zoomOut = zoomControlContainer.querySelector('.leaflet-control-zoom-out');
-                
-                if (zoomIn && zoomOut) {{
-                    [zoomIn, zoomOut].forEach(btn => {{
-                        btn.style.background = 'rgba(255, 255, 255, 0.8)';
-                        btn.style.borderBottom = '1px solid rgba(0,0,0,0.1)';
-                        btn.style.width = '30px';
-                        btn.style.height = '30px';
-                        btn.style.lineHeight = '30px';
-                        btn.style.fontSize = '20px';
-                        btn.style.color = '#333';
-                        btn.style.transition = 'all 0.2s';
-                        
-                        btn.onmouseover = () => {{ btn.style.background = 'rgba(255, 255, 255, 1)'; }};
-                        btn.onmouseout = () => {{ btn.style.background = 'rgba(255, 255, 255, 0.8)'; }};
+                highlightFeature(e) {{
+                    const layer = e.target;
+                    layer.setStyle({{
+                        weight: 3,
+                        color: '#333',
+                        fillOpacity: 0.9
                     }});
-                    
-                    // Remove the border from the last button
-                    zoomOut.style.borderBottom = 'none';
-                }}
-            }}
-            
-            // Function to determine color based on value and color scheme
-            function getColorForValue(value, scheme = '{color_scheme}') {{
-                // Ensure value is a number
-                value = parseFloat(value) || 0;
+                    layer.bringToFront();
+                }},
                 
-                // Define color schemes with more distinct steps
-                const schemes = {{
-                    blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
-                    green: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
-                    red: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
-                    purple: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
-                }};
+                resetHighlight(e) {{
+                    geoJsonLayer.resetStyle(e.target);
+                }},
                 
-                // Get the appropriate color scheme or default to blue
-                const colors = schemes[scheme] || schemes.blue;
-                
-                // Determine color based on value (adjust these thresholds as needed)
-                if (value >= 80) return colors[8];
-                if (value >= 70) return colors[7];
-                if (value >= 60) return colors[6];
-                if (value >= 50) return colors[5];
-                if (value >= 40) return colors[4];
-                if (value >= 30) return colors[3];
-                if (value >= 20) return colors[2];
-                if (value >= 10) return colors[1];
-                return colors[0];
-            }}
-            
-            // Store the current color scheme in the window object for the map
-            window['{map_id}_color_scheme'] = '{current_color_scheme}';
-            
-            // Set up color scheme change handler
-            const colorSchemeSelect = document.getElementById('color-scheme-select');
-            if (colorSchemeSelect) {{
-                colorSchemeSelect.addEventListener('change', function(event) {{
-                    const newColorScheme = event.target.value;
-                    // Send message to Streamlit with the new color scheme
-                    window.parent.postMessage({{
-                        type: 'color_scheme_change',
-                        color_scheme: newColorScheme,
-                        map_id: '{map_id}'
-                    }}, '*');
-                    
-                    // Update the map with the new color scheme
-                    updateMapColors(map, newColorScheme);
-                }});
-            }}
-            
-            // Function to update map colors when color scheme changes
-            function updateMapColors(map, colorScheme) {{
-                if (!map) return;
-                
-                // Get all layers and update their styles
-                map.eachLayer(function(layer) {{
-                    if (layer.feature) {{
-                        const value = layer.feature.properties['{selected_variable}'];
-                        if (value !== undefined) {{
-                            const color = getColorForValue(value, colorScheme);
-                            layer.setStyle({{ fillColor: color }});
-                        }}
-                    }}
-                }});
-                
-                // Update the legend to reflect the new color scheme
-                updateLegend();
-            }}
-            
-            // Store the map instance in the window object for debugging
-            window['{map_id}'] = map;
-            
-            // Style function for features
-            function style(feature) {{
-                const value = feature.properties['{selected_variable}'];
-                return {{
-                    fillColor: getColorForValue(value),
-                    weight: 1,  
-                    opacity: 1,
-                    color: '#666',
-                    dashArray: '',
-                    fillOpacity: 0.7
-                }};
-            }}
-            
-            // Highlight feature on hover
-            function highlightFeature(e) {{
-                const layer = e.target;
-                
-                layer.setStyle({{
-                    weight: 3,
-                    color: '#333',
-                    dashArray: '',
-                    fillOpacity: 0.9
-                }});
-                
-                layer.bringToFront();
-            }}
-            
-            // Reset highlight on mouseout
-            function resetHighlight(e) {{
-                geoJsonLayer.resetStyle(e.target);
-            }}
-            
-            // Click handler
-            function zoomToFeature(e) {{
-                // Check if click originated from popup content
-                if (e.originalEvent && e.originalEvent.target) {{
-                    const target = e.originalEvent.target;
-                    if (target.closest('.leaflet-popup-content')) {{
-                        console.log('Click originated from popup, ignoring zoom');
+                zoomToFeature(e) {{
+                    if (e.originalEvent && e.originalEvent.target && 
+                        e.originalEvent.target.closest('.leaflet-popup-content')) {{
                         return;
                     }}
-                }}
-                
-                map.fitBounds(e.target.getBounds());
-                
-                // Send the clicked feature ID to Streamlit via URL parameter
-                const featureId = e.target.feature.properties.id || e.target.feature.id;
-                if (featureId) {{
-                    // Store in localStorage and trigger a page event
-                    localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
                     
-                    // Trigger a custom event
-                    window.parent.postMessage({{
-                        type: 'feature_selected',
-                        featureId: featureId
-                    }}, '*');
-                }}
-            }}
-            
-            // Add interaction to each feature
-            function onEachFeature(feature, layer) {{
-                layer.on({{
-                    mouseover: highlightFeature,
-                    mouseout: resetHighlight,
-                    click: zoomToFeature
-                }});
-                
-                // Create popup content
-                const properties = feature.properties;
-                const name = properties.display_name || properties.NAME || 'Unknown';
-                let value = properties['{selected_variable}'];
-                
-                // Format the value based on the variable type
-                let formattedValue = 'N/A';
-                if (value !== undefined && value !== null) {{
-                    if ('{selected_variable}'.includes('rate') || '{selected_variable}'.includes('pct')) {{
-                        formattedValue = parseFloat(value).toFixed(1) + '%';
-                    }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                        formattedValue = '$' + parseFloat(value).toLocaleString();
-                    }} else {{
-                        formattedValue = value.toLocaleString();
+                    map.fitBounds(e.target.getBounds());
+                    
+                    const featureId = e.target.feature.properties.id || e.target.feature.id;
+                    if (featureId) {{
+                        localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
+                        window.parent.postMessage({{
+                            type: 'feature_selected',
+                            featureId: featureId
+                        }}, '*');
                     }}
+                }},
+                
+                onEachFeature(feature, layer) {{
+                    layer.on({{
+                        mouseover: mapHandlers.highlightFeature,
+                        mouseout: mapHandlers.resetHighlight,
+                        click: mapHandlers.zoomToFeature
+                    }});
+                    
+                    const props = feature.properties;
+                    const name = props.display_name || props.NAME || 'Unknown';
+                    const value = props[SELECTED_VARIABLE];
+                    const formattedValue = utils.formatValue(value, SELECTED_VARIABLE);
+                    const metricsHtml = utils.createMetricHtml(null, props);
+                    
+                    const popupContent = 
+                        '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 200px;">' +
+                        '<div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">' +
+                        '<strong style="font-size: 15px; color: #1a73e8;">' + name + '</strong>' +
+                        '</div>' +
+                        '<div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 8px;">' +
+                        '<strong>' + VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</strong>' +
+                        '</div>' +
+                        (metricsHtml ? 
+                            '<div style="border-top: 1px solid #eee; padding-top: 8px;">' +
+                            '<div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold;">Key Metrics</div>' +
+                            metricsHtml + '</div>' : '') +
+                        '</div>';
+                    
+                    layer.bindPopup(popupContent, {{
+                        maxWidth: 280,
+                        className: 'custom-popup'
+                    }});
+                    
+                    layer.bindTooltip(
+                        '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
+                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>',
+                        {{ className: 'custom-tooltip', offset: [0, -10] }}
+                    );
                 }}
-                
-                const displayName = '{variable_display_name}' || '{selected_variable}'.replace('_', ' ').replace(/\\b\\w/g, l => l.toUpperCase());
-                // Create comprehensive popup content with all available data
-                let additionalData = '';
-                const props = feature.properties;
-                
-                // Add key metrics if available
-                const keyMetrics = [
-                    {{ key: 'population', label: 'Population', format: (v) => v ? v.toLocaleString() : 'N/A' }},
-                    {{ key: 'poverty_rate', label: 'Poverty Rate', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
-                    {{ key: 'median_income', label: 'Median Income', format: (v) => v ? '$' + v.toLocaleString() : 'N/A' }},
-                    {{ key: 'unemployment_rate', label: 'Unemployment Rate', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
-                    {{ key: 'college_educated_pct', label: 'College Educated', format: (v) => v ? v.toFixed(1) + '%' : 'N/A' }},
-                    {{ key: 'median_home_value', label: 'Median Home Value', format: (v) => v ? '$' + v.toLocaleString() : 'N/A' }}
-                ];
-                
-                let metricsHtml = '';
-                keyMetrics.forEach(metric => {{
-                    const value = props[metric.key];
-                    if (value !== undefined && value !== null) {{
-                        const isSelected = metric.key === '{selected_variable}';
-                        const bgColor = isSelected ? '#e3f2fd' : '#f9f9f9';
-                        const borderColor = isSelected ? '#1E88E5' : '#e0e0e0';
-                        const fontWeight = isSelected ? 'bold' : 'normal';
-                        
-                        metricsHtml += `
-                            <div style="
-                                background: ${{bgColor}}; 
-                                border: 1px solid ${{borderColor}}; 
-                                border-radius: 4px; 
-                                padding: 6px 8px; 
-                                margin: 3px 0;
-                                font-weight: ${{fontWeight}};
-                                ${{isSelected ? 'box-shadow: 0 1px 3px rgba(30,136,229,0.3);' : ''}}
-                            ">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 2px;">${{metric.label}}</div>
-                                <div style="font-size: 13px; color: #333;">${{metric.format(value)}}</div>
-                            </div>
-                        `;
-                    }}
-                }});
-                
-                const popupContent = `
-                    <div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; min-width: 200px;">
-                        <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1E88E5;">
-                            <strong style="font-size: 15px; color: #1E88E5;">${{name}}</strong>
-                        </div>
-                        <div style="margin-bottom: 8px;">
-                            <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
-                                📊 Currently viewing: <strong>{variable_display_name}</strong>
-                            </div>
-                            <div style="background: #1E88E5; color: white; padding: 6px 8px; border-radius: 4px; text-align: center;">
-                                <strong>${{displayName}}: ${{formattedValue}}</strong>
-                            </div>
-                        </div>
-                        ${{metricsHtml ? `
-                            <div style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 4px; font-weight: bold;">
-                                    📋 Key Demographics & Economics
-                                </div>
-                                ${{metricsHtml}}
-                            </div>
-                        ` : ''}}
-                        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #eee; text-align: center;">
-                            <div style="font-size: 10px; color: #999;">
-                                Click elsewhere to close • Data from ACS 2023
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Bind popup with larger configuration
-                layer.bindPopup(popupContent, {{
-                    closeOnClick: false,
-                    autoClose: false,
-                    closeButton: true,
-                    maxWidth: 280,
-                    minWidth: 200,
-                    className: 'custom-popup enhanced-popup'
-                }});
-                
-                // Add tooltip to show data on hover
-                const tooltipContent = `<div class="leaflet-tooltip-content">
-                    <strong>${{name}}</strong><br>
-                    <span class="tooltip-data">${{displayName}}: ${{formattedValue}}</span>
-                </div>`;
-                
-                layer.bindTooltip(tooltipContent, {{
-                    permanent: false,
-                    direction: 'top',
-                    className: 'custom-tooltip',
-                    opacity: 0.9,
-                    offset: [0, -10]
-                }});
-            }}
+            }};
             
-            // Parse GeoJSON and add to map
+            // Create GeoJSON layer
             const geoJsonData = {geojson_str};
-            const geoJsonLayer = L.geoJSON(geoJsonData, {{
-                style: style,
-                onEachFeature: onEachFeature
+            geoJsonLayer = L.geoJSON(geoJsonData, {{
+                style: mapHandlers.style,
+                onEachFeature: mapHandlers.onEachFeature
             }}).addTo(map);
             
-            // Fit map to GeoJSON bounds
             map.fitBounds(geoJsonLayer.getBounds());
             
-            // Create legend
-            function updateLegend() {{
-                const legendItems = document.getElementById('{map_id}-legend-items');
-                if (!legendItems) return;
-                
-                legendItems.innerHTML = '';
-                
-                // Get the current color scheme
-                const colorSchemeSelect = document.getElementById('color-scheme-select');
-                const currentScheme = colorSchemeSelect ? colorSchemeSelect.value : '{color_scheme}';
-                
-                // Define color schemes with more distinct steps
-                const schemes = {{
-                    blue: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
-                    green: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
-                    red: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
-                    purple: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
-                }};
-                
-                const colors = schemes[currentScheme] || schemes.blue;
-                
-                // Create legend items based on the variable
-                const grades = [0, 5, 10, 15, 20, 25, 30, 35, 40];
-                let labels = [];
-                
-                // Update the getColor function to be dynamic based on the variable type
-                function getColor(value) {{
-                    if (value === null || isNaN(value)) return '#ccc';
+            // Legend functionality
+            const legendManager = {{
+                update() {{
+                    const legendItems = document.getElementById(MAP_ID + '-legend-items');
+                    if (!legendItems) return;
                     
-                    // Normalize the value based on variable type
-                    let normalizedValue;
+                    const colorSchemeSelect = document.getElementById('color-scheme-select');
+                    const currentScheme = colorSchemeSelect ? colorSchemeSelect.value : '{color_scheme}';
+                    const colors = COLOR_SCHEMES[currentScheme] || COLOR_SCHEMES.blue;
                     
-                    if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
-                        // For percentages (0-100%)
-                        normalizedValue = Math.min(Math.max(value, 0), 100);
-                        const percent = normalizedValue / 100;
-                        return colors[Math.min(Math.floor(percent * 8), 8)];
-                    }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                        // For income values (40k-120k) - adjusted for Hawaii's income range
-                        const minIncome = 40000;
-                        const maxIncome = 120000;
-                        normalizedValue = Math.min(Math.max(value, minIncome), maxIncome);
-                        const percent = (normalizedValue - minIncome) / (maxIncome - minIncome);
-                        return colors[Math.min(Math.floor(percent * 8), 8)];
+                    let title = SELECTED_VARIABLE.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase());
+                    let labels = [];
+                    let grades;
+                    
+                    if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
+                        title += ' (%)';
+                        grades = [[5, 10], [10, 15], [15, 20], [20, 25], [25, 30], [30, 35], [35, 40], [40, '+']];
+                    }} else if (SELECTED_VARIABLE.includes('income')) {{
+                        title += ' ($)';
+                        grades = [['40k', '50k'], ['50k', '60k'], ['60k', '70k'], ['70k', '80k'], 
+                                ['80k', '90k'], ['90k', '100k'], ['100k', '110k'], ['110k', '+']];
                     }} else {{
-                        // For counts (0-500k)
-                        normalizedValue = Math.min(Math.max(value, 0), 500000);
-                        const percent = normalizedValue / 500000;
-                        return colors[Math.min(Math.floor(percent * 8), 8)];
+                        title += ' (Count)';
+                        grades = [['0', '1k'], ['1k', '5k'], ['5k', '10k'], ['10k', '25k'], 
+                                ['25k', '50k'], ['50k', '100k'], ['100k', '250k'], ['250k', '+']];
+                    }}
+                    
+                    grades.forEach((grade, i) => {{
+                        const range = grade[1] === '+' ? grade[0] + '+' : grade[0] + '-' + grade[1];
+                        labels.push(
+                            '<div class="legend-item">' +
+                            '<i style="background:' + colors[i] + '"></i>' + range +
+                            '</div>'
+                        );
+                    }});
+                    
+                    document.querySelector('#' + MAP_ID + '-legend .legend-title').textContent = title;
+                    legendItems.innerHTML = labels.join('');
+                }},
+                
+                setupColorSchemeHandler() {{
+                    const select = document.getElementById('color-scheme-select');
+                    if (select) {{
+                        select.addEventListener('change', function(e) {{
+                            const newScheme = e.target.value;
+                            
+                            // Update map colors
+                            map.eachLayer(layer => {{
+                                if (layer.feature) {{
+                                    const value = layer.feature.properties[SELECTED_VARIABLE];
+                                    if (value !== undefined) {{
+                                        layer.setStyle({{ 
+                                            fillColor: utils.getColorForValue(value, newScheme) 
+                                        }});
+                                    }}
+                                }}
+                            }});
+                            
+                            legendManager.update();
+                            
+                            window.parent.postMessage({{
+                                type: 'color_scheme_change',
+                                color_scheme: newScheme,
+                                map_id: MAP_ID
+                            }}, '*');
+                        }});
                     }}
                 }}
-                
-                // Update legend title based on variable type
-                const legendTitle = document.querySelector('#{map_id}-legend .legend-title');
-                let title = '{selected_variable}'.replace(/_/g, ' ').replace(/\\b\\w/g, function(l) {{ return l.toUpperCase(); }});
-                
-                if ('{selected_variable}'.includes('poverty') || '{selected_variable}'.includes('pct') || '{selected_variable}'.includes('rate')) {{
-                    // For poverty rates (5-25% range)
-                    title = title + ' (%)';
-                    const povertyGrades = [5, 8, 11, 14, 17, 20, 23, 26, 29];
-                    for (let i = 0; i < povertyGrades.length - 1; i++) {{
-                        const from = povertyGrades[i];
-                        const to = povertyGrades[i + 1];
-                        const isLast = i === povertyGrades.length - 2;
-                        const color = getColor(from + 1);
-                        const range = isLast ? from + '%+' : from + '-' + to + '%';
-                        
-                        labels.push('<div class="legend-item">' +
-                            '<i style="background:' + color + '"></i>' +
-                            range +
-                            '</div>');
-                    }}
-                }} else if ('{selected_variable}'.includes('income') || '{selected_variable}'.includes('value')) {{
-                    // For income/value variables (in dollars) - adjusted for Hawaii's income range
-                    title = title + ' ($)';
-                    const incomeGrades = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
-                    for (let i = 0; i < incomeGrades.length - 1; i++) {{
-                        const from = incomeGrades[i];
-                        const to = incomeGrades[i + 1];
-                        const isLast = i === incomeGrades.length - 2;
-                        const color = getColor(from + (to - from) / 2);
-                        let range;
-                        
-                        if (isLast) {{
-                            range = '$' + (from/1000) + 'k+';
-                        }} else if (to - from === 10000) {{
-                            // For 10k ranges, show as single number (e.g., 50k)
-                            range = '$' + (from/1000) + 'k';
-                        }} else {{
-                            range = '$' + (from/1000) + 'k-$' + (to/1000) + 'k';
-                        }}
-                        
-                        labels.push('<div class="legend-item">' +
-                            '<i style="background:' + color + '"></i>' +
-                            range +
-                            '</div>');
-                    }}
-                }} else {{
-                    // For count variables
-                    title = title + ' (Count)';
-                    const countGrades = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
-                    for (let i = 0; i < countGrades.length - 1; i++) {{
-                        const from = countGrades[i];
-                        const to = countGrades[i + 1];
-                        const isLast = i === countGrades.length - 2;
-                        const color = getColor(from + (to - from) / 2);
-                        let range;
-                        
-                        if (isLast) {{
-                            range = from.toLocaleString() + '+';
-                        }} else if (to >= 1000) {{
-                            range = (from/1000) + 'k-' + (to/1000) + 'k';
-                        }} else {{
-                            range = from + '-' + to;
-                        }}
-                        
-                        labels.push('<div class="legend-item">' +
-                            '<i style="background:' + color + '"></i>' +
-                            range +
-                            '</div>');
-                    }}
-                }}
-                
-                // Update the legend title
-                if (legendTitle) {{
-                    legendTitle.textContent = title;
-                }}
-                
-                legendItems.innerHTML = labels.join('');
-                
-                // Update the colors in the legend items
-                const legendItemElements = legendItems.querySelectorAll('.legend-item i');
-                legendItemElements.forEach((item, i) => {{
-                    if (i < colors.length) {{
-                        item.style.backgroundColor = colors[i];
-                    }}
-                }});
-            }}
+            }};
             
-            updateLegend();
-        </script>
-    </div>
+            // Initialize legend
+            legendManager.update();
+            legendManager.setupColorSchemeHandler();
+            
+            // Store map reference for debugging
+            window[MAP_ID] = map;
+        }})();
+        """
+    
+    def create_map(
+        self,
+        geojson_data: Union[Dict[str, Any], str],
+        selected_variable: str,
+        variable_display_name: Optional[str] = None,
+        color_scheme: str = "blue",
+        active_layer: str = "Counties",
+        map_height: int = 500,
+        key: Optional[str] = None
+    ) -> None:
+        """
+        Create a Leaflet map component in Streamlit.
+        
+        Args:
+            geojson_data: GeoJSON data to display on the map
+            selected_variable: Variable to display (e.g., 'poverty_rate')
+            variable_display_name: Display name for the variable
+            color_scheme: Color scheme for the map ('blue', 'green', 'red', 'purple')
+            active_layer: Active layer name (for future use)
+            map_height: Height of the map in pixels
+            key: Unique key for the component
+        
+        Returns:
+            None
+        """
+        self.logger.info(f"Creating Leaflet map with variable: {selected_variable}")
+        
+        # Convert GeoJSON to dict if it's a string
+        if isinstance(geojson_data, str):
+            geojson_data = json.loads(geojson_data)
+        
+        # Validate data
+        self._validate_geojson_data(geojson_data, selected_variable)
+        
+        # Prepare data
+        geojson_str = json.dumps(geojson_data)
+        map_id = f"leaflet-map-{key}" if key else "leaflet-map"
+        variable_display_name = self._format_variable_name(selected_variable, variable_display_name)
+        current_color_scheme = st.session_state.get('color_scheme', color_scheme)
+        
+        # Build HTML component
+        component_html = f"""
+        <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative;">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            
+            <style>{self._get_css_styles()}</style>
+            
+            <div id="{map_id}" style="height:100%; width:100%;"></div>
+            <div id="{map_id}-legend" class="map-legend">
+                <div class="legend-title">{variable_display_name}</div>
+                <div class="legend-items" id="{map_id}-legend-items"></div>
+                <div class="color-scheme-selector">
+                    <label for="color-scheme-select">Color Scheme:</label>
+                    <select id="color-scheme-select">
+                        <option value="blue" {'selected' if current_color_scheme == 'blue' else ''}>Blue Scale</option>
+                        <option value="green" {'selected' if current_color_scheme == 'green' else ''}>Green Scale</option>
+                        <option value="red" {'selected' if current_color_scheme == 'red' else ''}>Red Scale</option>
+                        <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple Scale</option>
+                    </select>
+                </div>
+            </div>
+            
+            <script>
+                {self._get_javascript_code(map_id, geojson_str, selected_variable, variable_display_name, current_color_scheme)}
+            </script>
+        </div>
+        """
+        
+        # Render component
+        components.html(
+            component_html,
+            height=map_height + 50,
+            scrolling=False
+        )
+
+
+def create_leaflet_map(
+    geojson_data: Union[Dict[str, Any], str], 
+    selected_variable: str, 
+    variable_display_name: Optional[str] = None, 
+    color_scheme: str = "blue", 
+    active_layer: str = "Counties",
+    map_height: int = 500, 
+    key: Optional[str] = None
+) -> None:
     """
+    Create a Leaflet map component in Streamlit.
     
-    # Use Streamlit's component functionality to render the HTML/JS
-    components.html(
-        component_html,
-        height=map_height+50,
-        scrolling=False
+    This is a convenience function that creates a LeafletMapComponent instance
+    and calls its create_map method.
+    
+    Args:
+        geojson_data: GeoJSON data to display on the map
+        selected_variable: Variable to display (e.g., 'poverty_rate')
+        variable_display_name: Display name for the variable
+        color_scheme: Color scheme for the map ('blue', 'green', 'red', 'purple')
+        active_layer: Active layer name (for future use)
+        map_height: Height of the map in pixels
+        key: Unique key for the component
+    
+    Returns:
+        None
+    """
+    component = LeafletMapComponent()
+    component.create_map(
+        geojson_data=geojson_data,
+        selected_variable=selected_variable,
+        variable_display_name=variable_display_name,
+        color_scheme=color_scheme,
+        active_layer=active_layer,
+        map_height=map_height,
+        key=key
     )
-    
-    # Return None since we're using localStorage and postMessage for communication
-    return None
