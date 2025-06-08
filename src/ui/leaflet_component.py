@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Any, Optional, Union
 
 from .leaflet_legend import get_legend_js
+from .leaflet_styles import get_css_styles
 
 
 class LeafletMapComponent:
@@ -58,104 +59,6 @@ class LeafletMapComponent:
         if variable_display_name:
             return variable_display_name
         return variable.replace('_', ' ').title()
-    
-    def _get_css_styles(self) -> str:
-        """Return CSS styles for the map component."""
-        return """
-            .map-legend {
-                position: absolute;
-                bottom: 20px;
-                right: 10px;
-                z-index: 1000;
-                background: rgba(255, 255, 255, 0.95);
-                padding: 8px 10px;
-                border-radius: 6px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 11px;
-                line-height: 1.3;
-                color: #333;
-                border: 1px solid rgba(0,0,0,0.1);
-                min-width: 140px;
-                max-width: 200px;
-            }
-            .legend-title {
-                font-weight: 600;
-                margin-bottom: 6px;
-                text-align: center;
-                font-size: 12px;
-                color: #1a73e8;
-            }
-            .legend-item {
-                display: flex;
-                align-items: center;
-                margin: 3px 0;
-                font-size: 10px;
-            }
-            .legend-item i {
-                display: inline-block;
-                width: 18px;
-                height: 10px;
-                margin-right: 6px;
-                border: 1px solid rgba(0,0,0,0.2);
-                border-radius: 2px;
-            }
-            .color-scheme-selector {
-                margin-top: 8px;
-                padding-top: 8px;
-                border-top: 1px solid rgba(0,0,0,0.1);
-            }
-            .color-scheme-selector select {
-                width: 100%;
-                font-size: 10px;
-                padding: 4px 6px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                background-color: white;
-                margin-top: 2px;
-                cursor: pointer;
-                transition: border-color 0.2s;
-            }
-            .color-scheme-selector select:focus {
-                outline: none;
-                border-color: #1a73e8;
-                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-            }
-            .color-scheme-selector label {
-                font-size: 10px;
-                font-weight: 600;
-                color: #555;
-                display: block;
-                margin-bottom: 2px;
-            }
-            .custom-popup .leaflet-popup-content {
-                margin: 10px 12px;
-                line-height: 1.4;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-            .custom-tooltip {
-                background-color: rgba(255, 255, 255, 0.95);
-                border: 1px solid #1a73e8;
-                border-radius: 4px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-                padding: 6px 10px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 12px;
-                line-height: 1.4;
-                white-space: nowrap;
-                pointer-events: none;
-            }
-            .custom-tooltip strong {
-                color: #1a73e8;
-                display: block;
-                margin-bottom: 2px;
-                font-size: 13px;
-            }
-            .tooltip-data {
-                color: #333;
-                font-weight: 500;
-            }
-        """
     
     def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str, 
                            variable_display_name: str, color_scheme: str) -> str:
@@ -410,7 +313,7 @@ class LeafletMapComponent:
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             
-            <style>{self._get_css_styles()}</style>
+            <style>{get_css_styles()}</style>
             
             <div id="{map_id}" style="height:100%; width:100%;"></div>
             <div id="{map_id}-legend" class="map-legend">
