@@ -230,6 +230,10 @@ class LeafletMapComponent:
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
                         thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
+                    }} else if (SELECTED_VARIABLE === 'snap_benefits_annual_total') {{
+                        // Custom scale for total SNAP benefits to show more variation
+                        // Using logarithmic-like scale for better distribution
+                        thresholds = [1000000, 2000000, 5000000, 10000000, 15000000, 20000000, 30000000, 50000000, 75000000];
                     }} else {{
                         thresholds = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
                     }}
