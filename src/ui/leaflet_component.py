@@ -154,6 +154,26 @@ class LeafletMapComponent:
                 white-space: nowrap;
                 pointer-events: none;
             }
+            
+            /* Remove focus outline from map features */
+            .leaflet-container:focus,
+            .leaflet-container:focus-within,
+            .leaflet-container:focus-visible,
+            .leaflet-container:focus-visible *,
+            .leaflet-container *:focus,
+            .leaflet-container *:focus-within,
+            .leaflet-container *:focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Remove focus outline from interactive elements */
+            .leaflet-interactive:focus,
+            .leaflet-interactive:focus-within,
+            .leaflet-interactive:focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
+            }
             .custom-tooltip strong {
                 color: #1a73e8;
                 display: block;
