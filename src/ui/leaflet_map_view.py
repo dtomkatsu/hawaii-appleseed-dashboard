@@ -367,7 +367,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households'
+                'alice_rate': 'ALICE Households',
+                'snap_household_rate': 'SNAP Households (%)',
+                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
+                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
             }
         elif active_layer == 'Counties':
             variable_options = {
@@ -377,7 +380,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'population': 'Population',
                 'median_home_value': 'Median Home Value',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households'
+                'alice_rate': 'ALICE Households',
+                'snap_household_rate': 'SNAP Households (%)',
+                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
+                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
             }
         else:  # House and Senate Districts
             variable_options = {
@@ -385,7 +391,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'college_educated_pct': 'College Educated',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households'
+                'alice_rate': 'ALICE Households',
+                'snap_household_rate': 'SNAP Households (%)',
+                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
+                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
             }
         
         # Get the current index, defaulting to 0 if not found
@@ -416,7 +425,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'bachelors_rate': 'Bachelors Degree Rate',
         'renter_rate': 'Renter Rate',
         'rent_burden_rate': 'Housing Cost Burden (%)',
-        'alice_rate': 'ALICE Households (%)'
+        'alice_rate': 'ALICE Households (%)',
+        'snap_household_rate': 'SNAP Households (%)',
+        'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
     }
     
     # Create the map
@@ -482,7 +494,14 @@ def prepare_feature_details(feature_id, geojson_data):
         "Poverty Rate": format_number(properties.get('poverty_rate', 'N/A'), suffix='%'),
         "Median Income": format_number(properties.get('median_income', 'N/A'), prefix='$'),
         "Unemployment Rate": format_number(properties.get('unemployment_rate', 'N/A'), suffix='%'),
-        "SNAP Benefits (%)": format_number(properties.get('snap_benefits_pct', 'N/A'), suffix='%')
+        "ALICE Households": format_number(properties.get('alice_rate', 'N/A'), suffix='%')
+    }
+    
+    # SNAP data section
+    snap_data = {
+        "SNAP Households": format_number(properties.get('snap_household_rate', 'N/A'), suffix='%'),
+        "Avg Annual SNAP Benefit": format_number(properties.get('snap_benefit_annual_per_household', 'N/A'), prefix='$'),
+        "Total Annual SNAP Benefits": format_number(properties.get('snap_benefits_annual_total', 'N/A'), prefix='$')
     }
     
     housing = {
@@ -503,6 +522,7 @@ def prepare_feature_details(feature_id, geojson_data):
         "name": feature_name,
         "demographics": demographics,
         "economic": economic,
+        "snap": snap_data,
         "housing": housing,
         "education_health": education_health
     }
@@ -523,9 +543,28 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
         st.markdown(f"#### {details['name']}")
         
         # Create tabs for different categories of data
-        tab1, tab2, tab3, tab4 = st.tabs(["Demographics", "Economic", "Housing", "Education & Health"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Key Metrics", "SNAP", "Demographics", "Housing", "Education & Health"])
         
         with tab1:
+            # Key Metrics tab (Economic data)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Poverty Rate", details['economic']['Poverty Rate'])
+                st.metric("Median Income", details['economic']['Median Income'])
+            with col2:
+                st.metric("Unemployment Rate", details['economic']['Unemployment Rate'])
+                st.metric("ALICE Households", details['economic']['ALICE Households'])
+        
+        with tab2:
+            # SNAP tab
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("SNAP Households", details['snap']['SNAP Households'])
+                st.metric("Avg Annual SNAP Benefit", details['snap']['Avg Annual SNAP Benefit'])
+            with col2:
+                st.metric("Total Annual SNAP Benefits", details['snap']['Total Annual SNAP Benefits'])
+        
+        with tab3:
             # Demographics tab
             col1, col2 = st.columns(2)
             with col1:
@@ -535,17 +574,7 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
                 st.metric("Asian Alone (%)", details['demographics']['Asian Alone (%)'])
                 st.metric("Native Hawaiian/PI (%)", details['demographics']['Native Hawaiian/PI (%)'])
         
-        with tab2:
-            # Economic tab
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Poverty Rate", details['economic']['Poverty Rate'])
-                st.metric("Median Income", details['economic']['Median Income'])
-            with col2:
-                st.metric("Unemployment Rate", details['economic']['Unemployment Rate'])
-                st.metric("SNAP Benefits (%)", details['economic']['SNAP Benefits (%)'])
-        
-        with tab3:
+        with tab4:
             # Housing tab
             col1, col2 = st.columns(2)
             with col1:
@@ -555,7 +584,7 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
                 st.metric("Rent Burden (%)", details['housing']['Rent Burden (%)'])
                 st.metric("Median Rent", details['housing']['Median Rent'])
         
-        with tab4:
+        with tab5:
             # Education & Health tab
             col1, col2 = st.columns(2)
             with col1:

@@ -31,7 +31,11 @@ class DataLoader:
             'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
             'no_health_insurance': 'No Health Insurance (%)',
             # ALICE variables
-            'alice_rate': 'ALICE Households (%)'
+            'alice_rate': 'ALICE Households (%)',
+            # SNAP variables
+            'snap_household_rate': 'SNAP Households (%)',
+            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
         }
         
         # Geographic name mapping for data joining
@@ -52,6 +56,7 @@ class DataLoader:
         for geo_level in ['state', 'county', 'house', 'senate']:
             self.load_acs_data(geo_level)
             self.load_alice_data(geo_level)
+            self.load_snap_data(geo_level)
             
     def load_acs_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """
@@ -195,15 +200,79 @@ class DataLoader:
         logger.debug(f"Standardized ALICE {geo_level} data columns: {list(df.columns)}")
         return df
     
-    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
+    def load_snap_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """
-        Get combined ACS and ALICE data for a geographic level.
+        Load SNAP data for a specific geographic level.
         
         Args:
             geo_level: One of 'state', 'county', 'house', or 'senate'
             
         Returns:
-            DataFrame with merged ACS and ALICE data or None if not found
+            DataFrame with the loaded SNAP data or None if loading fails
+        """
+        try:
+            file_map = {
+                'state': 'hawaii_state_snap_2023.csv',
+                'county': 'hawaii_county_snap_2023.csv',
+                'house': 'hawaii_house_district_snap_2023.csv',
+                'senate': 'hawaii_senate_district_snap_2023.csv'
+            }
+            
+            if geo_level not in file_map:
+                logger.error(f"Invalid geographic level for SNAP data: {geo_level}")
+                return None
+                
+            file_path = self.data_dir / 'snap_benefits' / file_map[geo_level]
+            if not file_path.exists():
+                logger.error(f"SNAP data file not found: {file_path}")
+                return None
+                
+            # Read CSV and ensure geoid is string
+            df = pd.read_csv(file_path, dtype={'geoid': str})
+            
+            # Standardize geoid format for districts (should be 5 digits: 15XXX)
+            if geo_level in ['house', 'senate'] and 'geoid' in df.columns:
+                # Convert 4-digit geoids (like '1501') to 5-digit format ('15001')
+                # Also handle cases where it's already 5 digits but wrong format
+                def fix_geoid(geoid_str):
+                    geoid_str = str(geoid_str)
+                    if len(geoid_str) == 4 and geoid_str.startswith('15'):  # '1501' -> '15001'
+                        return geoid_str[:2] + '0' + geoid_str[2:]  # Insert '0' after '15'
+                    elif len(geoid_str) == 5 and geoid_str.startswith('0'):  # '01501' -> '15001' 
+                        return '15' + geoid_str[3:]  # Take the last 3 digits and add '15' prefix
+                    else:
+                        return geoid_str
+                df['geoid'] = df['geoid'].apply(fix_geoid)
+            
+            # Convert percentages from decimal to percentage format where needed
+            percentage_columns = ['snap_household_rate', 'snap_participation_rate']
+            for col in percentage_columns:
+                if col in df.columns:
+                    # Convert to percentage (multiply by 100)
+                    df[col] = df[col] * 100
+            
+            # Add log entry for debugging
+            logger.debug(f"Loaded SNAP {geo_level} data with columns: {list(df.columns)}")
+            
+            # Cache the loaded data with SNAP prefix
+            cache_key = f"snap_{geo_level}"
+            self.data_cache[cache_key] = df
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error loading SNAP {geo_level} data: {str(e)}")
+            return None
+    
+    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
+        """
+        Get combined ACS, ALICE, and SNAP data for a geographic level.
+        
+        Args:
+            geo_level: One of 'state', 'county', 'house', or 'senate'
+            
+        Returns:
+            DataFrame with merged ACS, ALICE, and SNAP data or None if not found
         """
         # Get ACS data
         acs_data = self.data_cache.get(geo_level)
@@ -215,128 +284,219 @@ class DataLoader:
         alice_data = self.data_cache.get(alice_cache_key)
         if alice_data is None:
             alice_data = self.load_alice_data(geo_level)
+            
+        # Get SNAP data
+        snap_cache_key = f"snap_{geo_level}"
+        snap_data = self.data_cache.get(snap_cache_key)
+        if snap_data is None:
+            snap_data = self.load_snap_data(geo_level)
         
-        # If we have both datasets, merge them
-        if acs_data is not None and alice_data is not None:
-            merged_data = self._merge_datasets(acs_data, alice_data, geo_level)
+        # Start with ACS data as base
+        merged_data = acs_data.copy() if acs_data is not None else None
+        
+        # Merge ALICE data if available
+        if merged_data is not None and alice_data is not None:
+            merged_data = self._merge_datasets(merged_data, alice_data, geo_level, data_type='alice')
+        elif alice_data is not None and merged_data is None:
+            merged_data = alice_data.copy()
+            
+        # Merge SNAP data if available
+        if merged_data is not None and snap_data is not None:
+            merged_data = self._merge_datasets(merged_data, snap_data, geo_level, data_type='snap')
+        elif snap_data is not None and merged_data is None:
+            merged_data = snap_data.copy()
+        
+        if merged_data is not None:
             return merged_data
-        elif acs_data is not None:
-            logger.warning(f"Only ACS data available for {geo_level}")
-            return acs_data
-        elif alice_data is not None:
-            logger.warning(f"Only ALICE data available for {geo_level}")
-            return alice_data
         else:
             logger.error(f"No data available for {geo_level}")
             return None
     
-    def _merge_datasets(self, acs_data: pd.DataFrame, alice_data: pd.DataFrame, geo_level: str) -> pd.DataFrame:
+    def _merge_datasets(self, base_data: pd.DataFrame, merge_data: pd.DataFrame, geo_level: str, data_type: str = 'alice') -> pd.DataFrame:
         """
-        Merge ACS and ALICE datasets on appropriate join keys.
+        Merge base data with additional dataset (ALICE or SNAP) on appropriate join keys.
         
         Args:
-            acs_data: ACS DataFrame
-            alice_data: ALICE DataFrame
+            base_data: Base DataFrame (ACS or already merged data)
+            merge_data: Data to merge (ALICE or SNAP DataFrame)
             geo_level: Geographic level
+            data_type: Type of data being merged ('alice' or 'snap')
             
         Returns:
             Merged DataFrame
         """
-        acs_df = acs_data.copy()
-        alice_df = alice_data.copy()
+        base_df = base_data.copy()
+        merge_df = merge_data.copy()
         
-        logger.debug(f"Merging {geo_level} data: ACS shape {acs_df.shape}, ALICE shape {alice_df.shape}")
+        logger.debug(f"Merging {geo_level} data: Base shape {base_df.shape}, {data_type.upper()} shape {merge_df.shape}")
         
         # Define join strategies by geographic level
         if geo_level == 'state':
             # Simple merge for state level
-            merged = acs_df.copy()
+            merged = base_df.copy()
             try:
-                if 'alice_rate' in alice_df.columns and len(alice_df) > 0:
-                    merged['alice_rate'] = alice_df['alice_rate'].iloc[0]
-                else:
-                    merged['alice_rate'] = None
+                if data_type == 'alice':
+                    if 'alice_rate' in merge_df.columns and len(merge_df) > 0:
+                        merged['alice_rate'] = merge_df['alice_rate'].iloc[0]
+                    else:
+                        merged['alice_rate'] = None
+                elif data_type == 'snap':
+                    # Add SNAP columns for state level
+                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                    for col in snap_columns:
+                        if col in merge_df.columns and len(merge_df) > 0:
+                            merged[col] = merge_df[col].iloc[0]
+                        else:
+                            merged[col] = None
             except Exception as e:
-                logger.error(f"Error merging state ALICE data: {e}")
-                merged['alice_rate'] = None
+                logger.error(f"Error merging state {data_type.upper()} data: {e}")
+                if data_type == 'alice':
+                    merged['alice_rate'] = None
+                elif data_type == 'snap':
+                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                    for col in snap_columns:
+                        merged[col] = None
                 
         elif geo_level == 'county':
             # County names need special handling due to Honolulu/Oahu mismatch
             join_key = 'NAME'
-            alice_join_key = 'name'
+            merge_join_key = 'name' if data_type == 'alice' else 'NAME'
             
             # Create mapping for county names
-            county_mapping = {
-                'Honolulu County, Hawaii': ['Honolulu', 'Oahu'],
-                'Hawaii County, Hawaii': ['Hawaii'],
-                'Maui County, Hawaii': ['Maui'],
-                'Kauai County, Hawaii': ['Kauai']
-            }
+            if data_type == 'alice':
+                county_mapping = {
+                    'Honolulu County, Hawaii': ['Honolulu', 'Oahu'],
+                    'Hawaii County, Hawaii': ['Hawaii'],
+                    'Maui County, Hawaii': ['Maui'],
+                    'Kauai County, Hawaii': ['Kauai']
+                }
+            else:  # SNAP data
+                county_mapping = {
+                    'Honolulu County, Hawaii': ['HONOLULU'],
+                    'Hawaii County, Hawaii': ['HAWAII'],
+                    'Maui County, Hawaii': ['MAUI'],
+                    'Kauai County, Hawaii': ['KAUAI']
+                }
             
-            merged = acs_df.copy()
-            merged['alice_rate'] = None
+            merged = base_df.copy()
+            
+            # Initialize columns based on data type
+            if data_type == 'alice':
+                merged['alice_rate'] = None
+            elif data_type == 'snap':
+                snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                for col in snap_columns:
+                    merged[col] = None
             
             # Manual join based on county mapping
             try:
-                for acs_idx, acs_row in acs_df.iterrows():
-                    acs_county_name = acs_row[join_key]
+                for base_idx, base_row in base_df.iterrows():
+                    base_county_name = base_row[join_key]
                     
-                    # Find matching ALICE data
-                    for alice_idx, alice_row in alice_df.iterrows():
-                        alice_county = alice_row[alice_join_key]
+                    # Find matching data
+                    for merge_idx, merge_row in merge_df.iterrows():
+                        merge_county = merge_row[merge_join_key]
                         
-                        # Check if this ALICE county matches the ACS county
-                        if acs_county_name in county_mapping:
-                            if alice_county in county_mapping[acs_county_name]:
-                                merged.loc[acs_idx, 'alice_rate'] = alice_row['alice_rate']
-                                logger.debug(f"Matched {acs_county_name} with ALICE {alice_county}")
+                        # Check if this county matches
+                        if base_county_name in county_mapping:
+                            if merge_county in county_mapping[base_county_name]:
+                                if data_type == 'alice':
+                                    merged.loc[base_idx, 'alice_rate'] = merge_row['alice_rate']
+                                elif data_type == 'snap':
+                                    for col in snap_columns:
+                                        if col in merge_row:
+                                            merged.loc[base_idx, col] = merge_row[col]
+                                logger.debug(f"Matched {base_county_name} with {data_type.upper()} {merge_county}")
                                 break
             except Exception as e:
-                logger.error(f"Error during county data merge: {e}")
-                # If merging fails, at least return the ACS data
+                logger.error(f"Error during county {data_type.upper()} data merge: {e}")
+                # If merging fails, at least return the base data
                 pass
                             
         elif geo_level in ['house', 'senate']:
             # Districts can join on district number
             if geo_level == 'house':
-                acs_join_key = 'state legislative district (lower chamber)'
-                alice_join_key = 'district'
+                base_join_key = 'state legislative district (lower chamber)'
+                merge_join_key = 'district'
             else:  # senate
-                acs_join_key = 'state legislative district (upper chamber)'
-                alice_join_key = 'district'
+                base_join_key = 'state legislative district (upper chamber)'
+                merge_join_key = 'district'
             
             # Try different possible column names for district matching
-            possible_acs_keys = [acs_join_key, 'district', 'DISTRICT']
-            actual_acs_key = None
+            possible_base_keys = [base_join_key, 'district', 'DISTRICT']
+            actual_base_key = None
             
-            for key in possible_acs_keys:
-                if key in acs_df.columns:
-                    actual_acs_key = key
+            for key in possible_base_keys:
+                if key in base_df.columns:
+                    actual_base_key = key
                     break
             
-            if actual_acs_key and alice_join_key in alice_df.columns:
+            if actual_base_key and merge_join_key in merge_df.columns:
                 try:
-                    merged = pd.merge(
-                        acs_df, 
-                        alice_df[['district', 'alice_rate']], 
-                        left_on=actual_acs_key, 
-                        right_on='district', 
-                        how='left'
-                    )
-                    logger.debug(f"Merged {geo_level} on {actual_acs_key} = {alice_join_key}")
+                    if data_type == 'alice':
+                        merged = pd.merge(
+                            base_df, 
+                            merge_df[['district', 'alice_rate']], 
+                            left_on=actual_base_key, 
+                            right_on='district', 
+                            how='left'
+                        )
+                    elif data_type == 'snap':
+                        # Use geoid for SNAP data joining since that's the standard field
+                        if 'geoid' in merge_df.columns:
+                            # Create geoid in base_df if it doesn't exist
+                            if 'geoid' not in base_df.columns and actual_base_key:
+                                # Convert district number to geoid format (15 + 3-digit district)
+                                base_df['geoid'] = '15' + base_df[actual_base_key].astype(str).str.zfill(3)
+                            
+                            snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                            merge_cols = ['geoid'] + [col for col in snap_columns if col in merge_df.columns]
+                            merged = pd.merge(
+                                base_df,
+                                merge_df[merge_cols],
+                                on='geoid',
+                                how='left'
+                            )
+                        else:
+                            # Fallback to district-based merge
+                            snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                            merge_cols = ['district'] + [col for col in snap_columns if col in merge_df.columns]
+                            merged = pd.merge(
+                                base_df,
+                                merge_df[merge_cols],
+                                left_on=actual_base_key,
+                                right_on='district',
+                                how='left'
+                            )
+                    logger.debug(f"Merged {geo_level} {data_type.upper()} on {actual_base_key} = {merge_join_key}")
                 except Exception as e:
-                    logger.error(f"Error merging {geo_level} data: {e}")
-                    merged = acs_df.copy()
-                    merged['alice_rate'] = None
+                    logger.error(f"Error merging {geo_level} {data_type.upper()} data: {e}")
+                    merged = base_df.copy()
+                    if data_type == 'alice':
+                        merged['alice_rate'] = None
+                    elif data_type == 'snap':
+                        snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                        for col in snap_columns:
+                            merged[col] = None
             else:
-                logger.warning(f"Could not find matching columns for {geo_level} merge")
-                merged = acs_df.copy()
-                merged['alice_rate'] = None
+                logger.warning(f"Could not find matching columns for {geo_level} {data_type.upper()} merge")
+                merged = base_df.copy()
+                if data_type == 'alice':
+                    merged['alice_rate'] = None
+                elif data_type == 'snap':
+                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                    for col in snap_columns:
+                        merged[col] = None
                 
         else:
             logger.warning(f"Unknown geo_level for merging: {geo_level}")
-            merged = acs_df.copy()
-            merged['alice_rate'] = None
+            merged = base_df.copy()
+            if data_type == 'alice':
+                merged['alice_rate'] = None
+            elif data_type == 'snap':
+                snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+                for col in snap_columns:
+                    merged[col] = None
         
         logger.debug(f"Merged data shape: {merged.shape}, columns: {list(merged.columns)}")
         return merged
