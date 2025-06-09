@@ -49,12 +49,18 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
+        # For SNAP variables, be more lenient since they might be merged later
+        snap_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+        if selected_variable in snap_variables:
+            self.logger.info(f"SNAP variable '{selected_variable}' expected to be merged - proceeding")
+            return True
+        
         self.logger.warning(f"Selected variable '{selected_variable}' not found in feature properties")
         # Log available properties for debugging
         if geojson_data['features']:
             first_feature_props = list(geojson_data['features'][0].get('properties', {}).keys())
             self.logger.info(f"Available properties: {first_feature_props}")
-        return False
+        return True  # Still proceed even if variable not found
     
     def _format_variable_name(self, variable: str, variable_display_name: Optional[str] = None) -> str:
         """Format variable name for display."""

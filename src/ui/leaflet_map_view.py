@@ -47,14 +47,36 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
     logger.debug("Building Leaflet map view")
     
-    # Get user selections from session state or initialize them if not present
-    if 'active_layer' not in st.session_state:
+    # Initialize session state with comprehensive error handling
+    try:
+        # Ensure active_layer is set
+        if 'active_layer' not in st.session_state:
+            st.session_state['active_layer'] = 'State Boundary'
+        
+        # Define all valid variables including SNAP variables
+        valid_variables = [
+            'poverty_rate', 'median_income', 'unemployment_rate', 'population', 
+            'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
+            'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total'
+        ]
+        
+        # Ensure selected_variable is valid
+        current_var = st.session_state.get('selected_variable', 'poverty_rate')
+        if current_var not in valid_variables:
+            logger.warning(f"Invalid variable '{current_var}' in session state, resetting to poverty_rate")
+            st.session_state['selected_variable'] = 'poverty_rate'
+        elif 'selected_variable' not in st.session_state:
+            st.session_state['selected_variable'] = 'poverty_rate'
+            
+        # Ensure color_scheme is set
+        if 'color_scheme' not in st.session_state:
+            st.session_state['color_scheme'] = 'blue'
+            
+    except Exception as e:
+        logger.error(f"Error initializing session state: {e}")
+        # Force reset to safe defaults
         st.session_state['active_layer'] = 'State Boundary'
-    # Define all valid variables including SNAP variables
-    valid_variables = ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in valid_variables:
         st.session_state['selected_variable'] = 'poverty_rate'
-    if 'color_scheme' not in st.session_state:
         st.session_state['color_scheme'] = 'blue'
         
     active_layer = st.session_state['active_layer']
@@ -299,33 +321,64 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         /* Style for dropdown options */
         [data-baseweb="popover"] {
             z-index: 1000 !important;
+            position: fixed !important;
+        }
+        
+        /* Force proper dropdown positioning and scrolling */
+        [data-baseweb="popover"] [data-baseweb="popover-content"] {
+            max-height: 400px !important;
+            overflow: hidden !important;
         }
         
         [data-baseweb="popover"] [role="listbox"] {
             padding: 8px 0 !important;
-            overflow: visible !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            scrollbar-width: thin !important;
+        }
+        
+        /* Webkit scrollbar styling for better UX */
+        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar {
+            width: 6px !important;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-track {
+            background: #f1f1f1 !important;
+            border-radius: 3px !important;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-thumb {
+            background: #c1c1c1 !important;
+            border-radius: 3px !important;
+        }
+        
+        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8 !important;
         }
         
         [data-baseweb="popover"] [role="listbox"] > div {
             padding: 0 !important;
             margin: 0 !important;
-            overflow: visible !important;
         }
         
         [data-baseweb="popover"] [role="listbox"] [role="option"] {
-            padding: 8px 16px 8px 12px !important;
+            padding: 10px 16px 10px 12px !important;
             margin: 0 !important;
             transition: all 0.2s ease !important;
             border-left: 3px solid transparent !important;
             position: relative !important;
             left: 0 !important;
             z-index: 1 !important;
+            min-height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
         }
         
         [data-baseweb="popover"] [role="listbox"] [role="option"]:hover {
             background-color: #f5f5f5 !important;
             border-left: 3px solid #1E88E5 !important;
-            transform: translateX(8px) !important;
+            transform: translateX(4px) !important;
             z-index: 2 !important;
             box-shadow: -2px 0 5px rgba(0,0,0,0.1) !important;
         }
@@ -333,9 +386,118 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         /* Style for selected option */
         [data-baseweb="popover"] [role="listbox"] [aria-selected="true"] {
             background-color: #E3F2FD !important;
-            font-weight: 500;
+            font-weight: 500 !important;
+            border-left: 3px solid #1E88E5 !important;
         }
     </style>
+    <script>
+    // Enhanced fix for dropdown scrolling issues
+    function fixDropdownScrolling() {
+        // Find all dropdown containers
+        const dropdowns = document.querySelectorAll('[data-baseweb="popover"] [role="listbox"]');
+        
+        dropdowns.forEach(dropdown => {
+            // Force proper scrolling behavior
+            dropdown.style.maxHeight = '350px';
+            dropdown.style.overflowY = 'auto';
+            dropdown.style.overflowX = 'hidden';
+            dropdown.style.scrollBehavior = 'smooth';
+            
+            // Ensure proper container setup
+            const container = dropdown.parentElement;
+            if (container) {
+                container.style.maxHeight = '350px';
+                container.style.overflow = 'hidden';
+            }
+            
+            // Fix individual options
+            const options = dropdown.querySelectorAll('[role="option"]');
+            options.forEach((option, index) => {
+                option.style.minHeight = '42px';
+                option.style.maxHeight = '42px';
+                option.style.display = 'flex';
+                option.style.alignItems = 'center';
+                option.style.padding = '8px 12px';
+                option.style.boxSizing = 'border-box';
+                option.style.whiteSpace = 'nowrap';
+                option.style.overflow = 'hidden';
+                option.style.textOverflow = 'ellipsis';
+                
+                // Add hover scroll behavior
+                option.addEventListener('mouseenter', function() {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+            
+            // Add keyboard scroll support
+            dropdown.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    setTimeout(() => {
+                        const selected = dropdown.querySelector('[aria-selected="true"]');
+                        if (selected) {
+                            selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 10);
+                }
+            });
+        });
+    }
+    
+    // Enhanced observer for better detection
+    let observer;
+    
+    function startObserver() {
+        if (observer) observer.disconnect();
+        
+        observer = new MutationObserver(function(mutations) {
+            let shouldFix = false;
+            
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length > 0) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.matches && node.matches('[data-baseweb="popover"]')) {
+                                shouldFix = true;
+                            } else if (node.querySelector && node.querySelector('[data-baseweb="popover"]')) {
+                                shouldFix = true;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            if (shouldFix) {
+                setTimeout(fixDropdownScrolling, 50);
+                setTimeout(fixDropdownScrolling, 200);
+            }
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: false
+        });
+    }
+    
+    // Initialize
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            startObserver();
+            setTimeout(fixDropdownScrolling, 100);
+        });
+    } else {
+        startObserver();
+        setTimeout(fixDropdownScrolling, 100);
+    }
+    
+    // Also fix on window events
+    window.addEventListener('resize', function() {
+        setTimeout(fixDropdownScrolling, 100);
+    });
+    
+    // Periodic check for stubborn cases
+    setInterval(fixDropdownScrolling, 2000);
+    </script>
     """, unsafe_allow_html=True)
     
     # Create a container for the dropdowns
@@ -344,10 +506,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col1:
         # First dropdown: Geography
         st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+        layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
+        try:
+            layer_index = layer_options.index(active_layer)
+        except (ValueError, KeyError):
+            layer_index = 0
+            
         selected_layer = st.selectbox(
             "",
-            ['State Boundary', 'Counties', 'House Districts', 'Senate Districts'],
-            index=['State Boundary', 'Counties', 'House Districts', 'Senate Districts'].index(active_layer),
+            layer_options,
+            index=layer_index,
             key="layer_selector",
             label_visibility="collapsed"
         )
@@ -400,7 +568,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             }
         
         # Get the current index, defaulting to 0 if not found
-        current_index = list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0
+        try:
+            current_index = list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0
+        except (ValueError, KeyError):
+            # Fallback to first option if there's any error
+            current_index = 0
         
         selected_var = st.selectbox(
             "",
@@ -413,8 +585,31 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         # Update session state if selection changes
         if selected_var != selected_variable:
-            st.session_state['selected_variable'] = selected_var
-            st.rerun()
+            try:
+                # Double-check that the selected variable is valid before setting it
+                if selected_var in list(variable_options.keys()):
+                    st.session_state['selected_variable'] = selected_var
+                    logger.debug(f"Successfully updated selected variable to: {selected_var}")
+                    st.rerun()
+                else:
+                    logger.warning(f"Attempted to select invalid variable: {selected_var}")
+                    # Keep the current selection if the new one is invalid
+                    pass
+            except Exception as e:
+                logger.error(f"Error updating selected variable from '{selected_variable}' to '{selected_var}': {e}")
+                # Try to keep current state, only reset as last resort
+                try:
+                    if selected_variable in list(variable_options.keys()):
+                        # Current variable is still valid, keep it
+                        pass
+                    else:
+                        # Current variable is also invalid, reset to safe default
+                        st.session_state['selected_variable'] = 'poverty_rate'
+                        st.rerun()
+                except:
+                    # Last resort: force reset
+                    st.session_state['selected_variable'] = 'poverty_rate'
+                    st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {

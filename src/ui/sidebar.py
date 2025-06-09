@@ -36,7 +36,11 @@ def create_sidebar() -> Dict[str, Any]:
         'rent_burden_rate': 'Housing Cost Burden (%)',
         'white_alone_pct': 'White Alone (%)',
         'asian_alone_pct': 'Asian Alone (%)',
-        'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)'
+        'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)',
+        'alice_rate': 'ALICE Households (%)',
+        'snap_household_rate': 'SNAP Households (%)',
+        'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
     }
     
     # Initialize selected variable if not set
@@ -59,30 +63,45 @@ def create_sidebar() -> Dict[str, Any]:
     st.sidebar.markdown("### 📊 Visualization Controls")
     
     # Layer selection
+    try:
+        layer_index = layer_options.index(st.session_state.active_layer)
+    except (ValueError, KeyError):
+        layer_index = 0
+    
     active_layer = st.sidebar.selectbox(
         "Map Layer:",
         options=layer_options,
-        index=layer_options.index(st.session_state.active_layer),
+        index=layer_index,
         key="sidebar_layer_selector"
     )
     st.session_state.active_layer = active_layer
     
     # Variable selection with descriptions
+    try:
+        variable_index = list(variable_options.keys()).index(st.session_state.selected_variable)
+    except (ValueError, KeyError):
+        variable_index = 0
+        
     selected_variable = st.sidebar.selectbox(
         "Select Variable:",
         options=list(variable_options.keys()),
         format_func=lambda x: variable_options[x],
-        index=list(variable_options.keys()).index(st.session_state.selected_variable),
+        index=variable_index,
         key="sidebar_variable_selector"
     )
     st.session_state.selected_variable = selected_variable
     
     # Color scheme selection
+    try:
+        color_index = list(color_schemes.keys()).index(st.session_state.color_scheme)
+    except (ValueError, KeyError):
+        color_index = 0
+        
     selected_color = st.sidebar.selectbox(
         "Color Scheme:",
         options=list(color_schemes.keys()),
         format_func=lambda x: color_schemes[x],
-        index=list(color_schemes.keys()).index(st.session_state.color_scheme),
+        index=color_index,
         key="sidebar_color_selector"
     )
     st.session_state.color_scheme = selected_color
