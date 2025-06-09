@@ -681,8 +681,6 @@ def main():
         variable_options = {
             'poverty_rate': 'Poverty Rate',
             'median_income': 'Median Income',
-            'median_home_value': 'Median Home Value ($)',
-            'unemployment_rate': 'Unemployment Rate (%)',
             'college_educated_pct': 'Bachelor\'s Degree or Higher (%)',
             'rent_burden_rate': 'Housing Cost Burden (%)',
             'alice_rate': 'ALICE Households (%)',
