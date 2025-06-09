@@ -61,12 +61,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         ]
         
         # Ensure selected_variable is valid
-        current_var = st.session_state.get('selected_variable', 'poverty_rate')
+        current_var = st.session_state.get('selected_variable', 'alice_rate')
         if current_var not in valid_variables:
-            logger.warning(f"Invalid variable '{current_var}' in session state, resetting to poverty_rate")
-            st.session_state['selected_variable'] = 'poverty_rate'
+            logger.warning(f"Invalid variable '{current_var}' in session state, resetting to alice_rate")
+            st.session_state['selected_variable'] = 'alice_rate'
         elif 'selected_variable' not in st.session_state:
-            st.session_state['selected_variable'] = 'poverty_rate'
+            st.session_state['selected_variable'] = 'alice_rate'
             
         # Ensure color_scheme is set
         if 'color_scheme' not in st.session_state:
@@ -529,39 +529,39 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Second dropdown: Data Variable (depends on Geography)
         st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
         
-        # Define available variables based on geography
+        # Define available variables based on geography with ALICE Households first
         if active_layer == 'State Boundary':
             variable_options = {
+                'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households',
                 'snap_household_rate': 'SNAP Households (%)',
                 'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
                 'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
             }
         elif active_layer == 'Counties':
             variable_options = {
+                'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'unemployment_rate': 'Unemployment Rate',
                 'population': 'Population',
                 'median_home_value': 'Median Home Value',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households',
                 'snap_household_rate': 'SNAP Households (%)',
                 'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
                 'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
             }
         else:  # House and Senate Districts
             variable_options = {
+                'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'college_educated_pct': 'College Educated',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'alice_rate': 'ALICE Households',
                 'snap_household_rate': 'SNAP Households (%)',
                 'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
                 'snap_benefits_annual_total': 'Total Annual SNAP Benefits'

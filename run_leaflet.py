@@ -696,7 +696,7 @@ def main():
         
         # Initialize selected variable if not set
         if 'selected_variable' not in st.session_state:
-            st.session_state.selected_variable = 'poverty_rate'
+            st.session_state.selected_variable = 'alice_rate'
         
         # Color scheme options with descriptive names
         color_schemes = {
