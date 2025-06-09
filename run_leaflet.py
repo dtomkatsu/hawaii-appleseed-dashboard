@@ -688,7 +688,10 @@ def main():
             'alice_rate': 'ALICE Households (%)',
             'white_alone_pct': 'White Alone (%)',
             'asian_alone_pct': 'Asian Alone (%)',
-            'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)'
+            'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)',
+            'snap_household_rate': 'SNAP Households (%)',
+            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
         }
         
         # Initialize selected variable if not set
@@ -712,32 +715,53 @@ def main():
         
         # Custom colored labels
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Geography:</p>', unsafe_allow_html=True)
+        
+        # Safe layer index calculation
+        try:
+            layer_index = layer_options.index(st.session_state.active_layer)
+        except (ValueError, KeyError):
+            layer_index = 0
+            
         active_layer = st.sidebar.selectbox(
             "",
             options=layer_options,
-            index=layer_options.index(st.session_state.active_layer),
+            index=layer_index,
             key="sidebar_layer_selector"
         )
         st.session_state.active_layer = active_layer
         
         # Variable selection with custom label
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Data Variable:</p>', unsafe_allow_html=True)
+        
+        # Safe variable index calculation
+        try:
+            variable_index = list(variable_options.keys()).index(st.session_state.selected_variable)
+        except (ValueError, KeyError):
+            variable_index = 0
+            
         selected_variable = st.sidebar.selectbox(
             "",
             options=list(variable_options.keys()),
             format_func=lambda x: variable_options[x],
-            index=list(variable_options.keys()).index(st.session_state.selected_variable),
+            index=variable_index,
             key="sidebar_variable_selector"
         )
         st.session_state.selected_variable = selected_variable
         
         # Color scheme selection
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Color Scheme:</p>', unsafe_allow_html=True)
+        
+        # Safe color scheme index calculation
+        try:
+            color_index = list(color_schemes.keys()).index(st.session_state.color_scheme)
+        except (ValueError, KeyError):
+            color_index = 0
+            
         selected_color = st.sidebar.selectbox(
             "",
             options=list(color_schemes.keys()),
             format_func=lambda x: color_schemes[x],
-            index=list(color_schemes.keys()).index(st.session_state.color_scheme),
+            index=color_index,
             key="sidebar_color_selector"
         )
         st.session_state.color_scheme = selected_color
