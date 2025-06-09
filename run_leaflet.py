@@ -217,9 +217,23 @@ def main():
                 padding-bottom: 0 !important;
             }
             
-            /* Add space above tabs */
+            /* Add space above tabs and remove focus outline */
             [role="tablist"] {
                 margin-top: 0.5rem !important;
+            }
+            
+            /* Remove focus outline from tabs */
+            button[data-baseweb="tab"]:focus,
+            button[data-baseweb="tab"]:focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Remove green border from selected tab */
+            [data-baseweb="tab"]:hover,
+            [data-baseweb="tab"][aria-selected="true"] {
+                border-color: transparent !important;
+                background-color: transparent !important;
             }
             
             /* Ensure dropdown labels have proper spacing */
