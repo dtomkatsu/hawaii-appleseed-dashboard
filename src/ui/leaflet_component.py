@@ -28,7 +28,10 @@ class LeafletMapComponent:
         {'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'},
         {'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'},
         {'key': 'alice_rate', 'label': 'ALICE Households', 'type': 'percentage'},
-        {'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}
+        {'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'},
+        {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
+        {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
+        {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}
     ]
     
     def __init__(self):
@@ -215,9 +218,15 @@ class LeafletMapComponent:
                 
                 createMetricHtml(metrics, properties) {{
                     const metricsConfig = {json.dumps(self.DEFAULT_METRICS)};
+                    const snapKeys = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total'];
                     let html = '';
                     
                     metricsConfig.forEach(metric => {{
+                        // Skip SNAP metrics as they have their own column
+                        if (snapKeys.includes(metric.key)) {{
+                            return;
+                        }}
+                        
                         const value = properties[metric.key];
                         if (value !== undefined && value !== null) {{
                             const isSelected = metric.key === SELECTED_VARIABLE;
@@ -237,6 +246,45 @@ class LeafletMapComponent:
                                 '</div>';
                         }}
                     }});
+                    return html;
+                }},
+                
+                createSnapHtml(properties) {{
+                    const snapMetrics = [
+                        {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
+                        {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual Benefit', 'type': 'currency'}},
+                        {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}}
+                    ];
+                    
+                    let html = '';
+                    let hasData = false;
+                    
+                    snapMetrics.forEach(metric => {{
+                        const value = properties[metric.key];
+                        if (value !== undefined && value !== null && !isNaN(value)) {{
+                            hasData = true;
+                            const isSelected = metric.key === SELECTED_VARIABLE;
+                            const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
+                            const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
+                            const fontWeight = isSelected ? 'bold' : 'normal';
+                            
+                            html += 
+                                '<div style="background: ' + bgColor + '; ' +
+                                'border: 1px solid ' + borderColor + '; ' +
+                                'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
+                                'font-weight: ' + fontWeight + ';">' +
+                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
+                                metric.label + '</div>' +
+                                '<div style="font-size: 12px; color: #333;">' + 
+                                utils.formatValue(value, metric.type) + '</div>' +
+                                '</div>';
+                        }}
+                    }});
+                    
+                    if (!hasData) {{
+                        html = '<div style="color: #999; text-align: center; font-style: italic;">No SNAP data available</div>';
+                    }}
+                    
                     return html;
                 }}
             }};
@@ -317,6 +365,7 @@ class LeafletMapComponent:
                     const value = props[SELECTED_VARIABLE];
                     const formattedValue = utils.formatValue(value, SELECTED_VARIABLE);
                     const metricsHtml = utils.createMetricHtml(null, props);
+                    const snapHtml = utils.createSnapHtml(props);
                     
                     // Create three columns for the popup content
                     const popupContent = [
@@ -336,7 +385,7 @@ class LeafletMapComponent:
                         '    <!-- SNAP Column -->',
                         '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
                         '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
-                        '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
+                        '      ', snapHtml,
                         '    </div>',
                         '    <!-- Tax Credits Column -->',
                         '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',

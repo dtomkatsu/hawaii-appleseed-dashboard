@@ -50,7 +50,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     # Get user selections from session state or initialize them if not present
     if 'active_layer' not in st.session_state:
         st.session_state['active_layer'] = 'State Boundary'
-    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate']:
+    # Define all valid variables including SNAP variables
+    valid_variables = ['poverty_rate', 'median_income', 'unemployment_rate', 'population', 'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+    if 'selected_variable' not in st.session_state or st.session_state['selected_variable'] not in valid_variables:
         st.session_state['selected_variable'] = 'poverty_rate'
     if 'color_scheme' not in st.session_state:
         st.session_state['color_scheme'] = 'blue'
