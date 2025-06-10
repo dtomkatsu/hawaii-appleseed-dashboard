@@ -398,6 +398,7 @@ class LeafletMapComponent:
                     const snapHtml = utils.createSnapHtml(props);
                     
                     // Create three columns for the popup content
+                    const featureId = props.id || feature.id;
                     const popupContent = [
                         '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 500px;">',
                         '  <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">',
@@ -422,6 +423,11 @@ class LeafletMapComponent:
                         '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Tax Credits</div>',
                         '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
                         '    </div>',
+                        '  </div>',
+                        '  <div style="margin-top: 12px; text-align: center;">',
+                        '    <a href="/geo_detail?geo_id=', featureId, '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
+                        '      View Detailed Data',
+                        '    </a>',
                         '  </div>',
                         '</div>'
                     ].join('');
