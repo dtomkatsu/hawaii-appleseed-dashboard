@@ -76,11 +76,15 @@ def display_geo_detail_view(geo_id=None):
             if econ_data:
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Median Income", f"${econ_data.get('median_income', 'N/A'):,}")
-                    st.metric("Poverty Rate", f"{econ_data.get('poverty_rate', 'N/A')}%")
+                    median_income = econ_data.get('median_income')
+                    st.metric("Median Income", f"${int(median_income):,}" if median_income is not None else "N/A")
+                    poverty_rate = econ_data.get('poverty_rate')
+                    st.metric("Poverty Rate", f"{poverty_rate}%" if poverty_rate is not None else "N/A")
                 with col2:
-                    st.metric("Unemployment Rate", f"{econ_data.get('unemployment_rate', 'N/A')}%")
-                    st.metric("ALICE Rate", f"{econ_data.get('alice_rate', 'N/A')}%")
+                    unemployment_rate = econ_data.get('unemployment_rate')
+                    st.metric("Unemployment Rate", f"{unemployment_rate}%" if unemployment_rate is not None else "N/A")
+                    alice_rate = econ_data.get('alice_rate')
+                    st.metric("ALICE Rate", f"{alice_rate}%" if alice_rate is not None else "N/A")
                 
                 # Income distribution chart
                 if "income_distribution" in econ_data:
@@ -98,11 +102,15 @@ def display_geo_detail_view(geo_id=None):
             if housing_data:
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Median Home Value", f"${housing_data.get('median_home_value', 'N/A'):,}")
-                    st.metric("Median Rent", f"${housing_data.get('median_rent', 'N/A'):,}")
+                    median_home_value = housing_data.get('median_home_value')
+                    st.metric("Median Home Value", f"${int(median_home_value):,}" if median_home_value is not None else "N/A")
+                    median_rent = housing_data.get('median_rent')
+                    st.metric("Median Rent", f"${int(median_rent):,}" if median_rent is not None else "N/A")
                 with col2:
-                    st.metric("Housing Cost Burden", f"{housing_data.get('rent_burden_rate', 'N/A')}%")
-                    st.metric("Homeownership Rate", f"{housing_data.get('homeownership_rate', 'N/A')}%")
+                    rent_burden = housing_data.get('rent_burden_rate')
+                    st.metric("Housing Cost Burden", f"{rent_burden}%" if rent_burden is not None else "N/A")
+                    homeownership_rate = housing_data.get('homeownership_rate')
+                    st.metric("Homeownership Rate", f"{homeownership_rate}%" if homeownership_rate is not None else "N/A")
             else:
                 st.info("No housing data available for this geography.")
         
@@ -113,10 +121,16 @@ def display_geo_detail_view(geo_id=None):
             if snap_data:
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("SNAP Households", f"{snap_data.get('snap_household_rate', 'N/A')}%")
-                    st.metric("Average Annual Benefit", f"${snap_data.get('snap_benefit_annual_per_household', 'N/A'):,}")
+                    snap_rate = snap_data.get('snap_household_rate')
+                    st.metric("SNAP Households", f"{snap_rate}%" if snap_rate is not None else "N/A")
+                    
+                    benefit_per_household = snap_data.get('snap_benefit_annual_per_household')
+                    st.metric("Average Annual Benefit", 
+                              f"${int(benefit_per_household):,}" if benefit_per_household is not None else "N/A")
                 with col2:
-                    st.metric("Total Annual Benefits", f"${snap_data.get('snap_benefits_annual_total', 'N/A'):,}")
+                    total_benefits = snap_data.get('snap_benefits_annual_total')
+                    st.metric("Total Annual Benefits", 
+                              f"${int(total_benefits):,}" if total_benefits is not None else "N/A")
             else:
                 st.info("No SNAP data available for this geography.")
         

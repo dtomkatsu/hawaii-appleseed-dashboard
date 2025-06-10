@@ -58,6 +58,99 @@ class DataLoader:
             self.load_alice_data(geo_level)
             self.load_snap_data(geo_level)
             
+    def get_all_data_for_geo(self, geo_id: str) -> dict:
+        """
+        Get all available data for a specific geography ID.
+        
+        Args:
+            geo_id: The geography ID to get data for
+            
+        Returns:
+            dict: Dictionary containing all available data for the geography
+        """
+        result = {
+            "id": geo_id,
+            "name": "",
+            "demographics": {},
+            "economic": {},
+            "housing": {},
+            "snap": {},
+            "tax_credits": {}
+        }
+        
+        try:
+            # Determine geo level from ID length
+            geo_levels = {
+                2: 'state',
+                5: 'county',
+                7: 'house',
+                8: 'senate'
+            }
+            
+            geo_level = geo_levels.get(len(str(geo_id)))
+            if not geo_level:
+                logger.warning(f"Could not determine geo level for ID: {geo_id}")
+                return result
+                
+            # Load the appropriate ACS data
+            acs_data = self.load_acs_data(geo_level)
+            if acs_data is not None and not acs_data.empty:
+                # Find the specific geography
+                geo_row = acs_data[acs_data['geoid'] == str(geo_id)]
+                if not geo_row.empty:
+                    geo_row = geo_row.iloc[0]
+                    result['name'] = geo_row.get('NAME', f"Geography {geo_id}")
+                    
+                    # Add demographic data
+                    result['demographics'] = {
+                        'population': geo_row.get('total_population'),
+                        'median_age': geo_row.get('median_age'),
+                        'population_by_race': {
+                            'White': geo_row.get('white_alone', 0),
+                            'Native Hawaiian/Pacific Islander': geo_row.get('nhpi_alone', 0),
+                            'Asian': geo_row.get('asian_alone', 0),
+                            'Two or More Races': geo_row.get('two_or_more_races', 0),
+                            'Other': geo_row.get('other_race', 0)
+                        }
+                    }
+                    
+                    # Add economic data
+                    result['economic'] = {
+                        'median_income': geo_row.get('median_income'),
+                        'poverty_rate': geo_row.get('poverty_rate'),
+                        'unemployment_rate': geo_row.get('unemployment_rate'),
+                        'alice_rate': geo_row.get('alice_rate')
+                    }
+                    
+                    # Add housing data
+                    result['housing'] = {
+                        'median_home_value': geo_row.get('median_home_value'),
+                        'median_rent': geo_row.get('median_rent'),
+                        'homeownership_rate': geo_row.get('homeownership_rate'),
+                        'rent_burden_rate': geo_row.get('rent_burden_rate')
+                    }
+            
+            # Add SNAP data
+            snap_data = self.load_snap_data(geo_level)
+            if snap_data is not None and not snap_data.empty:
+                snap_row = snap_data[snap_data['geoid'] == str(geo_id)]
+                if not snap_row.empty:
+                    snap_row = snap_row.iloc[0]
+                    result['snap'] = {
+                        'snap_household_rate': snap_row.get('snap_household_rate'),
+                        'snap_benefit_annual_per_household': snap_row.get('snap_benefit_annual_per_household'),
+                        'snap_benefits_annual_total': snap_row.get('snap_benefits_annual_total')
+                    }
+            
+            # Tax credits data can be added here when available
+            
+            logger.debug(f"Loaded data for geography {geo_id}")
+            
+        except Exception as e:
+            logger.error(f"Error getting data for geography {geo_id}: {str(e)}")
+            
+        return result
+            
     def load_acs_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """
         Load ACS data for a specific geographic level.
