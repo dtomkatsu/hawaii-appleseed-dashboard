@@ -1,24 +1,684 @@
-"""Data loading utilities for the Hawaii Appleseed Dashboard."""
+"""Refactored data loading utilities for the Hawaii Appleseed Dashboard."""
+
 import pandas as pd
 from pathlib import Path
 import logging
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, Union, List, Any
 import datetime
 import json
+from dataclasses import dataclass
+from enum import Enum
+from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)
 
+
+class GeoLevel(Enum):
+    """Geographic levels supported by the data loader."""
+    STATE = "state"
+    COUNTY = "county"
+    HOUSE = "house"
+    SENATE = "senate"
+
+
+class DataType(Enum):
+    """Types of data available in the dashboard."""
+    ACS = "acs"
+    ALICE = "alice"
+    SNAP = "snap"
+
+
+@dataclass
+class DataConfig:
+    """Configuration for data files and columns."""
+    file_patterns: Dict[str, str]
+    sheet_patterns: Optional[Dict[str, str]] = None
+    join_columns: Optional[Dict[str, str]] = None
+    id_converters: Optional[Dict[str, callable]] = None
+
+
+class DataMerger:
+    """Handles merging of different data sources."""
+    
+    def __init__(self, geo_name_mapping: Dict[str, Dict[str, str]]):
+        self.geo_name_mapping = geo_name_mapping
+    
+    def merge_datasets(self, base_data: pd.DataFrame, merge_data: pd.DataFrame, 
+                      geo_level: GeoLevel, data_type: DataType) -> pd.DataFrame:
+        """Merge datasets based on geographic level and data type."""
+        merge_strategies = {
+            GeoLevel.STATE: self._merge_state_data,
+            GeoLevel.COUNTY: self._merge_county_data,
+            GeoLevel.HOUSE: self._merge_district_data,
+            GeoLevel.SENATE: self._merge_district_data
+        }
+        
+        strategy = merge_strategies.get(geo_level)
+        if not strategy:
+            logger.error(f"No merge strategy for {geo_level}")
+            return base_data
+        
+        return strategy(base_data, merge_data, data_type)
+    
+    def _merge_state_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame, 
+                         data_type: DataType) -> pd.DataFrame:
+        """Merge state-level data."""
+        merged = base_data.copy()
+        if len(merge_data) > 0:
+            merge_row = merge_data.iloc[0]
+            self._add_columns_by_type(merged, merge_row, data_type)
+        return merged
+    
+    def _merge_county_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
+                          data_type: DataType) -> pd.DataFrame:
+        """Merge county-level data with name mapping."""
+        merged = base_data.copy()
+        self._initialize_columns_by_type(merged, data_type)
+        
+        county_mapping = self._get_county_mapping(data_type)
+        
+        for base_idx, base_row in base_data.iterrows():
+            base_county_name = base_row.get('NAME', '')
+            
+            for merge_idx, merge_row in merge_data.iterrows():
+                merge_county = merge_row.get('name' if data_type == DataType.ALICE else 'NAME', '')
+                
+                if self._counties_match(base_county_name, merge_county, county_mapping):
+                    self._add_columns_by_type(merged, merge_row, data_type, base_idx)
+                    logger.debug(f"Matched {base_county_name} with {data_type.value} {merge_county}")
+                    break
+        
+        return merged
+    
+    def _merge_district_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
+                           data_type: DataType) -> pd.DataFrame:
+        """Merge district-level data."""
+        if data_type == DataType.SNAP and 'geoid' in merge_data.columns:
+            return self._merge_by_geoid(base_data, merge_data, data_type)
+        
+        return self._merge_by_district(base_data, merge_data, data_type)
+    
+    def _merge_by_geoid(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
+                       data_type: DataType) -> pd.DataFrame:
+        """Merge data using geoid field."""
+        if 'geoid' not in base_data.columns:
+            base_data = self._create_geoid_column(base_data)
+        
+        merge_cols = self._get_merge_columns(merge_data, data_type)
+        return pd.merge(base_data, merge_data[merge_cols], on='geoid', how='left')
+    
+    def _merge_by_district(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
+                          data_type: DataType) -> pd.DataFrame:
+        """Merge data using district numbers."""
+        base_key = self._find_district_column(base_data)
+        if not base_key or 'district' not in merge_data.columns:
+            logger.warning("Could not find matching district columns")
+            merged = base_data.copy()
+            self._initialize_columns_by_type(merged, data_type)
+            return merged
+        
+        merge_cols = self._get_merge_columns(merge_data, data_type)
+        return pd.merge(base_data, merge_data[merge_cols], 
+                       left_on=base_key, right_on='district', how='left')
+    
+    def _get_county_mapping(self, data_type: DataType) -> Dict[str, List[str]]:
+        """Get county name mapping for data type."""
+        if data_type == DataType.ALICE:
+            return {
+                'Honolulu County, Hawaii': ['Honolulu', 'Oahu'],
+                'Hawaii County, Hawaii': ['Hawaii'],
+                'Maui County, Hawaii': ['Maui'],
+                'Kauai County, Hawaii': ['Kauai']
+            }
+        else:
+            return {
+                'Honolulu County, Hawaii': ['HONOLULU'],
+                'Hawaii County, Hawaii': ['HAWAII'],
+                'Maui County, Hawaii': ['MAUI'],
+                'Kauai County, Hawaii': ['KAUAI']
+            }
+    
+    def _counties_match(self, base_name: str, merge_name: str, 
+                       mapping: Dict[str, List[str]]) -> bool:
+        """Check if county names match using mapping."""
+        if base_name in mapping:
+            return merge_name in mapping[base_name]
+        return False
+    
+    def _get_merge_columns(self, merge_data: pd.DataFrame, data_type: DataType) -> List[str]:
+        """Get columns to merge based on data type."""
+        base_cols = ['geoid'] if 'geoid' in merge_data.columns else ['district']
+        
+        if data_type == DataType.ALICE:
+            return base_cols + ['alice_rate']
+        elif data_type == DataType.SNAP:
+            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            return base_cols + [col for col in snap_cols if col in merge_data.columns]
+        
+        return base_cols
+    
+    def _find_district_column(self, df: pd.DataFrame) -> Optional[str]:
+        """Find the district column in a DataFrame."""
+        possible_cols = [
+            'state legislative district (lower chamber)',
+            'state legislative district (upper chamber)',
+            'district', 'DISTRICT'
+        ]
+        
+        for col in possible_cols:
+            if col in df.columns:
+                return col
+        return None
+    
+    def _create_geoid_column(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Create geoid column from district information."""
+        df = df.copy()
+        district_col = self._find_district_column(df)
+        if district_col:
+            df['geoid'] = '15' + df[district_col].astype(str).str.zfill(3)
+        return df
+    
+    def _add_columns_by_type(self, df: pd.DataFrame, source_row: pd.Series, 
+                           data_type: DataType, target_idx: Optional[int] = None):
+        """Add columns to DataFrame based on data type."""
+        if data_type == DataType.ALICE:
+            self._set_value(df, 'alice_rate', source_row.get('alice_rate'), target_idx)
+        elif data_type == DataType.SNAP:
+            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            for col in snap_cols:
+                self._set_value(df, col, source_row.get(col), target_idx)
+    
+    def _initialize_columns_by_type(self, df: pd.DataFrame, data_type: DataType):
+        """Initialize columns in DataFrame based on data type."""
+        if data_type == DataType.ALICE:
+            df['alice_rate'] = None
+        elif data_type == DataType.SNAP:
+            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            for col in snap_cols:
+                df[col] = None
+    
+    def _set_value(self, df: pd.DataFrame, column: str, value: Any, 
+                  target_idx: Optional[int] = None):
+        """Set value in DataFrame column."""
+        if target_idx is not None:
+            df.loc[target_idx, column] = value
+        else:
+            df[column] = value
+
+
+class BaseDataLoader(ABC):
+    """Abstract base class for data loaders."""
+    
+    def __init__(self, data_dir: Path, config: DataConfig):
+        self.data_dir = data_dir
+        self.config = config
+    
+    @abstractmethod
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load data for a specific geographic level."""
+        pass
+    
+    def _validate_geo_level(self, geo_level: Union[GeoLevel, str]) -> bool:
+        """Validate that the geographic level is supported."""
+        if isinstance(geo_level, str):
+            geo_level = geo_level.lower()
+            return geo_level in ['state', 'county', 'house', 'senate']
+        return geo_level in [GeoLevel.STATE, GeoLevel.COUNTY, 
+                           GeoLevel.HOUSE, GeoLevel.SENATE]
+
+
+class ACSDataLoader(BaseDataLoader):
+    """Loader for American Community Survey data."""
+    
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load ACS data for a geographic level."""
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Invalid geographic level: {geo_level}")
+            return None
+        
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
+        if not file_path.exists():
+            logger.error(f"ACS data file not found: {file_path}")
+            return None
+        
+        try:
+            df = pd.read_csv(file_path, dtype={'geoid': str})
+            logger.debug(f"Loaded ACS {geo_level.value} data: {df.shape}")
+            return df
+        except Exception as e:
+            logger.error(f"Error loading ACS {geo_level.value} data: {e}")
+            return None
+
+
+class ALICEDataLoader(BaseDataLoader):
+    """Loader for ALICE (Asset Limited, Income Constrained, Employed) data."""
+    
+    def load_data(self, geo_level: Union[GeoLevel, str]) -> Optional[pd.DataFrame]:
+        """Load ALICE data for a geographic level."""
+        # Convert string geo_level to GeoLevel enum if needed
+        if isinstance(geo_level, str):
+            try:
+                geo_level = GeoLevel(geo_level.lower())
+            except ValueError:
+                logger.error(f"Invalid geographic level for ALICE: {geo_level}")
+                return None
+                
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Unsupported geographic level for ALICE: {geo_level}")
+            return None
+        
+        alice_file = self.data_dir.parent / 'ALICE By Geography (2023).xlsx'
+        if not alice_file.exists():
+            logger.warning(f"ALICE data file not found: {alice_file}")
+            return None
+        
+        try:
+            sheet_name = self.config.sheet_patterns[geo_level.value]
+            df = pd.read_excel(alice_file, sheet_name=sheet_name)
+            df = self._standardize_alice_data(df, geo_level)
+            logger.debug(f"Loaded ALICE {geo_level.value} data: {df.shape}")
+            return df
+        except Exception as e:
+            logger.error(f"Error loading ALICE {geo_level.value} data: {e}")
+            return None
+    
+    def _standardize_alice_data(self, df: pd.DataFrame, geo_level: Union[GeoLevel, str]) -> pd.DataFrame:
+        """Standardize ALICE data columns and identifiers."""
+        if df is None or df.empty:
+            return pd.DataFrame()
+            
+        df = df.copy()
+        
+        # Standardize ALICE rate column - handle both percentage and decimal formats
+        alice_cols = [
+            'Percentage of Households Under ALICE Threshold',
+            'ALICE Rate',
+            'alice_rate',
+            'pct_alice_households'
+        ]
+        
+        for col in alice_cols:
+            if col in df.columns:
+                # Convert to percentage if it's a decimal (0-1)
+                if df[col].max() <= 1.0:
+                    df['alice_rate'] = df[col] * 100
+                else:
+                    df['alice_rate'] = df[col]
+                break
+        
+        # Add geographic identifiers based on level
+        if isinstance(geo_level, str):
+            geo_level = geo_level.lower()
+            
+            if geo_level == 'state':
+                df = self._standardize_state_alice(df)
+            elif geo_level == 'county':
+                df = self._standardize_county_alice(df)
+            elif geo_level == 'house':
+                df = self._standardize_house_alice(df)
+            elif geo_level == 'senate':
+                df = self._standardize_senate_alice(df)
+        else:
+            standardizers = {
+                GeoLevel.STATE: self._standardize_state_alice,
+                GeoLevel.COUNTY: self._standardize_county_alice,
+                GeoLevel.HOUSE: self._standardize_house_alice,
+                GeoLevel.SENATE: self._standardize_senate_alice
+            }
+            
+            standardizer = standardizers.get(geo_level)
+            if standardizer:
+                df = standardizer(df)
+        
+        # Ensure we have a geoid column for merging
+        if 'geoid' not in df.columns and 'GEOID' in df.columns:
+            df['geoid'] = df['GEOID']
+            
+        return df
+    
+    def _standardize_state_alice(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Standardize state-level ALICE data."""
+        df['name'] = 'Hawaii'
+        df['display_name'] = 'Hawaii'
+        return df
+    
+    def _standardize_county_alice(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Standardize county-level ALICE data."""
+        if 'County' in df.columns:
+            df['name'] = df['County']
+            df['display_name'] = df['County']
+        return df
+    
+    def _standardize_house_alice(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Standardize house district ALICE data."""
+        if 'District' in df.columns:
+            df['district'] = df['District'].astype(int)
+            df['display_name'] = df['District'].apply(lambda x: f"House District {x}")
+        return df
+    
+    def _standardize_senate_alice(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Standardize senate district ALICE data."""
+        if 'Senate District' in df.columns:
+            df['district'] = df['Senate District'].astype(int)
+            df['display_name'] = df['Senate District'].apply(lambda x: f"Senate District {x}")
+        return df
+
+
+class SNAPDataLoader(BaseDataLoader):
+    """Loader for SNAP (Supplemental Nutrition Assistance Program) data."""
+    
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load SNAP data for a geographic level."""
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Invalid geographic level for SNAP: {geo_level}")
+            return None
+        
+        file_path = self.data_dir / 'snap_benefits' / self.config.file_patterns[geo_level.value]
+        if not file_path.exists():
+            logger.error(f"SNAP data file not found: {file_path}")
+            return None
+        
+        try:
+            df = pd.read_csv(file_path, dtype={'geoid': str})
+            df = self._standardize_snap_data(df, geo_level)
+            logger.debug(f"Loaded SNAP {geo_level.value} data: {df.shape}")
+            return df
+        except Exception as e:
+            logger.error(f"Error loading SNAP {geo_level.value} data: {e}")
+            return None
+    
+    def _standardize_snap_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Standardize SNAP data format."""
+        df = df.copy()
+        
+        # Fix geoid format for districts
+        if geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE] and 'geoid' in df.columns:
+            df['geoid'] = df['geoid'].apply(self._fix_geoid)
+        
+        # Convert percentages from decimal to percentage format
+        percentage_cols = ['snap_household_rate', 'snap_participation_rate']
+        for col in percentage_cols:
+            if col in df.columns:
+                df[col] = df[col] * 100
+        
+        return df
+    
+    def _fix_geoid(self, geoid_str: str) -> str:
+        """Fix geoid format for districts."""
+        geoid_str = str(geoid_str)
+        if len(geoid_str) == 4 and geoid_str.startswith('15'):
+            return geoid_str[:2] + '0' + geoid_str[2:]
+        elif len(geoid_str) == 5 and geoid_str.startswith('0'):
+            return '15' + geoid_str[3:]
+        return geoid_str
+
+
+class GeoJSONProcessor:
+    """Handles GeoJSON processing and data merging."""
+    
+    def __init__(self, base_dir: Path):
+        self.base_dir = base_dir
+        self.geojson_configs = {
+            GeoLevel.STATE: {
+                'file': 'hawaii_state_boundary.geojson',
+                'id_field': 'GEOID',
+                'converter': lambda x: '15'
+            },
+            GeoLevel.COUNTY: {
+                'file': 'hawaii_county_boundaries.geojson',
+                'id_field': 'GEOID',
+                'converter': self._convert_county_to_fips
+            },
+            GeoLevel.HOUSE: {
+                'file': 'Hawaii_State_House_Districts_2022.geojson',
+                'id_field': 'GEOID',
+                'converter': lambda x: '15' + str(x).replace('H', '').zfill(3)
+            },
+            GeoLevel.SENATE: {
+                'file': 'Hawaii_State_Senate_Districts_2022.geojson',
+                'id_field': 'GEOID',
+                'converter': lambda x: '15' + str(x).replace('S', '').zfill(3)
+            }
+        }
+    
+    def get_geojson_path(self, geo_level: GeoLevel) -> Optional[Path]:
+        """Get path to GeoJSON file for geographic level."""
+        config = self.geojson_configs.get(geo_level)
+        if not config:
+            return None
+        
+        geojson_dir = self.base_dir / 'data' / 'Processed GeoJsons'
+        geojson_path = geojson_dir / config['file']
+        
+        return geojson_path if geojson_path.exists() else None
+    
+    def merge_geojson_with_data(self, geojson_data: dict, data: pd.DataFrame,
+                               geo_level: GeoLevel) -> dict:
+        """Merge GeoJSON with data DataFrame."""
+        if data is None or data.empty:
+            logger.warning(f"No data available for merging with {geo_level.value} GeoJSON")
+            return geojson_data
+        
+        # Standardize GeoJSON IDs
+        geojson_data = self._standardize_geojson_ids(geojson_data, geo_level)
+        
+        # Merge data into features
+        for feature in geojson_data.get('features', []):
+            properties = feature.get('properties', {})
+            matching_data = self._find_matching_data(properties, data, geo_level)
+            
+            if matching_data:
+                self._add_data_to_properties(properties, matching_data)
+        
+        return geojson_data
+    
+    def _standardize_geojson_ids(self, geojson_data: dict, geo_level: GeoLevel) -> dict:
+        """Standardize ID fields in GeoJSON data."""
+        config = self.geojson_configs.get(geo_level)
+        if not config:
+            return geojson_data
+        
+        # Find the appropriate source field
+        source_field = self._find_source_field(geojson_data, geo_level)
+        if not source_field:
+            return geojson_data
+        
+        # Convert IDs for each feature
+        for feature in geojson_data.get('features', []):
+            props = feature.get('properties', {})
+            if source_field in props:
+                try:
+                    source_id = props[source_field]
+                    target_id = config['converter'](source_id)
+                    props[config['id_field']] = target_id
+                    props['geoid'] = target_id
+                except Exception as e:
+                    logger.error(f"Error converting ID for {geo_level.value}: {e}")
+        
+        return geojson_data
+    
+    def _find_source_field(self, geojson_data: dict, geo_level: GeoLevel) -> Optional[str]:
+        """Find the source field for ID conversion."""
+        features = geojson_data.get('features', [])
+        if not features:
+            return None
+        
+        props = features[0].get('properties', {})
+        
+        field_mappings = {
+            GeoLevel.STATE: ['state_fips'],
+            GeoLevel.COUNTY: ['county_name'],
+            GeoLevel.HOUSE: ['state_house', 'STATE_HOUSE', 'house_id', 'DISTRICT', 'district'],
+            GeoLevel.SENATE: ['state_senate', 'STATE_SENATE', 'senate_id', 'DISTRICT', 'district']
+        }
+        
+        possible_fields = field_mappings.get(geo_level, [])
+        for field in possible_fields:
+            if field in props:
+                return field
+        
+        return None
+    
+    def _convert_county_to_fips(self, county_name: str) -> str:
+        """Convert county name to FIPS code."""
+        county_map = {
+            'oahu': '15003',
+            'honolulu': '15003',
+            'hawaii': '15001',
+            'maui': '15009',
+            'kauai': '15007',
+            'kalawao': '15005'
+        }
+        
+        county_name = str(county_name).lower()
+        for pattern, fips in county_map.items():
+            if pattern in county_name:
+                return fips
+        
+        return '15000'  # Default for unknown county
+    
+    def _find_matching_data(self, properties: dict, data: pd.DataFrame,
+                           geo_level: GeoLevel) -> Optional[dict]:
+        """Find matching data row for GeoJSON feature."""
+        if geo_level == GeoLevel.STATE and len(data) > 0:
+            return data.iloc[0].to_dict()
+        
+        if geo_level == GeoLevel.COUNTY:
+            return self._find_county_match(properties, data)
+        
+        if geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
+            return self._find_district_match(properties, data)
+        
+        return None
+    
+    def _find_county_match(self, properties: dict, data: pd.DataFrame) -> Optional[dict]:
+        """Find matching county data."""
+        county_name = properties.get('county_name', properties.get('NAME', ''))
+        
+        # Try direct matching strategies
+        strategies = [
+            ('NAME', county_name),
+            ('NAME', f"{county_name} County, Hawaii"),
+        ]
+        
+        # Special case for Oahu/Honolulu
+        if 'oahu' in county_name.lower():
+            strategies.extend([
+                ('NAME', 'Honolulu County, Hawaii'),
+                ('NAME', 'Honolulu')
+            ])
+        
+        for col, value in strategies:
+            if col in data.columns:
+                matches = data[data[col].str.lower() == value.lower()]
+                if len(matches) > 0:
+                    return matches.iloc[0].to_dict()
+        
+        return None
+    
+    def _find_district_match(self, properties: dict, data: pd.DataFrame) -> Optional[dict]:
+        """Find matching district data."""
+        district_num = None
+        
+        for field in ['DISTRICT', 'house_id', 'senate_id', 'district']:
+            if field in properties:
+                district_num = properties[field]
+                break
+        
+        if district_num is None:
+            return None
+        
+        # Try matching on different columns
+        for col in ['district', 'state legislative district (lower chamber)',
+                   'state legislative district (upper chamber)']:
+            if col in data.columns:
+                matches = data[data[col] == district_num]
+                if len(matches) > 0:
+                    return matches.iloc[0].to_dict()
+        
+        return None
+    
+    def _add_data_to_properties(self, properties: dict, data: dict):
+        """Add data to GeoJSON feature properties."""
+        for key, value in data.items():
+            if key not in ['index', 'level_0'] and value is not None:
+                if pd.isna(value):
+                    properties[key] = None
+                else:
+                    properties[key] = value
+
+
 class DataLoader:
-    """Load and manage data for the dashboard."""
+    """Main data loader class that coordinates all data sources."""
     
     def __init__(self, data_dir: str = 'data/processed'):
-        """Initialize the data loader with the data directory."""
+        """Initialize the data loader."""
         self.base_dir = Path(__file__).parent.parent.parent
         self.data_dir = self.base_dir / data_dir
         self.data_cache = {}
         
-        # Define common ACS variables and their display names
-        self.available_variables = {
+        # Initialize data loaders
+        self._init_data_loaders()
+        
+        # Initialize processors
+        self.merger = DataMerger(self._get_geo_name_mapping())
+        self.geojson_processor = GeoJSONProcessor(self.base_dir)
+        
+        # Available variables for the dashboard
+        self.available_variables = self._get_available_variables()
+        
+        # Preload all data
+        self._preload_data()
+    
+    def _init_data_loaders(self):
+        """Initialize data loaders for different data types."""
+        # ACS data configuration
+        acs_config = DataConfig({
+            'state': 'hawaii_state_acs_2023.csv',
+            'county': 'hawaii_counties_acs_2023.csv',
+            'house': 'hawaii_house_districts_acs_2023.csv',
+            'senate': 'hawaii_senate_districts_acs_2023.csv'
+        })
+        
+        # ALICE data configuration
+        alice_config = DataConfig(
+            file_patterns={},
+            sheet_patterns={
+                'state': 'State',
+                'county': 'Counties',
+                'house': 'House',
+                'senate': 'Senate'
+            }
+        )
+        
+        # SNAP data configuration
+        snap_config = DataConfig({
+            'state': 'hawaii_state_snap_2023.csv',
+            'county': 'hawaii_county_snap_2023.csv',
+            'house': 'hawaii_house_district_snap_2023.csv',
+            'senate': 'hawaii_senate_district_snap_2023.csv'
+        })
+        
+        self.loaders = {
+            DataType.ACS: ACSDataLoader(self.data_dir, acs_config),
+            DataType.ALICE: ALICEDataLoader(self.data_dir, alice_config),
+            DataType.SNAP: SNAPDataLoader(self.data_dir, snap_config)
+        }
+    
+    def _get_geo_name_mapping(self) -> Dict[str, Dict[str, str]]:
+        """Get geographic name mappings."""
+        return {
+            'county': {
+                'Honolulu': 'Oahu',
+                'Hawaii': 'Hawaii',
+                'Maui': 'Maui',
+                'Kauai': 'Kauai'
+            }
+        }
+    
+    def _get_available_variables(self) -> Dict[str, str]:
+        """Get available variables and their display names."""
+        return {
             'poverty_rate': 'Poverty Rate (%)',
             'median_income': 'Median Household Income ($)',
             'population': 'Total Population',
@@ -30,44 +690,54 @@ class DataLoader:
             'renter_occupied': 'Renter-Occupied Housing (%)',
             'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
             'no_health_insurance': 'No Health Insurance (%)',
-            # ALICE variables
             'alice_rate': 'ALICE Households (%)',
-            # SNAP variables
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
         }
-        
-        # Geographic name mapping for data joining
-        self.geo_name_mapping = {
-            'county': {
-                'Honolulu': 'Oahu',  # ALICE data uses "Honolulu", GeoJSON uses "Oahu"
-                'Hawaii': 'Hawaii',
-                'Maui': 'Maui', 
-                'Kauai': 'Kauai'
-            }
-        }
-        
-        # Load all data at initialization to avoid pipeline runs
-        self._preload_data()
     
-    def _preload_data(self) -> None:
-        """Preload all data at initialization to avoid pipeline runs."""
-        for geo_level in ['state', 'county', 'house', 'senate']:
-            self.load_acs_data(geo_level)
-            self.load_alice_data(geo_level)
-            self.load_snap_data(geo_level)
-            
-    def get_all_data_for_geo(self, geo_id: str) -> dict:
-        """
-        Get all available data for a specific geography ID.
+    def _preload_data(self):
+        """Preload all data at initialization."""
+        for geo_level in GeoLevel:
+            for data_type in DataType:
+                try:
+                    self._load_and_cache_data(data_type, geo_level)
+                except Exception as e:
+                    logger.error(f"Error preloading {data_type.value} {geo_level.value} data: {e}")
+    
+    def _load_and_cache_data(self, data_type: DataType, geo_level: GeoLevel):
+        """Load and cache data for a specific type and geographic level."""
+        cache_key = f"{data_type.value}_{geo_level.value}"
         
-        Args:
-            geo_id: The geography ID to get data for
-            
-        Returns:
-            dict: Dictionary containing all available data for the geography
-        """
+        if cache_key not in self.data_cache:
+            loader = self.loaders.get(data_type)
+            if loader:
+                data = loader.load_data(geo_level)
+                self.data_cache[cache_key] = data
+    
+    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
+        """Get combined data for a geographic level."""
+        geo_enum = GeoLevel(geo_level)
+        
+        # Get individual datasets
+        acs_data = self.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
+        alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
+        snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
+        
+        # Start with ACS data as base
+        merged_data = acs_data.copy() if acs_data is not None else None
+        
+        # Merge additional datasets
+        if merged_data is not None and alice_data is not None:
+            merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
+        
+        if merged_data is not None and snap_data is not None:
+            merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
+        
+        return merged_data
+    
+    def get_all_data_for_geo(self, geo_id: str) -> Dict[str, Any]:
+        """Get all available data for a specific geography ID."""
         result = {
             "id": geo_id,
             "name": "",
@@ -79,965 +749,173 @@ class DataLoader:
         }
         
         try:
-            # Determine geo level from ID length
-            geo_levels = {
-                2: 'state',
-                5: 'county',
-                7: 'house',
-                8: 'senate'
-            }
-            
-            geo_level = geo_levels.get(len(str(geo_id)))
+            geo_level = self._determine_geo_level(geo_id)
             if not geo_level:
                 logger.warning(f"Could not determine geo level for ID: {geo_id}")
                 return result
-                
-            # Load the appropriate ACS data
-            acs_data = self.load_acs_data(geo_level)
-            if acs_data is not None and not acs_data.empty:
-                # Find the specific geography
-                geo_row = acs_data[acs_data['geoid'] == str(geo_id)]
-                if not geo_row.empty:
-                    geo_row = geo_row.iloc[0]
-                    result['name'] = geo_row.get('NAME', f"Geography {geo_id}")
-                    
-                    # Add demographic data
-                    result['demographics'] = {
-                        'population': geo_row.get('total_population'),
-                        'median_age': geo_row.get('median_age'),
-                        'population_by_race': {
-                            'White': geo_row.get('white_alone', 0),
-                            'Native Hawaiian/Pacific Islander': geo_row.get('nhpi_alone', 0),
-                            'Asian': geo_row.get('asian_alone', 0),
-                            'Two or More Races': geo_row.get('two_or_more_races', 0),
-                            'Other': geo_row.get('other_race', 0)
-                        }
-                    }
-                    
-                    # Add economic data
-                    result['economic'] = {
-                        'median_income': geo_row.get('median_income'),
-                        'poverty_rate': geo_row.get('poverty_rate'),
-                        'unemployment_rate': geo_row.get('unemployment_rate'),
-                        'alice_rate': geo_row.get('alice_rate')
-                    }
-                    
-                    # Add housing data
-                    result['housing'] = {
-                        'median_home_value': geo_row.get('median_home_value'),
-                        'median_rent': geo_row.get('median_rent'),
-                        'homeownership_rate': geo_row.get('homeownership_rate'),
-                        'rent_burden_rate': geo_row.get('rent_burden_rate')
-                    }
             
-            # Add SNAP data
-            snap_data = self.load_snap_data(geo_level)
-            if snap_data is not None and not snap_data.empty:
-                snap_row = snap_data[snap_data['geoid'] == str(geo_id)]
-                if not snap_row.empty:
-                    snap_row = snap_row.iloc[0]
-                    result['snap'] = {
-                        'snap_household_rate': snap_row.get('snap_household_rate'),
-                        'snap_benefit_annual_per_household': snap_row.get('snap_benefit_annual_per_household'),
-                        'snap_benefits_annual_total': snap_row.get('snap_benefits_annual_total')
-                    }
+            # Get merged data for the geographic level
+            data = self.get_data(geo_level.value)
+            if data is None or data.empty:
+                logger.warning(f"No data available for {geo_level.value}")
+                return result
             
-            # Tax credits data can be added here when available
+            # Find the specific geography
+            geo_row = data[data['geoid'] == str(geo_id)]
+            if geo_row.empty:
+                logger.warning(f"No data found for geography ID: {geo_id}")
+                return result
             
-            logger.debug(f"Loaded data for geography {geo_id}")
+            geo_row = geo_row.iloc[0]
+            result = self._build_geography_result(result, geo_row)
             
         except Exception as e:
-            logger.error(f"Error getting data for geography {geo_id}: {str(e)}")
-            
+            logger.error(f"Error getting data for geography {geo_id}: {e}")
+        
         return result
-            
-    def load_acs_data(self, geo_level: str) -> Optional[pd.DataFrame]:
-        """
-        Load ACS data for a specific geographic level.
+    
+    def _determine_geo_level(self, geo_id: str) -> Optional[GeoLevel]:
+        """Determine geographic level from ID length."""
+        geo_level_map = {
+            2: GeoLevel.STATE,
+            5: GeoLevel.COUNTY,
+            7: GeoLevel.HOUSE,
+            8: GeoLevel.SENATE
+        }
+        return geo_level_map.get(len(str(geo_id)))
+    
+    def _build_geography_result(self, result: Dict[str, Any], geo_row: pd.Series) -> Dict[str, Any]:
+        """Build the result dictionary from a geography data row."""
+        result['name'] = geo_row.get('NAME', f"Geography {result['id']}")
         
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            
-        Returns:
-            DataFrame with the loaded data or None if loading fails
-        """
-        try:
-            file_map = {
-                'state': 'hawaii_state_acs_2023.csv',
-                'county': 'hawaii_counties_acs_2023.csv',
-                'house': 'hawaii_house_districts_acs_2023.csv',
-                'senate': 'hawaii_senate_districts_acs_2023.csv'
+        # Demographics
+        result['demographics'] = {
+            'population': self._safe_get(geo_row, 'total_population'),
+            'median_age': self._safe_get(geo_row, 'median_age'),
+            'population_by_race': {
+                'White': self._safe_get(geo_row, 'white_alone', 0),
+                'Native Hawaiian/Pacific Islander': self._safe_get(geo_row, 'nhpi_alone', 0),
+                'Asian': self._safe_get(geo_row, 'asian_alone', 0),
+                'Two or More Races': self._safe_get(geo_row, 'two_or_more_races', 0),
+                'Other': self._safe_get(geo_row, 'other_race', 0)
             }
-            
-            if geo_level not in file_map:
-                logger.error(f"Invalid geographic level: {geo_level}")
-                return None
-                
-            file_path = self.data_dir / file_map[geo_level]
-            if not file_path.exists():
-                logger.error(f"Data file not found: {file_path}")
-                return None
-                
-            # Read CSV and ensure geoid is string
-            df = pd.read_csv(file_path, dtype={'geoid': str})
-            
-            # Add log entry for debugging
-            logger.debug(f"Loaded {geo_level} data with columns: {list(df.columns)}")
-            
-            # Cache the loaded data
-            self.data_cache[geo_level] = df
-            return df
-            
-        except Exception as e:
-            logger.error(f"Error loading {geo_level} data: {str(e)}")
-            return None
+        }
+        
+        # Economic indicators
+        result['economic'] = {
+            'median_income': self._safe_get(geo_row, 'median_income'),
+            'poverty_rate': self._safe_get(geo_row, 'poverty_rate'),
+            'unemployment_rate': self._safe_get(geo_row, 'unemployment_rate'),
+            'alice_rate': self._safe_get(geo_row, 'alice_rate')
+        }
+        
+        # Housing indicators
+        result['housing'] = {
+            'median_home_value': self._safe_get(geo_row, 'median_home_value'),
+            'median_rent': self._safe_get(geo_row, 'median_rent'),
+            'homeownership_rate': self._safe_get(geo_row, 'homeownership_rate'),
+            'rent_burden_rate': self._safe_get(geo_row, 'rent_burden_rate')
+        }
+        
+        # SNAP data
+        result['snap'] = {
+            'snap_household_rate': self._safe_get(geo_row, 'snap_household_rate'),
+            'snap_benefit_annual_per_household': self._safe_get(geo_row, 'snap_benefit_annual_per_household'),
+            'snap_benefits_annual_total': self._safe_get(geo_row, 'snap_benefits_annual_total')
+        }
+        
+        return result
     
-    def load_alice_data(self, geo_level: str) -> Optional[pd.DataFrame]:
-        """
-        Load ALICE data for a specific geographic level from Excel file.
-        
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            
-        Returns:
-            DataFrame with the loaded ALICE data or None if loading fails
-        """
-        try:
-            # Map geo levels to Excel sheet names
-            sheet_map = {
-                'state': 'State',
-                'county': 'Counties', 
-                'house': 'House',
-                'senate': 'Senate'
-            }
-            
-            if geo_level not in sheet_map:
-                logger.error(f"Invalid geographic level for ALICE data: {geo_level}")
-                return None
-                
-            # Look for ALICE Excel file in data directory
-            alice_file_path = self.base_dir / 'data' / 'ALICE By Geography (2023).xlsx'
-            if not alice_file_path.exists():
-                logger.warning(f"ALICE data file not found: {alice_file_path}")
-                return None
-                
-            # Read the specific sheet
-            sheet_name = sheet_map[geo_level]
-            df = pd.read_excel(alice_file_path, sheet_name=sheet_name)
-            
-            logger.debug(f"Loaded ALICE {geo_level} data with columns: {list(df.columns)}")
-            logger.debug(f"ALICE {geo_level} data shape: {df.shape}")
-            
-            # Standardize column names and add geo identifier
-            df = self._standardize_alice_data(df, geo_level)
-            
-            # Cache the loaded data with ALICE prefix
-            cache_key = f"alice_{geo_level}"
-            self.data_cache[cache_key] = df
-            
-            return df
-            
-        except Exception as e:
-            logger.error(f"Error loading ALICE {geo_level} data: {str(e)}")
-            return None
+    def _safe_get(self, series: pd.Series, key: str, default: Any = None) -> Any:
+        """Safely get a value from a pandas Series, handling NaN values."""
+        value = series.get(key, default)
+        return None if pd.isna(value) else value
     
-    def _standardize_alice_data(self, df: pd.DataFrame, geo_level: str) -> pd.DataFrame:
-        """
-        Standardize ALICE data columns and add geographic identifiers.
-        
-        Args:
-            df: Raw ALICE DataFrame
-            geo_level: Geographic level
-            
-        Returns:
-            Standardized DataFrame
-        """
-        df = df.copy()
-        
-        # Rename the ALICE percentage column to a standard name
-        if 'Percentage of Households Under ALICE Threshold' in df.columns:
-            df['alice_rate'] = df['Percentage of Households Under ALICE Threshold'] * 100  # Convert to percentage
-            
-        if geo_level == 'state':
-            # For state level, add consistent naming
-            df['name'] = 'Hawaii'
-            df['display_name'] = 'Hawaii'
-            
-        elif geo_level == 'county':
-            # For counties, standardize names for joining
-            if 'County' in df.columns:
-                df['county_raw'] = df['County']
-                # Apply name mapping for consistency with GeoJSON
-                df['county_name'] = df['County'].map(
-                    lambda x: self.geo_name_mapping['county'].get(x, x)
-                )
-                df['display_name'] = df['county_name']
-                df['name'] = df['County']  # Keep original for joining with ALICE data
-                
-        elif geo_level == 'house':
-            # For house districts, ensure district numbers are integers
-            if 'District' in df.columns:
-                df['district'] = df['District'].astype(int)
-                df['house_id'] = df['District'].astype(int)
-                df['display_name'] = df['District'].apply(lambda x: f"House District {x}")
-                df['name'] = df['District'].apply(lambda x: f"State House District {x} (2022); Hawaii")
-                
-        elif geo_level == 'senate':
-            # For senate districts, ensure district numbers are integers
-            if 'Senate District' in df.columns:
-                df['district'] = df['Senate District'].astype(int)
-                df['senate_id'] = df['Senate District'].astype(int)
-                df['display_name'] = df['Senate District'].apply(lambda x: f"Senate District {x}")
-                df['name'] = df['Senate District'].apply(lambda x: f"State Senate District {x} (2022); Hawaii")
-        
-        logger.debug(f"Standardized ALICE {geo_level} data columns: {list(df.columns)}")
-        return df
-    
-    def load_snap_data(self, geo_level: str) -> Optional[pd.DataFrame]:
-        """
-        Load SNAP data for a specific geographic level.
-        
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            
-        Returns:
-            DataFrame with the loaded SNAP data or None if loading fails
-        """
-        try:
-            file_map = {
-                'state': 'hawaii_state_snap_2023.csv',
-                'county': 'hawaii_county_snap_2023.csv',
-                'house': 'hawaii_house_district_snap_2023.csv',
-                'senate': 'hawaii_senate_district_snap_2023.csv'
-            }
-            
-            if geo_level not in file_map:
-                logger.error(f"Invalid geographic level for SNAP data: {geo_level}")
-                return None
-                
-            file_path = self.data_dir / 'snap_benefits' / file_map[geo_level]
-            if not file_path.exists():
-                logger.error(f"SNAP data file not found: {file_path}")
-                return None
-                
-            # Read CSV and ensure geoid is string
-            df = pd.read_csv(file_path, dtype={'geoid': str})
-            
-            # Standardize geoid format for districts (should be 5 digits: 15XXX)
-            if geo_level in ['house', 'senate'] and 'geoid' in df.columns:
-                # Convert 4-digit geoids (like '1501') to 5-digit format ('15001')
-                # Also handle cases where it's already 5 digits but wrong format
-                def fix_geoid(geoid_str):
-                    geoid_str = str(geoid_str)
-                    if len(geoid_str) == 4 and geoid_str.startswith('15'):  # '1501' -> '15001'
-                        return geoid_str[:2] + '0' + geoid_str[2:]  # Insert '0' after '15'
-                    elif len(geoid_str) == 5 and geoid_str.startswith('0'):  # '01501' -> '15001' 
-                        return '15' + geoid_str[3:]  # Take the last 3 digits and add '15' prefix
-                    else:
-                        return geoid_str
-                df['geoid'] = df['geoid'].apply(fix_geoid)
-            
-            # Convert percentages from decimal to percentage format where needed
-            percentage_columns = ['snap_household_rate', 'snap_participation_rate']
-            for col in percentage_columns:
-                if col in df.columns:
-                    # Convert to percentage (multiply by 100)
-                    df[col] = df[col] * 100
-            
-            # Add log entry for debugging
-            logger.debug(f"Loaded SNAP {geo_level} data with columns: {list(df.columns)}")
-            
-            # Cache the loaded data with SNAP prefix
-            cache_key = f"snap_{geo_level}"
-            self.data_cache[cache_key] = df
-            
-            return df
-            
-        except Exception as e:
-            logger.error(f"Error loading SNAP {geo_level} data: {str(e)}")
-            return None
-    
-    def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
-        """
-        Get combined ACS, ALICE, and SNAP data for a geographic level.
-        
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            
-        Returns:
-            DataFrame with merged ACS, ALICE, and SNAP data or None if not found
-        """
-        # Get ACS data
-        acs_data = self.data_cache.get(geo_level)
-        if acs_data is None:
-            acs_data = self.load_acs_data(geo_level)
-        
-        # Get ALICE data
-        alice_cache_key = f"alice_{geo_level}"
-        alice_data = self.data_cache.get(alice_cache_key)
-        if alice_data is None:
-            alice_data = self.load_alice_data(geo_level)
-            
-        # Get SNAP data
-        snap_cache_key = f"snap_{geo_level}"
-        snap_data = self.data_cache.get(snap_cache_key)
-        if snap_data is None:
-            snap_data = self.load_snap_data(geo_level)
-        
-        # Start with ACS data as base
-        merged_data = acs_data.copy() if acs_data is not None else None
-        
-        # Merge ALICE data if available
-        if merged_data is not None and alice_data is not None:
-            merged_data = self._merge_datasets(merged_data, alice_data, geo_level, data_type='alice')
-        elif alice_data is not None and merged_data is None:
-            merged_data = alice_data.copy()
-            
-        # Merge SNAP data if available
-        if merged_data is not None and snap_data is not None:
-            merged_data = self._merge_datasets(merged_data, snap_data, geo_level, data_type='snap')
-        elif snap_data is not None and merged_data is None:
-            merged_data = snap_data.copy()
-        
-        if merged_data is not None:
-            return merged_data
-        else:
-            logger.error(f"No data available for {geo_level}")
-            return None
-    
-    def _merge_datasets(self, base_data: pd.DataFrame, merge_data: pd.DataFrame, geo_level: str, data_type: str = 'alice') -> pd.DataFrame:
-        """
-        Merge base data with additional dataset (ALICE or SNAP) on appropriate join keys.
-        
-        Args:
-            base_data: Base DataFrame (ACS or already merged data)
-            merge_data: Data to merge (ALICE or SNAP DataFrame)
-            geo_level: Geographic level
-            data_type: Type of data being merged ('alice' or 'snap')
-            
-        Returns:
-            Merged DataFrame
-        """
-        base_df = base_data.copy()
-        merge_df = merge_data.copy()
-        
-        logger.debug(f"Merging {geo_level} data: Base shape {base_df.shape}, {data_type.upper()} shape {merge_df.shape}")
-        
-        # Define join strategies by geographic level
-        if geo_level == 'state':
-            # Simple merge for state level
-            merged = base_df.copy()
-            try:
-                if data_type == 'alice':
-                    if 'alice_rate' in merge_df.columns and len(merge_df) > 0:
-                        merged['alice_rate'] = merge_df['alice_rate'].iloc[0]
-                    else:
-                        merged['alice_rate'] = None
-                elif data_type == 'snap':
-                    # Add SNAP columns for state level
-                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                    for col in snap_columns:
-                        if col in merge_df.columns and len(merge_df) > 0:
-                            merged[col] = merge_df[col].iloc[0]
-                        else:
-                            merged[col] = None
-            except Exception as e:
-                logger.error(f"Error merging state {data_type.upper()} data: {e}")
-                if data_type == 'alice':
-                    merged['alice_rate'] = None
-                elif data_type == 'snap':
-                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                    for col in snap_columns:
-                        merged[col] = None
-                
-        elif geo_level == 'county':
-            # County names need special handling due to Honolulu/Oahu mismatch
-            join_key = 'NAME'
-            merge_join_key = 'name' if data_type == 'alice' else 'NAME'
-            
-            # Create mapping for county names
-            if data_type == 'alice':
-                county_mapping = {
-                    'Honolulu County, Hawaii': ['Honolulu', 'Oahu'],
-                    'Hawaii County, Hawaii': ['Hawaii'],
-                    'Maui County, Hawaii': ['Maui'],
-                    'Kauai County, Hawaii': ['Kauai']
-                }
-            else:  # SNAP data
-                county_mapping = {
-                    'Honolulu County, Hawaii': ['HONOLULU'],
-                    'Hawaii County, Hawaii': ['HAWAII'],
-                    'Maui County, Hawaii': ['MAUI'],
-                    'Kauai County, Hawaii': ['KAUAI']
-                }
-            
-            merged = base_df.copy()
-            
-            # Initialize columns based on data type
-            if data_type == 'alice':
-                merged['alice_rate'] = None
-            elif data_type == 'snap':
-                snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                for col in snap_columns:
-                    merged[col] = None
-            
-            # Manual join based on county mapping
-            try:
-                for base_idx, base_row in base_df.iterrows():
-                    base_county_name = base_row[join_key]
-                    
-                    # Find matching data
-                    for merge_idx, merge_row in merge_df.iterrows():
-                        merge_county = merge_row[merge_join_key]
-                        
-                        # Check if this county matches
-                        if base_county_name in county_mapping:
-                            if merge_county in county_mapping[base_county_name]:
-                                if data_type == 'alice':
-                                    merged.loc[base_idx, 'alice_rate'] = merge_row['alice_rate']
-                                elif data_type == 'snap':
-                                    for col in snap_columns:
-                                        if col in merge_row:
-                                            merged.loc[base_idx, col] = merge_row[col]
-                                logger.debug(f"Matched {base_county_name} with {data_type.upper()} {merge_county}")
-                                break
-            except Exception as e:
-                logger.error(f"Error during county {data_type.upper()} data merge: {e}")
-                # If merging fails, at least return the base data
-                pass
-                            
-        elif geo_level in ['house', 'senate']:
-            # Districts can join on district number
-            if geo_level == 'house':
-                base_join_key = 'state legislative district (lower chamber)'
-                merge_join_key = 'district'
-            else:  # senate
-                base_join_key = 'state legislative district (upper chamber)'
-                merge_join_key = 'district'
-            
-            # Try different possible column names for district matching
-            possible_base_keys = [base_join_key, 'district', 'DISTRICT']
-            actual_base_key = None
-            
-            for key in possible_base_keys:
-                if key in base_df.columns:
-                    actual_base_key = key
-                    break
-            
-            if actual_base_key and merge_join_key in merge_df.columns:
-                try:
-                    if data_type == 'alice':
-                        merged = pd.merge(
-                            base_df, 
-                            merge_df[['district', 'alice_rate']], 
-                            left_on=actual_base_key, 
-                            right_on='district', 
-                            how='left'
-                        )
-                    elif data_type == 'snap':
-                        # Use geoid for SNAP data joining since that's the standard field
-                        if 'geoid' in merge_df.columns:
-                            # Create geoid in base_df if it doesn't exist
-                            if 'geoid' not in base_df.columns and actual_base_key:
-                                # Convert district number to geoid format (15 + 3-digit district)
-                                base_df['geoid'] = '15' + base_df[actual_base_key].astype(str).str.zfill(3)
-                            
-                            snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                            merge_cols = ['geoid'] + [col for col in snap_columns if col in merge_df.columns]
-                            merged = pd.merge(
-                                base_df,
-                                merge_df[merge_cols],
-                                on='geoid',
-                                how='left'
-                            )
-                        else:
-                            # Fallback to district-based merge
-                            snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                            merge_cols = ['district'] + [col for col in snap_columns if col in merge_df.columns]
-                            merged = pd.merge(
-                                base_df,
-                                merge_df[merge_cols],
-                                left_on=actual_base_key,
-                                right_on='district',
-                                how='left'
-                            )
-                    logger.debug(f"Merged {geo_level} {data_type.upper()} on {actual_base_key} = {merge_join_key}")
-                except Exception as e:
-                    logger.error(f"Error merging {geo_level} {data_type.upper()} data: {e}")
-                    merged = base_df.copy()
-                    if data_type == 'alice':
-                        merged['alice_rate'] = None
-                    elif data_type == 'snap':
-                        snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                        for col in snap_columns:
-                            merged[col] = None
-            else:
-                logger.warning(f"Could not find matching columns for {geo_level} {data_type.upper()} merge")
-                merged = base_df.copy()
-                if data_type == 'alice':
-                    merged['alice_rate'] = None
-                elif data_type == 'snap':
-                    snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                    for col in snap_columns:
-                        merged[col] = None
-                
-        else:
-            logger.warning(f"Unknown geo_level for merging: {geo_level}")
-            merged = base_df.copy()
-            if data_type == 'alice':
-                merged['alice_rate'] = None
-            elif data_type == 'snap':
-                snap_columns = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-                for col in snap_columns:
-                    merged[col] = None
-        
-        logger.debug(f"Merged data shape: {merged.shape}, columns: {list(merged.columns)}")
-        return merged
-        
     def get_available_variables(self) -> Dict[str, str]:
-        """
-        Get a dictionary of available variables and their display names.
-        
-        Returns:
-            Dictionary mapping variable names to display names
-        """
+        """Get available variables and their display names."""
         return self.available_variables
-        
+    
     def get_variable_values(self, geo_level: str, variable: str) -> Optional[pd.Series]:
-        """
-        Get the values for a specific variable at a geographic level.
-        
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            variable: The variable name to retrieve
-            
-        Returns:
-            Series with the variable values or None if not found
-        """
+        """Get values for a specific variable at a geographic level."""
         df = self.get_data(geo_level)
         if df is None or variable not in df.columns:
             if df is not None:
-                logger.error(f"Variable {variable} not found in {geo_level} data. Available columns: {list(df.columns)}")
+                logger.error(f"Variable {variable} not found in {geo_level} data. "
+                           f"Available columns: {list(df.columns)}")
             return None
         return df[variable]
     
-    def _standardize_geojson_ids(self, geojson_data: dict, geo_level: str) -> dict:
-        """
-        Standardize ID fields in GeoJSON data to match CSV data.
-        
-        Args:
-            geojson_data: The GeoJSON data as a dictionary
-            geo_level: The geographic level ('state', 'county', 'house', 'senate')
-            
-        Returns:
-            The GeoJSON data with standardized ID fields
-        """
-        logger.debug(f"Standardizing GeoJSON IDs for {geo_level} level")
-        
-        # Create logs directory if it doesn't exist
-        logs_dir = Path(self.base_dir) / 'logs'
-        logs_dir.mkdir(exist_ok=True)
-        debug_log = logs_dir / 'id_conversion.log'
-        
-        # Write header to debug log
-        with open(debug_log, 'a') as f:
-            f.write(f"\n\n==== ID Conversion for {geo_level} at {datetime.datetime.now()} ====\n")
-        
-        # Load the CSV data to check against
-        csv_data = self.load_acs_data(geo_level)
-        if csv_data is not None:
-            csv_ids = csv_data['geoid'].astype(str).tolist()
-            with open(debug_log, 'a') as f:
-                f.write(f"CSV IDs (first 5): {csv_ids[:5]}\n")
-                f.write(f"CSV columns: {list(csv_data.columns)}\n")
-        else:
-            csv_ids = []
-            with open(debug_log, 'a') as f:
-                f.write(f"No CSV data found for {geo_level}\n")
-        
-        # Map of geo levels to their ID fields and conversion functions
-        id_config = {
-            'state': {
-                'source_field': 'state_fips',
-                'target_field': 'GEOID',
-                'converter': lambda x: '15'  # Hawaii state FIPS code
-            },
-            'county': {
-                'source_field': 'county_name',
-                'target_field': 'GEOID',
-                'converter': lambda x: self._get_county_fips(x)  # Convert county name to FIPS
-            },
-            'house': {
-                'source_field': 'state_house',
-                'target_field': 'GEOID',
-                'converter': lambda x: '15' + str(x).replace('H', '').zfill(3)  # Convert H01 to 15001
-            },
-            'senate': {
-                'source_field': 'state_senate',
-                'target_field': 'GEOID',
-                'converter': lambda x: '15' + str(x).replace('S', '').zfill(3)  # Convert S01 to 15001
-            }
-        }
-        
-        # Special case handling for each geo level
-        if geo_level == 'house':
-            # Try to find the right source field by checking what's available
-            features = geojson_data.get('features', [])
-            if features:
-                props = features[0].get('properties', {})
-                with open(debug_log, 'a') as f:
-                    f.write(f"House district properties: {list(props.keys())}\n")
-                
-                # Check for different possible field names
-                for field in ['state_house', 'STATE_HOUSE', 'house_id', 'HOUSE_ID', 'DISTRICT', 'district']:
-                    if field in props:
-                        id_config['house']['source_field'] = field
-                        with open(debug_log, 'a') as f:
-                            f.write(f"Using source field '{field}' for house districts\n")
-                        break
-        
-        elif geo_level == 'senate':
-            # Try to find the right source field by checking what's available
-            features = geojson_data.get('features', [])
-            if features:
-                props = features[0].get('properties', {})
-                with open(debug_log, 'a') as f:
-                    f.write(f"Senate district properties: {list(props.keys())}\n")
-                
-                # Check for different possible field names
-                for field in ['state_senate', 'STATE_SENATE', 'senate_id', 'SENATE_ID', 'DISTRICT', 'district']:
-                    if field in props:
-                        id_config['senate']['source_field'] = field
-                        with open(debug_log, 'a') as f:
-                            f.write(f"Using source field '{field}' for senate districts\n")
-                        break
-        
-        config = id_config.get(geo_level)
-        if not config:
-            logger.warning(f"No ID configuration found for geo_level: {geo_level}")
-            return geojson_data
-            
-        source_field = config['source_field']
-        target_field = config['target_field']
-        converter = config['converter']
-        
-        logger.debug(f"Mapping {source_field} -> {target_field} for {geo_level}")
-        
-        # Log the first few features' properties for debugging
-        features = geojson_data.get('features', [])
-        if features:
-            sample_props = features[0].get('properties', {})
-            logger.debug(f"Sample feature properties: {list(sample_props.keys())}")
-            with open(debug_log, 'a') as f:
-                f.write(f"Sample feature properties: {list(sample_props.keys())}\n")
-            
-        # Track if we found and modified any features
-        modified_count = 0
-        converted_ids = []
-        
-        # Update each feature's properties with the standardized ID
-        for feature in features:
-            props = feature.get('properties', {})
-            if source_field in props:
-                try:
-                    # Convert the source ID to the target format
-                    source_id = props[source_field]
-                    target_id = converter(source_id)
-                    props[target_field] = target_id
-                    
-                    # Also add a 'geoid' field to match CSV directly
-                    props['geoid'] = target_id
-                    
-                    # Special handling for Oahu/Honolulu County
-                    if geo_level == 'county' and ('oahu' in str(source_id).lower() or 'honolulu' in str(source_id).lower()):
-                        # Ensure we use the correct name and FIPS code
-                        props['county_name'] = 'Honolulu County, Hawaii'
-                        props['county_fips'] = '003'  # Without state prefix
-                        props['state_fips'] = '15'
-                        logger.debug(f"Standardized Oahu/Honolulu county name and FIPS code")
-                    
-                    modified_count += 1
-                    converted_ids.append(target_id)
-                    
-                    # Log the first few conversions for debugging
-                    if modified_count <= 5:
-                        logger.debug(f"Converted {source_field}={source_id} -> {target_field}={target_id}")
-                        with open(debug_log, 'a') as f:
-                            f.write(f"Converted {source_field}={source_id} -> {target_field}={target_id}\n")
-                except Exception as e:
-                    logger.error(f"Error converting ID for {geo_level} with {source_field}={props.get(source_field)}: {str(e)}")
-                    with open(debug_log, 'a') as f:
-                        f.write(f"ERROR: {str(e)} when converting {source_field}={props.get(source_field)}\n")
-        
-        logger.debug(f"Standardized {modified_count} features by adding {target_field}")
-        with open(debug_log, 'a') as f:
-            f.write(f"Standardized {modified_count} features by adding {target_field}\n")
-        
-        # Check for matches between converted IDs and CSV IDs
-        matches = set(converted_ids).intersection(set(csv_ids))
-        with open(debug_log, 'a') as f:
-            f.write(f"Matches between GeoJSON and CSV: {len(matches)} out of {len(converted_ids)} features\n")
-            f.write(f"Converted IDs (first 5): {converted_ids[:5]}\n")
-            f.write(f"CSV IDs (first 5): {csv_ids[:5]}\n")
-            
-            # Create a detailed log file for debugging
-            debug_dir = self.base_dir / 'logs' / 'debug'
-            debug_dir.mkdir(parents=True, exist_ok=True)
-            detailed_log = debug_dir / f'county_matching_debug_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
-            
-            with open(detailed_log, 'w') as detail_f:
-                detail_f.write(f"=== County Matching Debug Log ===\n")
-                detail_f.write(f"Time: {datetime.datetime.now()}\n\n")
-                detail_f.write(f"GeoJSON IDs: {converted_ids}\n\n")
-                detail_f.write(f"CSV IDs: {csv_ids}\n\n")
-                detail_f.write(f"Matches: {list(matches)}\n\n")
-                
-                # Log any missing matches
-                missing = set(csv_ids) - set(converted_ids)
-                if missing:
-                    detail_f.write(f"Missing IDs (in CSV but not in GeoJSON): {list(missing)}\n\n")
-                
-                extra = set(converted_ids) - set(csv_ids)
-                if extra:
-                    detail_f.write(f"Extra IDs (in GeoJSON but not in CSV): {list(extra)}\n\n")
-            
-            if len(matches) > 0:
-                f.write(f"Matching IDs (first 5): {list(matches)[:5]}\n")
-            else:
-                f.write("NO MATCHES FOUND!\n")
-        
-        # Verify the first feature has the new field
-        if features and modified_count > 0:
-            sample_props = features[0].get('properties', {})
-            logger.debug(f"First feature now has properties: {list(sample_props.keys())}")
-            with open(debug_log, 'a') as f:
-                f.write(f"First feature now has properties: {list(sample_props.keys())}\n")
-                f.write(f"First feature GEOID: {sample_props.get(target_field, 'Not found')}\n")
-                f.write(f"First feature geoid: {sample_props.get('geoid', 'Not found')}\n")
-        
-        return geojson_data
-        
-    def _get_county_fips(self, county_name: str) -> str:
-        """
-        Convert a county name to its FIPS code with detailed logging.
-        
-        Args:
-            county_name: The name of the county as it appears in the GeoJSON
-            
-        Returns:
-            The FIPS code as a string
-        """
-        if not county_name:
-            logger.warning("Empty county name provided to _get_county_fips")
-            return '15000'  # Default FIPS code for unknown county
-            
-        county_name = str(county_name).lower()
-        logger.debug(f"Converting county name to FIPS: {county_name}")
-        
-        # Create a debug log file for county name conversions
-        debug_dir = self.base_dir / 'logs'
-        debug_dir.mkdir(parents=True, exist_ok=True)
-        debug_log = debug_dir / 'county_fips_conversion.log'
-        
-        with open(debug_log, 'a') as f:
-            f.write(f"\n[{datetime.datetime.now()}] Converting county: '{county_name}'\n")
-        
-        # Define county name patterns and their corresponding FIPS codes
-        county_map = [
-            ('oahu', '15003'),  # Oahu is Honolulu County
-            ('honolulu', '15003'),
-            ('hawaii', '15001'),
-            ('maui', '15009'),
-            ('kauai', '15007'),
-            ('kalawao', '15005')
-        ]
-        
-        # Find the first matching pattern
-        for pattern, fips in county_map:
-            if pattern in county_name:
-                logger.debug(f"Matched county name '{county_name}' to FIPS {fips} using pattern '{pattern}'")
-                with open(debug_log, 'a') as f:
-                    f.write(f"  Matched to FIPS {fips} using pattern '{pattern}'\n")
-                return fips
-                
-        # If no match found, log a warning and return a default FIPS code
-        logger.warning(f"No FIPS code match found for county: {county_name}")
-        with open(debug_log, 'a') as f:
-            f.write(f"  WARNING: No match found for '{county_name}'\n")
-        return '15000'  # Default FIPS code for unknown county
-        
     def get_geojson_path(self, geo_level: str) -> Optional[Path]:
-        """
-        Get the path to the GeoJSON file for a geographic level.
-        
-        Args:
-            geo_level: One of 'state', 'county', 'house', or 'senate'
-            
-        Returns:
-            Path to the GeoJSON file or None if not found
-        """
-        file_map = {
-            'state': 'hawaii_state_boundary.geojson',
-            'county': 'hawaii_county_boundaries.geojson',
-            'house': 'Hawaii_State_House_Districts_2022.geojson',
-            'senate': 'Hawaii_State_Senate_Districts_2022.geojson'
-        }
-        
-        if geo_level not in file_map:
-            logger.error(f"Invalid geographic level for GeoJSON: {geo_level}")
+        """Get path to GeoJSON file for a geographic level."""
+        try:
+            geo_enum = GeoLevel(geo_level)
+            return self.geojson_processor.get_geojson_path(geo_enum)
+        except ValueError:
+            logger.error(f"Invalid geographic level: {geo_level}")
             return None
-            
-        # Create a debug log file to track file access issues
-        debug_log_path = self.base_dir / 'logs' / 'data_debug.log'
-        debug_log_path.parent.mkdir(exist_ok=True)
-        
-        with open(debug_log_path, 'a') as debug_file:
-            debug_file.write(f"\n[{geo_level}] Looking for GeoJSON: {file_map[geo_level]}\n")
-            
-            # Check if the Processed GeoJsons directory exists
-            geojson_dir = self.base_dir / 'data' / 'Processed GeoJsons'
-            if not geojson_dir.exists():
-                error_msg = f"GeoJSON directory not found: {geojson_dir}"
-                logger.error(error_msg)
-                debug_file.write(f"ERROR: {error_msg}\n")
-                return None
-            
-            # List all files in the directory for debugging
-            debug_file.write(f"Files in {geojson_dir}:\n")
-            for file in geojson_dir.iterdir():
-                debug_file.write(f"  - {file.name}\n")
-            
-            # Check for the specific file
-            geojson_path = geojson_dir / file_map[geo_level]
-            if not geojson_path.exists():
-                error_msg = f"GeoJSON file not found: {geojson_path}"
-                logger.error(error_msg)
-                debug_file.write(f"ERROR: {error_msg}\n")
-                return None
-            
-            debug_file.write(f"SUCCESS: Found GeoJSON at {geojson_path}\n")
-            
-        return geojson_path
     
     def merge_geojson_with_data(self, geojson_data: dict, geo_level: str) -> dict:
-        """
-        Enhanced method to merge GeoJSON with both ACS and ALICE data.
-        
-        Args:
-            geojson_data: GeoJSON data as dictionary
-            geo_level: Geographic level
-            
-        Returns:
-            GeoJSON data with merged attributes
-        """
+        """Merge GeoJSON with data for a geographic level."""
         try:
-            # Get merged ACS + ALICE data
+            geo_enum = GeoLevel(geo_level)
             data = self.get_data(geo_level)
-            if data is None:
-                logger.warning(f"No data available for merging with {geo_level} GeoJSON")
-                return geojson_data
-            
-            logger.debug(f"Merging GeoJSON with data containing columns: {list(data.columns)}")
-            
-            # Process each feature in the GeoJSON
-            for feature in geojson_data.get('features', []):
-                properties = feature.get('properties', {})
-                
-                # Find matching data based on geographic level
-                try:
-                    matching_data = self._find_matching_data(properties, data, geo_level)
-                    
-                    if matching_data is not None:
-                        # Add all data columns to the feature properties
-                        for key, value in matching_data.items():
-                            # Skip certain columns that shouldn't be in properties
-                            if key not in ['index', 'level_0'] and value is not None:
-                                # Handle pandas NaN values
-                                if pd.isna(value):
-                                    properties[key] = None
-                                else:
-                                    properties[key] = value
-                                
-                        logger.debug(f"Added {len(matching_data)} data fields to feature")
-                    else:
-                        logger.warning(f"No matching data found for feature in {geo_level}")
-                except Exception as e:
-                    logger.error(f"Error processing feature in {geo_level}: {e}")
-                    continue
-            
+            return self.geojson_processor.merge_geojson_with_data(geojson_data, data, geo_enum)
+        except ValueError:
+            logger.error(f"Invalid geographic level: {geo_level}")
             return geojson_data
-            
         except Exception as e:
-            logger.error(f"Error in merge_geojson_with_data for {geo_level}: {e}")
+            logger.error(f"Error merging GeoJSON with data for {geo_level}: {e}")
             return geojson_data
+
+
+# Legacy compatibility functions (if needed for existing code)
+def load_acs_data(geo_level: str) -> Optional[pd.DataFrame]:
+    """Legacy function for loading ACS data."""
+    loader = DataLoader()
+    return loader.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
+
+
+def load_alice_data(geo_level: str) -> Optional[pd.DataFrame]:
+    """Legacy function for loading ALICE data."""
+    loader = DataLoader()
+    return loader.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
+
+
+def load_snap_data(geo_level: str) -> Optional[pd.DataFrame]:
+    """Legacy function for loading SNAP data."""
+    loader = DataLoader()
+    return loader.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    # Initialize the data loader
+    loader = DataLoader()
     
-    def _find_matching_data(self, properties: dict, data: pd.DataFrame, geo_level: str) -> Optional[dict]:
-        """
-        Find matching data row for a GeoJSON feature.
+    # Test loading different data types
+    for geo_level in ['state', 'county', 'house', 'senate']:
+        print(f"\n=== Testing {geo_level.upper()} level ===")
         
-        Args:
-            properties: Feature properties from GeoJSON
-            data: Data DataFrame
-            geo_level: Geographic level
-            
-        Returns:
-            Dictionary of matching data or None
-        """
-        if geo_level == 'state':
-            # State level - just return the first (and only) row
-            if len(data) > 0:
-                return data.iloc[0].to_dict()
-                
-        elif geo_level == 'county':
-            # County matching with name variations
-            county_name = properties.get('county_name', properties.get('NAME', ''))
-            
-            # Try multiple matching strategies
-            matching_strategies = [
-                ('NAME', county_name),  # Direct name match
-                ('NAME', f"{county_name} County, Hawaii"),  # Add county suffix
-            ]
-            
-            # Special case for Oahu/Honolulu
-            if 'oahu' in county_name.lower():
-                matching_strategies.extend([
-                    ('NAME', 'Honolulu County, Hawaii'),
-                    ('NAME', 'Honolulu')
-                ])
-            
-            for col, value in matching_strategies:
-                if col in data.columns:
-                    matches = data[data[col] == value]
-                    if len(matches) > 0:
-                        logger.debug(f"Matched county using {col}={value}")
-                        return matches.iloc[0].to_dict()
-            
-            # Try case-insensitive matching
-            for col, value in matching_strategies:
-                if col in data.columns:
-                    matches = data[data[col].str.lower() == value.lower()]
-                    if len(matches) > 0:
-                        logger.debug(f"Matched county using case-insensitive {col}={value}")
-                        return matches.iloc[0].to_dict()
-                        
-        elif geo_level in ['house', 'senate']:
-            # District matching by number
-            district_num = None
-            
-            # Try different ways to get district number
-            for field in ['DISTRICT', 'house_id', 'senate_id', 'district']:
-                if field in properties:
-                    district_num = properties[field]
-                    break
-            
-            if district_num is not None:
-                # Try matching on different column names
-                for col in ['district', 'state legislative district (lower chamber)', 
-                           'state legislative district (upper chamber)']:
-                    if col in data.columns:
-                        matches = data[data[col] == district_num]
-                        if len(matches) > 0:
-                            logger.debug(f"Matched {geo_level} district {district_num} using {col}")
-                            return matches.iloc[0].to_dict()
+        # Get combined data
+        combined_data = loader.get_data(geo_level)
+        if combined_data is not None:
+            print(f"Combined data shape: {combined_data.shape}")
+            print(f"Columns: {list(combined_data.columns)[:10]}...")  # First 10 columns
+        else:
+            print("No combined data available")
         
-        return None
+        # Test specific geography lookup (if data exists)
+        if combined_data is not None and not combined_data.empty:
+            first_geoid = combined_data['geoid'].iloc[0] if 'geoid' in combined_data.columns else None
+            if first_geoid:
+                geo_data = loader.get_all_data_for_geo(first_geoid)
+                print(f"Sample geography data for {first_geoid}: {geo_data['name']}")
+    
+    # Test available variables
+    variables = loader.get_available_variables()
+    print(f"\nAvailable variables: {len(variables)}")
+    for var, desc in list(variables.items())[:5]:  # First 5 variables
+        print(f"  {var}: {desc}")
+    
+    print("\nData loader initialization and testing complete!")
+    
