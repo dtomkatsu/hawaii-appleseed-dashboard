@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hawaii Data Dashboard - Detailed View</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hawaii Data Dashboard</h1>
+            <nav>
+                <a href="/" class="back-button">← Back to Map</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div id="loading">Loading data...</div>
+            
+            <div id="content" style="display: none;">
+                <div class="geo-header">
+                    <h2 id="geo-name"></h2>
+                    <div id="geo-meta"></div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="overview">Overview</button>
+                    <button class="tab-button" data-tab="demographics">Demographics</button>
+                    <button class="tab-button" data-tab="economic">Economic</button>
+                    <button class="tab-button" data-tab="housing">Housing</button>
+                </div>
+                
+                <div id="overview" class="tab-content active">
+                    <div class="card">
+                        <h3>Key Indicators</h3>
+                        <div id="key-indicators" class="indicators-grid">
+                            <!-- Filled by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Map</h3>
+                        <div id="map"></div>
+                    </div>
+                </div>
+                
+                <div id="demographics" class="tab-content">
+                    <div class="card">
+                        <h3>Population Demographics</h3>
+                        <canvas id="demographics-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div id="economic" class="tab-content">
+                    <div class="card">
+                        <h3>Economic Indicators</h3>
+                        <canvas id="economic-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div id="housing" class="tab-content">
+                    <div class="card">
+                        <h3>Housing Data</h3>
+                        <canvas id="housing-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>
