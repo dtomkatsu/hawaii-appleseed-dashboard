@@ -371,7 +371,15 @@ class LeafletMapComponent:
                     
                     map.fitBounds(e.target.getBounds());
                     
-                    const featureId = e.target.feature.properties.id || e.target.feature.id;
+                    const featureId = e.target.feature.properties.id || 
+                                    e.target.feature.properties.GEOID || 
+                                    e.target.feature.properties.geoid || 
+                                    e.target.feature.properties.fips || 
+                                    e.target.feature.properties.FIPS || 
+                                    e.target.feature.properties.feature_id ||
+                                    e.target.feature.properties.geo_id ||
+                                    e.target.feature.id;
+                    
                     if (featureId) {{
                         localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
                         window.parent.postMessage({{
@@ -391,14 +399,44 @@ class LeafletMapComponent:
                     const props = feature.properties;
                     let name = props.display_name || props.NAME || 'Unknown';
                     // Remove ', Hawaii' or '; Hawaii' from anywhere in the name
-                    name = name.replace(/[,;]\s*Hawaii/g, '').trim();
+                    name = name.replace(/[,;]\\s*Hawaii/g, '').trim();
                     const value = props[SELECTED_VARIABLE];
                     const formattedValue = utils.formatValue(value, SELECTED_VARIABLE);
                     const metricsHtml = utils.createMetricHtml(null, props);
                     const snapHtml = utils.createSnapHtml(props);
                     
                     // Create three columns for the popup content
-                    const featureId = props.id || feature.id;
+                    const featureId = props.id || 
+                                    props.GEOID || 
+                                    props.geoid || 
+                                    props.fips || 
+                                    props.FIPS || 
+                                    props.feature_id ||
+                                    props.geo_id ||
+                                    feature.id;
+                    
+                    console.log('Feature properties:', props);
+                    console.log('Selected feature ID:', featureId);
+                    
+                    let detailLinkHtml = '';
+                    if (featureId && featureId !== 'undefined' && featureId !== 'null') {{
+                        detailLinkHtml = [
+                            '  <div style="margin-top: 12px; text-align: center;">',
+                            '    <a href="/geo_detail?geo_id=' + encodeURIComponent(String(featureId)) + '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
+                            '      View Detailed Data',
+                            '    </a>',
+                            '  </div>'
+                        ].join('');
+                    }} else {{
+                        detailLinkHtml = [
+                            '  <div style="margin-top: 12px; text-align: center;">',
+                            '    <span style="display: inline-block; background-color: #ccc; color: #666; padding: 8px 16px; border-radius: 4px; font-style: italic;">',
+                            '      Detailed data unavailable (no ID)',
+                            '    </span>',
+                            '  </div>'
+                        ].join('');
+                    }}
+                    
                     const popupContent = [
                         '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 500px;">',
                         '  <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">',
@@ -424,11 +462,7 @@ class LeafletMapComponent:
                         '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
                         '    </div>',
                         '  </div>',
-                        '  <div style="margin-top: 12px; text-align: center;">',
-                        '    <a href="/geo_detail?geo_id=', featureId, '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
-                        '      View Detailed Data',
-                        '    </a>',
-                        '  </div>',
+                        detailLinkHtml,
                         '</div>'
                     ].join('');
                     
