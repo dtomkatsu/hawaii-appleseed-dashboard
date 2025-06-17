@@ -32,6 +32,58 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
     except (ValueError, TypeError):
         return str(value)
 
+def get_snap_fraction(participation_rate):
+    """Convert SNAP participation rate to a fraction with qualifiers.
+    
+    Args:
+        participation_rate: The SNAP participation rate as a percentage (e.g., 16.6)
+        
+    Returns:
+        str: Formatted string like "just over 1 in 6" or "about 1 in 4"
+    """
+    if not participation_rate or participation_rate <= 0:
+        return ""
+        
+    # Convert percentage to decimal fraction
+    decimal_fraction = participation_rate / 100.0
+    
+    # Common fractions to check against (1/2, 1/3, 1/4, etc.)
+    common_fractions = [
+        (1, 2, 0.5), (1, 3, 0.333), (1, 4, 0.25), (1, 5, 0.2),
+        (1, 6, 0.1667), (1, 7, 0.1429), (1, 8, 0.125), (1, 9, 0.1111),
+        (1, 10, 0.1), (2, 5, 0.4), (3, 4, 0.75), (2, 3, 0.6667)
+    ]
+    
+    best_match = None
+    min_diff = float('inf')
+    
+    # Find the closest matching fraction
+    for num, denom, value in common_fractions:
+        diff = abs(decimal_fraction - value)
+        if diff < min_diff:
+            min_diff = diff
+            best_match = (num, denom, value)
+    
+    if best_match:
+        num, denom, value = best_match
+        diff = decimal_fraction - value
+        
+        # Determine the qualifier based on the difference
+        if abs(diff) < 0.002:  # Less than 0.2% difference
+            return f"{num} in {denom}"
+        elif diff > 0.002:  # More than 0.2% above
+            if diff < 0.01:  # Less than 1% above
+                return f"just over {num} in {denom}"
+            else:
+                return f"over {num} in {denom}"
+        else:  # More than 0.2% below
+            if diff > -0.01:  # Less than 1% below
+                return f"just under {num} in {denom}"
+            else:
+                return f"under {num} in {denom}"
+    
+    return ""
+
 def display_snap_fact_sheet(geo_data):
     """Display the SNAP fact sheet HTML with dynamic data.
     
@@ -63,6 +115,14 @@ def display_snap_fact_sheet(geo_data):
     retailers_count = "941"
     retailers_redemption = "$858,976,504"
     
+    # Get ALICE data if available
+    alice_rate = format_number(geo_data.get('alice', {}).get('alice_rate'), is_percent=True)
+    
+    # Pre-calculate values that require function calls
+    snap_fraction = get_snap_fraction(float(snap_data.get('snap_household_rate', 0)))
+    disability_rate = format_number(snap_data.get('snap_disability_rate'), is_percent=True)
+    veterans_count = format_number(snap_data.get('snap_veterans_count'))
+    
     # Use double curly braces to escape them in the f-string
     snap_html = f"""
     <!DOCTYPE html>
@@ -89,6 +149,26 @@ def display_snap_fact_sheet(geo_data):
                 margin: 0 auto;
                 background: white;
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }}
+            
+            .alice-section {{
+                background-color: #6A7BA2;
+                color: white;
+                padding: 20px;
+                margin: 0;
+                border-top: 4px solid #D4AF37;
+            }}
+            
+            .alice-rate {{
+                font-size: 24px;
+                font-weight: bold;
+                margin: 10px 0;
+            }}
+            
+            .alice-definition {{
+                font-size: 14px;
+                line-height: 1.4;
+                margin-top: 10px;
             }}
             
             .header {{
@@ -287,6 +367,13 @@ def display_snap_fact_sheet(geo_data):
     </head>
     <body>
         <div class="fact-sheet">
+            <div class="alice-section">
+                <div class="alice-rate">ALICE Rate: {alice_rate}</div>
+                <div class="alice-definition">
+                    ALICE stands for Asset Limited, Income Constrained, Employed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
+                </div>
+            </div>
+            
             <div class="header">
                 <h1>{geo_name.upper()}</h1>
                 <div class="subtitle">Fact Sheet</div>
@@ -300,7 +387,7 @@ def display_snap_fact_sheet(geo_data):
                 <div class="stats-grid">
                     <div>
                         <ul class="bullet-points">
-                            <li><span class="stat-highlight">{snap_participation_rate}</span> of households in {geo_name.upper()} participated in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span> SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas in {geo_name.upper()}.</li>
+                            <li>Approximately <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span> SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas.</li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
                             <li>SNAP helped over <span class="stat-highlight">{children_in_snap}</span> children in {geo_name.upper()} in FY 2023. It also provided these children with eligibility for school meals. Cuts to SNAP would mean that children in families with low incomes would lose access to school meals.</li>
                         </ul>
@@ -312,7 +399,7 @@ def display_snap_fact_sheet(geo_data):
                             <div class="small-stat-label">SNAP households with children</div>
                         </div>
                         <div class="small-stat-box">
-                            <div class="small-stat-number">{format_number(snap_data.get('snap_disability_rate'), is_percent=True)}</div>
+                            <div class="small-stat-number">{disability_rate}</div>
                             <div class="small-stat-label">SNAP households with a person with a disability</div>
                         </div>
                         <div class="small-stat-box">
@@ -320,7 +407,7 @@ def display_snap_fact_sheet(geo_data):
                             <div class="small-stat-label">SNAP households with older adults</div>
                         </div>
                         <div class="small-stat-box">
-                            <div class="small-stat-number">{format_number(snap_data.get('snap_veterans_count'))}</div>
+                            <div class="small-stat-number">{veterans_count}</div>
                             <div class="small-stat-label">Veterans participating in SNAP</div>
                         </div>
                     </div>
