@@ -50,6 +50,10 @@ def display_snap_fact_sheet(geo_data):
     avg_monthly_benefit = format_number(snap_data.get('snap_benefit_annual_per_household', 0) / 12, is_currency=True, decimals=2)
     daily_per_person = format_number((snap_data.get('snap_benefit_annual_per_household', 0) / 12) / 30, is_currency=True, decimals=2)
     
+    # Get comparison text from geo_data (added in display_geo_data)
+    comparison_text = geo_data.get('comparison_text', '')
+    st.write("Debug - Comparison text to be displayed:", f"'{comparison_text}'")
+    
     # Calculate children in SNAP households (assuming 25% of SNAP participants are children)
     children_in_snap = format_number(int(snap_data.get('snap_household_count', 0)) * 0.8)  # Estimate
     
@@ -296,7 +300,7 @@ def display_snap_fact_sheet(geo_data):
                 <div class="stats-grid">
                     <div>
                         <ul class="bullet-points">
-                            <li><span class="stat-highlight">{snap_participation_rate}</span> of households in {geo_name.upper()} participated in SNAP. SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas in {geo_name.upper()}.</li>
+                            <li><span class="stat-highlight">{snap_participation_rate}</span> of households in {geo_name.upper()} participated in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span> SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas in {geo_name.upper()}.</li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
                             <li>SNAP helped over <span class="stat-highlight">{children_in_snap}</span> children in {geo_name.upper()} in FY 2023. It also provided these children with eligibility for school meals. Cuts to SNAP would mean that children in families with low incomes would lose access to school meals.</li>
                         </ul>
@@ -355,6 +359,68 @@ def display_snap_fact_sheet(geo_data):
     
     html(snap_html, height=1200)
 
+def get_parent_geography_data(geo_id: str, geo_data: dict) -> dict:
+    """Get parent geography data for comparison.
+    
+    Args:
+        geo_id: The ID of the current geography
+        geo_data: The current geography's data
+        
+    Returns:
+        dict: Parent geography data or None if not applicable
+    """
+    # Determine parent geography type based on ID length
+    geo_level = len(str(geo_id).strip())
+    
+    # For house districts (ID length 4) and senate districts (ID length 5)
+    if geo_level in [4, 5]:
+        # Get county data for district comparison
+        # In Hawaii, districts are statewide, so we'll use the state as parent
+        parent_geo_id = '15'  # Hawaii state FIPS code
+        parent_geo_type = 'state'
+    # For counties (ID length 5)
+    elif geo_level == 5:
+        # Use state as parent for counties
+        parent_geo_id = '15'  # Hawaii state FIPS code
+        parent_geo_type = 'state'
+    # For state (ID length 2) or unknown
+    else:
+        return None
+    
+    try:
+        # Get parent data
+        st.write(f"Debug - Fetching parent data for {parent_geo_type} with ID: {parent_geo_id}")
+        parent_data = data_loader.get_all_data_for_geo(parent_geo_id)
+        
+        if parent_data:
+            st.write(f"Debug - Parent data keys: {parent_data.keys()}")
+            
+            if 'snap' in parent_data:
+                st.write("Debug - Parent SNAP data structure:", parent_data['snap'].keys())
+                st.write("Debug - Parent SNAP data values:", parent_data['snap'])
+            else:
+                st.write("Debug - No SNAP data in parent data")
+            
+            if 'name' in parent_data:
+                result = {
+                    'type': parent_geo_type,
+                    'id': parent_geo_id,
+                    'name': parent_data.get('name', 'Hawaii'),
+                    'snap': parent_data.get('snap', {})
+                }
+                st.write("Debug - Returning parent data:", result)
+                return result
+            else:
+                st.write("Debug - Parent data missing 'name' field")
+        else:
+            st.write("Debug - No parent data returned from data_loader")
+            
+    except Exception as e:
+        st.warning(f"Could not load parent geography data: {str(e)}")
+        st.exception(e)  # Show full traceback for debugging
+    
+    return None
+
 def display_geo_data(geo_id: str):
     """Display detailed data for a specific geographic area."""
     try:
@@ -364,6 +430,14 @@ def display_geo_data(geo_id: str):
         if not geo_data or 'name' not in geo_data:
             st.warning("No detailed data available for this location.")
             return
+        
+        # Get parent geography data for comparison
+        parent_geo = get_parent_geography_data(geo_id, geo_data)
+        if parent_geo:
+            geo_data['parent_geography'] = parent_geo
+        
+        # Debug: Log the complete geo_data structure
+        st.write("Debug - Geo data structure:", geo_data.keys())
         
         # Ensure all required data fields are present with defaults if missing
         if 'snap' not in geo_data:
@@ -375,14 +449,37 @@ def display_geo_data(geo_id: str):
         if 'economic' not in geo_data:
             geo_data['economic'] = {}
         
+        # Debug: Log the complete SNAP data structure
+        st.write("Debug - SNAP data structure:", geo_data.get('snap', {}).keys())
+        
         # Calculate derived values
         snap_data = geo_data['snap']
         
-        # Ensure required SNAP fields exist
-        snap_data['household_count'] = snap_data.get('household_count', 0)
-        snap_data['benefits_annual_total'] = snap_data.get('benefits_annual_total', 0)
-        snap_data['household_rate'] = snap_data.get('household_rate', 0)
-        snap_data['benefit_annual_per_household'] = snap_data.get('benefit_annual_per_household', 0)
+        # Debug: Log all SNAP data fields and values
+        st.write("Debug - All SNAP data fields:")
+        for key, value in snap_data.items():
+            st.write(f"  {key}: {value} ({type(value).__name__})")
+        
+        # Map SNAP data to expected field names for backward compatibility
+        snap_data_mapped = {
+            'household_count': 0,  # Not available in the data
+            'household_rate': snap_data.get('snap_household_rate', 0),
+            'benefits_annual_total': snap_data.get('snap_benefits_annual_total', 0),
+            'benefit_annual_per_household': snap_data.get('snap_benefit_annual_per_household', 0)
+        }
+        
+        # Update snap_data with mapped values
+        snap_data.update(snap_data_mapped)
+        
+        # Debug: Log the final SNAP data values
+        st.write("Debug - Final SNAP values:")
+        st.write(f"  household_rate: {snap_data['household_rate']}%")
+        st.write(f"  benefits_annual_total: ${snap_data['benefits_annual_total']:,.2f}")
+        st.write(f"  benefit_annual_per_household: ${snap_data['benefit_annual_per_household']:,.2f}")
+        
+        # Debug: If we have parent data, log its structure too
+        if 'parent_geography' in geo_data and 'snap' in geo_data['parent_geography']:
+            st.write("Debug - Parent SNAP data:", geo_data['parent_geography']['snap'])
         
         # Calculate monthly and daily benefits
         if 'benefit_annual_per_household' in snap_data and snap_data['benefit_annual_per_household']:
@@ -415,6 +512,33 @@ def display_geo_data(geo_id: str):
         with col3:
             if 'median_income' in geo_data['economic']:
                 st.metric("Median Income", f"${geo_data['economic']['median_income']:,.0f}")
+        
+        # Add comparison text for SNAP participation rate
+        comparison_text = ""
+        st.write("Debug - Checking parent geography data:", geo_data.get('parent_geography', 'No parent_geography data'))
+        
+        if 'parent_geography' in geo_data and 'snap' in geo_data['parent_geography']:
+            parent_snap = geo_data['parent_geography']['snap']
+            parent_rate = parent_snap.get('snap_household_rate', 0)
+            current_rate = snap_data.get('snap_household_rate', 0)
+            
+            st.write(f"Debug - Parent rate: {parent_rate}%, Current rate: {current_rate}%")
+            
+            if parent_rate and current_rate:
+                diff = current_rate - parent_rate
+                if diff > 0:
+                    comparison_text = f"This is {abs(diff):.1f} percentage points higher than the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
+                elif diff < 0:
+                    comparison_text = f"This is {abs(diff):.1f} percentage points lower than the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
+                else:
+                    comparison_text = f"This matches the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
+            else:
+                st.write("Debug - Missing rate data for comparison")
+        else:
+            st.write("Debug - No parent geography data for comparison")
+        
+        # Add comparison text to the geo_data
+        geo_data['comparison_text'] = comparison_text
         
         # Display the SNAP fact sheet with all available data
         st.subheader("SNAP Fact Sheet")
