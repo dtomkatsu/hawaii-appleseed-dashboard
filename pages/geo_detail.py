@@ -26,7 +26,8 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
         if is_currency:
             return f"${float(value):,.{decimals}f}"
         elif is_percent:
-            return f"{float(value):.0f}%"
+            # Use one decimal place for percentages
+            return f"{float(value):.1f}%"
         return f"{float(value):,.0f}"
     except (ValueError, TypeError):
         return str(value)
@@ -52,7 +53,6 @@ def display_snap_fact_sheet(geo_data):
     
     # Get comparison text from geo_data (added in display_geo_data)
     comparison_text = geo_data.get('comparison_text', '')
-    st.write("Debug - Comparison text to be displayed:", f"'{comparison_text}'")
     
     # Calculate children in SNAP households (assuming 25% of SNAP participants are children)
     children_in_snap = format_number(int(snap_data.get('snap_household_count', 0)) * 0.8)  # Estimate
@@ -389,35 +389,19 @@ def get_parent_geography_data(geo_id: str, geo_data: dict) -> dict:
     
     try:
         # Get parent data
-        st.write(f"Debug - Fetching parent data for {parent_geo_type} with ID: {parent_geo_id}")
         parent_data = data_loader.get_all_data_for_geo(parent_geo_id)
         
-        if parent_data:
-            st.write(f"Debug - Parent data keys: {parent_data.keys()}")
-            
-            if 'snap' in parent_data:
-                st.write("Debug - Parent SNAP data structure:", parent_data['snap'].keys())
-                st.write("Debug - Parent SNAP data values:", parent_data['snap'])
-            else:
-                st.write("Debug - No SNAP data in parent data")
-            
-            if 'name' in parent_data:
-                result = {
-                    'type': parent_geo_type,
-                    'id': parent_geo_id,
-                    'name': parent_data.get('name', 'Hawaii'),
-                    'snap': parent_data.get('snap', {})
-                }
-                st.write("Debug - Returning parent data:", result)
-                return result
-            else:
-                st.write("Debug - Parent data missing 'name' field")
-        else:
-            st.write("Debug - No parent data returned from data_loader")
-            
+        if parent_data and 'name' in parent_data:
+            return {
+                'type': parent_geo_type,
+                'id': parent_geo_id,
+                'name': parent_data.get('name', 'Hawaii'),
+                'snap': parent_data.get('snap', {})
+            }
     except Exception as e:
         st.warning(f"Could not load parent geography data: {str(e)}")
-        st.exception(e)  # Show full traceback for debugging
+    
+    return None
     
     return None
 
@@ -436,9 +420,6 @@ def display_geo_data(geo_id: str):
         if parent_geo:
             geo_data['parent_geography'] = parent_geo
         
-        # Debug: Log the complete geo_data structure
-        st.write("Debug - Geo data structure:", geo_data.keys())
-        
         # Ensure all required data fields are present with defaults if missing
         if 'snap' not in geo_data:
             geo_data['snap'] = {}
@@ -449,16 +430,8 @@ def display_geo_data(geo_id: str):
         if 'economic' not in geo_data:
             geo_data['economic'] = {}
         
-        # Debug: Log the complete SNAP data structure
-        st.write("Debug - SNAP data structure:", geo_data.get('snap', {}).keys())
-        
         # Calculate derived values
         snap_data = geo_data['snap']
-        
-        # Debug: Log all SNAP data fields and values
-        st.write("Debug - All SNAP data fields:")
-        for key, value in snap_data.items():
-            st.write(f"  {key}: {value} ({type(value).__name__})")
         
         # Map SNAP data to expected field names for backward compatibility
         snap_data_mapped = {
@@ -470,16 +443,6 @@ def display_geo_data(geo_id: str):
         
         # Update snap_data with mapped values
         snap_data.update(snap_data_mapped)
-        
-        # Debug: Log the final SNAP data values
-        st.write("Debug - Final SNAP values:")
-        st.write(f"  household_rate: {snap_data['household_rate']}%")
-        st.write(f"  benefits_annual_total: ${snap_data['benefits_annual_total']:,.2f}")
-        st.write(f"  benefit_annual_per_household: ${snap_data['benefit_annual_per_household']:,.2f}")
-        
-        # Debug: If we have parent data, log its structure too
-        if 'parent_geography' in geo_data and 'snap' in geo_data['parent_geography']:
-            st.write("Debug - Parent SNAP data:", geo_data['parent_geography']['snap'])
         
         # Calculate monthly and daily benefits
         if 'benefit_annual_per_household' in snap_data and snap_data['benefit_annual_per_household']:
@@ -513,16 +476,13 @@ def display_geo_data(geo_id: str):
             if 'median_income' in geo_data['economic']:
                 st.metric("Median Income", f"${geo_data['economic']['median_income']:,.0f}")
         
-        # Add comparison text for SNAP participation rate
+        # If we have parent geography data, add comparison text
         comparison_text = ""
-        st.write("Debug - Checking parent geography data:", geo_data.get('parent_geography', 'No parent_geography data'))
         
         if 'parent_geography' in geo_data and 'snap' in geo_data['parent_geography']:
             parent_snap = geo_data['parent_geography']['snap']
             parent_rate = parent_snap.get('snap_household_rate', 0)
             current_rate = snap_data.get('snap_household_rate', 0)
-            
-            st.write(f"Debug - Parent rate: {parent_rate}%, Current rate: {current_rate}%")
             
             if parent_rate and current_rate:
                 diff = current_rate - parent_rate
@@ -532,10 +492,6 @@ def display_geo_data(geo_id: str):
                     comparison_text = f"This is {abs(diff):.1f} percentage points lower than the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
                 else:
                     comparison_text = f"This matches the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
-            else:
-                st.write("Debug - Missing rate data for comparison")
-        else:
-            st.write("Debug - No parent geography data for comparison")
         
         # Add comparison text to the geo_data
         geo_data['comparison_text'] = comparison_text
