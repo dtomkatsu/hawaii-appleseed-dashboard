@@ -695,18 +695,62 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             @media print {{
-                .print-button {{
-                    display: none;
+                /* Reset print margins and padding */
+                @page {{
+                    size: auto;
+                    margin: 1cm;
                 }}
-                body {{
-                    padding: 0;
+                
+                /* Hide print button */
+                .print-button {{
+                    display: none !important;
+                }}
+                
+                /* Reset body styles for printing */
+                html, body {{
+                    height: auto !important;
+                    overflow: visible !important;
+                    background: white !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                 }}
+                
+                /* Make sure the fact sheet takes full width and has no shadow */
+                .fact-sheet-container {{
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    box-shadow: none !important;
+                    overflow: visible !important;
+                    height: auto !important;
+                }}
+                
+                /* Ensure fact sheet content is visible */
                 .fact-sheet {{
-                    box-shadow: none;
-                    margin: 0;
-                    max-width: 100%;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0.5cm !important;
+                    box-shadow: none !important;
+                    break-inside: avoid;
+                }}
+                
+                /* Prevent page breaks inside important sections */
+                .stats-grid, .four-stats, .bullet-points li {{
+                    break-inside: avoid;
+                }}
+                
+                /* Ensure text is black for better print contrast */
+                * {{
+                    color: #000 !important;
+                }}
+                
+                /* Make sure links are visible in print */
+                a {{
+                    text-decoration: underline !important;
                 }}
             }}
             
@@ -911,7 +955,7 @@ def generate_fact_sheet_html(geo_data):
                             </div>
                         </h3>
                         <ul class="bullet-points">
-                            <li>Approximately <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span> SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas.</li>
+                            <li>Approximately <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span></li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
                             <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
                         </ul>
