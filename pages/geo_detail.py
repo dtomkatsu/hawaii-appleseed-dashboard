@@ -390,30 +390,51 @@ def generate_fact_sheet_html(geo_data):
     
     return f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html style="height: 100%;">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SNAP Fact Sheet - {geo_name} Preview</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <title>SNAP Fact Sheet - {geo_name}</title>
         <style>
+            /* Reset and base styles */
             * {{
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }}
             
-            body {{
+            html, body {{
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
                 font-family: Arial, sans-serif;
-                background-color: #f5f5f5;
-                padding: 20px;
             }}
             
-            .fact-sheet {{
+            body {{
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                margin: 0;
+                padding: 0;
+                background: #f5f5f5;
+            }}
+            
+            .fact-sheet-container {{
+                flex: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
                 max-width: 8in;
                 margin: 0 auto;
                 background: white;
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }}
+            
+            .fact-sheet {{
+                padding: 20px;
+                width: 100%;
+                box-sizing: border-box;
             }}
             
             .alice-section {{
@@ -858,7 +879,8 @@ def generate_fact_sheet_html(geo_data):
         </style>
     </head>
     <body>
-        <div class="fact-sheet">
+        <div class="fact-sheet-container">
+            <div class="fact-sheet">
             <div class="header">
                 <button class="print-button" onclick="printFactSheet()">
                     <i class="fas fa-print"></i> Print/Save
@@ -956,7 +978,8 @@ def generate_fact_sheet_html(geo_data):
 def display_snap_fact_sheet(geo_data):
     """Display the SNAP fact sheet HTML with dynamic data."""
     html_content = generate_fact_sheet_html(geo_data)
-    html(html_content, height=1200, scrolling=True)
+    # Remove fixed height and scrolling to use the parent container's scroll
+    html(html_content, height=None, scrolling=False)
 
 def display_geo_data(geo_id: str):
     """Display the SNAP fact sheet for a specific geographic area."""
@@ -996,18 +1019,63 @@ def main():
         }
     </style>
     """
+    # Enhanced CSS to handle scrolling and layout
+    hide_streamlit_style = """
+    <style>
+        /* Hide Streamlit UI elements */
+        #MainMenu, header, .stApp [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        
+        /* Reset body and html to full height */
+        html, body, #root, .stApp {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            overflow: hidden;
+        }
+        
+        /* Main container */
+        .block-container {
+            padding: 0 !important;
+            max-width: 100% !important;
+            height: 100vh !important;
+            margin: 0 !important;
+        }
+        
+        /* Iframe styling */
+        iframe {
+            border: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 100vh !important;
+        }
+        
+        /* Hide Streamlit's default scrolling */
+        .stApp > div > div > div > div > section > div {
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+    </style>
+    """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
     # Get the geo_id from query parameters
     query_params = st.experimental_get_query_params()
     geo_id = query_params.get('geo_id', [None])[0]
     
+    # Create a container that will hold our content
+    container = st.container()
+    
     if geo_id:
-        display_geo_data(geo_id)
+        with container:
+            display_geo_data(geo_id)
     else:
-        st.error("No geographic ID provided. Please select a feature from the map.")
-        if st.button("← Back to Map"):
-            st.switch_page("run_leaflet.py")
+        with container:
+            st.error("No geographic ID provided. Please select a feature from the map.")
+            if st.button("← Back to Map"):
+                st.switch_page("run_leaflet.py")
 
 if __name__ == "__main__":
     main()
