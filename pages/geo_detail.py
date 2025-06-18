@@ -109,6 +109,13 @@ def prepare_geo_data(geo_data):
     household_count = snap_data.get('household_count', 0)
     snap_data['estimated_children'] = int(household_count * 2.5 * 0.4) if household_count else 0
     
+    # Add housing cost burden data if available
+    if 'housing' in geo_data and 'rent_burden_rate' in geo_data['housing']:
+        rent_burden = geo_data['housing']['rent_burden_rate']
+        geo_data['housing_cost_burden'] = f"{float(rent_burden):.1f}%" if rent_burden is not None else "N/A"
+    else:
+        geo_data['housing_cost_burden'] = "N/A"
+    
     return geo_data
 
 def get_comparison_text(geo_data, parent_geo):
@@ -645,8 +652,8 @@ def generate_fact_sheet_html(geo_data):
                             <div class="small-stat-label">SNAP households with children</div>
                         </div>
                         <div class="small-stat-box">
-                            <div class="small-stat-number">{disability_rate}</div>
-                            <div class="small-stat-label">SNAP households with a person with a disability</div>
+                            <div class="small-stat-number">{geo_data.get('housing_cost_burden', 'N/A')}</div>
+                            <div class="small-stat-label">Households with housing cost burden</div>
                         </div>
                         <div class="small-stat-box">
                             <span class="small-stat-number">50%</span>
