@@ -32,6 +32,60 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
     except (ValueError, TypeError):
         return str(value)
 
+def get_alice_fraction(participation_rate):
+    """Convert ALICE rate to a fraction with qualifiers.
+    
+    Args:
+        participation_rate: The ALICE rate as a percentage (e.g., 42.5)
+        
+    Returns:
+        str: Formatted string like "just over 2 in 5 households" or "about 1 in 2 households"
+    """
+    if not participation_rate or participation_rate <= 0:
+        return ""
+        
+    # Convert percentage to decimal fraction
+    decimal_fraction = participation_rate / 100.0
+    
+    # Common fractions to check against (1/2, 1/3, 1/4, etc.)
+    common_fractions = [
+        (1, 2, 0.5), (1, 3, 0.333), (2, 3, 0.666), (1, 4, 0.25),
+        (3, 4, 0.75), (1, 5, 0.2), (2, 5, 0.4), (3, 5, 0.6),
+        (4, 5, 0.8), (1, 6, 0.166), (5, 6, 0.833), (1, 7, 0.142),
+        (2, 7, 0.285), (3, 7, 0.428), (4, 7, 0.571), (5, 7, 0.714),
+        (6, 7, 0.857)
+    ]
+    
+    # Find the closest fraction
+    closest = None
+    min_diff = float('inf')
+    
+    for num, denom, value in common_fractions:
+        diff = abs(decimal_fraction - value)
+        if diff < min_diff:
+            min_diff = diff
+            closest = (num, denom, value)
+    
+    if closest:
+        num, denom, value = closest
+        diff = decimal_fraction - value
+        
+        # Determine the qualifier based on the difference
+        if abs(diff) < 0.002:  # Less than 0.2% difference
+            return f"{num} in {denom} households"
+        elif diff > 0.002:  # More than 0.2% above
+            if diff < 0.01:  # Less than 1% above
+                return f"just over {num} in {denom} households"
+            else:
+                return f"over {num} in {denom} households"
+        else:  # More than 0.2% below
+            if diff > -0.01:  # Less than 1% below
+                return f"just under {num} in {denom} households"
+            else:
+                return f"under {num} in {denom} households"
+    
+    return ""
+
 def get_snap_fraction(participation_rate):
     """Convert SNAP participation rate to a fraction with qualifiers.
     
@@ -50,22 +104,22 @@ def get_snap_fraction(participation_rate):
     # Common fractions to check against (1/2, 1/3, 1/4, etc.)
     common_fractions = [
         (1, 2, 0.5), (1, 3, 0.333), (1, 4, 0.25), (1, 5, 0.2),
-        (1, 6, 0.1667), (1, 7, 0.1429), (1, 8, 0.125), (1, 9, 0.1111),
-        (1, 10, 0.1), (2, 5, 0.4), (3, 4, 0.75), (2, 3, 0.6667)
+        (1, 6, 0.166), (1, 7, 0.142), (1, 8, 0.125), (1, 9, 0.111),
+        (2, 5, 0.4), (3, 5, 0.6), (2, 3, 0.666), (3, 4, 0.75)
     ]
     
-    best_match = None
+    # Find the closest fraction
+    closest = None
     min_diff = float('inf')
     
-    # Find the closest matching fraction
     for num, denom, value in common_fractions:
         diff = abs(decimal_fraction - value)
         if diff < min_diff:
             min_diff = diff
-            best_match = (num, denom, value)
+            closest = (num, denom, value)
     
-    if best_match:
-        num, denom, value = best_match
+    if closest:
+        num, denom, value = closest
         diff = decimal_fraction - value
         
         # Determine the qualifier based on the difference
@@ -115,8 +169,13 @@ def display_snap_fact_sheet(geo_data):
     retailers_count = "941"
     retailers_redemption = "$858,976,504"
     
-    # Get ALICE data if available
-    alice_rate = format_number(geo_data.get('alice', {}).get('alice_rate'), is_percent=True)
+    # Debug: Print ALICE data structure
+    print("ALICE data in geo_data:", geo_data.get('alice', 'No ALICE data found'))
+    
+    # Get ALICE data if available - it's stored in the economic indicators
+    alice_rate_value = geo_data.get('economic', {}).get('alice_rate', 0)
+    alice_rate = format_number(alice_rate_value, is_percent=True)
+    alice_fraction = get_alice_fraction(alice_rate_value)
     
     # Pre-calculate values that require function calls
     snap_fraction = get_snap_fraction(float(snap_data.get('snap_household_rate', 0)))
@@ -152,23 +211,47 @@ def display_snap_fact_sheet(geo_data):
             }}
             
             .alice-section {{
-                background-color: #6A7BA2;
-                color: white;
-                padding: 20px;
-                margin: 0;
-                border-top: 4px solid #D4AF37;
+                background-color: #f0f4ff;  /* Very light blue background */
+                color: #000;  /* Black text */
+                padding: 6px 10px;  /* Even more compact */
+                margin: 5px auto 10px auto;  /* Reduced margins */
+                border: 1px solid #D4AF37;  /* Thinner gold border */
+                font-size: 0.8em;  /* Smaller font */
+                max-width: 50%;  /* Much narrower */
+                text-align: center;  /* Center text */
+                border-radius: 3px;  /* Subtle rounding */
             }}
             
             .alice-rate {{
-                font-size: 24px;
+                font-size: 16px;  /* Smaller font */
+                font-weight: normal;
+                margin: 2px 0;  /* Minimal margin */
+                text-align: center;  /* Center the rate */
+                color: #000;  /* Ensure black text */
+                line-height: 1.3;
+            }}
+            
+            .alice-rate strong {{
+                font-weight: 700;
+            }}
+            
+            .percentage-box {{
+                display: inline-block;
+                background-color: #2A3B62;  /* Even darker blue for better contrast */
+                color: white;
+                padding: 1px 6px;
+                border-radius: 3px;
                 font-weight: bold;
-                margin: 10px 0;
+                margin-left: 4px;
+                font-size: 0.95em;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.15);
             }}
             
             .alice-definition {{
-                font-size: 14px;
-                line-height: 1.4;
-                margin-top: 10px;
+                font-size: 11px;  /* Smaller text */
+                line-height: 1.2;  /* Tighter line height */
+                margin: 2px 0 0 0;  /* Minimal margins */
+                color: #333;  /* Slightly lighter black */
             }}
             
             .header {{
@@ -367,16 +450,18 @@ def display_snap_fact_sheet(geo_data):
     </head>
     <body>
         <div class="fact-sheet">
-            <div class="alice-section">
-                <div class="alice-rate">ALICE Rate: {alice_rate}</div>
-                <div class="alice-definition">
-                    ALICE stands for Asset Limited, Income Constrained, Employed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
-                </div>
-            </div>
-            
             <div class="header">
                 <h1>{geo_name.upper()}</h1>
                 <div class="subtitle">Fact Sheet</div>
+            </div>
+            
+            <div class="alice-section">
+                <div class="alice-rate">
+                    <strong>ALICE Rate:</strong> {alice_fraction} <span class="percentage-box">({alice_rate})</span>
+                </div>
+                <div class="alice-definition">
+                    ALICE stands for Asset Limited, Income Constrained, Employed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
+                </div>
             </div>
             
             <div class="main-content">
