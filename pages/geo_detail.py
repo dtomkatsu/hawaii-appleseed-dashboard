@@ -298,36 +298,41 @@ def generate_fact_sheet_html(geo_data):
     function fixHousingTooltipPosition() {
         const housingTitle = document.querySelector('.housing-title');
         const housingTooltip = document.querySelector('.housing-tooltip');
-        
         if (!housingTitle || !housingTooltip) return;
         
-        // Move tooltip to body to escape stacking context
-        document.body.appendChild(housingTooltip);
+        // Move tooltip to body if not already there
+        if (housingTooltip.parentNode !== document.body) {
+            document.body.appendChild(housingTooltip);
+        }
         
-        // Function to position tooltip
         function positionTooltip() {
+            if (!housingTooltip) return;
+            
             const rect = housingTitle.getBoundingClientRect();
             const tooltipRect = housingTooltip.getBoundingClientRect();
             
-            // Position above the trigger element
-            housingTooltip.style.position = 'fixed';
-            housingTooltip.style.left = (rect.left + rect.width / 2 - tooltipRect.width / 2) + 'px';
-            housingTooltip.style.top = (rect.top - tooltipRect.height - 10) + 'px';
-            housingTooltip.style.zIndex = '99999';
+            // Calculate position
+            const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            const top = rect.top - tooltipRect.height - 10;
+            
+            // Apply position with transform for better performance
+            housingTooltip.style.transform = `translate3d(${Math.max(10, left)}px, ${Math.max(10, top)}px, 0)`;
+            housingTooltip.style.webkitTransform = `translate3d(${Math.max(10, left)}px, ${Math.max(10, top)}px, 0)`;
+            housingTooltip.style.opacity = '1';
         }
         
+        // Initial position
+        positionTooltip();
+        
         // Update position on hover
-        housingTitle.addEventListener('mouseenter', function() {
-            if (housingTooltip.classList.contains('visible')) {
-                positionTooltip();
-            }
-        });
+        housingTitle.addEventListener('mouseenter', positionTooltip);
         
         // Update position when tooltip becomes visible
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.target === housingTooltip && 
-                    housingTooltip.classList.contains('visible')) {
+                    (housingTooltip.classList.contains('visible') || 
+                     housingTooltip.classList.contains('persistent'))) {
                     positionTooltip();
                 }
             });
@@ -338,11 +343,24 @@ def generate_fact_sheet_html(geo_data):
             attributeFilter: ['class']
         });
         
-        // Reposition on scroll or resize
-        window.addEventListener('scroll', positionTooltip);
-        window.addEventListener('resize', positionTooltip);
-    }
-    
+        // Update position on scroll/resize with debounce
+        let resizeTimer;
+        function handleResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(positionTooltip, 100);
+        }
+        
+        window.addEventListener('scroll', handleResize, { passive: true });
+        window.addEventListener('resize', handleResize);
+        
+        // Clean up event listeners when tooltip is removed
+        return function cleanup() {
+            window.removeEventListener('scroll', handleResize);
+            window.removeEventListener('resize', handleResize);
+            observer.disconnect();
+            housingTitle.removeEventListener('mouseenter', positionTooltip);
+        };
+    }  
     // Initialize everything
     function initTooltips() {
         setupTooltips();
@@ -439,8 +457,8 @@ def generate_fact_sheet_html(geo_data):
                 border: 1px solid #2A3B62;
             }}
             
-            /* Tooltip styles */
-            .alice-tooltip, .snap-tooltip, .housing-tooltip {{
+            /* Base tooltip styles */
+            .alice-tooltip, .snap-tooltip {{
                 visibility: hidden;
                 width: 300px;
                 background-color: #f9f9f9;
@@ -462,16 +480,16 @@ def generate_fact_sheet_html(geo_data):
                 border: 1px solid #ddd;
             }}
             
-            .alice-tooltip p, .snap-tooltip p, .housing-tooltip p {{
+            .alice-tooltip p, .snap-tooltip p {{
                 margin: 0 0 10px 0;
                 color: #333;
             }}
             
-            .alice-tooltip p:last-child, .snap-tooltip p:last-child, .housing-tooltip p:last-child {{
+            .alice-tooltip p:last-child, .snap-tooltip p:last-child {{
                 margin-bottom: 0;
             }}
             
-            .alice-tooltip::after, .snap-tooltip::after, .housing-tooltip::after {{
+            .alice-tooltip::after, .snap-tooltip::after {{
                 content: '';
                 position: absolute;
                 bottom: 100%;
@@ -482,13 +500,13 @@ def generate_fact_sheet_html(geo_data):
                 border-color: transparent transparent #f9f9f9 transparent;
             }}
             
-            .alice-tooltip.visible, .snap-tooltip.visible, .housing-tooltip.visible {{
+            .alice-tooltip.visible, .snap-tooltip.visible {{
                 visibility: visible;
                 opacity: 1;
                 pointer-events: auto;
             }}
             
-            .alice-tooltip.persistent, .snap-tooltip.persistent, .housing-tooltip.persistent {{
+            .alice-tooltip.persistent, .snap-tooltip.persistent {{
                 pointer-events: auto;
             }}
             
@@ -499,6 +517,7 @@ def generate_fact_sheet_html(geo_data):
                 display: inline-block;
             }}
             
+            /* Housing tooltip specific styles */
             .housing-title {{
                 cursor: help;
                 border-bottom: 1px dashed #555;
@@ -507,45 +526,86 @@ def generate_fact_sheet_html(geo_data):
                 z-index: 1;
             }}
             
+            /* Move tooltip to body level to avoid parent container issues */
+            /* Move tooltip to body level to avoid parent container issues */
             .housing-tooltip {{
                 visibility: hidden;
                 width: 300px;
-                background-color: #2A3B72;
-                color: #fff;
+                background-color: #2A3B72 !important;
+                color: #fff !important;
                 text-align: left;
-                border-radius: 5px;
+                border-radius: 8px;
                 padding: 15px;
-                position: absolute;
-                z-index: 9999 !important;
-                bottom: 100%;
-                left: 50%;
-                transform: translateX(-50%);
-                margin-bottom: 10px;
+                position: fixed;
+                z-index: 2147483647;
                 opacity: 0;
-                transition: opacity 0.3s, visibility 0.3s;
+                transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
                 font-size: 14px;
                 line-height: 1.5;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
                 pointer-events: none;
                 max-width: 90vw;
-                box-sizing: border-box;
-                isolation: isolate;
+                border: none !important;
+                background-image: none !important;
+                transform: translate3d(0, 0, 0);
+                -webkit-transform: translate3d(0, 0, 0);
+                -webkit-backface-visibility: hidden;
+                -webkit-perspective: 1000;
+                -webkit-background-clip: padding-box;
+                background-clip: padding-box;
+                left: 0;
+                top: 0;
+                will-change: transform, opacity;
             }}
             
-            .housing-tooltip.visible {{
+            /* Tooltip content styling */
+            .housing-tooltip * {{
+                position: relative;
+                z-index: 2;
+                color: #fff !important;
+                text-shadow: none !important;
+            }}
+            
+            /* Background layer for tooltip */
+            .housing-tooltip::before {{
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: #2A3B72 !important;
+                border-radius: 8px;
+                z-index: 1;
+                /* Ensure this covers the entire tooltip */
+                box-shadow: 0 0 0 10px #2A3B72; /* Extend beyond borders */
+                margin: -10px;
+            }}
+            
+            .housing-tooltip.visible,
+            .housing-tooltip.persistent {{
                 visibility: visible;
                 opacity: 1;
                 pointer-events: auto;
-                z-index: 9999 !important;
+                background: #2A3B72 !important;
+                /* Keep the transform for positioning */
+                transform: translate3d(-50%, -5px, 0);
+                -webkit-transform: translate3d(-50%, -5px, 0);
             }}
             
-            .housing-tooltip.persistent {{
-                pointer-events: auto;
-                z-index: 9999 !important;
+            .housing-title:hover + .housing-tooltip,
+            .housing-tooltip:hover {{
+                transform: translate3d(-50%, -8px, 0);
+                -webkit-transform: translate3d(-50%, -8px, 0);
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
             }}
             
             .housing-tooltip p {{
                 margin: 0 0 10px 0;
+            }}
+            
+            .housing-tooltip p:last-child {{
+                margin-bottom: 0;
             }}
             
             .housing-tooltip::after {{
@@ -553,12 +613,19 @@ def generate_fact_sheet_html(geo_data):
                 position: absolute;
                 top: 100%;
                 left: 50%;
-                margin-left: -8px;
-                border-width: 8px;
+                margin-left: -10px;
+                border-width: 10px;
                 border-style: solid;
                 border-color: #2A3B72 transparent transparent transparent;
-                z-index: 10000 !important;
+                z-index: 99999;
                 pointer-events: none;
+                transition: all 0.3s ease;
+            }}
+            
+            .housing-tooltip.visible::after,
+            .housing-tooltip.persistent::after {{
+                border-width: 12px;
+                margin-left: -12px;
             }}
             
             .header {{
