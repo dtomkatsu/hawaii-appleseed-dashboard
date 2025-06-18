@@ -18,6 +18,14 @@ st.set_page_config(
     layout="wide"
 )
 
+# Constants for economic impact (would ideally come from data)
+ECONOMIC_IMPACT_DEFAULTS = {
+    'working_families_rate': "84%",
+    'economic_impact': "$1.80",
+    'retailers_count': "941",
+    'retailers_redemption': "$858,976,504"
+}
+
 def format_number(value, is_percent=False, is_currency=False, decimals=0):
     """Format a number for display in the fact sheet."""
     if value is None:
@@ -26,164 +34,235 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
         if is_currency:
             return f"${float(value):,.{decimals}f}"
         elif is_percent:
-            # Use one decimal place for percentages
             return f"{float(value):.1f}%"
         return f"{float(value):,.0f}"
     except (ValueError, TypeError):
         return str(value)
 
-def get_alice_fraction(participation_rate):
-    """Convert ALICE rate to a fraction with qualifiers.
+def get_fraction_text(rate, household_suffix="households"):
+    """Convert a percentage rate to a fraction with qualifiers.
     
     Args:
-        participation_rate: The ALICE rate as a percentage (e.g., 42.5)
+        rate: The rate as a percentage (e.g., 42.5)
+        household_suffix: Text to append after fraction (default: "households")
         
     Returns:
-        str: Formatted string like "just over 2 in 5 households" or "about 1 in 2 households"
+        str: Formatted string like "just over 2 in 5 households"
     """
-    if not participation_rate or participation_rate <= 0:
+    if not rate or rate <= 0:
         return ""
         
-    # Convert percentage to decimal fraction
-    decimal_fraction = participation_rate / 100.0
+    decimal_fraction = rate / 100.0
     
-    # Common fractions to check against (1/2, 1/3, 1/4, etc.)
+    # Common fractions to check against
     common_fractions = [
         (1, 2, 0.5), (1, 3, 0.333), (2, 3, 0.666), (1, 4, 0.25),
         (3, 4, 0.75), (1, 5, 0.2), (2, 5, 0.4), (3, 5, 0.6),
         (4, 5, 0.8), (1, 6, 0.166), (5, 6, 0.833), (1, 7, 0.142),
         (2, 7, 0.285), (3, 7, 0.428), (4, 7, 0.571), (5, 7, 0.714),
-        (6, 7, 0.857)
+        (6, 7, 0.857), (1, 8, 0.125), (1, 9, 0.111)
     ]
     
     # Find the closest fraction
-    closest = None
-    min_diff = float('inf')
+    closest = min(common_fractions, key=lambda f: abs(decimal_fraction - f[2]))
+    num, denom, value = closest
+    diff = decimal_fraction - value
     
-    for num, denom, value in common_fractions:
-        diff = abs(decimal_fraction - value)
-        if diff < min_diff:
-            min_diff = diff
-            closest = (num, denom, value)
+    # Determine the qualifier based on the difference
+    if abs(diff) < 0.002:  # Less than 0.2% difference
+        prefix = ""
+    elif diff > 0.002:  # More than 0.2% above
+        prefix = "just over " if diff < 0.01 else "over "
+    else:  # More than 0.2% below
+        prefix = "just under " if diff > -0.01 else "under "
     
-    if closest:
-        num, denom, value = closest
-        diff = decimal_fraction - value
-        
-        # Determine the qualifier based on the difference
-        if abs(diff) < 0.002:  # Less than 0.2% difference
-            return f"{num} in {denom} households"
-        elif diff > 0.002:  # More than 0.2% above
-            if diff < 0.01:  # Less than 1% above
-                return f"just over {num} in {denom} households"
-            else:
-                return f"over {num} in {denom} households"
-        else:  # More than 0.2% below
-            if diff > -0.01:  # Less than 1% below
-                return f"just under {num} in {denom} households"
-            else:
-                return f"under {num} in {denom} households"
-    
-    return ""
+    suffix = f" {household_suffix}" if household_suffix else ""
+    return f"{prefix}{num} in {denom}{suffix}"
 
-def get_snap_fraction(participation_rate):
-    """Convert SNAP participation rate to a fraction with qualifiers.
+def prepare_geo_data(geo_data):
+    """Prepare and enhance geography data with calculated fields."""
+    # Ensure all required data fields are present
+    geo_data.setdefault('snap', {})
+    geo_data.setdefault('demographics', {})
+    geo_data.setdefault('economic', {})
     
-    Args:
-        participation_rate: The SNAP participation rate as a percentage (e.g., 16.6)
-        
-    Returns:
-        str: Formatted string like "just over 1 in 6" or "about 1 in 4"
-    """
-    if not participation_rate or participation_rate <= 0:
+    snap_data = geo_data['snap']
+    
+    # Map SNAP data fields for consistency
+    snap_data.update({
+        'household_count': snap_data.get('snap_household_count', 0),
+        'household_rate': snap_data.get('snap_household_rate', 0),
+        'benefits_annual_total': snap_data.get('snap_benefits_annual_total', 0),
+        'benefit_annual_per_household': snap_data.get('snap_benefit_annual_per_household', 0)
+    })
+    
+    # Calculate derived values
+    annual_per_household = snap_data.get('benefit_annual_per_household', 0)
+    if annual_per_household:
+        snap_data['monthly_benefit'] = annual_per_household / 12
+        snap_data['daily_benefit_per_person'] = snap_data['monthly_benefit'] / 30
+    else:
+        snap_data['monthly_benefit'] = 0
+        snap_data['daily_benefit_per_person'] = 0
+    
+    # Estimate children in SNAP households
+    household_count = snap_data.get('household_count', 0)
+    snap_data['estimated_children'] = int(household_count * 2.5 * 0.4) if household_count else 0
+    
+    return geo_data
+
+def get_comparison_text(geo_data, parent_geo):
+    """Generate comparison text between current and parent geography."""
+    if not parent_geo or 'snap' not in parent_geo:
         return ""
-        
-    # Convert percentage to decimal fraction
-    decimal_fraction = participation_rate / 100.0
     
-    # Common fractions to check against (1/2, 1/3, 1/4, etc.)
-    common_fractions = [
-        (1, 2, 0.5), (1, 3, 0.333), (1, 4, 0.25), (1, 5, 0.2),
-        (1, 6, 0.166), (1, 7, 0.142), (1, 8, 0.125), (1, 9, 0.111),
-        (2, 5, 0.4), (3, 5, 0.6), (2, 3, 0.666), (3, 4, 0.75)
-    ]
+    parent_rate = parent_geo['snap'].get('snap_household_rate', 0)
+    current_rate = geo_data['snap'].get('snap_household_rate', 0)
     
-    # Find the closest fraction
-    closest = None
-    min_diff = float('inf')
+    if not (parent_rate and current_rate):
+        return ""
     
-    for num, denom, value in common_fractions:
-        diff = abs(decimal_fraction - value)
-        if diff < min_diff:
-            min_diff = diff
-            closest = (num, denom, value)
+    diff = current_rate - parent_rate
+    parent_type = parent_geo.get('type', 'state')
     
-    if closest:
-        num, denom, value = closest
-        diff = decimal_fraction - value
-        
-        # Determine the qualifier based on the difference
-        if abs(diff) < 0.002:  # Less than 0.2% difference
-            return f"{num} in {denom}"
-        elif diff > 0.002:  # More than 0.2% above
-            if diff < 0.01:  # Less than 1% above
-                return f"just over {num} in {denom}"
-            else:
-                return f"over {num} in {denom}"
-        else:  # More than 0.2% below
-            if diff > -0.01:  # Less than 1% below
-                return f"just under {num} in {denom}"
-            else:
-                return f"under {num} in {denom}"
-    
-    return ""
+    if abs(diff) < 0.1:  # Consider rates equal if difference is less than 0.1%
+        return f"This matches the {parent_type} average of {parent_rate:.1f}%."
+    elif diff > 0:
+        return f"This is {abs(diff):.1f} percentage points higher than the {parent_type} average of {parent_rate:.1f}%."
+    else:
+        return f"This is {abs(diff):.1f} percentage points lower than the {parent_type} average of {parent_rate:.1f}%."
 
-def display_snap_fact_sheet(geo_data):
-    """Display the SNAP fact sheet HTML with dynamic data.
+def get_parent_geography_data(geo_id: str) -> dict:
+    """Get parent geography data for comparison."""
+    geo_id_str = str(geo_id).strip()
+    geo_level = len(geo_id_str)
     
-    Args:
-        geo_data: Dictionary containing geographic data from DataLoader
-    """
-    # Extract data with fallbacks
+    # Determine parent based on geography level
+    if geo_level in [4, 5]:  # House/Senate districts or counties
+        parent_geo_id = '15'  # Hawaii state FIPS
+        parent_geo_type = 'state'
+    else:
+        return None
+    
+    try:
+        parent_data = data_loader.get_all_data_for_geo(parent_geo_id)
+        if parent_data and 'name' in parent_data:
+            return {
+                'type': parent_geo_type,
+                'id': parent_geo_id,
+                'name': parent_data.get('name', 'Hawaii'),
+                'snap': parent_data.get('snap', {})
+            }
+    except Exception as e:
+        st.warning(f"Could not load parent geography data: {str(e)}")
+    
+    return None
+
+def generate_fact_sheet_html(geo_data):
+    """Generate the SNAP fact sheet HTML with all styles and scripts inline."""
+    # Extract data with enhanced preparation
     geo_name = geo_data.get('name', 'Hawaii')
     snap_data = geo_data.get('snap', {})
-    demographics = geo_data.get('demographics', {})
-    economic = geo_data.get('economic', {})
     
-    # Format values with fallbacks
+    # Format all values
     snap_households = format_number(snap_data.get('snap_household_count'))
     snap_benefits_total = format_number(snap_data.get('snap_benefits_annual_total'), is_currency=True)
     snap_participation_rate = format_number(snap_data.get('snap_household_rate'), is_percent=True)
-    avg_monthly_benefit = format_number(snap_data.get('snap_benefit_annual_per_household', 0) / 12, is_currency=True, decimals=2)
-    daily_per_person = format_number((snap_data.get('snap_benefit_annual_per_household', 0) / 12) / 30, is_currency=True, decimals=2)
+    avg_monthly_benefit = format_number(snap_data.get('monthly_benefit', 0), is_currency=True, decimals=2)
+    daily_per_person = format_number(snap_data.get('daily_benefit_per_person', 0), is_currency=True, decimals=2)
     
-    # Get comparison text from geo_data (added in display_geo_data)
+    # Get comparison text
     comparison_text = geo_data.get('comparison_text', '')
     
-    # Calculate children in SNAP households (assuming 25% of SNAP participants are children)
-    children_in_snap = format_number(int(snap_data.get('snap_household_count', 0)) * 0.8)  # Estimate
-    
-    # Economic impact data (these would ideally come from the data)
-    working_families_rate = "84%"
-    economic_impact = "$1.80"
-    retailers_count = "941"
-    retailers_redemption = "$858,976,504"
-    
-    # Debug: Print ALICE data structure
-    print("ALICE data in geo_data:", geo_data.get('alice', 'No ALICE data found'))
-    
-    # Get ALICE data if available - it's stored in the economic indicators
+    # Format rates and fractions
     alice_rate_value = geo_data.get('economic', {}).get('alice_rate', 0)
     alice_rate = format_number(alice_rate_value, is_percent=True)
-    alice_fraction = get_alice_fraction(alice_rate_value)
+    alice_fraction = get_fraction_text(alice_rate_value, "households")
     
-    # Pre-calculate values that require function calls
-    snap_fraction = get_snap_fraction(float(snap_data.get('snap_household_rate', 0)))
+    snap_rate_value = snap_data.get('snap_household_rate', 0)
+    snap_fraction = get_fraction_text(snap_rate_value, "")
+    
     disability_rate = format_number(snap_data.get('snap_disability_rate'), is_percent=True)
     veterans_count = format_number(snap_data.get('snap_veterans_count'))
     
-    # Use double curly braces to escape them in the f-string
-    snap_html = f"""
+    # Get economic impact data with defaults
+    eco_defaults = ECONOMIC_IMPACT_DEFAULTS
+    working_families_rate = eco_defaults['working_families_rate']
+    economic_impact = eco_defaults['economic_impact']
+    retailers_count = eco_defaults['retailers_count']
+    retailers_redemption = eco_defaults['retailers_redemption']
+    
+    # Fixed JavaScript that waits for DOM to be ready
+    javascript_code = """
+    function printFactSheet() {
+        window.print();
+    }
+    
+    // Wait for next tick to ensure DOM is ready
+    setTimeout(function() {
+        // ALICE tooltip elements
+        const aliceRate = document.querySelector('.alice-rate-text');
+        const aliceTooltip = document.querySelector('.alice-tooltip');
+        
+        // SNAP tooltip elements
+        const snapTitle = document.querySelector('.snap-title');
+        const snapTooltip = document.querySelector('.snap-tooltip');
+        
+        // Track persistent state
+        let isAliceTooltipPersistent = false;
+        let isSnapTooltipPersistent = false;
+        
+        function setupTooltip(element, tooltip, isPersistentRef) {
+            if (!element || !tooltip) return;
+            
+            // Click to toggle persistent
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                isPersistentRef.value = !isPersistentRef.value;
+                tooltip.classList.toggle('persistent', isPersistentRef.value);
+                tooltip.classList.toggle('visible', isPersistentRef.value);
+            });
+            
+            // Show on hover
+            element.addEventListener('mouseenter', function() {
+                if (!isPersistentRef.value) {
+                    tooltip.classList.add('visible');
+                }
+            });
+            
+            // Hide on mouse leave
+            element.addEventListener('mouseleave', function() {
+                if (!isPersistentRef.value) {
+                    tooltip.classList.remove('visible');
+                }
+            });
+            
+            return isPersistentRef;
+        }
+        
+        // Setup tooltips with reference objects
+        const aliceRef = {value: false};
+        const snapRef = {value: false};
+        
+        setupTooltip(aliceRate, aliceTooltip, aliceRef);
+        setupTooltip(snapTitle, snapTooltip, snapRef);
+        
+        // Close tooltips when clicking outside
+        document.addEventListener('click', function(e) {
+            if (aliceRef.value && aliceTooltip && !aliceTooltip.contains(e.target) && !aliceRate.contains(e.target)) {
+                aliceRef.value = false;
+                aliceTooltip.classList.remove('persistent', 'visible');
+            }
+            
+            if (snapRef.value && snapTooltip && !snapTooltip.contains(e.target) && !snapTitle.contains(e.target)) {
+                snapRef.value = false;
+                snapTooltip.classList.remove('persistent', 'visible');
+            }
+        });
+    }, 100);
+    """
+    
+    return f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -191,74 +270,6 @@ def display_snap_fact_sheet(geo_data):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>SNAP Fact Sheet - {geo_name} Preview</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-        <script>
-            function printFactSheet() {{
-                window.print();
-            }}
-            
-            // Handle tooltip interactions
-            document.addEventListener('DOMContentLoaded', function() {{
-                // ALICE tooltip
-                const aliceRate = document.querySelector('.alice-rate-text');
-                const aliceTooltip = document.querySelector('.alice-tooltip');
-                let isAliceTooltipPersistent = false;
-                
-                // SNAP tooltip
-                const snapTitle = document.querySelector('.snap-title');
-                const snapTooltip = document.querySelector('.snap-tooltip');
-                let isSnapTooltipPersistent = false;
-                
-                function setupTooltip(element, tooltip, isPersistent) {{
-                    let isPersistentRef = isPersistent;
-                    
-                    // Toggle tooltip on click
-                    element.addEventListener('click', function(e) {{
-                        e.stopPropagation();
-                        isPersistentRef = !isPersistentRef;
-                        tooltip.classList.toggle('persistent', isPersistentRef);
-                        tooltip.classList.toggle('visible', isPersistentRef);
-                        isPersistent = isPersistentRef;
-                    }});
-                    
-                    // Show on hover
-                    element.addEventListener('mouseenter', function() {{
-                        if (!isPersistentRef) {{
-                            tooltip.classList.add('visible');
-                        }}
-                    }});
-                    
-                    // Hide on mouse leave (if not persistent)
-                    element.addEventListener('mouseleave', function() {{
-                        if (!isPersistentRef) {{
-                            tooltip.classList.remove('visible');
-                        }}
-                    }});
-                }}
-                
-                // Close tooltips when clicking outside
-                document.addEventListener('click', function(e) {{
-                    // ALICE tooltip
-                    if (isAliceTooltipPersistent && !aliceTooltip.contains(e.target) && !aliceRate.contains(e.target)) {{
-                        isAliceTooltipPersistent = false;
-                        aliceTooltip.classList.remove('persistent', 'visible');
-                    }}
-                    
-                    // SNAP tooltip
-                    if (isSnapTooltipPersistent && !snapTooltip.contains(e.target) && !snapTitle.contains(e.target)) {{
-                        isSnapTooltipPersistent = false;
-                        snapTooltip.classList.remove('persistent', 'visible');
-                    }}
-                }});
-                
-                // Initialize tooltips
-                if (aliceRate && aliceTooltip) {{
-                    setupTooltip(aliceRate, aliceTooltip, isAliceTooltipPersistent);
-                }}
-                if (snapTitle && snapTooltip) {{
-                    setupTooltip(snapTitle, snapTooltip, isSnapTooltipPersistent);
-                }}
-            }});
-        </script>
         <style>
             * {{
                 margin: 0;
@@ -280,16 +291,16 @@ def display_snap_fact_sheet(geo_data):
             }}
             
             .alice-section {{
-                background-color: #f0f4ff;  /* Very light blue background */
-                color: #000;  /* Black text */
-                padding: 6px 10px;  /* Even more compact */
-                margin: 5px auto 10px auto;  /* Reduced margins */
-                border: 1px solid #D4AF37;  /* Thinner gold border */
-                font-size: 0.8em;  /* Smaller font */
-                max-width: 50%;  /* Much narrower */
-                text-align: center;  /* Center text */
-                border-radius: 3px;  /* Subtle rounding */
-                position: relative;  /* For tooltip positioning */
+                background-color: #f0f4ff;
+                color: #000;
+                padding: 6px 10px;
+                margin: 5px auto 10px auto;
+                border: 1px solid #D4AF37;
+                font-size: 0.8em;
+                max-width: 50%;
+                text-align: center;
+                border-radius: 3px;
+                position: relative;
             }}
             
             .alice-rate {{
@@ -315,6 +326,7 @@ def display_snap_fact_sheet(geo_data):
                 margin-left: 4px;
                 font-size: 0.95em;
                 box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+                background-color: #2A3B72;
             }}
             
             .percentage-box {{
@@ -328,13 +340,8 @@ def display_snap_fact_sheet(geo_data):
                 border: 1px solid #2A3B62;
             }}
             
-            /* Hide the original definition */
-            .alice-definition {{
-                display: none;
-            }}
-            
-            /* ALICE Tooltip */
-            .alice-tooltip {{
+            /* Tooltip styles */
+            .alice-tooltip, .snap-tooltip {{
                 visibility: hidden;
                 width: 300px;
                 background-color: #2A3B72;
@@ -355,15 +362,15 @@ def display_snap_fact_sheet(geo_data):
                 pointer-events: none;
             }}
             
-            .alice-tooltip p {{
+            .alice-tooltip p, .snap-tooltip p {{
                 margin: 0 0 10px 0;
             }}
             
-            .alice-tooltip p:last-child {{
+            .alice-tooltip p:last-child, .snap-tooltip p:last-child {{
                 margin-bottom: 0;
             }}
             
-            .alice-tooltip::after {{
+            .alice-tooltip::after, .snap-tooltip::after {{
                 content: '';
                 position: absolute;
                 bottom: 100%;
@@ -374,72 +381,21 @@ def display_snap_fact_sheet(geo_data):
                 border-color: transparent transparent #2A3B72 transparent;
             }}
             
-            .alice-tooltip.visible {{
+            .alice-tooltip.visible, .snap-tooltip.visible {{
                 visibility: visible;
                 opacity: 1;
                 pointer-events: auto;
             }}
             
-            .alice-tooltip.persistent {{
+            .alice-tooltip.persistent, .snap-tooltip.persistent {{
                 pointer-events: auto;
             }}
             
-            /* SNAP Tooltip */
             .snap-title {{
                 cursor: help;
                 border-bottom: 1px dotted #2A3B72;
                 position: relative;
                 display: inline-block;
-            }}
-            
-            .snap-tooltip {{
-                visibility: hidden;
-                width: 300px;
-                background-color: #2A3B72;
-                color: #fff;
-                text-align: left;
-                border-radius: 5px;
-                padding: 15px;
-                position: absolute;
-                z-index: 1100;
-                top: 100%;
-                left: 0;
-                margin-top: 10px;
-                opacity: 0;
-                transition: opacity 0.3s, visibility 0.3s;
-                font-size: 14px;
-                line-height: 1.5;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                pointer-events: none;
-            }}
-            
-            .snap-tooltip p {{
-                margin: 0 0 10px 0;
-            }}
-            
-            .snap-tooltip p:last-child {{
-                margin-bottom: 0;
-            }}
-            
-            .snap-tooltip::after {{
-                content: '';
-                position: absolute;
-                bottom: 100%;
-                left: 20px;
-                margin-left: -5px;
-                border-width: 5px;
-                border-style: solid;
-                border-color: transparent transparent #2A3B72 transparent;
-            }}
-            
-            .snap-tooltip.visible {{
-                visibility: visible;
-                opacity: 1;
-                pointer-events: auto;
-            }}
-            
-            .snap-tooltip.persistent {{
-                pointer-events: auto;
             }}
             
             .header {{
@@ -454,12 +410,7 @@ def display_snap_fact_sheet(geo_data):
                 font-size: 18px;
                 font-weight: bold;
                 margin-bottom: 5px;
-                padding: 0 40px; /* Add padding for print button */
-            }}
-            
-            .header .organization {{
-                font-size: 12px;
-                font-weight: normal;
+                padding: 0 40px;
             }}
             
             .print-button {{
@@ -483,19 +434,15 @@ def display_snap_fact_sheet(geo_data):
                 background-color: #f0f0f0;
             }}
             
-            .print-button i {{
-                font-size: 14px;
-            }}
-            
             @media print {{
                 .print-button {{
                     display: none;
                 }}
-                
                 body {{
                     padding: 0;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                 }}
-                
                 .fact-sheet {{
                     box-shadow: none;
                     margin: 0;
@@ -503,38 +450,13 @@ def display_snap_fact_sheet(geo_data):
                 }}
             }}
             
+            @page {{
+                size: letter;
+                margin: 0.5in;
+            }}
+            
             .main-content {{
                 padding: 20px;
-            }}
-            
-            .title-section {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            
-            .main-title {{
-                font-size: 24px;
-                font-weight: bold;
-                color: #2c5f2d;
-                margin-bottom: 5px;
-            }}
-            
-            .state-name {{
-                font-size: 28px;
-                font-weight: bold;
-                color: #d32f2f;
-            }}
-            
-            .intro-section {{
-                background-color: #f8f9fa;
-                padding: 15px;
-                margin-bottom: 20px;
-                border-left: 4px solid #2c5f2d;
-            }}
-            
-            .intro-section strong {{
-                color: #2c5f2d;
-                font-weight: 900;
             }}
             
             .stats-grid {{
@@ -651,6 +573,15 @@ def display_snap_fact_sheet(geo_data):
                 font-size: 1.05em;
             }}
             
+            .strengthen-section {{
+                background-color: #2c5f2d;
+                color: white;
+                padding: 15px;
+                margin: 20px 0;
+                text-align: center;
+                font-weight: bold;
+            }}
+            
             .call-to-action {{
                 background-color: #d32f2f;
                 color: white;
@@ -668,15 +599,6 @@ def display_snap_fact_sheet(geo_data):
                 text-align: center;
                 font-size: 12px;
             }}
-            
-            .strengthen-section {{
-                background-color: #2c5f2d;
-                color: white;
-                padding: 15px;
-                margin: 20px 0;
-                text-align: center;
-                font-weight: bold;
-            }}
         </style>
     </head>
     <body>
@@ -693,19 +615,16 @@ def display_snap_fact_sheet(geo_data):
                 <div class="alice-rate">
                     <span class="alice-rate-text">ALICE Rate</span>: {alice_fraction} <span class="percentage-box">({alice_rate})</span>
                     <div class="alice-tooltip">
-                        <strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
+                        <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
+                        <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
                     </div>
-                </div>
-                <!-- Original definition moved to tooltip -->
-                <div class="alice-definition" aria-hidden="true">
-                    ALICE stands for Asset Limited, Income Constrained, Employed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
                 </div>
             </div>
             
             <div class="main-content">
                 <div class="stats-grid">
                     <div>
-                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px;">
+                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
                             <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
                             <div class="snap-tooltip">
                                 <p><strong>SNAP</strong> stands for the Supplemental Nutrition Assistance Program, a government program that helps low-income people buy food.</p>
@@ -743,9 +662,9 @@ def display_snap_fact_sheet(geo_data):
                 <div class="impact-section">
                     <div class="impact-title">SNAP'S IMPACT IN {geo_name.upper()}</div>
                     <ul class="bullet-points">
-                            <li><strong>SNAP supports working families.</strong> Between 2019–2023, an average of <span class="stat-highlight">{working_families_rate}</span> of SNAP households in {geo_name.upper()} included someone who was working.</li>
-                            <li><strong>SNAP stimulates the economy and creates jobs.</strong> Each SNAP dollar has up to a <span class="stat-highlight">{economic_impact}</span> impact during economic downturns, supporting the supply chain from farmer to store.</li>
-                            <li><strong>SNAP supports local businesses,</strong> including <span class="stat-highlight">{retailers_count}</span> retailers in {geo_name.upper()}, which redeemed a total of <span class="stat-highlight">{retailers_redemption}</span> in 2023. Retailers include grocery stores and farmers' markets, which contribute to local taxes that fund services like schools and health care.</li>
+                        <li><strong>SNAP supports working families.</strong> Between 2019–2023, an average of <span class="stat-highlight">{working_families_rate}</span> of SNAP households in {geo_name.upper()} included someone who was working.</li>
+                        <li><strong>SNAP stimulates the economy and creates jobs.</strong> Each SNAP dollar has up to a <span class="stat-highlight">{economic_impact}</span> impact during economic downturns, supporting the supply chain from farmer to store.</li>
+                        <li><strong>SNAP supports local businesses,</strong> including <span class="stat-highlight">{retailers_count}</span> retailers in {geo_name.upper()}, which redeemed a total of <span class="stat-highlight">{retailers_redemption}</span> in 2023. Retailers include grocery stores and farmers' markets, which contribute to local taxes that fund services like schools and health care.</li>
                     </ul>
                 </div>
                 
@@ -767,142 +686,40 @@ def display_snap_fact_sheet(geo_data):
                 SOURCES FOR THIS FACT SHEET CAN BE FOUND IN THE TECHNICAL NOTES.
             </div>
         </div>
+        <script>{javascript_code}</script>
     </body>
     </html>
     """
-    
-    # Add print-specific styles
-    print_styles = """
-    <style>
-        @page {{
-            size: letter;
-            margin: 0.5in;
-        }}
-        @media print {{
-            body {{
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }}
-            .fact-sheet {{
-                margin: 0;
-                padding: 0;
-                box-shadow: none;
-            }}
-        }}
-    </style>
-    """
-    
-    # Combine print styles with the main HTML
-    full_html = f"""
-    {print_styles}
-    {snap_html}
-    """
-    
-    html(full_html, height=1200, scrolling=True)
 
-def get_parent_geography_data(geo_id: str, geo_data: dict) -> dict:
-    """Get parent geography data for comparison.
-    
-    Args:
-        geo_id: The ID of the current geography
-        geo_data: The current geography's data
-        
-    Returns:
-        dict: Parent geography data or None if not applicable
-    """
-    # Determine parent geography type based on ID length
-    geo_level = len(str(geo_id).strip())
-    
-    # For house districts (ID length 4) and senate districts (ID length 5)
-    if geo_level in [4, 5]:
-        # Get county data for district comparison
-        # In Hawaii, districts are statewide, so we'll use the state as parent
-        parent_geo_id = '15'  # Hawaii state FIPS code
-        parent_geo_type = 'state'
-    # For counties (ID length 5)
-    elif geo_level == 5:
-        # Use state as parent for counties
-        parent_geo_id = '15'  # Hawaii state FIPS code
-        parent_geo_type = 'state'
-    # For state (ID length 2) or unknown
-    else:
-        return None
-    
-    try:
-        # Get parent data
-        parent_data = data_loader.get_all_data_for_geo(parent_geo_id)
-        
-        if parent_data and 'name' in parent_data:
-            return {
-                'type': parent_geo_type,
-                'id': parent_geo_id,
-                'name': parent_data.get('name', 'Hawaii'),
-                'snap': parent_data.get('snap', {})
-            }
-    except Exception as e:
-        st.warning(f"Could not load parent geography data: {str(e)}")
-    
-    return None
-    
-    return None
+def display_snap_fact_sheet(geo_data):
+    """Display the SNAP fact sheet HTML with dynamic data."""
+    html_content = generate_fact_sheet_html(geo_data)
+    html(html_content, height=1200, scrolling=True)
 
 def display_geo_data(geo_id: str):
     """Display detailed data for a specific geographic area."""
     try:
-        # Get data for the specific geography
+        # Get and prepare data
         geo_data = data_loader.get_all_data_for_geo(geo_id)
         
         if not geo_data or 'name' not in geo_data:
             st.warning("No detailed data available for this location.")
             return
         
-        # Get parent geography data for comparison
-        parent_geo = get_parent_geography_data(geo_id, geo_data)
+        # Prepare data with calculated fields
+        geo_data = prepare_geo_data(geo_data)
+        
+        # Get parent geography for comparison
+        parent_geo = get_parent_geography_data(geo_id)
         if parent_geo:
             geo_data['parent_geography'] = parent_geo
-        
-        # Ensure all required data fields are present with defaults if missing
-        if 'snap' not in geo_data:
-            geo_data['snap'] = {}
-        
-        if 'demographics' not in geo_data:
-            geo_data['demographics'] = {}
-        
-        if 'economic' not in geo_data:
-            geo_data['economic'] = {}
-        
-        # Calculate derived values
-        snap_data = geo_data['snap']
-        
-        # Map SNAP data to expected field names for backward compatibility
-        snap_data_mapped = {
-            'household_count': 0,  # Not available in the data
-            'household_rate': snap_data.get('snap_household_rate', 0),
-            'benefits_annual_total': snap_data.get('snap_benefits_annual_total', 0),
-            'benefit_annual_per_household': snap_data.get('snap_benefit_annual_per_household', 0)
-        }
-        
-        # Update snap_data with mapped values
-        snap_data.update(snap_data_mapped)
-        
-        # Calculate monthly and daily benefits
-        if 'benefit_annual_per_household' in snap_data and snap_data['benefit_annual_per_household']:
-            snap_data['monthly_benefit'] = snap_data['benefit_annual_per_household'] / 12
-            snap_data['daily_benefit_per_person'] = snap_data['monthly_benefit'] / 30  # Rough estimate
+            geo_data['comparison_text'] = get_comparison_text(geo_data, parent_geo)
         else:
-            snap_data['monthly_benefit'] = 0
-            snap_data['daily_benefit_per_person'] = 0
+            geo_data['comparison_text'] = ""
         
-        # Estimate children in SNAP households (assuming 40% of SNAP participants are children)
-        if 'household_count' in snap_data and snap_data['household_count']:
-            snap_data['estimated_children'] = int(snap_data['household_count'] * 2.5 * 0.4)  # 2.5 people per household, 40% children
-        else:
-            snap_data['estimated_children'] = 0
-        
-        # Display basic information
+        # Display header and metrics
         st.subheader(geo_data.get('name', 'Location Details'))
         
-        # Display key metrics in columns
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -917,37 +734,13 @@ def display_geo_data(geo_id: str):
             if 'median_income' in geo_data['economic']:
                 st.metric("Median Income", f"${geo_data['economic']['median_income']:,.0f}")
         
-        # If we have parent geography data, add comparison text
-        comparison_text = ""
-        
-        if 'parent_geography' in geo_data and 'snap' in geo_data['parent_geography']:
-            parent_snap = geo_data['parent_geography']['snap']
-            parent_rate = parent_snap.get('snap_household_rate', 0)
-            current_rate = snap_data.get('snap_household_rate', 0)
-            
-            if parent_rate and current_rate:
-                diff = current_rate - parent_rate
-                if diff > 0:
-                    comparison_text = f"This is {abs(diff):.1f} percentage points higher than the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
-                elif diff < 0:
-                    comparison_text = f"This is {abs(diff):.1f} percentage points lower than the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
-                else:
-                    comparison_text = f"This matches the {geo_data['parent_geography']['type']} average of {parent_rate:.1f}%."
-        
-        # Add comparison text to the geo_data
-        geo_data['comparison_text'] = comparison_text
-        
-        # Display the SNAP fact sheet with all available data
+        # Display fact sheet
         st.subheader("SNAP Fact Sheet")
         display_snap_fact_sheet(geo_data)
         
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
-        st.exception(e)  # Show full traceback for debugging
-        
-    except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        st.exception(e)  # This will show the full traceback in the app for debugging
+        st.exception(e)
 
 def main():
     """Main function for the geographic detail page."""
