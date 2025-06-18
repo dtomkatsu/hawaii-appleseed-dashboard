@@ -665,39 +665,40 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             .header {{
-                background-color: #2c5f2d;
+                background-color: #4a8c1a;  /* Lighter green color */
                 color: white;
                 padding: 10px 20px;
-                display: flex;
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
                 align-items: center;
-                justify-content: center;
                 position: relative;
-                gap: 20px;
+                max-width: 8in;
+                margin: 0 auto;
             }}
             
             .header-content {{
                 text-align: center;
-                flex: 0 1 auto;
-                margin: 0 auto;
+                grid-column: 2;
             }}
             
             .logo {{
                 height: 50px;
                 width: auto;
-                position: absolute;
-                left: 20px;
+                grid-column: 1;
+                justify-self: start;
+                filter: brightness(0) invert(1);  /* Makes the logo white */
             }}
             
             .logo-container {{
                 display: flex;
                 align-items: center;
-                position: relative;
-                width: 50px;  /* Match logo width for spacing */
+                grid-column: 1;
+                justify-self: start;
             }}
             
             .print-button {{
-                position: absolute;
-                right: 20px;
+                grid-column: 3;
+                justify-self: end;
             }}
             
             .header h1 {{
@@ -777,9 +778,19 @@ def generate_fact_sheet_html(geo_data):
                     break-inside: avoid;
                 }}
                 
-                /* Ensure text is black for better print contrast */
-                * {{
+                /* Ensure text is black for better print contrast, except header */
+                *:not(.header):not(.header *):not(.header-content):not(.header-content *) {{
                     color: #000 !important;
+                }}
+                
+                /* Keep header text white when printing */
+                .header,
+                .header *,
+                .header-content,
+                .header-content * {{
+                    color: #fff !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                 }}
                 
                 /* Make sure links are visible in print */
@@ -983,6 +994,13 @@ def generate_fact_sheet_html(geo_data):
             </div>
             
             <div class="main-content">
+                <div class="veterans-box" style="margin: 0 0 15px 20px; max-width: 180px; float: left;">
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9);">
+                        <div class="small-stat-number" style="font-size: 16px;">{veterans_count}</div>
+                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2;">Veterans participating in SNAP</div>
+                    </div>
+                </div>
+                <div style="clear: both;"></div>
                 <div class="stats-grid">
                     <div>
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
@@ -1019,10 +1037,7 @@ def generate_fact_sheet_html(geo_data):
                             <span class="small-stat-number">50%</span>
                             <div class="small-stat-label">SNAP households with older adults</div>
                         </div>
-                        <div class="small-stat-box">
-                            <div class="small-stat-number">{veterans_count}</div>
-                            <div class="small-stat-label">Veterans participating in SNAP</div>
-                        </div>
+
                     </div>
                 </div>
                 
