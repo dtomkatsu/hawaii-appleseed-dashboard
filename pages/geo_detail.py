@@ -199,74 +199,166 @@ def generate_fact_sheet_html(geo_data):
     retailers_count = eco_defaults['retailers_count']
     retailers_redemption = eco_defaults['retailers_redemption']
     
-    # Fixed JavaScript that waits for DOM to be ready
     javascript_code = """
     function printFactSheet() {
         window.print();
     }
     
-    // Wait for next tick to ensure DOM is ready
-    setTimeout(function() {
-        // ALICE tooltip elements
-        const aliceRate = document.querySelector('.alice-rate-text');
-        const aliceTooltip = document.querySelector('.alice-tooltip');
+    // Setup tooltips function
+    function setupTooltips() {
+        // Get all tooltip pairs
+        const tooltipPairs = [
+            { trigger: '.alice-rate-text', tooltip: '.alice-tooltip' },
+            { trigger: '.snap-title', tooltip: '.snap-tooltip' },
+            { trigger: '.housing-title', tooltip: '.housing-tooltip' }
+        ];
         
-        // SNAP tooltip elements
-        const snapTitle = document.querySelector('.snap-title');
-        const snapTooltip = document.querySelector('.snap-tooltip');
+        // Store persistent states
+        const persistentStates = {};
         
-        // Track persistent state
-        let isAliceTooltipPersistent = false;
-        let isSnapTooltipPersistent = false;
-        
-        function setupTooltip(element, tooltip, isPersistentRef) {
-            if (!element || !tooltip) return;
+        tooltipPairs.forEach(pair => {
+            const triggerEl = document.querySelector(pair.trigger);
+            const tooltipEl = document.querySelector(pair.tooltip);
             
-            // Click to toggle persistent
-            element.addEventListener('click', function(e) {
+            if (!triggerEl || !tooltipEl) {
+                console.log('Missing element:', pair.trigger, 'or', pair.tooltip);
+                return;
+            }
+            
+            // Initialize persistent state
+            persistentStates[pair.trigger] = false;
+            
+            // Click to toggle persistent tooltip
+            triggerEl.addEventListener('click', function(e) {
                 e.stopPropagation();
-                isPersistentRef.value = !isPersistentRef.value;
-                tooltip.classList.toggle('persistent', isPersistentRef.value);
-                tooltip.classList.toggle('visible', isPersistentRef.value);
-            });
-            
-            // Show on hover
-            element.addEventListener('mouseenter', function() {
-                if (!isPersistentRef.value) {
-                    tooltip.classList.add('visible');
+                e.preventDefault();
+                
+                persistentStates[pair.trigger] = !persistentStates[pair.trigger];
+                
+                if (persistentStates[pair.trigger]) {
+                    tooltipEl.classList.add('visible', 'persistent');
+                    
+                    // Close other tooltips
+                    tooltipPairs.forEach(otherPair => {
+                        if (otherPair.trigger !== pair.trigger) {
+                            const otherTooltip = document.querySelector(otherPair.tooltip);
+                            if (otherTooltip) {
+                                otherTooltip.classList.remove('visible', 'persistent');
+                                persistentStates[otherPair.trigger] = false;
+                            }
+                        }
+                    });
+                } else {
+                    tooltipEl.classList.remove('visible', 'persistent');
                 }
             });
             
-            // Hide on mouse leave
-            element.addEventListener('mouseleave', function() {
-                if (!isPersistentRef.value) {
-                    tooltip.classList.remove('visible');
+            // Show on hover (if not persistent)
+            triggerEl.addEventListener('mouseenter', function() {
+                if (!persistentStates[pair.trigger]) {
+                    tooltipEl.classList.add('visible');
                 }
             });
             
-            return isPersistentRef;
+            // Hide on mouse leave (if not persistent)
+            triggerEl.addEventListener('mouseleave', function() {
+                if (!persistentStates[pair.trigger]) {
+                    tooltipEl.classList.remove('visible');
+                }
+            });
+        });
+        
+        // Close all tooltips when clicking outside
+        document.addEventListener('click', function(e) {
+            tooltipPairs.forEach(pair => {
+                const triggerEl = document.querySelector(pair.trigger);
+                const tooltipEl = document.querySelector(pair.tooltip);
+                
+                if (!triggerEl || !tooltipEl) return;
+                
+                if (persistentStates[pair.trigger] && 
+                    !triggerEl.contains(e.target) && 
+                    !tooltipEl.contains(e.target)) {
+                    tooltipEl.classList.remove('visible', 'persistent');
+                    persistentStates[pair.trigger] = false;
+                }
+            });
+        });
+    }
+    
+    // Wait for DOM and then setup tooltips
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupTooltips);
+    } else {
+        // DOM is already loaded, but wait a bit for dynamic content
+        setTimeout(setupTooltips, 100);
+    }
+    
+    // Function to fix housing tooltip positioning
+    function fixHousingTooltipPosition() {
+        const housingTitle = document.querySelector('.housing-title');
+        const housingTooltip = document.querySelector('.housing-tooltip');
+        
+        if (!housingTitle || !housingTooltip) return;
+        
+        // Move tooltip to body to escape stacking context
+        document.body.appendChild(housingTooltip);
+        
+        // Function to position tooltip
+        function positionTooltip() {
+            const rect = housingTitle.getBoundingClientRect();
+            const tooltipRect = housingTooltip.getBoundingClientRect();
+            
+            // Position above the trigger element
+            housingTooltip.style.position = 'fixed';
+            housingTooltip.style.left = (rect.left + rect.width / 2 - tooltipRect.width / 2) + 'px';
+            housingTooltip.style.top = (rect.top - tooltipRect.height - 10) + 'px';
+            housingTooltip.style.zIndex = '99999';
         }
         
-        // Setup tooltips with reference objects
-        const aliceRef = {value: false};
-        const snapRef = {value: false};
-        
-        setupTooltip(aliceRate, aliceTooltip, aliceRef);
-        setupTooltip(snapTitle, snapTooltip, snapRef);
-        
-        // Close tooltips when clicking outside
-        document.addEventListener('click', function(e) {
-            if (aliceRef.value && aliceTooltip && !aliceTooltip.contains(e.target) && !aliceRate.contains(e.target)) {
-                aliceRef.value = false;
-                aliceTooltip.classList.remove('persistent', 'visible');
-            }
-            
-            if (snapRef.value && snapTooltip && !snapTooltip.contains(e.target) && !snapTitle.contains(e.target)) {
-                snapRef.value = false;
-                snapTooltip.classList.remove('persistent', 'visible');
+        // Update position on hover
+        housingTitle.addEventListener('mouseenter', function() {
+            if (housingTooltip.classList.contains('visible')) {
+                positionTooltip();
             }
         });
-    }, 100);
+        
+        // Update position when tooltip becomes visible
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.target === housingTooltip && 
+                    housingTooltip.classList.contains('visible')) {
+                    positionTooltip();
+                }
+            });
+        });
+        
+        observer.observe(housingTooltip, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+        
+        // Reposition on scroll or resize
+        window.addEventListener('scroll', positionTooltip);
+        window.addEventListener('resize', positionTooltip);
+    }
+    
+    // Initialize everything
+    function initTooltips() {
+        setupTooltips();
+        fixHousingTooltipPosition();
+    }
+    
+    // Wait for DOM and then initialize
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTooltips);
+    } else {
+        // DOM is already loaded, but wait a bit for dynamic content
+        setTimeout(initTooltips, 100);
+    }
+    
+    // Also retry after a longer delay as a failsafe
+    setTimeout(initTooltips, 500);
     """
     
     return f"""
@@ -348,11 +440,11 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             /* Tooltip styles */
-            .alice-tooltip, .snap-tooltip {{
+            .alice-tooltip, .snap-tooltip, .housing-tooltip {{
                 visibility: hidden;
                 width: 300px;
-                background-color: #2A3B72;
-                color: #fff;
+                background-color: #f9f9f9;
+                color: #333;
                 text-align: left;
                 border-radius: 5px;
                 padding: 15px;
@@ -367,17 +459,19 @@ def generate_fact_sheet_html(geo_data):
                 line-height: 1.5;
                 box-shadow: 0 2px 10px rgba(0,0,0,0.2);
                 pointer-events: none;
+                border: 1px solid #ddd;
             }}
             
-            .alice-tooltip p, .snap-tooltip p {{
+            .alice-tooltip p, .snap-tooltip p, .housing-tooltip p {{
                 margin: 0 0 10px 0;
+                color: #333;
             }}
             
-            .alice-tooltip p:last-child, .snap-tooltip p:last-child {{
+            .alice-tooltip p:last-child, .snap-tooltip p:last-child, .housing-tooltip p:last-child {{
                 margin-bottom: 0;
             }}
             
-            .alice-tooltip::after, .snap-tooltip::after {{
+            .alice-tooltip::after, .snap-tooltip::after, .housing-tooltip::after {{
                 content: '';
                 position: absolute;
                 bottom: 100%;
@@ -385,16 +479,16 @@ def generate_fact_sheet_html(geo_data):
                 margin-left: -5px;
                 border-width: 5px;
                 border-style: solid;
-                border-color: transparent transparent #2A3B72 transparent;
+                border-color: transparent transparent #f9f9f9 transparent;
             }}
             
-            .alice-tooltip.visible, .snap-tooltip.visible {{
+            .alice-tooltip.visible, .snap-tooltip.visible, .housing-tooltip.visible {{
                 visibility: visible;
                 opacity: 1;
                 pointer-events: auto;
             }}
             
-            .alice-tooltip.persistent, .snap-tooltip.persistent {{
+            .alice-tooltip.persistent, .snap-tooltip.persistent, .housing-tooltip.persistent {{
                 pointer-events: auto;
             }}
             
@@ -403,6 +497,68 @@ def generate_fact_sheet_html(geo_data):
                 border-bottom: 1px dotted #2A3B72;
                 position: relative;
                 display: inline-block;
+            }}
+            
+            .housing-title {{
+                cursor: help;
+                border-bottom: 1px dashed #555;
+                display: inline-block;
+                position: relative;
+                z-index: 1;
+            }}
+            
+            .housing-tooltip {{
+                visibility: hidden;
+                width: 300px;
+                background-color: #2A3B72;
+                color: #fff;
+                text-align: left;
+                border-radius: 5px;
+                padding: 15px;
+                position: absolute;
+                z-index: 9999 !important;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-bottom: 10px;
+                opacity: 0;
+                transition: opacity 0.3s, visibility 0.3s;
+                font-size: 14px;
+                line-height: 1.5;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                pointer-events: none;
+                max-width: 90vw;
+                box-sizing: border-box;
+                isolation: isolate;
+            }}
+            
+            .housing-tooltip.visible {{
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+                z-index: 9999 !important;
+            }}
+            
+            .housing-tooltip.persistent {{
+                pointer-events: auto;
+                z-index: 9999 !important;
+            }}
+            
+            .housing-tooltip p {{
+                margin: 0 0 10px 0;
+            }}
+            
+            .housing-tooltip::after {{
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -8px;
+                border-width: 8px;
+                border-style: solid;
+                border-color: #2A3B72 transparent transparent transparent;
+                z-index: 10000 !important;
+                pointer-events: none;
             }}
             
             .header {{
@@ -474,11 +630,19 @@ def generate_fact_sheet_html(geo_data):
                 align-items: start;
             }}
             
+            /* Ensure the four-stats container doesn't create a stacking context */
             .four-stats {{
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 15px;
                 margin: 20px 0;
+                /* Remove any z-index or transform properties */
+                position: static;
+            }}
+            
+            /* Alternative approach if :has() is not supported */
+            .small-stat-box.tooltip-active {{
+                z-index: 1000 !important;
             }}
             
             .small-stat-box {{
@@ -490,6 +654,15 @@ def generate_fact_sheet_html(geo_data):
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
+                position: relative;
+                overflow: visible !important;
+                /* Remove z-index from stat boxes to prevent stacking issues */
+            }}
+            
+            /* Add hover state to temporarily increase z-index */
+            .small-stat-box:has(.housing-title:hover),
+            .small-stat-box:has(.housing-tooltip.visible) {{
+                z-index: 1000 !important;
             }}
             
             .small-stat-number {{
@@ -501,15 +674,15 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             .small-stat-label {{
-                font-size: 13px;
-                color: #333;
+                font-size: 12px;
+                color: #555;
                 margin-top: 5px;
-                line-height: 1.3;
-                font-weight: 600;
-            }}
-            
-            .impact-section {{
-                margin: 20px 0;
+                text-align: center;
+                line-height: 1.2;
+                position: relative;
+                display: inline-block;
+                overflow: visible !important;
+                /* Remove z-index */
             }}
             
             .impact-title {{
@@ -653,7 +826,13 @@ def generate_fact_sheet_html(geo_data):
                         </div>
                         <div class="small-stat-box">
                             <div class="small-stat-number">{geo_data.get('housing_cost_burden', 'N/A')}</div>
-                            <div class="small-stat-label">Households with housing cost burden</div>
+                            <div class="small-stat-label">
+                                <span class="housing-title">Households with housing cost burden</span>
+                                <div class="housing-tooltip">
+                                    <p>A household is considered "housing cost burdened" by the Census if it spends more than 30% of its income on housing expenses, which include rent or mortgage payments, utilities, and related fees.</p>
+                                    <p>If a household spends more than 50% of its income on these costs, it is classified as "severely cost burdened".</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="small-stat-box">
                             <span class="small-stat-number">50%</span>
