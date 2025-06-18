@@ -195,6 +195,69 @@ def display_snap_fact_sheet(geo_data):
             function printFactSheet() {{
                 window.print();
             }}
+            
+            // Handle tooltip interactions
+            document.addEventListener('DOMContentLoaded', function() {{
+                // ALICE tooltip
+                const aliceRate = document.querySelector('.alice-rate-text');
+                const aliceTooltip = document.querySelector('.alice-tooltip');
+                let isAliceTooltipPersistent = false;
+                
+                // SNAP tooltip
+                const snapTitle = document.querySelector('.snap-title');
+                const snapTooltip = document.querySelector('.snap-tooltip');
+                let isSnapTooltipPersistent = false;
+                
+                function setupTooltip(element, tooltip, isPersistent) {{
+                    let isPersistentRef = isPersistent;
+                    
+                    // Toggle tooltip on click
+                    element.addEventListener('click', function(e) {{
+                        e.stopPropagation();
+                        isPersistentRef = !isPersistentRef;
+                        tooltip.classList.toggle('persistent', isPersistentRef);
+                        tooltip.classList.toggle('visible', isPersistentRef);
+                        isPersistent = isPersistentRef;
+                    }});
+                    
+                    // Show on hover
+                    element.addEventListener('mouseenter', function() {{
+                        if (!isPersistentRef) {{
+                            tooltip.classList.add('visible');
+                        }}
+                    }});
+                    
+                    // Hide on mouse leave (if not persistent)
+                    element.addEventListener('mouseleave', function() {{
+                        if (!isPersistentRef) {{
+                            tooltip.classList.remove('visible');
+                        }}
+                    }});
+                }}
+                
+                // Close tooltips when clicking outside
+                document.addEventListener('click', function(e) {{
+                    // ALICE tooltip
+                    if (isAliceTooltipPersistent && !aliceTooltip.contains(e.target) && !aliceRate.contains(e.target)) {{
+                        isAliceTooltipPersistent = false;
+                        aliceTooltip.classList.remove('persistent', 'visible');
+                    }}
+                    
+                    // SNAP tooltip
+                    if (isSnapTooltipPersistent && !snapTooltip.contains(e.target) && !snapTitle.contains(e.target)) {{
+                        isSnapTooltipPersistent = false;
+                        snapTooltip.classList.remove('persistent', 'visible');
+                    }}
+                }});
+                
+                // Initialize tooltips
+                if (aliceRate && aliceTooltip) {{
+                    setupTooltip(aliceRate, aliceTooltip, isAliceTooltipPersistent);
+                }}
+                if (snapTitle && snapTooltip) {{
+                    setupTooltip(snapTitle, snapTooltip, isSnapTooltipPersistent);
+                }}
+            }});
         </script>
         <style>
             * {{
@@ -226,24 +289,25 @@ def display_snap_fact_sheet(geo_data):
                 max-width: 50%;  /* Much narrower */
                 text-align: center;  /* Center text */
                 border-radius: 3px;  /* Subtle rounding */
+                position: relative;  /* For tooltip positioning */
             }}
             
             .alice-rate {{
-                font-size: 16px;  /* Smaller font */
+                font-size: 16px;
                 font-weight: normal;
-                margin: 2px 0;  /* Minimal margin */
-                text-align: center;  /* Center the rate */
-                color: #000;  /* Ensure black text */
+                margin: 2px 0;
+                text-align: center;
+                color: #000;
                 line-height: 1.3;
-            }}
-            
-            .alice-rate strong {{
-                font-weight: 700;
-            }}
-            
-            .percentage-box {{
+                position: relative;
                 display: inline-block;
-                background-color: #2A3B62;  /* Even darker blue for better contrast */
+            }}
+            
+            .alice-rate-text {{
+                font-weight: 700;
+                border-bottom: 1px dotted #2A3B72;
+                cursor: pointer;
+                position: relative;
                 color: white;
                 padding: 1px 6px;
                 border-radius: 3px;
@@ -253,11 +317,129 @@ def display_snap_fact_sheet(geo_data):
                 box-shadow: 0 1px 2px rgba(0,0,0,0.15);
             }}
             
+            .percentage-box {{
+                font-size: 0.8em;
+                font-weight: normal;
+                color: white;
+                margin-left: 4px;
+                padding: 1px 4px;
+                border-radius: 3px;
+                background-color: #2A3B62;
+                border: 1px solid #2A3B62;
+            }}
+            
+            /* Hide the original definition */
             .alice-definition {{
-                font-size: 11px;  /* Smaller text */
-                line-height: 1.2;  /* Tighter line height */
-                margin: 2px 0 0 0;  /* Minimal margins */
-                color: #333;  /* Slightly lighter black */
+                display: none;
+            }}
+            
+            /* ALICE Tooltip */
+            .alice-tooltip {{
+                visibility: hidden;
+                width: 300px;
+                background-color: #2A3B72;
+                color: #fff;
+                text-align: left;
+                border-radius: 5px;
+                padding: 15px;
+                position: absolute;
+                z-index: 1100;
+                top: 100%;
+                left: 0;
+                margin-top: 10px;
+                opacity: 0;
+                transition: opacity 0.3s, visibility 0.3s;
+                font-size: 14px;
+                line-height: 1.5;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                pointer-events: none;
+            }}
+            
+            .alice-tooltip p {{
+                margin: 0 0 10px 0;
+            }}
+            
+            .alice-tooltip p:last-child {{
+                margin-bottom: 0;
+            }}
+            
+            .alice-tooltip::after {{
+                content: '';
+                position: absolute;
+                bottom: 100%;
+                left: 20px;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: transparent transparent #2A3B72 transparent;
+            }}
+            
+            .alice-tooltip.visible {{
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+            }}
+            
+            .alice-tooltip.persistent {{
+                pointer-events: auto;
+            }}
+            
+            /* SNAP Tooltip */
+            .snap-title {{
+                cursor: help;
+                border-bottom: 1px dotted #2A3B72;
+                position: relative;
+                display: inline-block;
+            }}
+            
+            .snap-tooltip {{
+                visibility: hidden;
+                width: 300px;
+                background-color: #2A3B72;
+                color: #fff;
+                text-align: left;
+                border-radius: 5px;
+                padding: 15px;
+                position: absolute;
+                z-index: 1100;
+                top: 100%;
+                left: 0;
+                margin-top: 10px;
+                opacity: 0;
+                transition: opacity 0.3s, visibility 0.3s;
+                font-size: 14px;
+                line-height: 1.5;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                pointer-events: none;
+            }}
+            
+            .snap-tooltip p {{
+                margin: 0 0 10px 0;
+            }}
+            
+            .snap-tooltip p:last-child {{
+                margin-bottom: 0;
+            }}
+            
+            .snap-tooltip::after {{
+                content: '';
+                position: absolute;
+                bottom: 100%;
+                left: 20px;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: transparent transparent #2A3B72 transparent;
+            }}
+            
+            .snap-tooltip.visible {{
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+            }}
+            
+            .snap-tooltip.persistent {{
+                pointer-events: auto;
             }}
             
             .header {{
@@ -509,24 +691,32 @@ def display_snap_fact_sheet(geo_data):
             
             <div class="alice-section">
                 <div class="alice-rate">
-                    <strong>ALICE Rate:</strong> {alice_fraction} <span class="percentage-box">({alice_rate})</span>
+                    <span class="alice-rate-text">ALICE Rate</span>: {alice_fraction} <span class="percentage-box">({alice_rate})</span>
+                    <div class="alice-tooltip">
+                        <strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
+                    </div>
                 </div>
-                <div class="alice-definition">
+                <!-- Original definition moved to tooltip -->
+                <div class="alice-definition" aria-hidden="true">
                     ALICE stands for Asset Limited, Income Constrained, Employed. It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.
                 </div>
             </div>
             
             <div class="main-content">
-                <div class="intro-section">
-                    <p>The Supplemental Nutrition Assistance Program (SNAP) is the nation's first line of defense against hunger, helping <strong>{snap_households}</strong> households in <strong>{geo_name.upper()}</strong> put food on the table. In fiscal year 2024, SNAP brought <strong>{snap_benefits_total}</strong> to the area. With many {geo_name} households experiencing food insecurity and high food prices, protecting and strengthening SNAP is more important than ever.</p>
-                </div>
-                
                 <div class="stats-grid">
                     <div>
+                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px;">
+                            <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
+                            <div class="snap-tooltip">
+                                <p><strong>SNAP</strong> stands for the Supplemental Nutrition Assistance Program, a government program that helps low-income people buy food.</p>
+                                <p>Recipients get monthly benefits on a special card, which they can use like a debit card at grocery stores and certain farmers' markets.</p>
+                                <p>The goal is to make sure everyone can avoid going hungry while having better access to healthy food.</p>
+                            </div>
+                        </h3>
                         <ul class="bullet-points">
                             <li>Approximately <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span> SNAP participants reside throughout the area: one in 6 small-town households and one in 10 households in metro areas.</li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
-                            <li>SNAP helped over <span class="stat-highlight">{children_in_snap}</span> children in {geo_name.upper()} in FY 2023. It also provided these children with eligibility for school meals. Cuts to SNAP would mean that children in families with low incomes would lose access to school meals.</li>
+                            <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
                         </ul>
                     </div>
                     
