@@ -311,13 +311,22 @@ def generate_fact_sheet_html(geo_data):
             const rect = housingTitle.getBoundingClientRect();
             const tooltipRect = housingTooltip.getBoundingClientRect();
             
-            // Calculate position
-            const left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            const top = rect.top - tooltipRect.height - 10;
+            // Calculate position - center it more on the page
+            const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+            const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+            
+            // Calculate centered position
+            let left = (viewportWidth - tooltipRect.width) / 2;
+            let top = (viewportHeight - tooltipRect.height) / 2;
+            
+            // Ensure it's not too close to the edges
+            const padding = 20;
+            left = Math.max(padding, Math.min(left, viewportWidth - tooltipRect.width - padding));
+            top = Math.max(padding, Math.min(top, viewportHeight - tooltipRect.height - padding));
             
             // Apply position with transform for better performance
-            housingTooltip.style.transform = `translate3d(${Math.max(10, left)}px, ${Math.max(10, top)}px, 0)`;
-            housingTooltip.style.webkitTransform = `translate3d(${Math.max(10, left)}px, ${Math.max(10, top)}px, 0)`;
+            housingTooltip.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+            housingTooltip.style.webkitTransform = `translate3d(${left}px, ${top}px, 0)`;
             housingTooltip.style.opacity = '1';
         }
         
@@ -950,7 +959,7 @@ def display_snap_fact_sheet(geo_data):
     html(html_content, height=1200, scrolling=True)
 
 def display_geo_data(geo_id: str):
-    """Display detailed data for a specific geographic area."""
+    """Display the SNAP fact sheet for a specific geographic area."""
     try:
         # Get and prepare data
         geo_data = data_loader.get_all_data_for_geo(geo_id)
@@ -962,33 +971,7 @@ def display_geo_data(geo_id: str):
         # Prepare data with calculated fields
         geo_data = prepare_geo_data(geo_data)
         
-        # Get parent geography for comparison
-        parent_geo = get_parent_geography_data(geo_id)
-        if parent_geo:
-            geo_data['parent_geography'] = parent_geo
-            geo_data['comparison_text'] = get_comparison_text(geo_data, parent_geo)
-        else:
-            geo_data['comparison_text'] = ""
-        
-        # Display header and metrics
-        st.subheader(geo_data.get('name', 'Location Details'))
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if 'population' in geo_data['demographics']:
-                st.metric("Total Population", f"{geo_data['demographics']['population']:,}")
-        
-        with col2:
-            if 'poverty_rate' in geo_data['economic']:
-                st.metric("Poverty Rate", f"{geo_data['economic']['poverty_rate']}%")
-        
-        with col3:
-            if 'median_income' in geo_data['economic']:
-                st.metric("Median Income", f"${geo_data['economic']['median_income']:,.0f}")
-        
-        # Display fact sheet
-        st.subheader("SNAP Fact Sheet")
+        # Display the fact sheet
         display_snap_fact_sheet(geo_data)
         
     except Exception as e:
@@ -997,19 +980,30 @@ def display_geo_data(geo_id: str):
 
 def main():
     """Main function for the geographic detail page."""
-    st.title("🏝️ Geographic Detail")
+    # Hide the title and other Streamlit UI elements
+    hide_streamlit_style = """
+    <style>
+        #MainMenu, header, .stApp [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        .stApp {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .block-container {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+    </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
     # Get the geo_id from query parameters
     query_params = st.experimental_get_query_params()
     geo_id = query_params.get('geo_id', [None])[0]
     
     if geo_id:
-        st.success(f"Successfully loaded data for location ID: {geo_id}")
         display_geo_data(geo_id)
-        
-        # Add a back button
-        if st.button("← Back to Map"):
-            st.switch_page("run_leaflet.py")
     else:
         st.error("No geographic ID provided. Please select a feature from the map.")
         if st.button("← Back to Map"):
