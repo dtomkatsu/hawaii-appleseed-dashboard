@@ -82,10 +82,16 @@ def get_fraction_text(rate, household_suffix="households"):
 
 def prepare_geo_data(geo_data):
     """Prepare and enhance geography data with calculated fields."""
+    # Debug: Print available top-level keys
+    print("Top-level keys in geo_data:", list(geo_data.keys()))
+    
     # Ensure all required data fields are present
     geo_data.setdefault('snap', {})
     geo_data.setdefault('demographics', {})
     geo_data.setdefault('economic', {})
+    
+    # Debug: Print available demographics keys
+    print("Demographics keys:", list(geo_data['demographics'].keys()))
     
     snap_data = geo_data['snap']
     
@@ -116,6 +122,12 @@ def prepare_geo_data(geo_data):
         geo_data['housing_cost_burden'] = f"{float(rent_burden):.1f}%" if rent_burden is not None else "N/A"
     else:
         geo_data['housing_cost_burden'] = "N/A"
+    
+    # Ensure median_income is properly formatted
+    if 'economic' in geo_data and 'median_income' in geo_data['economic']:
+        median_income = geo_data['economic']['median_income']
+        if median_income is not None:
+            geo_data['formatted_median_income'] = format_number(median_income, is_currency=True, decimals=0)
     
     return geo_data
 
@@ -996,8 +1008,8 @@ def generate_fact_sheet_html(geo_data):
             <div class="main-content">
                 <div class="veterans-box" style="margin: 0 0 15px 20px; max-width: 180px; float: left;">
                     <div class="small-stat-box" style="padding: 8px; transform: scale(0.9);">
-                        <div class="small-stat-number" style="font-size: 16px;">{veterans_count}</div>
-                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2;">Veterans participating in SNAP</div>
+                        <div class="small-stat-number" style="font-size: 16px; color: red;">{geo_data.get('formatted_median_income', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
                     </div>
                 </div>
                 <div style="clear: both;"></div>
