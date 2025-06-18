@@ -129,6 +129,12 @@ def prepare_geo_data(geo_data):
         if median_income is not None:
             geo_data['formatted_median_income'] = format_number(median_income, is_currency=True, decimals=0)
     
+    # Format population count
+    if 'demographics' in geo_data and 'population' in geo_data['demographics']:
+        population = geo_data['demographics']['population']
+        if population is not None:
+            geo_data['formatted_population'] = format_number(population, decimals=0)
+    
     return geo_data
 
 def get_comparison_text(geo_data, parent_geo):
@@ -1006,10 +1012,14 @@ def generate_fact_sheet_html(geo_data):
             </div>
             
             <div class="main-content">
-                <div class="veterans-box" style="margin: 0 0 15px 20px; max-width: 180px; float: left;">
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9);">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-left: 20px;">
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
                         <div class="small-stat-number" style="font-size: 16px; color: red;">{geo_data.get('formatted_median_income', 'N/A')}</div>
                         <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
+                    </div>
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
+                        <div class="small-stat-number" style="font-size: 16px; color: #2c5f2d;">{geo_data.get('formatted_population', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Total Population</div>
                     </div>
                 </div>
                 <div style="clear: both;"></div>
