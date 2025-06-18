@@ -190,6 +190,12 @@ def display_snap_fact_sheet(geo_data):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>SNAP Fact Sheet - {geo_name} Preview</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <script>
+            function printFactSheet() {{
+                window.print();
+            }}
+        </script>
         <style>
             * {{
                 margin: 0;
@@ -259,17 +265,60 @@ def display_snap_fact_sheet(geo_data):
                 color: white;
                 padding: 15px 20px;
                 text-align: center;
+                position: relative;
             }}
             
             .header h1 {{
                 font-size: 18px;
                 font-weight: bold;
                 margin-bottom: 5px;
+                padding: 0 40px; /* Add padding for print button */
             }}
             
             .header .organization {{
                 font-size: 12px;
                 font-weight: normal;
+            }}
+            
+            .print-button {{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: #fff;
+                color: #2c5f2d;
+                border: 1px solid #fff;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-size: 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                transition: all 0.2s;
+            }}
+            
+            .print-button:hover {{
+                background-color: #f0f0f0;
+            }}
+            
+            .print-button i {{
+                font-size: 14px;
+            }}
+            
+            @media print {{
+                .print-button {{
+                    display: none;
+                }}
+                
+                body {{
+                    padding: 0;
+                }}
+                
+                .fact-sheet {{
+                    box-shadow: none;
+                    margin: 0;
+                    max-width: 100%;
+                }}
             }}
             
             .main-content {{
@@ -451,6 +500,9 @@ def display_snap_fact_sheet(geo_data):
     <body>
         <div class="fact-sheet">
             <div class="header">
+                <button class="print-button" onclick="printFactSheet()">
+                    <i class="fas fa-print"></i> Print/Save
+                </button>
                 <h1>{geo_name.upper()}</h1>
                 <div class="subtitle">Fact Sheet</div>
             </div>
@@ -529,7 +581,34 @@ def display_snap_fact_sheet(geo_data):
     </html>
     """
     
-    html(snap_html, height=1200)
+    # Add print-specific styles
+    print_styles = """
+    <style>
+        @page {{
+            size: letter;
+            margin: 0.5in;
+        }}
+        @media print {{
+            body {{
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }}
+            .fact-sheet {{
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }}
+        }}
+    </style>
+    """
+    
+    # Combine print styles with the main HTML
+    full_html = f"""
+    {print_styles}
+    {snap_html}
+    """
+    
+    html(full_html, height=1200, scrolling=True)
 
 def get_parent_geography_data(geo_id: str, geo_data: dict) -> dict:
     """Get parent geography data for comparison.
