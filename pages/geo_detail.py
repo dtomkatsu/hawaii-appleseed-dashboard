@@ -1,4 +1,5 @@
 """Geographic Detail Page for Hawaii Appleseed Dashboard."""
+import base64
 import streamlit as st
 from streamlit.components.v1 import html
 from pathlib import Path
@@ -388,6 +389,11 @@ def generate_fact_sheet_html(geo_data):
     setTimeout(initTooltips, 500);
     """
     
+    # Convert logo to base64
+    logo_path = "/Users/dtomkatsu/Downloads/Leaf only.png"
+    with open(logo_path, "rb") as img_file:
+        logo_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+    
     return f"""
     <!DOCTYPE html>
     <html style="height: 100%;">
@@ -661,9 +667,37 @@ def generate_fact_sheet_html(geo_data):
             .header {{
                 background-color: #2c5f2d;
                 color: white;
-                padding: 15px 20px;
-                text-align: center;
+                padding: 10px 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 position: relative;
+                gap: 20px;
+            }}
+            
+            .header-content {{
+                text-align: center;
+                flex: 0 1 auto;
+                margin: 0 auto;
+            }}
+            
+            .logo {{
+                height: 50px;
+                width: auto;
+                position: absolute;
+                left: 20px;
+            }}
+            
+            .logo-container {{
+                display: flex;
+                align-items: center;
+                position: relative;
+                width: 50px;  /* Match logo width for spacing */
+            }}
+            
+            .print-button {{
+                position: absolute;
+                right: 20px;
             }}
             
             .header h1 {{
@@ -926,11 +960,16 @@ def generate_fact_sheet_html(geo_data):
         <div class="fact-sheet-container">
             <div class="fact-sheet">
             <div class="header">
+                <div class="logo-container">
+                    <img src="data:image/png;base64,{logo_base64}" alt="Logo" class="logo">
+                </div>
+                <div class="header-content">
+                    <h1>{geo_name.upper()}</h1>
+                    <div class="subtitle">Fact Sheet</div>
+                </div>
                 <button class="print-button" onclick="printFactSheet()">
                     <i class="fas fa-print"></i> Print/Save
                 </button>
-                <h1>{geo_name.upper()}</h1>
-                <div class="subtitle">Fact Sheet</div>
             </div>
             
             <div class="alice-section">
