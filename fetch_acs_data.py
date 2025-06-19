@@ -40,6 +40,7 @@ class ACSScraper:
             'B15003_001E': 'pop_25_plus',
             'B25003_003E': 'renter_occupied',
             'B25003_001E': 'total_housing_units',
+            'B25064_001E': 'median_rent',       # Median gross rent
             # Gross rent as percentage of household income (GRAPI)
             'B25070_007E': 'rent_30_34_pct',    # 30.0 to 34.9 percent
             'B25070_008E': 'rent_35_39_pct',    # 35.0 to 39.9 percent

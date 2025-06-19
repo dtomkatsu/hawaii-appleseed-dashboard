@@ -712,7 +712,19 @@ class DataLoader:
         if cache_key not in self.data_cache:
             loader = self.loaders.get(data_type)
             if loader:
+                print(f"DEBUG: Loading {data_type.value} data for {geo_level.value}")
                 data = loader.load_data(geo_level)
+                
+                # Log the columns in the loaded data for debugging
+                if data is not None and not data.empty:
+                    print(f"DEBUG: Loaded {data_type.value} data columns: {data.columns.tolist()}")
+                    if 'median_rent' in data.columns:
+                        print(f"DEBUG: Found median_rent in {data_type.value} data. First 5 values: {data['median_rent'].head().tolist()}")
+                    elif 'b25064_001e' in [col.lower() for col in data.columns]:
+                        print(f"DEBUG: Found b25064_001e in {data_type.value} data. First 5 values: {data['b25064_001e'].head().tolist()}")
+                    else:
+                        print(f"DEBUG: median_rent NOT FOUND in {data_type.value} data columns")
+                
                 self.data_cache[cache_key] = data
     
     def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
@@ -724,15 +736,36 @@ class DataLoader:
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
         
+        # Log the datasets we found
+        print(f"DEBUG: Found datasets - ACS: {acs_data is not None}, ALICE: {alice_data is not None}, SNAP: {snap_data is not None}")
+        
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
         
+        # Log ACS data columns before merging
+        if merged_data is not None:
+            print(f"DEBUG: ACS data columns before merging: {merged_data.columns.tolist()}")
+            if 'median_rent' in merged_data.columns:
+                print(f"DEBUG: median_rent in ACS data before merging: {merged_data['median_rent'].head().tolist()}")
+        
         # Merge additional datasets
         if merged_data is not None and alice_data is not None:
+            print(f"DEBUG: Merging ALICE data")
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
+            print(f"DEBUG: After ALICE merge, columns: {merged_data.columns.tolist()}")
         
         if merged_data is not None and snap_data is not None:
+            print(f"DEBUG: Merging SNAP data")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
+            print(f"DEBUG: After SNAP merge, columns: {merged_data.columns.tolist()}")
+            
+        # Log final columns and median_rent if available
+        if merged_data is not None:
+            print(f"DEBUG: Final merged data columns: {merged_data.columns.tolist()}")
+            if 'median_rent' in merged_data.columns:
+                print(f"DEBUG: median_rent in final merged data: {merged_data['median_rent'].head().tolist()}")
+            else:
+                print("DEBUG: median_rent NOT FOUND in final merged data columns")
         
         return merged_data
     
@@ -748,6 +781,8 @@ class DataLoader:
             "tax_credits": {}
         }
         
+        print(f"DEBUG: Getting data for geo_id: {geo_id}")
+        
         try:
             geo_level = self._determine_geo_level(geo_id)
             if not geo_level:
@@ -761,10 +796,20 @@ class DataLoader:
                 return result
             
             # Find the specific geography
+            print(f"DEBUG: Looking for geo_id: {geo_id} in data")
+            print(f"DEBUG: Available geoids: {data['geoid'].head().tolist()}")
+            
             geo_row = data[data['geoid'] == str(geo_id)]
             if geo_row.empty:
                 logger.warning(f"No data found for geography ID: {geo_id}")
+                print(f"DEBUG: Could not find geo_id: {geo_id} in data")
                 return result
+                
+            print(f"DEBUG: Found matching row. Columns: {geo_row.columns.tolist()}")
+            if 'median_rent' in geo_row.columns:
+                print(f"DEBUG: median_rent value: {geo_row['median_rent'].values[0]}")
+            else:
+                print("DEBUG: median_rent column not found in the row")
             
             geo_row = geo_row.iloc[0]
             result = self._build_geography_result(result, geo_row)
@@ -786,7 +831,13 @@ class DataLoader:
     
     def _build_geography_result(self, result: Dict[str, Any], geo_row: pd.Series) -> Dict[str, Any]:
         """Build the result dictionary from a geography data row."""
+        print(f"Debug - Raw geo_row columns: {geo_row.index.tolist()}")  # Debug: Print all available columns
+        
         result['name'] = geo_row.get('NAME', f"Geography {result['id']}")
+        
+        # Log median_rent value if it exists
+        median_rent = self._safe_get(geo_row, 'median_rent')
+        print(f"Debug - Raw median_rent value: {median_rent}")  # Debug: Print raw median_rent value
         
         # Demographics
         result['demographics'] = {
@@ -812,10 +863,12 @@ class DataLoader:
         # Housing indicators
         result['housing'] = {
             'median_home_value': self._safe_get(geo_row, 'median_home_value'),
-            'median_rent': self._safe_get(geo_row, 'median_rent'),
+            'median_rent': median_rent,  # Use the value we already retrieved
             'homeownership_rate': self._safe_get(geo_row, 'homeownership_rate'),
             'rent_burden_rate': self._safe_get(geo_row, 'rent_burden_rate')
         }
+        
+        print(f"Debug - Final housing data: {result['housing']}")  # Debug: Print final housing data
         
         # SNAP data
         result['snap'] = {

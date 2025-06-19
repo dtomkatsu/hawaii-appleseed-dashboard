@@ -36,9 +36,6 @@ class ACSDataFetcher:
             api_key: Census API key
             year: ACS year (default: 2023)
         """
-        # Set the API key
-        self.api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"  # Directly using the provided API key
-        
         # Set up API URL and year
         self.year = year
         self.base_url = f"https://api.census.gov/data/{self.year}/acs/acs5"
@@ -59,11 +56,12 @@ class ACSDataFetcher:
             f.write(f"\n--- Initializing ACSDataFetcher for {self.year} ACS 5-year estimates ---\n")
             f.write(f"Base URL: {self.base_url}\n")
         
+        # Set and validate the API key
+        self.api_key = api_key or "2104852dd7bfd83fbc9e320d650eb57decc11817"  # Using provided key or default
+        self.api_key = self._validate_api_key(self.api_key)
+        
         # Test the connection
         self._test_connection()
-        
-        # Validate and format the API key
-        self.api_key = self._validate_api_key(api_key_value)
         
         # Log initialization
         with open(self.debug_log_file, 'a', encoding='utf-8') as f:
@@ -244,6 +242,9 @@ class ACSDataFetcher:
             
             # Log the request (without API key for security)
             logger.info(f"Fetching ACS data for {len(variables)} variables at {level} level")
+            
+            # Construct the URL for the request
+            url = f"{self.base_url}?{urlencode(params, safe=':,')}"
             safe_url = url.split('&key=')[0] + '&key=HIDDEN'
             logger.debug(f"API URL: {safe_url}")
             
@@ -260,6 +261,12 @@ class ACSDataFetcher:
                 f.write(f"Raw API response status code: {response.status_code}\n")
                 f.write(f"Raw API response headers: {response.headers}\n")
                 f.write(f"Raw API response content (first 500 chars): {response.text[:500]}\n")
+                
+                # Check if median_rent variable is in the response
+                if 'b25064_001e' in response.text.lower():
+                    f.write("Found b25064_001e (median_rent) in raw API response\n")
+                else:
+                    f.write("WARNING: b25064_001e (median_rent) NOT FOUND in raw API response\n")
             
             # Check if the response is valid JSON
             try:
@@ -289,11 +296,21 @@ class ACSDataFetcher:
             # Convert to DataFrame
             df = pd.DataFrame(rows, columns=headers)
             
+            # Log the columns before conversion
+            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+                f.write(f"Columns in raw DataFrame: {df.columns.tolist()}\n")
+                f.write(f"Looking for b25064_001e in columns: {'b25064_001e' in [col.lower() for col in df.columns]}\n")
+            
             # Convert numeric columns to appropriate types
             for var in variables:
                 var_lower = var.lower()
                 if var_lower in df.columns:
                     df[var_lower] = pd.to_numeric(df[var_lower], errors='coerce')
+                    
+                    # Log median_rent values for debugging
+                    if var_lower == 'b25064_001e':
+                        with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+                            f.write(f"Found b25064_001e in DataFrame. First 5 values: {df[var_lower].head().tolist()}\n")
             
             # Add GEOID column based on geographic level
             if standardize_geoids:
@@ -332,7 +349,8 @@ class ACSDataFetcher:
                 'b15003_022e': 'bachelors_plus',
                 'b15003_001e': 'pop_25_plus',
                 'b25003_003e': 'renter_occupied',
-                'b25003_001e': 'total_housing_units'
+                'b25003_001e': 'total_housing_units',
+                'b25064_001e': 'median_rent'  # Added median rent variable
             }
             
             # Only rename columns that exist in the dataframe
@@ -426,7 +444,13 @@ class ACSDataFetcher:
             'B15003_022E': 'Bachelor\'s degree or higher',
             'B15003_001E': 'Population 25 years and over',
             'B25003_003E': 'Renter-occupied housing units',
-            'B25003_001E': 'Total housing units'
+            'B25003_001E': 'Total housing units',
+            'B25064_001E': 'Median gross rent',
+            'B25070_001E': 'Gross rent as percentage of household income',
+            'B25070_007E': '30.0 to 34.9 percent',
+            'B25070_008E': '35.0 to 39.9 percent',
+            'B25070_009E': '40.0 to 49.9 percent',
+            'B25070_010E': '50.0 percent or more'
         }
     
     def calculate_poverty_rate(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -497,6 +521,8 @@ def main():
         # Get common variables
         variables = list(fetcher.get_common_variables().keys())
         
+        print("Fetching ACS data for Hawaii counties...")
+        
         # Fetch data for Hawaii counties
         county_data = fetcher.get_acs_data(
             variables=variables,
@@ -505,15 +531,34 @@ def main():
             geometry=False
         )
         
-        # Calculate metrics
-        county_data = fetcher.calculate_poverty_rate(county_data)
-        
-        # Save to CSV
-        fetcher.save_to_csv(county_data, 'hawaii_counties_acs')
-        
-        print("Done!")
-        
+        if county_data is not None:
+            print(f"Successfully fetched data with {len(county_data)} rows")
+            print(f"Columns: {county_data.columns.tolist()}")
+            
+            # Calculate metrics
+            county_data = fetcher.calculate_poverty_rate(county_data)
+            
+            # Save to CSV
+            output_file = fetcher.save_to_csv(county_data, 'hawaii_counties_acs')
+            print(f"Data saved to: {output_file}")
+            
+            # Verify median_rent is in the saved file
+            if os.path.exists(output_file):
+                df = pd.read_csv(output_file)
+                if 'median_rent' in df.columns:
+                    print("✓ median_rent column found in output file")
+                    print(f"Sample median rent values:\n{df[['name', 'median_rent']].head()}")
+                else:
+                    print("✗ median_rent column NOT found in output file")
+                    print(f"Available columns: {df.columns.tolist()}")
+            
+            print("Done!")
+        else:
+            print("Failed to fetch county data")
+            
     except Exception as e:
+        print(f"Error in main: {str(e)}")
+        logger.error(f"Error in main: {str(e)}", exc_info=True)
         logger.error(f"Error in main: {str(e)}", exc_info=True)
 
 if __name__ == "__main__":

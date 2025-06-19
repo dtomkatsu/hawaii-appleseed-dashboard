@@ -2,6 +2,8 @@
 import base64
 import streamlit as st
 from streamlit.components.v1 import html
+import pandas as pd
+import numpy as np
 from pathlib import Path
 import sys
 
@@ -134,6 +136,26 @@ def prepare_geo_data(geo_data):
         population = geo_data['demographics']['population']
         if population is not None:
             geo_data['formatted_population'] = format_number(population, decimals=0)
+            
+    # Format median rent with debug logging
+    print("\n=== Debug: prepare_geo_data ===")
+    print("Debug - geo_data keys:", list(geo_data.keys()))  # Debug: Print all top-level keys
+    
+    if 'housing' in geo_data:
+        print("Debug - housing keys:", list(geo_data['housing'].keys()))  # Debug: Print housing keys
+        print("Debug - housing values:", {k: v for k, v in geo_data['housing'].items()})  # Debug: Print housing values
+    
+    if 'housing' in geo_data and 'median_rent' in geo_data['housing']:
+        median_rent = geo_data['housing']['median_rent']
+        print(f"Debug - Raw median_rent value: {median_rent} (type: {type(median_rent)})")  # Debug: Print raw value and type
+        
+        if median_rent is not None and not (isinstance(median_rent, float) and np.isnan(median_rent)):
+            geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
+            print(f"Debug - Formatted median_rent: {geo_data['formatted_median_rent']}")
+        else:
+            print("Debug - median_rent is None or NaN")  # Debug: Log if None or NaN
+    else:
+        print("Debug - median_rent not found in geo_data['housing']")  # Debug: Log if key not found
     
     return geo_data
 
@@ -1012,14 +1034,18 @@ def generate_fact_sheet_html(geo_data):
             </div>
             
             <div class="main-content">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-left: 20px;">
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
-                        <div class="small-stat-number" style="font-size: 16px; color: red;">{geo_data.get('formatted_median_income', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
-                    </div>
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-left: 20px; flex-wrap: wrap;">
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
                         <div class="small-stat-number" style="font-size: 16px; color: #2c5f2d;">{geo_data.get('formatted_population', 'N/A')}</div>
                         <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Total Population</div>
+                    </div>
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
+                        <div class="small-stat-number" style="font-size: 16px; color: #d9534f;">{geo_data.get('formatted_median_income', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
+                    </div>
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
+                        <div class="small-stat-number" style="font-size: 16px; color: #337ab7;">{geo_data.get('formatted_median_rent', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Rent</div>
                     </div>
                 </div>
                 <div style="clear: both;"></div>

@@ -1,6 +1,6 @@
-NAME,total_population,below_poverty,total_population_poverty,median_income,median_income_moe,bachelors_plus,pop_25_plus,renter_occupied,total_housing_units,rent_30_34_pct,rent_35_39_pct,rent_40_49_pct,rent_50_plus_pct,rent_total_units,state,county,geoid,poverty_rate,bachelors_rate,renter_rate,rent_burden_households,rent_burden_rate
-"Hawaii County, Hawaii",203684,29257,200968,77215,2280,28088,147788,19625,72958,1581,1101,1375,4561,19625,15,001,15001,14.56,19.01,26.9,8618,43.91
-"Honolulu County, Hawaii",1003666,88808,972612,104264,1357,167802,707526,136375,337061,13246,9802,13784,36730,136375,15,003,15003,9.13,23.72,40.46,73562,53.94
-"Kalawao County, Hawaii",43,13,41,86250,58780,7,43,22,22,1,0,4,0,22,15,005,15005,31.71,16.28,100.0,5,22.73
-"Kauai County, Hawaii",73610,6414,72848,93612,4932,11014,53076,7677,23465,688,411,835,1452,7677,15,007,15007,8.8,20.75,32.72,3386,44.11
-"Maui County, Hawaii",164632,15969,162991,95076,3077,23730,118918,19423,55485,1680,1199,1735,4852,19423,15,009,15009,9.8,19.95,35.01,9466,48.74
+NAME,total_population,below_poverty,total_population_poverty,median_income,median_income_moe,bachelors_plus,pop_25_plus,renter_occupied,total_housing_units,median_rent,rent_30_34_pct,rent_35_39_pct,rent_40_49_pct,rent_50_plus_pct,rent_total_units,state,county,geoid,poverty_rate,bachelors_rate,renter_rate,rent_burden_households,rent_burden_rate
+"Hawaii County, Hawaii",203684,29257,200968,77215,2280,28088,147788,19625,72958,1411,1581,1101,1375,4561,19625,15,001,15001,14.56,19.01,26.9,8618,43.91
+"Honolulu County, Hawaii",1003666,88808,972612,104264,1357,167802,707526,136375,337061,2054,13246,9802,13784,36730,136375,15,003,15003,9.13,23.72,40.46,73562,53.94
+"Kalawao County, Hawaii",43,13,41,86250,58780,7,43,22,22,1300,1,0,4,0,22,15,005,15005,31.71,16.28,100.0,5,22.73
+"Kauai County, Hawaii",73610,6414,72848,93612,4932,11014,53076,7677,23465,1810,688,411,835,1452,7677,15,007,15007,8.8,20.75,32.72,3386,44.11
+"Maui County, Hawaii",164632,15969,162991,95076,3077,23730,118918,19423,55485,1863,1680,1199,1735,4852,19423,15,009,15009,9.8,19.95,35.01,9466,48.74
