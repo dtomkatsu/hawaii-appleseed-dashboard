@@ -11,6 +11,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.data.data_loader import DataLoader
+from src.ui.fact_sheet_generator import generate_fact_sheet_html
 
 # Initialize the data loader
 data_loader = DataLoader()
@@ -1123,9 +1124,19 @@ def generate_fact_sheet_html(geo_data):
 
 def display_snap_fact_sheet(geo_data):
     """Display the SNAP fact sheet HTML with dynamic data."""
-    html_content = generate_fact_sheet_html(geo_data)
-    # Remove fixed height and scrolling to use the parent container's scroll
-    html(html_content, height=None, scrolling=False)
+    # Ensure all required data is present
+    geo_data.setdefault('snap', {})
+    geo_data.setdefault('economic', {})
+    geo_data.setdefault('demographics', {})
+    
+    # Generate the HTML content using the fact sheet generator
+    try:
+        html_content = generate_fact_sheet_html(geo_data)
+        # Remove fixed height and scrolling to use the parent container's scroll
+        html(html_content, height=None, scrolling=False)
+    except Exception as e:
+        st.error(f"Error generating fact sheet: {str(e)}")
+        st.exception(e)
 
 def display_geo_data(geo_id: str):
     """Display the SNAP fact sheet for a specific geographic area."""
