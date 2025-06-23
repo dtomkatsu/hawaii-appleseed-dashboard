@@ -42,6 +42,58 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
     except (ValueError, TypeError):
         return str(value)
 
+def get_comparison_text(current_value, comparison_value, is_currency=True):
+    """Generate comparison text between current value and comparison value.
+    
+    Args:
+        current_value: The current value to compare
+        comparison_value: The value to compare against (e.g., state/county average)
+        is_currency: Whether the values are currency amounts (default: True)
+    """
+    if current_value is None or comparison_value is None or comparison_value == 0:
+        return ""
+    
+    try:
+        current = float(current_value)
+        comparison = float(comparison_value)
+        
+        if current > comparison:
+            diff = current - comparison
+            diff_pct = (diff / comparison) * 100
+            diff_str = f"${diff:,.0f}" if is_currency else f"{diff:,.0f}"
+            return f"+{diff_str} (+{diff_pct:.1f}%) above average"
+        elif current < comparison:
+            diff = comparison - current
+            diff_pct = (diff / comparison) * 100
+            diff_str = f"${diff:,.0f}" if is_currency else f"{diff:,.0f}"
+            return f"-{diff_str} ({diff_pct:.1f}%) below average"
+        else:
+            return "Same as average"
+    except (ValueError, TypeError) as e:
+        print(f"Error in get_comparison_text: {e}")
+        return ""
+
+def get_snap_comparison_text(geo_data, parent_geo):
+    """Generate comparison text between current and parent geography."""
+    if not parent_geo or 'snap' not in parent_geo:
+        return ""
+    
+    parent_rate = parent_geo['snap'].get('snap_household_rate', 0)
+    current_rate = geo_data['snap'].get('snap_household_rate', 0)
+    
+    if not (parent_rate and current_rate):
+        return ""
+    
+    diff = current_rate - parent_rate
+    parent_type = parent_geo.get('type', 'state')
+    
+    if abs(diff) < 0.1:  # Consider rates equal if difference is less than 0.1%
+        return f"This matches the {parent_type} average of {parent_rate:.1f}%."
+    elif diff > 0:
+        return f"This is {abs(diff):.1f} percentage points higher than the {parent_type} average of {parent_rate:.1f}%."
+    else:
+        return f"This is {abs(diff):.1f} percentage points lower than the {parent_type} average of {parent_rate:.1f}%."
+
 def get_fraction_text(rate, household_suffix="households"):
     """Convert a percentage rate to a fraction with qualifiers.
     
@@ -125,11 +177,25 @@ def prepare_geo_data(geo_data):
     else:
         geo_data['housing_cost_burden'] = "N/A"
     
-    # Ensure median_income is properly formatted
+    # State and county averages (example values - replace with actual data)
+    state_avg_income = 83500  # Hawaii state average median income
+    county_avg_income = 92000  # County average median income
+    state_avg_rent = 1800      # Hawaii state average median rent
+    county_avg_rent = 2000     # County average median rent
+
+    # Process median income with comparison
     if 'economic' in geo_data and 'median_income' in geo_data['economic']:
         median_income = geo_data['economic']['median_income']
         if median_income is not None:
             geo_data['formatted_median_income'] = format_number(median_income, is_currency=True, decimals=0)
+            
+            # Add comparison data for median income
+            geo_data['income_comparison_state'] = get_comparison_text(
+                median_income, state_avg_income, is_currency=True
+            )
+            geo_data['income_comparison_county'] = get_comparison_text(
+                median_income, county_avg_income, is_currency=True
+            )
     
     # Format population count
     if 'demographics' in geo_data and 'population' in geo_data['demographics']:
@@ -137,7 +203,7 @@ def prepare_geo_data(geo_data):
         if population is not None:
             geo_data['formatted_population'] = format_number(population, decimals=0)
             
-    # Format median rent with debug logging
+    # Format median rent with debug logging and comparison
     print("\n=== Debug: prepare_geo_data ===")
     print("Debug - geo_data keys:", list(geo_data.keys()))  # Debug: Print all top-level keys
     
@@ -152,33 +218,24 @@ def prepare_geo_data(geo_data):
         if median_rent is not None and not (isinstance(median_rent, float) and np.isnan(median_rent)):
             geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
             print(f"Debug - Formatted median_rent: {geo_data['formatted_median_rent']}")
+            
+            # Add comparison data for median rent
+            geo_data['rent_comparison_state'] = get_comparison_text(
+                median_rent, state_avg_rent, is_currency=True
+            )
+            geo_data['rent_comparison_county'] = get_comparison_text(
+                median_rent, county_avg_rent, is_currency=True
+            )
         else:
             print("Debug - median_rent is None or NaN")  # Debug: Log if None or NaN
+            geo_data['rent_comparison_state'] = ""
+            geo_data['rent_comparison_county'] = ""
     else:
         print("Debug - median_rent not found in geo_data['housing']")  # Debug: Log if key not found
+        geo_data['rent_comparison_state'] = ""
+        geo_data['rent_comparison_county'] = ""
     
     return geo_data
-
-def get_comparison_text(geo_data, parent_geo):
-    """Generate comparison text between current and parent geography."""
-    if not parent_geo or 'snap' not in parent_geo:
-        return ""
-    
-    parent_rate = parent_geo['snap'].get('snap_household_rate', 0)
-    current_rate = geo_data['snap'].get('snap_household_rate', 0)
-    
-    if not (parent_rate and current_rate):
-        return ""
-    
-    diff = current_rate - parent_rate
-    parent_type = parent_geo.get('type', 'state')
-    
-    if abs(diff) < 0.1:  # Consider rates equal if difference is less than 0.1%
-        return f"This matches the {parent_type} average of {parent_rate:.1f}%."
-    elif diff > 0:
-        return f"This is {abs(diff):.1f} percentage points higher than the {parent_type} average of {parent_rate:.1f}%."
-    else:
-        return f"This is {abs(diff):.1f} percentage points lower than the {parent_type} average of {parent_rate:.1f}%."
 
 def get_parent_geography_data(geo_id: str) -> dict:
     """Get parent geography data for comparison."""
@@ -1039,13 +1096,21 @@ def generate_fact_sheet_html(geo_data):
                         <div class="small-stat-number" style="font-size: 16px; color: #2c5f2d;">{geo_data.get('formatted_population', 'N/A')}</div>
                         <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Total Population</div>
                     </div>
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
                         <div class="small-stat-number" style="font-size: 16px; color: #d9534f;">{geo_data.get('formatted_median_income', 'N/A')}</div>
                         <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
+                        <div class="comparison-text" style="font-size: 10px; color: #666; line-height: 1.2; margin-top: 2px;">
+                            {geo_data.get('income_comparison_state', '')}<br>
+                            {geo_data.get('income_comparison_county', '')}
+                        </div>
                     </div>
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
+                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
                         <div class="small-stat-number" style="font-size: 16px; color: #337ab7;">{geo_data.get('formatted_median_rent', 'N/A')}</div>
                         <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Rent</div>
+                        <div class="comparison-text" style="font-size: 10px; color: #666; line-height: 1.2; margin-top: 2px;">
+                            {geo_data.get('rent_comparison_state', '')}<br>
+                            {geo_data.get('rent_comparison_county', '')}
+                        </div>
                     </div>
                 </div>
                 <div style="clear: both;"></div>
