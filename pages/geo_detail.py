@@ -42,12 +42,13 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
     except (ValueError, TypeError):
         return str(value)
 
-def get_comparison_text(current_value, comparison_value, is_currency=True):
+def get_comparison_text(current_value, comparison_value, comparison_type='state', is_currency=True):
     """Generate comparison text between current value and comparison value.
     
     Args:
         current_value: The current value to compare
         comparison_value: The value to compare against (e.g., state/county average)
+        comparison_type: Either 'state' or 'county' to specify the comparison
         is_currency: Whether the values are currency amounts (default: True)
     """
     if current_value is None or comparison_value is None or comparison_value == 0:
@@ -61,14 +62,14 @@ def get_comparison_text(current_value, comparison_value, is_currency=True):
             diff = current - comparison
             diff_pct = (diff / comparison) * 100
             diff_str = f"${diff:,.0f}" if is_currency else f"{diff:,.0f}"
-            return f"+{diff_str} (+{diff_pct:.1f}%) above average"
+            return f"+{diff_str} (+{diff_pct:.1f}%) above {comparison_type} average"
         elif current < comparison:
             diff = comparison - current
             diff_pct = (diff / comparison) * 100
             diff_str = f"${diff:,.0f}" if is_currency else f"{diff:,.0f}"
-            return f"-{diff_str} ({diff_pct:.1f}%) below average"
+            return f"-{diff_str} ({diff_pct:.1f}%) below {comparison_type} average"
         else:
-            return "Same as average"
+            return f"Same as {comparison_type} average"
     except (ValueError, TypeError) as e:
         print(f"Error in get_comparison_text: {e}")
         return ""
@@ -191,10 +192,10 @@ def prepare_geo_data(geo_data):
             
             # Add comparison data for median income
             geo_data['income_comparison_state'] = get_comparison_text(
-                median_income, state_avg_income, is_currency=True
+                median_income, state_avg_income, comparison_type='state', is_currency=True
             )
             geo_data['income_comparison_county'] = get_comparison_text(
-                median_income, county_avg_income, is_currency=True
+                median_income, county_avg_income, comparison_type='county', is_currency=True
             )
     
     # Format population count
@@ -221,10 +222,10 @@ def prepare_geo_data(geo_data):
             
             # Add comparison data for median rent
             geo_data['rent_comparison_state'] = get_comparison_text(
-                median_rent, state_avg_rent, is_currency=True
+                median_rent, state_avg_rent, comparison_type='state', is_currency=True
             )
             geo_data['rent_comparison_county'] = get_comparison_text(
-                median_rent, county_avg_rent, is_currency=True
+                median_rent, county_avg_rent, comparison_type='county', is_currency=True
             )
         else:
             print("Debug - median_rent is None or NaN")  # Debug: Log if None or NaN
