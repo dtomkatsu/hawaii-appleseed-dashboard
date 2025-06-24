@@ -266,8 +266,19 @@ def get_parent_geography_data(geo_id: str) -> dict:
 
 def generate_fact_sheet_html(geo_data):
     """Generate the SNAP fact sheet HTML with all styles and scripts inline."""
-    # Extract data with enhanced preparation
+    # Extract and format geo name
     geo_name = geo_data.get('name', 'Hawaii')
+    
+    # Simplify county names
+    if ', Hawaii' in geo_name:
+        geo_name = geo_name.replace(' County, Hawaii', '')
+        geo_name = geo_name.replace(', Hawaii', '')
+        
+        # Special case for Hawaii County
+        if geo_name == 'Hawaii':
+            geo_name = 'Hawaii Island'
+    
+    geo_name = f"{geo_name} Fact Sheet"
     snap_data = geo_data.get('snap', {})
     
     # Format all values
@@ -498,7 +509,7 @@ def generate_fact_sheet_html(geo_data):
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SNAP Fact Sheet - {geo_name}</title>
+        <title>{geo_name}</title>
         <style>
             /* Reset and base styles */
             * {{
@@ -765,26 +776,17 @@ def generate_fact_sheet_html(geo_data):
             .header {{
                 background-color: #4a8c1a;  /* Lighter green color */
                 color: white;
-                padding: 10px 20px;
-                display: grid;
-                grid-template-columns: 1fr auto 1fr;
-                align-items: center;
-                position: relative;
-                max-width: 8in;
-                margin: 0 auto;
-            }}
-            
-            .header-content {{
+                padding: 15px 20px;
                 text-align: center;
-                grid-column: 2;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             }}
             
             .logo {{
-                height: 50px;
+                max-height: 40px;
                 width: auto;
-                grid-column: 1;
-                justify-self: start;
-                filter: brightness(0) invert(1);  /* Makes the logo white */
+                margin-right: 15px;
             }}
             
             .logo-container {{
@@ -792,18 +794,21 @@ def generate_fact_sheet_html(geo_data):
                 align-items: center;
                 grid-column: 1;
                 justify-self: start;
+                filter: brightness(0) invert(1);  /* Makes the logo white */
+            }}
+            
+            .header-content {{
+                flex-grow: 1;
+                text-align: center;
+                font-size: 28px;
+                font-weight: bold;
+                color: white;
+                padding: 0 20px;
             }}
             
             .print-button {{
                 grid-column: 3;
                 justify-self: end;
-            }}
-            
-            .header h1 {{
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 5px;
-                padding: 0 40px;
             }}
             
             .print-button {{
@@ -1073,48 +1078,47 @@ def generate_fact_sheet_html(geo_data):
                     <img src="data:image/png;base64,{logo_base64}" alt="Logo" class="logo">
                 </div>
                 <div class="header-content">
-                    <h1>{geo_name.upper()}</h1>
-                    <div class="subtitle">Fact Sheet</div>
+                    <h1 style="margin: 0; font-size: 28px; line-height: 1.2; flex-grow: 1; text-transform: none;">{geo_name}</h1>
                 </div>
                 <button class="print-button" onclick="printFactSheet()">
                     <i class="fas fa-print"></i> Print/Save
                 </button>
             </div>
             
-            <div class="alice-section">
-                <div class="alice-rate">
-                    <span class="alice-rate-text">ALICE Rate</span>: {alice_fraction} <span class="percentage-box">({alice_rate})</span>
-                    <div class="alice-tooltip">
-                        <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
-                        <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
-                    </div>
-                </div>
-            </div>
-            
             <div class="main-content">
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-left: 20px; flex-wrap: wrap;">
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 140px;">
-                        <div class="small-stat-number" style="font-size: 16px; color: #2c5f2d;">{geo_data.get('formatted_population', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Total Population</div>
+                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 140px;">
+                        <div class="small-stat-number" style="font-size: 22px; color: #2c5f2d; margin-bottom: 3px;">{geo_data.get('formatted_population', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Total Population</div>
                     </div>
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
-                        <div class="small-stat-number" style="font-size: 16px; color: #d9534f;">{geo_data.get('formatted_median_income', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Income</div>
-                        <div class="comparison-text" style="font-size: 10px; color: #666; line-height: 1.2; margin-top: 2px;">
+                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 160px;">
+                        <div class="small-stat-number" style="font-size: 22px; color: #d9534f; margin-bottom: 3px;">{geo_data.get('formatted_median_income', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Median Income</div>
+                        <div class="comparison-text" style="font-size: 11px; color: #666; line-height: 1.3; margin-top: 3px;">
                             {geo_data.get('income_comparison_state', '')}<br>
                             {geo_data.get('income_comparison_county', '')}
                         </div>
                     </div>
-                    <div class="small-stat-box" style="padding: 8px; transform: scale(0.9); min-width: 160px;">
-                        <div class="small-stat-number" style="font-size: 16px; color: #337ab7;">{geo_data.get('formatted_median_rent', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 12px; line-height: 1.2; color: black;">Median Rent</div>
-                        <div class="comparison-text" style="font-size: 10px; color: #666; line-height: 1.2; margin-top: 2px;">
+                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 160px;">
+                        <div class="small-stat-number" style="font-size: 22px; color: #337ab7; margin-bottom: 3px;">{geo_data.get('formatted_median_rent', 'N/A')}</div>
+                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Median Rent</div>
+                        <div class="comparison-text" style="font-size: 11px; color: #666; line-height: 1.3; margin-top: 3px;">
                             {geo_data.get('rent_comparison_state', '')}<br>
                             {geo_data.get('rent_comparison_county', '')}
                         </div>
                     </div>
                 </div>
                 <div style="clear: both;"></div>
+                
+                <div class="alice-section" style="margin: 20px 0 15px 20px;">
+                    <div class="alice-rate">
+                        <span class="alice-rate-text">{alice_fraction} <span class="percentage-box">({alice_rate})</span> households are employed, yet struggling to make ends meet.</span>
+                        <div class="alice-tooltip">
+                            <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
+                            <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
+                        </div>
+                    </div>
+                </div>
                 <div class="stats-grid">
                     <div>
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
