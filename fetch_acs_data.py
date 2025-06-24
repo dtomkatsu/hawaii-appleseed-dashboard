@@ -250,11 +250,28 @@ class ACSScraper:
             # Calculate percentage
             df['rent_burden_rate'] = (df['rent_burden_households'] / df['rent_total_units'] * 100).round(2)
             
+            # Calculate severe rent burden (50% or more of income on rent)
+            df['severe_rent_burden_rate'] = (df['rent_50_plus_pct'] / df['rent_total_units'] * 100).round(2)
+            
             # Log the calculation for debugging
             logger.debug(f"Calculated rent burden for {len(df)} areas")
+            logger.debug(f"Calculated severe rent burden (50%+) for {len(df)} areas")
         else:
             missing_cols = [col for col in rent_burden_cols + ['rent_total_units'] if col not in df.columns]
             logger.warning(f"Could not calculate rent burden, missing columns: {missing_cols}")
+            
+        # Add owner cost burden if data is available
+        owner_burden_cols = ['owner_30_34_pct', 'owner_35_39_pct', 'owner_40_49_pct', 'owner_50_plus_pct']
+        if all(col in df.columns for col in owner_burden_cols) and 'owner_total_units' in df.columns:
+            # Calculate severe owner cost burden (50% or more of income on housing costs)
+            df['severe_owner_burden_rate'] = (df['owner_50_plus_pct'] / df['owner_total_units'] * 100).round(2)
+            
+            # Calculate combined severe housing cost burden (renters + owners)
+            if 'rent_50_plus_pct' in df.columns and 'rent_total_units' in df.columns:
+                total_severe_burdened = df['rent_50_plus_pct'].fillna(0) + df['owner_50_plus_pct'].fillna(0)
+                total_units = df['rent_total_units'].fillna(0) + df['owner_total_units'].fillna(0)
+                df['severe_housing_burden_rate'] = (total_severe_burdened / total_units.replace(0, float('nan')) * 100).round(2)
+                logger.debug(f"Calculated combined severe housing burden for {len(df)} areas")
         
         return df
 

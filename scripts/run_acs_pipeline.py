@@ -88,25 +88,52 @@ def main():
     try:
         logger.info("Starting ACS data pipeline...")
         
-        # Get API key from environment variable
-        api_key = os.getenv('CENSUS_API_KEY')
-        if not api_key:
-            logger.error("CENSUS_API_KEY environment variable not set")
-            return 1
+        # Use the provided Census API key directly
+        api_key = '2104852dd7bfd83fbc9e320d650eb57decc11817'
         
-        # Initialize the ACS data fetcher
-        acs = ACSDataFetcher(api_key=api_key, year=2019)
+        # Initialize the ACS data fetcher with the API key
+        acs = ACSDataFetcher(api_key=api_key, year=2023)  # Updated to 2023 for more recent data
         
         # Define the variables we want to fetch
         variables = [
+            # Population and poverty
             'B17001_002E',  # Below poverty level (past 12 months)
             'B17001_001E',  # Total population for whom poverty status is determined
+            
+            # Income
             'B19013_001E',  # Median household income
             'B19013_001M',  # Median household income (margin of error)
+            
+            # Education
             'B15003_022E',  # Bachelor's degree or higher (population 25+)
             'B15003_001E',  # Total population 25 years and over
+            
+            # Housing tenure
             'B25003_003E',  # Renter-occupied housing units
-            'B25003_001E'   # Total housing units
+            'B25003_001E',  # Total housing units
+            
+            # Rent burden variables (30%+ of income on rent)
+            'B25070_007E',  # 30.0 to 34.9 percent
+            'B25070_008E',  # 35.0 to 39.9 percent
+            'B25070_009E',  # 40.0 to 49.9 percent
+            'B25070_010E',  # 50.0 percent or more (severe burden)
+            'B25070_001E',  # Total renter-occupied housing units
+            
+            # Owner cost burden variables (30%+ of income on ownership costs)
+            'B25091_008E',  # 30.0 to 34.9 percent (with a mortgage)
+            'B25091_009E',  # 35.0 to 39.9 percent (with a mortgage)
+            'B25091_010E',  # 40.0 to 49.9 percent (with a mortgage)
+            'B25091_011E',  # 50.0 percent or more (with a mortgage, severe burden)
+            'B25092_002E',  # With a mortgage (total)
+            'B25092_003E',  # 30.0 to 34.9 percent (no mortgage)
+            'B25092_004E',  # 35.0 to 39.9 percent (no mortgage)
+            'B25092_005E',  # 40.0 to 49.9 percent (no mortgage)
+            'B25092_006E',  # 50.0 percent or more (no mortgage, severe burden)
+            'B25092_001E',  # Total owner-occupied housing units
+            
+            # Median rent and home values
+            'B25064_001E',  # Median gross rent
+            'B25077_001E'   # Median home value
         ]
         
         logger.info(f"Using {len(variables)} variables")

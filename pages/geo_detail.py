@@ -172,11 +172,24 @@ def prepare_geo_data(geo_data):
     snap_data['estimated_children'] = int(household_count * 2.5 * 0.4) if household_count else 0
     
     # Add housing cost burden data if available
-    if 'housing' in geo_data and 'rent_burden_rate' in geo_data['housing']:
-        rent_burden = geo_data['housing']['rent_burden_rate']
-        geo_data['housing_cost_burden'] = f"{float(rent_burden):.1f}%" if rent_burden is not None else "N/A"
-    else:
-        geo_data['housing_cost_burden'] = "N/A"
+    if 'housing' in geo_data:
+        # Standard housing cost burden (30%+ of income on rent)
+        if 'rent_burden_rate' in geo_data['housing']:
+            rent_burden = geo_data['housing']['rent_burden_rate']
+            geo_data['housing_cost_burden'] = f"{float(rent_burden):.1f}%" if rent_burden is not None else "N/A"
+        else:
+            geo_data['housing_cost_burden'] = "N/A"
+            
+        # Severe housing cost burden (50%+ of income on rent)
+        if 'severe_rent_burden_rate' in geo_data['housing']:
+            severe_rent_burden = geo_data['housing']['severe_rent_burden_rate']
+            geo_data['severe_housing_cost_burden'] = f"{float(severe_rent_burden):.1f}%" if severe_rent_burden is not None else "N/A"
+        # Fallback to combined severe housing burden if available
+        elif 'severe_housing_burden_rate' in geo_data['housing']:
+            severe_burden = geo_data['housing']['severe_housing_burden_rate']
+            geo_data['severe_housing_cost_burden'] = f"{float(severe_burden):.1f}%" if severe_burden is not None else "N/A"
+        else:
+            geo_data['severe_housing_cost_burden'] = "N/A"
     
     # State and county averages (example values - replace with actual data)
     state_avg_income = 83500  # Hawaii state average median income
@@ -1206,7 +1219,8 @@ def generate_fact_sheet_html(geo_data):
                         </h3>
                         <ul class="bullet-points">
                             <li><strong style="color: black;">{geo_data.get('renter_rate', 'N/A')}%</strong> of households are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
-                            <li><strong style="color: black;">{geo_data.get('rent_burden_rate', 'N/A')}%</strong> of renters are considered cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li><strong style="color: black;">{geo_data.get('housing_cost_burden', 'N/A')}</strong> of renters are considered cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li><strong style="color: black;">{geo_data.get('severe_housing_cost_burden', 'N/A')}</strong> of renters are <span style="color: #d62728; font-weight: bold;">severely</span> cost-burdened, spending more than 50% of their income on housing.</li>
                             <li>The median home value in the area is approximately <span class="stat-highlight">{geo_data.get('formatted_median_home_value', 'N/A')}</span>.</li>
                         </ul>
                     </div>
@@ -1218,21 +1232,30 @@ def generate_fact_sheet_html(geo_data):
                         <span class="small-stat-number">50%</span>
                         <div class="small-stat-label">SNAP households with children</div>
                     </div>
-                        <div class="small-stat-box">
-                            <div class="small-stat-number">{geo_data.get('housing_cost_burden', 'N/A')}</div>
-                            <div class="small-stat-label">
-                                <span class="housing-title">Households with housing cost burden</span>
-                                <div class="housing-tooltip">
-                                    <p>A household is considered "housing cost burdened" by the Census if it spends more than 30% of its income on housing expenses, which include rent or mortgage payments, utilities, and related fees.</p>
-                                    <p>If a household spends more than 50% of its income on these costs, it is classified as "severely cost burdened".</p>
-                                </div>
+                    <div class="small-stat-box">
+                        <div class="small-stat-number">
+                            <div>{geo_data.get('housing_cost_burden', 'N/A')}</div>
+                            <div style="font-size: 14px; color: #d62728; margin-top: 5px;">
+                                {geo_data.get('severe_housing_cost_burden', 'N/A')} <span style="font-size: 12px;">(severe)</span>
                             </div>
                         </div>
-                        <div class="small-stat-box">
-                            <span class="small-stat-number">50%</span>
-                            <div class="small-stat-label">SNAP households with older adults</div>
+                        <div class="small-stat-label">
+                            <span class="housing-title">Households with housing cost burden</span>
+                            <div class="housing-tooltip">
+                                <p>A household is considered "housing cost burdened" by the Census if it spends more than 30% of its income on housing expenses, which include rent or mortgage payments, utilities, and related fees.</p>
+                                <p>If a household spends more than 50% of its income on these costs, it is classified as "severely cost burdened".</p>
+                                <p><strong>Top number:</strong> 30%+ of income on housing</p>
+                                <p><strong>Bottom number (red):</strong> 50%+ of income on housing</p>
+                            </div>
                         </div>
-
+                    </div>
+                    <div class="small-stat-box">
+                        <span class="small-stat-number">50%</span>
+                        <div class="small-stat-label">SNAP households with older adults</div>
+                    </div>
+                    <div class="small-stat-box">
+                        <span class="small-stat-number">50%</span>
+                        <div class="small-stat-label">SNAP households with disabilities</div>
                     </div>
                 </div>
                 
