@@ -1176,8 +1176,9 @@ def generate_fact_sheet_html(geo_data):
                     </div>
                 </div>
                 
-                <div class="stats-grid" style="clear: both;">
-                    <div>
+                <div style="display: flex; gap: 20px; margin-bottom: 20px; clear: both;">
+                    <!-- First Column -->
+                    <div style="flex: 1;">
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
                             <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
                             <div class="snap-tooltip">
@@ -1193,11 +1194,30 @@ def generate_fact_sheet_html(geo_data):
                         </ul>
                     </div>
                     
-                    <div class="four-stats">
-                        <div class="small-stat-box">
-                            <span class="small-stat-number">50%</span>
-                            <div class="small-stat-label">SNAP households with children</div>
-                        </div>
+                    <!-- Housing Column -->
+                    <div style="flex: 1;">
+                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
+                            <span class="snap-title">Housing</span>
+                            <div class="snap-tooltip">
+                                <p><strong>Housing</strong> data provides insights into the living conditions and affordability in the area.</p>
+                                <p>This includes information about home ownership, rental rates, housing costs, and the percentage of income that residents spend on housing.</p>
+                                <p>Understanding housing trends helps identify areas where residents may be cost-burdened or at risk of housing instability.</p>
+                            </div>
+                        </h3>
+                        <ul class="bullet-points">
+                            <li><strong style="color: black;">{geo_data.get('renter_rate', 'N/A')}%</strong> of households are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
+                            <li><strong style="color: black;">{geo_data.get('rent_burden_rate', 'N/A')}%</strong> of renters are considered cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li>The median home value in the area is approximately <span class="stat-highlight">{geo_data.get('formatted_median_home_value', 'N/A')}</span>.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Moved Stat Boxes Below -->
+                <div class="four-stats" style="clear: both; margin-top: 20px;">
+                    <div class="small-stat-box">
+                        <span class="small-stat-number">50%</span>
+                        <div class="small-stat-label">SNAP households with children</div>
+                    </div>
                         <div class="small-stat-box">
                             <div class="small-stat-number">{geo_data.get('housing_cost_burden', 'N/A')}</div>
                             <div class="small-stat-label">
