@@ -1101,7 +1101,7 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             /* Housing section specific styles */
-            .bullet-points li:has(strong:contains("renters")):before {{
+            .housing-bullets li:before {{
                 color: #CC5500;  /* Dark orange for housing section */
             }}
             
@@ -1227,7 +1227,7 @@ def generate_fact_sheet_html(geo_data):
                                 <p>Understanding housing trends helps identify areas where residents may be cost-burdened or at risk of housing instability.</p>
                             </div>
                         </h3>
-                        <ul class="bullet-points">
+                        <ul class="bullet-points housing-bullets">
                             <li><strong style="color: black;">{geo_data.get('renter_rate', 'N/A')}%</strong> of households are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
                             <li><strong style="color: black;">{geo_data.get('housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('housing_cost_burden', 'N/A')})</span></strong> are cost-burdened, spending more than 30% of their income on housing.</li>
                             <li><strong style="color: black;">{geo_data.get('severe_housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('severe_housing_cost_burden', 'N/A')})</span></strong> are <span style="color: #d62728; font-weight: bold;">severely</span> cost-burdened, spending more than 50% of their income on housing.</li>
