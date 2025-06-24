@@ -177,19 +177,24 @@ def prepare_geo_data(geo_data):
         if 'rent_burden_rate' in geo_data['housing']:
             rent_burden = geo_data['housing']['rent_burden_rate']
             geo_data['housing_cost_burden'] = f"{float(rent_burden):.1f}%" if rent_burden is not None else "N/A"
+            geo_data['housing_cost_burden_fraction'] = get_fraction_text(rent_burden, "renters") if rent_burden is not None else "N/A"
         else:
             geo_data['housing_cost_burden'] = "N/A"
+            geo_data['housing_cost_burden_fraction'] = "N/A"
             
         # Severe housing cost burden (50%+ of income on rent)
         if 'severe_rent_burden_rate' in geo_data['housing']:
             severe_rent_burden = geo_data['housing']['severe_rent_burden_rate']
             geo_data['severe_housing_cost_burden'] = f"{float(severe_rent_burden):.1f}%" if severe_rent_burden is not None else "N/A"
+            geo_data['severe_housing_cost_burden_fraction'] = get_fraction_text(severe_rent_burden, "renters") if severe_rent_burden is not None else "N/A"
         # Fallback to combined severe housing burden if available
         elif 'severe_housing_burden_rate' in geo_data['housing']:
             severe_burden = geo_data['housing']['severe_housing_burden_rate']
             geo_data['severe_housing_cost_burden'] = f"{float(severe_burden):.1f}%" if severe_burden is not None else "N/A"
+            geo_data['severe_housing_cost_burden_fraction'] = get_fraction_text(severe_burden, "renters") if severe_burden is not None else "N/A"
         else:
             geo_data['severe_housing_cost_burden'] = "N/A"
+            geo_data['severe_housing_cost_burden_fraction'] = "N/A"
     
     # State and county averages (example values - replace with actual data)
     state_avg_income = 83500  # Hawaii state average median income
@@ -1095,6 +1100,11 @@ def generate_fact_sheet_html(geo_data):
                 left: 0;
             }}
             
+            /* Housing section specific styles */
+            .bullet-points li:has(strong:contains("renters")):before {{
+                color: #CC5500;  /* Dark orange for housing section */
+            }}
+            
             .highlight-box {{
                 background-color: #fff3cd;
                 border: 1px solid #ffeaa7;
@@ -1201,7 +1211,7 @@ def generate_fact_sheet_html(geo_data):
                             </div>
                         </h3>
                         <ul class="bullet-points">
-                            <li>Approximately <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span></li>
+                            <li>About <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span></li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
                             <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
                         </ul>
@@ -1219,8 +1229,8 @@ def generate_fact_sheet_html(geo_data):
                         </h3>
                         <ul class="bullet-points">
                             <li><strong style="color: black;">{geo_data.get('renter_rate', 'N/A')}%</strong> of households are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
-                            <li><strong style="color: black;">{geo_data.get('housing_cost_burden', 'N/A')}</strong> of renters are considered cost-burdened, spending more than 30% of their income on housing.</li>
-                            <li><strong style="color: black;">{geo_data.get('severe_housing_cost_burden', 'N/A')}</strong> of renters are <span style="color: #d62728; font-weight: bold;">severely</span> cost-burdened, spending more than 50% of their income on housing.</li>
+                            <li><strong style="color: black;">{geo_data.get('housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('housing_cost_burden', 'N/A')})</span></strong> are cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li><strong style="color: black;">{geo_data.get('severe_housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('severe_housing_cost_burden', 'N/A')})</span></strong> are <span style="color: #d62728; font-weight: bold;">severely</span> cost-burdened, spending more than 50% of their income on housing.</li>
                             <li>The median home value in the area is approximately <span class="stat-highlight">{geo_data.get('formatted_median_home_value', 'N/A')}</span>.</li>
                         </ul>
                     </div>
