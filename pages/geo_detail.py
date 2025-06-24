@@ -905,10 +905,10 @@ def generate_fact_sheet_html(geo_data):
             }}
             
             @media print {{
-                /* Reset print margins and padding */
+                /* Reset print margins for full width */
                 @page {{
-                    size: auto;
-                    margin: 1cm;
+                    size: letter;
+                    margin: 0.5in; /* Reduced margins for more content area */
                 }}
                 
                 /* Hide print button */
@@ -925,27 +925,180 @@ def generate_fact_sheet_html(geo_data):
                     margin: 0 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
+                    width: 100% !important;
                 }}
                 
-                /* Make sure the fact sheet takes full width and has no shadow */
+                /* Make container take full width */
                 .fact-sheet-container {{
                     width: 100% !important;
-                    max-width: 100% !important;
+                    max-width: none !important; /* Remove the 8in constraint */
                     margin: 0 !important;
                     padding: 0 !important;
                     box-shadow: none !important;
                     overflow: visible !important;
                     height: auto !important;
+                    background: white !important;
                 }}
                 
-                /* Ensure fact sheet content is visible */
+                /* Ensure fact sheet content fills available space */
                 .fact-sheet {{
                     width: 100% !important;
-                    max-width: 100% !important;
+                    max-width: none !important;
                     margin: 0 !important;
-                    padding: 0.5cm !important;
+                    padding: 0 !important; /* Remove padding to maximize content area */
                     box-shadow: none !important;
                     break-inside: avoid;
+                    page-break-inside: avoid;
+                }}
+                
+                /* Adjust main content padding for print */
+                .main-content {{
+                    padding: 10px 0 !important; /* Minimal vertical padding */
+                    width: 100% !important;
+                }}
+                
+                /* Make header full width */
+                .header {{
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 10px 20px !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                /* Ensure two-column layout uses full width */
+                .stats-grid {{
+                    width: 100% !important;
+                    grid-template-columns: 1fr 1fr !important; /* Equal columns */
+                    gap: 20px !important;
+                }}
+                
+                /* Four stats grid adjustments */
+                .four-stats {{
+                    width: 100% !important;
+                    grid-template-columns: repeat(4, 1fr) !important; /* Four columns in print */
+                    gap: 10px !important;
+                    margin: 15px 0 !important;
+                }}
+                
+                /* Stat boxes adjustments for print */
+                .small-stat-box {{
+                    padding: 10px !important;
+                    min-height: 70px !important;
+                    transform: none !important; /* Remove scaling */
+                }}
+                
+                /* Adjust the top stat boxes container */
+                .main-content > div:first-child {{
+                    width: 100% !important;
+                    margin: 10px 0 !important;
+                    justify-content: space-around !important;
+                }}
+                
+                /* ALICE section full width */
+                .alice-section {{
+                    max-width: none !important;
+                    width: 90% !important;
+                    margin: 10px auto !important;
+                }}
+                
+                /* Two column layout for SNAP and Housing */
+                .main-content > div[style*="display: flex"] {{
+                    width: 100% !important;
+                    gap: 30px !important;
+                }}
+                
+                /* Bullet points optimization */
+                .bullet-points {{
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }}
+                
+                .bullet-points li {{
+                    margin-bottom: 10px !important;
+                    padding: 5px 5px 5px 20px !important;
+                    page-break-inside: avoid !important;
+                }}
+                
+                /* Impact section */
+                .impact-section {{
+                    width: 100% !important;
+                    margin: 15px 0 !important;
+                }}
+                
+                /* Highlight box */
+                .highlight-box {{
+                    width: 100% !important;
+                    margin: 15px 0 !important;
+                    padding: 10px !important;
+                }}
+                
+                /* Strengthen section */
+                .strengthen-section {{
+                    width: 100% !important;
+                    margin: 15px 0 !important;
+                    padding: 10px !important;
+                }}
+                
+                /* Call to action */
+                .call-to-action {{
+                    width: 100% !important;
+                    margin: 15px 0 !important;
+                    padding: 10px !important;
+                }}
+                
+                /* Footer */
+                .footer {{
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 8px !important;
+                }}
+                
+                /* Prevent page breaks inside important sections */
+                .stats-grid, .four-stats, .bullet-points li, 
+                .impact-section, .highlight-box, .strengthen-section {{
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                }}
+                
+                /* Ensure text is black for better print contrast */
+                *:not(.header):not(.header *):not(.header-content):not(.header-content *) {{
+                    color: #000 !important;
+                }}
+                
+                /* Keep header elements white */
+                .header,
+                .header *,
+                .header-content,
+                .header-content *,
+                .logo-container {{
+                    color: #fff !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                /* Hide tooltips in print */
+                .alice-tooltip,
+                .snap-tooltip,
+                .housing-tooltip {{
+                    display: none !important;
+                }}
+                
+                /* Font size adjustments for better print readability */
+                body {{
+                    font-size: 11pt !important;
+                }}
+                
+                .header-content {{
+                    font-size: 24pt !important;
+                }}
+                
+                .small-stat-number {{
+                    font-size: 20pt !important;
+                }}
+                
+                .impact-title {{
+                    font-size: 14pt !important;
                 }}
                 
                 /* Prevent page breaks inside important sections */
@@ -972,11 +1125,6 @@ def generate_fact_sheet_html(geo_data):
                 a {{
                     text-decoration: underline !important;
                 }}
-            }}
-            
-            @page {{
-                size: letter;
-                margin: 0.5in;
             }}
             
             .main-content {{
