@@ -560,40 +560,6 @@ def generate_fact_sheet_html(geo_data):
                 border: 1px solid #D4AF37;
                 font-size: 0.8em;
                 max-width: 50%;
-                text-align: center;
-                border-radius: 3px;
-                position: relative;
-            }}
-            
-            .alice-rate {{
-                font-size: 16px;
-                font-weight: normal;
-                margin: 2px 0;
-                text-align: center;
-                color: #000;
-                line-height: 1.3;
-                position: relative;
-                display: inline-block;
-            }}
-            
-            .alice-rate-text {{
-                font-weight: 700;
-                border-bottom: 1px dotted #2A3B72;
-                cursor: pointer;
-                position: relative;
-                color: white;
-                padding: 1px 6px;
-                border-radius: 3px;
-                font-weight: bold;
-                margin-left: 4px;
-                font-size: 0.95em;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-                background-color: #2A3B72;
-            }}
-            
-            .percentage-box {{
-                font-size: 0.8em;
-                font-weight: normal;
                 color: white;
                 margin-left: 4px;
                 padding: 1px 4px;
@@ -781,6 +747,49 @@ def generate_fact_sheet_html(geo_data):
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+            }}
+            
+            .alice-section {{
+                background-color: #f8f9fa;
+                color: #000;
+                padding: 12px 15px;
+                margin: 20px 20px 15px 0;
+                border: 1px solid #e0e0e0;
+                font-size: 0.95em;
+                max-width: 400px;
+                text-align: right;
+                border-radius: 5px;
+                float: right;
+                clear: both;
+            }}
+            
+            .alice-rate {{
+                font-size: 15px;
+                font-weight: normal;
+                margin: 0 auto;
+                text-align: center;
+                color: #333;
+                line-height: 1.4;
+                position: relative;
+                display: block;
+                max-width: 100%;
+            }}
+            
+            .alice-rate-text {{
+                font-weight: 500;
+                cursor: pointer;
+                position: relative;
+                color: #333;
+                padding: 0;
+                margin: 0;
+                font-size: 1em;
+                line-height: 1.4;
+            }}
+            
+            .percentage-box {{
+                font-weight: 600;
+                color: #2A3B72;
+                margin: 0 2px;
             }}
             
             .logo {{
@@ -1108,18 +1117,21 @@ def generate_fact_sheet_html(geo_data):
                         </div>
                     </div>
                 </div>
-                <div style="clear: both;"></div>
+                </div> <!-- Close the flex container for stat boxes -->
                 
-                <div class="alice-section" style="margin: 20px 0 15px 20px;">
-                    <div class="alice-rate">
-                        <span class="alice-rate-text">{alice_fraction} <span class="percentage-box">({alice_rate})</span> households are employed, yet struggling to make ends meet.</span>
-                        <div class="alice-tooltip">
-                            <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
-                            <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
+                <div style="width: 100%; margin: 15px 0;">
+                    <div style="margin: 0 auto; max-width: 600px; text-align: center; padding: 12px 15px; background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 5px;">
+                        <div style="font-size: 15px; color: #333; line-height: 1.4;">
+                            <span>{alice_fraction} <span style="font-weight: 600; color: #2A3B72;">({alice_rate})</span> households are employed, yet struggling to make ends meet.</span>
+                            <div style="display: none; position: absolute; background: white; border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                                <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
+                                <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="stats-grid">
+                
+                <div class="stats-grid" style="clear: both;">
                     <div>
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
                             <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
