@@ -312,10 +312,22 @@ def get_parent_geography_data(geo_id: str) -> dict:
     
     return None
 
-def generate_fact_sheet_html(geo_data):
-    """Generate the SNAP fact sheet HTML with all styles and scripts inline."""
-    # Extract and format geo name
+def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
+    """Generate HTML content for the SNAP fact sheet."""
+    # Debug: Log the incoming geo_data structure
+    import json
+    print("\n=== DEBUG: RAW GEO DATA ===")
+    print(json.dumps(geo_data, indent=2, default=str))
+    
+    # Get data from geo_data
     geo_name = geo_data.get('name', 'Hawaii')
+    geo_type = geo_data.get('type', 'area')
+    
+    # Get economic data with debug info
+    econ_data = geo_data.get('economic', {})
+    print("\n=== DEBUG: ECONOMIC DATA ===")
+    print(f"ALICE rate: {econ_data.get('alice_rate')} (type: {type(econ_data.get('alice_rate'))})")
+    print(f"All economic data keys: {list(econ_data.keys())}")
     
     # Simplify county names
     if ', Hawaii' in geo_name:

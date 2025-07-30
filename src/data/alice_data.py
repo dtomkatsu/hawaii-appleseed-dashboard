@@ -80,22 +80,44 @@ class ALICEDataLoader:
             float: The ALICE rate as a decimal (e.g., 0.35 for 35%), or None if not found
         """
         if geo_level not in self.data:
+            logger.warning(f"No data found for geo_level: {geo_level}")
             return None
             
         df = self.data[geo_level]
+        logger.info(f"Looking for location: {location_name} in {geo_level}. Available locations: {df['name'].tolist()}")
         
         # Try exact match first
         result = df[df['name'].str.lower() == location_name.lower()]
         
         # If no match, try partial match
         if len(result) == 0:
+            logger.info(f"No exact match for {location_name}, trying partial match")
             result = df[df['name'].str.lower().str.contains(location_name.lower())]
         
         if len(result) > 0:
+            logger.info(f"Found {len(result)} matches for {location_name}")
             # Get the first column that contains 'percentage' or 'alice'
             for col in result.columns:
-                if 'percentage' in col or 'alice' in col:
-                    return result[col].iloc[0]
+                if any(x in col.lower() for x in ['percentage', 'alice', 'rate']):
+                    value = result[col].iloc[0]
+                    logger.info(f"Found ALICE rate column: {col} with value: {value}")
+                    # Convert to decimal if it's a percentage (e.g., 35% -> 0.35)
+                    if isinstance(value, str) and '%' in value:
+                        try:
+                            return float(value.strip('%')) / 100
+                        except (ValueError, TypeError):
+                            logger.error(f"Could not convert ALICE rate value: {value}")
+                            return None
+                    # If it's already a float, ensure it's in decimal format
+                    elif isinstance(value, (int, float)):
+                        if value > 1.0:  # If it's a whole number percentage (e.g., 35 for 35%)
+                            return value / 100
+                        return value  # Already in decimal format
+                    return value
+            
+            logger.warning(f"No ALICE rate column found in result columns: {result.columns.tolist()}")
+        else:
+            logger.warning(f"No match found for location: {location_name} in {geo_level}")
         
         return None
 
