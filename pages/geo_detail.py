@@ -517,7 +517,12 @@ def generate_fact_sheet_html(geo_data):
     """
     
     # Convert logo to base64
-    logo_path = "/Users/dtomkatsu/Downloads/Leaf only.png"
+    # Use a path relative to the project root
+    import os
+    logo_path = os.path.join(os.path.dirname(__file__), "..", "static", "images", "leaf_only.png")
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(os.path.dirname(logo_path), exist_ok=True)
     with open(logo_path, "rb") as img_file:
         logo_base64 = base64.b64encode(img_file.read()).decode('utf-8')
     
