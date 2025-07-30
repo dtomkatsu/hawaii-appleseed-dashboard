@@ -1,10 +1,40 @@
 """Geographic Detail Page for Hawaii Appleseed Dashboard."""
 import base64
+import json
+import os
+from typing import Dict, Any, Optional
 import streamlit as st
-from streamlit.components.v1 import html
 import pandas as pd
 import numpy as np
 from pathlib import Path
+
+def get_image_base64(image_path: str) -> str:
+    """Get base64 encoded image or return empty string if not found."""
+    try:
+        # Try direct path first
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode('utf-8')
+        
+        # Try relative to the script directory
+        script_dir = Path(__file__).parent.absolute()
+        rel_path = script_dir / image_path
+        if os.path.exists(rel_path):
+            with open(rel_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode('utf-8')
+                
+        # Try relative to the project root
+        root_path = script_dir.parent / image_path
+        if os.path.exists(root_path):
+            with open(root_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode('utf-8')
+        
+        print(f"Warning: Image not found at {image_path}")
+        return ""
+    except Exception as e:
+        print(f"Error loading image {image_path}: {e}")
+        return ""
+
 import sys
 
 # Add the src directory to the path
@@ -516,15 +546,10 @@ def generate_fact_sheet_html(geo_data):
     setTimeout(initTooltips, 500);
     """
     
-    # Convert logo to base64
-    # Use a path relative to the project root
-    import os
-    logo_path = os.path.join(os.path.dirname(__file__), "..", "static", "images", "leaf_only.png")
-    
-    # Create the directory if it doesn't exist
-    os.makedirs(os.path.dirname(logo_path), exist_ok=True)
-    with open(logo_path, "rb") as img_file:
-        logo_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+    # Load and encode the logo
+    logo_path = "static/images/leaf_only.png"
+    logo_base64 = get_image_base64(logo_path)
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo" alt="Logo">' if logo_base64 else ''
     
     return f"""
     <!DOCTYPE html>
@@ -1305,7 +1330,7 @@ def generate_fact_sheet_html(geo_data):
             <div class="fact-sheet">
             <div class="header">
                 <div class="logo-container">
-                    <img src="data:image/png;base64,{logo_base64}" alt="Logo" class="logo">
+                    {logo_html}
                 </div>
                 <div class="header-content">
                     <h1 style="margin: 0; font-size: 28px; line-height: 1.2; flex-grow: 1; text-transform: none;">{geo_name}</h1>
@@ -1454,11 +1479,39 @@ def generate_fact_sheet_html(geo_data):
     </html>
     """
 
-def display_snap_fact_sheet(geo_data):
-    """Display the SNAP fact sheet HTML with dynamic data."""
-    html_content = generate_fact_sheet_html(geo_data)
-    # Remove fixed height and scrolling to use the parent container's scroll
-    html(html_content, height=None, scrolling=False)
+def display_snap_fact_sheet(geo_data: Dict[str, Any], show_errors: bool = True):
+    """Display the SNAP fact sheet with the given geographic data.
+    
+    Args:
+        geo_data: Dictionary containing geographic data
+        show_errors: Whether to show error messages (set to False for fallback display)
+    """
+    try:
+        # Generate the HTML content for the fact sheet
+        html_content = generate_fact_sheet_html(geo_data)
+        
+        # Display the HTML content in Streamlit
+        st.components.v1.html(html_content, height=1200, scrolling=True)
+    except FileNotFoundError as e:
+        if show_errors:
+            st.warning("Could not find a required resource. Some images might not display correctly.")
+            st.error(f"Resource not found: {e}")
+        # Fallback to a simpler display if the main fact sheet fails
+        st.markdown(f"""
+        ## SNAP Fact Sheet
+        ### {geo_data.get('name', 'Hawaii')}
+        
+        *Note: Some resources could not be loaded. This is a simplified view.*
+        
+        **Population:** {format_number(geo_data.get('total_population', 0))}  
+        **Median Household Income:** {format_currency(geo_data.get('median_household_income', 0))}  
+        **Poverty Rate:** {format_number(geo_data.get('poverty_rate', 0), is_percent=True)}  
+        **ALICE Households:** {format_number(geo_data.get('economic', {}).get('alice_rate', 0), is_percent=True)}
+        """)
+    except Exception as e:
+        if show_errors:
+            st.error(f"Error generating fact sheet: {e}")
+            st.exception(e)
 
 def display_geo_data(geo_id: str):
     """Display the SNAP fact sheet for a specific geographic area."""
@@ -1476,9 +1529,14 @@ def display_geo_data(geo_id: str):
         # Display the fact sheet
         display_snap_fact_sheet(geo_data)
         
+    except FileNotFoundError as e:
+        st.warning("Could not find a required resource. Some images or data might not display correctly.")
+        st.error(f"Resource not found: {e}")
+        # Continue with the rest of the page
+        display_snap_fact_sheet(geo_data, show_errors=False)
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
-        st.exception(e)
+        st.error(f"Error loading data: {e}")
+        st.exception(e)  # This will show the full traceback for debugging
 
 def main():
     """Main function for the geographic detail page."""
