@@ -527,11 +527,37 @@ class SNAPDataLoader(BaseDataLoader):
     
     def _fix_geoid(self, geoid_str: str) -> str:
         """Fix geoid format for districts."""
-        geoid_str = str(geoid_str)
+        geoid_str = str(geoid_str).strip()
+        
+        # Handle house district format (e.g., 'H1' -> '15001')
+        if geoid_str.startswith('H'):
+            try:
+                district_num = int(geoid_str[1:])
+                return f'15{district_num:03d}'
+            except (ValueError, IndexError):
+                pass
+        
+        # Handle senate district format (e.g., 'S1' -> '150001')
+        elif geoid_str.startswith('S'):
+            try:
+                district_num = int(geoid_str[1:])
+                return f'15{district_num:03d}'
+            except (ValueError, IndexError):
+                pass
+        
+        # Handle numeric district IDs (e.g., '1001' -> '151001')
+        elif geoid_str.isdigit():
+            if len(geoid_str) == 4:  # State + 2-digit district
+                return f'15{geoid_str}'
+            elif len(geoid_str) == 5:  # State + 3-digit district
+                return f'15{geoid_str[2:]}'  # Remove state FIPS if present
+        
+        # Handle existing FIPS patterns
         if len(geoid_str) == 4 and geoid_str.startswith('15'):
             return geoid_str[:2] + '0' + geoid_str[2:]
         elif len(geoid_str) == 5 and geoid_str.startswith('0'):
             return '15' + geoid_str[3:]
+            
         return geoid_str
 
 
@@ -699,25 +725,78 @@ class GeoJSONProcessor:
         return None
     
     def _find_district_match(self, properties: dict, data: pd.DataFrame) -> Optional[dict]:
-        """Find matching district data."""
+        """Find matching district data with improved matching logic."""
+        # Try to get district number from various possible property names
         district_num = None
         
-        for field in ['DISTRICT', 'house_id', 'senate_id', 'district']:
-            if field in properties:
-                district_num = properties[field]
+        # Check for common district ID fields in properties
+        for field in ['DISTRICT', 'house_id', 'senate_id', 'district', 'DISTRICT_NUM', 'DISTRICT_ID']:
+            if field in properties and properties[field] is not None:
+                district_num = str(properties[field]).strip()
                 break
         
-        if district_num is None:
+        if not district_num:
             return None
         
-        # Try matching on different columns
-        for col in ['district', 'state legislative district (lower chamber)',
-                   'state legislative district (upper chamber)']:
+        # Clean up the district number (remove any non-numeric prefixes/suffixes)
+        import re
+        match = re.search(r'\d+', district_num)
+        if match:
+            district_num = match.group(0)
+        
+        # Try to match on various possible column names
+        possible_columns = [
+            'district', 
+            'state legislative district (lower chamber)',
+            'state legislative district (upper chamber)',
+            'state_house',
+            'state_senate',
+            'house_district',
+            'senate_district',
+            'geoid',
+            'GEOID',
+            'id',
+            'ID',
+            'fips',
+            'FIPS'
+        ]
+        
+        # First try exact matches
+        for col in possible_columns:
             if col in data.columns:
-                matches = data[data[col] == district_num]
+                # Convert to string and strip whitespace for comparison
+                data_col = data[col].astype(str).str.strip()
+                matches = data[data_col == district_num]
                 if len(matches) > 0:
                     return matches.iloc[0].to_dict()
         
+        # If no exact match, try partial matches (e.g., '1' matches 'H1' or 'S1')
+        for col in possible_columns:
+            if col in data.columns:
+                # Convert to string and extract numbers for comparison
+                data_col = data[col].astype(str).str.extract('(\d+)')[0]
+                matches = data[data_col == district_num]
+                if len(matches) > 0:
+                    return matches.iloc[0].to_dict()
+        
+        # If still no match, try to match the last 1-3 digits of GEOID
+        if 'geoid' in data.columns:
+            try:
+                # Try to match the last 1-3 digits of the GEOID
+                data['geoid_str'] = data['geoid'].astype(str).str.strip()
+                matches = data[data['geoid_str'].str.endswith(district_num)]
+                if len(matches) > 0:
+                    return matches.iloc[0].to_dict()
+                
+                # Try to match just the district number part
+                data['district_part'] = data['geoid_str'].str.extract('(\d{1,3})$')
+                matches = data[data['district_part'] == district_num]
+                if len(matches) > 0:
+                    return matches.iloc[0].to_dict()
+            except Exception as e:
+                logger.warning(f"Error matching district by GEOID: {e}")
+        
+        logger.warning(f"Could not find matching district data for district_num: {district_num}")
         return None
     
     def _add_data_to_properties(self, properties: dict, data: dict):
@@ -903,63 +982,182 @@ class DataLoader:
             "tax_credits": {}
         }
         
-        print(f"DEBUG: Getting data for geo_id: {geo_id}")
+        print(f"\n=== DEBUG: Getting data for geo_id: {geo_id} ===")
         
         try:
             geo_level = self._determine_geo_level(geo_id)
             if not geo_level:
                 logger.warning(f"Could not determine geo level for ID: {geo_id}")
                 return result
+                
+            print(f"DEBUG: Determined geo_level: {geo_level}")
             
             # Get merged data for the geographic level
             data = self.get_data(geo_level.value)
             if data is None or data.empty:
                 logger.warning(f"No data available for {geo_level.value}")
                 return result
+                
+            print(f"DEBUG: Loaded data with {len(data)} rows and columns: {data.columns.tolist()}")
             
             # Find the specific geography
-            print(f"DEBUG: Looking for geo_id: {geo_id} in data")
-            print(f"DEBUG: Available geoids: {data['geoid'].head().tolist()}")
+            print(f"\nDEBUG: Looking for geo_id: {geo_id} in data")
+            print(f"DEBUG: First 10 geoids: {data['geoid'].head(10).tolist() if 'geoid' in data.columns else 'No geoid column'}")
             
-            geo_row = data[data['geoid'] == str(geo_id)]
+            # Try exact match first
+            geo_row = data[data['geoid'].astype(str) == str(geo_id)]
+            
+            # If no exact match, try more flexible matching for districts
+            if geo_row.empty and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
+                print(f"DEBUG: No exact match for {geo_id}, trying flexible matching...")
+                # Try matching just the district number part
+                district_num = str(geo_id)[-3:] if len(str(geo_id)) >= 3 else str(geo_id)
+                print(f"DEBUG: Trying to match district number: {district_num}")
+                
+                # Try matching the last 3 digits of the geoid
+                data['geoid_str'] = data['geoid'].astype(str)
+                geo_row = data[data['geoid_str'].str.endswith(district_num)]
+                
+                # If still no match, try extracting just the numeric part
+                if geo_row.empty:
+                    print("DEBUG: Trying to extract numeric part from geoid")
+                    data['district_num'] = data['geoid_str'].str.extract('(\d{1,3})$')
+                    geo_row = data[data['district_num'] == district_num]
+            
             if geo_row.empty:
                 logger.warning(f"No data found for geography ID: {geo_id}")
                 print(f"DEBUG: Could not find geo_id: {geo_id} in data")
+                print(f"DEBUG: Sample of available geoids: {data['geoid'].head().tolist() if 'geoid' in data.columns else 'No geoid column'}")
                 return result
                 
-            print(f"DEBUG: Found matching row. Columns: {geo_row.columns.tolist()}")
-            if 'median_rent' in geo_row.columns:
-                print(f"DEBUG: median_rent value: {geo_row['median_rent'].values[0]}")
-            else:
-                print("DEBUG: median_rent column not found in the row")
+            print(f"\nDEBUG: Found {len(geo_row)} matching row(s).")
+            print(f"DEBUG: Matching row data: {geo_row.iloc[0].to_dict() if not geo_row.empty else 'No data'}")
+            
+            # Log available columns for debugging
+            if not geo_row.empty:
+                print("\nDEBUG: Available columns in the matched row:")
+                for col in sorted(geo_row.columns):
+                    if col not in ['geoid', 'geoid_str', 'district_num']:  # Skip debug columns
+                        print(f"  - {col}: {geo_row[col].values[0] if col in geo_row.columns else 'N/A'}")
             
             geo_row = geo_row.iloc[0]
             result = self._build_geography_result(result, geo_row)
             
+            # Debug the built result
+            print("\nDEBUG: Built result structure:")
+            for key, value in result.items():
+                if isinstance(value, dict):
+                    print(f"  - {key}: {list(value.keys())}")
+                else:
+                    print(f"  - {key}: {value}")
+            
         except Exception as e:
             logger.error(f"Error getting data for geography {geo_id}: {e}")
+            import traceback
+            print(f"ERROR: {str(e)}\n{traceback.format_exc()}")
         
+        print("=== End of debug output ===\n")
         return result
     
     def _determine_geo_level(self, geo_id: str) -> Optional[GeoLevel]:
-        """Determine geographic level from ID length."""
-        geo_level_map = {
-            2: GeoLevel.STATE,
-            5: GeoLevel.COUNTY,
-            7: GeoLevel.HOUSE,
-            8: GeoLevel.SENATE
-        }
-        return geo_level_map.get(len(str(geo_id)))
+        """Determine geographic level from ID length and format."""
+        geo_id_str = str(geo_id)
+        geo_id_len = len(geo_id_str)
+        
+        print(f"DEBUG: Determining geo level for ID: {geo_id_str} (length: {geo_id_len})")
+        
+        if geo_id_len == 2:
+            return GeoLevel.STATE
+        elif geo_id_len == 5:
+            # Need to distinguish between county and house district
+            # There's a conflict: some house districts have the same geoids as counties
+            # Counties: 15001 (Hawaii), 15003 (Honolulu), 15007 (Kauai), 15009 (Maui)
+            # House districts: 15001-15051
+            
+            # Try both levels and see which one has data
+            print(f"DEBUG: 5-digit ID {geo_id_str} - checking both county and house data")
+            
+            # First check if it's a known county code
+            county_codes = {'15001', '15003', '15007', '15009'}
+            
+            if geo_id_str in county_codes:
+                # This could be either a county or a house district with conflicting ID
+                # Check which data source has this ID
+                try:
+                    # Try to load house district data first (more specific)
+                    house_data = self.get_data('house')
+                    if house_data is not None and not house_data.empty:
+                        house_match = house_data[house_data['geoid'].astype(str) == geo_id_str]
+                        if not house_match.empty:
+                            print(f"DEBUG: Found {geo_id_str} in HOUSE data")
+                            return GeoLevel.HOUSE
+                    
+                    # Try county data
+                    county_data = self.get_data('county')
+                    if county_data is not None and not county_data.empty:
+                        county_match = county_data[county_data['geoid'].astype(str) == geo_id_str]
+                        if not county_match.empty:
+                            print(f"DEBUG: Found {geo_id_str} in COUNTY data")
+                            return GeoLevel.COUNTY
+                    
+                    # Default to house district if both or neither found
+                    print(f"DEBUG: Defaulting to HOUSE district for {geo_id_str}")
+                    return GeoLevel.HOUSE
+                    
+                except Exception as e:
+                    print(f"DEBUG: Error checking data sources: {e}")
+                    # Default to house district
+                    return GeoLevel.HOUSE
+            else:
+                # Not a conflicting county code, assume house district
+                print(f"DEBUG: Identified as HOUSE district: {geo_id_str}")
+                return GeoLevel.HOUSE
+        elif geo_id_len == 6:
+            # 6-digit IDs are house districts (15001X format)
+            return GeoLevel.HOUSE
+        elif geo_id_len == 7:
+            return GeoLevel.HOUSE
+        elif geo_id_len == 8:
+            return GeoLevel.SENATE
+        
+        print(f"DEBUG: Could not determine geo level for ID: {geo_id_str}")
+        return None
     
     def _build_geography_result(self, result: Dict[str, Any], geo_row: pd.Series) -> Dict[str, Any]:
         """Build the result dictionary from a geography data row."""
-        print(f"Debug - Raw geo_row columns: {geo_row.index.tolist()}")  # Debug: Print all available columns
+        print("\n=== DEBUG: Building geography result ===")
         
+        # Get all available columns for debugging
+        all_columns = geo_row.index.tolist()
+        print(f"DEBUG: All available columns in geo_row: {all_columns}")
+        
+        # Log values of interest for debugging
+        columns_of_interest = [
+            'NAME', 'geoid', 'median_rent', 'median_home_value', 'homeownership_rate',
+            'renter_rate', 'rent_burden_rate', 'severe_rent_burden_rate',
+            'snap_household_rate', 'snap_benefit_annual_per_household',
+            'snap_benefits_annual_total', 'total_population', 'median_income',
+            'poverty_rate', 'unemployment_rate', 'alice_rate'
+        ]
+        
+        print("\nDEBUG: Values of interest:")
+        for col in columns_of_interest:
+            if col in geo_row:
+                print(f"  - {col}: {geo_row[col]}")
+        
+        # Set the name with a fallback
         result['name'] = geo_row.get('NAME', f"Geography {result['id']}")
         
-        # Log median_rent value if it exists
+        # Extract all values using _safe_get to handle missing values
         median_rent = self._safe_get(geo_row, 'median_rent')
-        print(f"Debug - Raw median_rent value: {median_rent}")  # Debug: Print raw median_rent value
+        median_home_value = self._safe_get(geo_row, 'median_home_value')
+        homeownership_rate = self._safe_get(geo_row, 'homeownership_rate')
+        renter_rate = self._safe_get(geo_row, 'renter_rate')
+        
+        print(f"\nDEBUG: Extracted housing values - median_rent: {median_rent}, "
+              f"median_home_value: {median_home_value}, "
+              f"homeownership_rate: {homeownership_rate}, "
+              f"renter_rate: {renter_rate}")
         
         # Demographics
         result['demographics'] = {
@@ -984,15 +1182,13 @@ class DataLoader:
         
         # Housing indicators
         result['housing'] = {
-            'median_home_value': self._safe_get(geo_row, 'median_home_value'),
-            'median_rent': median_rent,  # Use the value we already retrieved
-            'homeownership_rate': self._safe_get(geo_row, 'homeownership_rate'),
-            'renter_rate': self._safe_get(geo_row, 'renter_rate'),  # Add renter rate
+            'median_home_value': median_home_value,
+            'median_rent': median_rent,
+            'homeownership_rate': homeownership_rate,
+            'renter_rate': renter_rate,
             'rent_burden_rate': self._safe_get(geo_row, 'rent_burden_rate'),
             'severe_rent_burden_rate': self._safe_get(geo_row, 'severe_rent_burden_rate')
         }
-        
-        print(f"Debug - Final housing data: {result['housing']}")  # Debug: Print final housing data
         
         # SNAP data
         result['snap'] = {
@@ -1001,12 +1197,62 @@ class DataLoader:
             'snap_benefits_annual_total': self._safe_get(geo_row, 'snap_benefits_annual_total')
         }
         
+        # Log the final result structure
+        print("\nDEBUG: Final result structure:")
+        for section, values in result.items():
+            if isinstance(values, dict):
+                print(f"  - {section}: {list(values.keys())}")
+                if section in ['demographics', 'economic', 'housing', 'snap']:
+                    for key, value in values.items():
+                        if isinstance(value, dict):
+                            print(f"    - {key}: {list(value.keys())}")
+                        else:
+                            print(f"    - {key}: {value}")
+            else:
+                print(f"  - {section}: {values}")
+        
+        print("=== End of building geography result ===\n")
         return result
     
     def _safe_get(self, series: pd.Series, key: str, default: Any = None) -> Any:
-        """Safely get a value from a pandas Series, handling NaN values."""
+        """
+        Safely get a value from a pandas Series, handling NaN and None values.
+        
+        Args:
+            series: The pandas Series to get the value from
+            key: The key to look up in the Series
+            default: The default value to return if the key is not found or the value is NaN/None
+            
+        Returns:
+            The value from the Series, or the default value if the key is not found or the value is NaN/None
+        """
+        # Debug: Log the key being looked up
+        debug = False  # Set to True to enable debug logging for this method
+        
+        if debug:
+            print(f"\nDEBUG: _safe_get - Looking up key: {key}")
+            print(f"DEBUG: _safe_get - Available keys: {series.index.tolist() if hasattr(series, 'index') else 'N/A'}")
+        
+        # Check if the key exists in the Series
+        if key not in series:
+            if debug:
+                print(f"DEBUG: _safe_get - Key '{key}' not found in Series. Returning default: {default}")
+            return default
+        
+        # Get the value
         value = series.get(key, default)
-        return None if pd.isna(value) else value
+        
+        # Handle None/NaN values
+        if value is None or (hasattr(value, '__len__') and len(value) == 0) or (pd.isna(value) if hasattr(pd, 'isna') and hasattr(value, '__array__') else False):
+            if debug:
+                print(f"DEBUG: _safe_get - Value for key '{key}' is None/NaN/empty. Returning default: {default}")
+            return default
+        
+        # Debug: Log the value that will be returned
+        if debug:
+            print(f"DEBUG: _safe_get - Found value for key '{key}': {value}")
+        
+        return value
     
     def get_available_variables(self) -> Dict[str, str]:
         """Get available variables and their display names."""

@@ -203,9 +203,55 @@ def prepare_geo_data(geo_data):
     
     # Add housing cost burden data if available
     if 'housing' in geo_data:
+        print(f"DEBUG: Housing data available: {geo_data['housing']}")
+            
+        # Process median rent
+        if 'median_rent' in geo_data['housing']:
+            median_rent = geo_data['housing']['median_rent']
+            print(f"DEBUG: Raw median_rent from housing: {median_rent} (type: {type(median_rent)})")
+                
+            if median_rent is not None:
+                try:
+                    # Format as currency
+                    geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
+                    print(f"DEBUG: Formatted median_rent: {geo_data['formatted_median_rent']}")
+                except (ValueError, TypeError) as e:
+                    print(f"DEBUG: Error formatting median_rent: {e}")
+                    geo_data['formatted_median_rent'] = str(median_rent)
+            else:
+                geo_data['formatted_median_rent'] = "N/A"
+                print("DEBUG: median_rent is None")
+        else:
+            print("DEBUG: median_rent not found in housing data")
+            geo_data['formatted_median_rent'] = "N/A"
+            
         # Move renter_rate to top level for easy access in the template
         if 'renter_rate' in geo_data['housing']:
-            geo_data['renter_rate'] = geo_data['housing']['renter_rate']
+            raw_renter_rate = geo_data['housing']['renter_rate']
+            print(f"DEBUG: Raw renter_rate from housing: {raw_renter_rate} (type: {type(raw_renter_rate)})")
+                
+            # Format the renter_rate as a percentage if it's a decimal
+            if raw_renter_rate is not None:
+                try:
+                    # Convert to float and format as percentage
+                    renter_rate_float = float(raw_renter_rate)
+                    # If the value is between 0 and 1, assume it's a decimal that needs to be converted to percentage
+                    if 0 <= renter_rate_float <= 1:
+                        formatted_renter_rate = renter_rate_float * 100
+                    else:
+                        formatted_renter_rate = renter_rate_float
+                        
+                    geo_data['renter_rate'] = round(formatted_renter_rate, 1)
+                    print(f"DEBUG: Formatted renter_rate: {geo_data['renter_rate']}")
+                except (ValueError, TypeError) as e:
+                    print(f"DEBUG: Error formatting renter_rate: {e}")
+                    geo_data['renter_rate'] = raw_renter_rate
+            else:
+                geo_data['renter_rate'] = None
+                print("DEBUG: renter_rate is None")
+        else:
+            print("DEBUG: renter_rate not found in housing data")
+            geo_data['renter_rate'] = None
         
         # Standard housing cost burden (30%+ of income on rent)
         if 'rent_burden_rate' in geo_data['housing']:
@@ -264,9 +310,10 @@ def prepare_geo_data(geo_data):
         print("Debug - housing keys:", list(geo_data['housing'].keys()))  # Debug: Print housing keys
         print("Debug - housing values:", {k: v for k, v in geo_data['housing'].items()})  # Debug: Print housing values
     
-    if 'housing' in geo_data and 'median_rent' in geo_data['housing']:
+    # Process median rent comparison if not already done
+    if 'housing' in geo_data and 'median_rent' in geo_data['housing'] and 'formatted_median_rent' not in geo_data:
         median_rent = geo_data['housing']['median_rent']
-        print(f"Debug - Raw median_rent value: {median_rent} (type: {type(median_rent)})")  # Debug: Print raw value and type
+        print(f"Debug - Raw median_rent value for comparison: {median_rent} (type: {type(median_rent)})")  # Debug: Print raw value and type
         
         if median_rent is not None and not (isinstance(median_rent, float) and np.isnan(median_rent)):
             geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
@@ -322,6 +369,15 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     import json
     print("\n=== DEBUG: RAW GEO DATA ===")
     print(json.dumps(geo_data, indent=2, default=str))
+    
+    # Debug: Log specific values that are being used in the template
+    print("\n=== DEBUG: TEMPLATE VALUES ===")
+    print(f"renter_rate: {geo_data.get('renter_rate', 'NOT_FOUND')}")
+    print(f"formatted_median_rent: {geo_data.get('formatted_median_rent', 'NOT_FOUND')}")
+    print(f"housing data: {geo_data.get('housing', 'NOT_FOUND')}")
+    if 'housing' in geo_data:
+        print(f"housing.median_rent: {geo_data['housing'].get('median_rent', 'NOT_FOUND')}")
+        print(f"housing.renter_rate: {geo_data['housing'].get('renter_rate', 'NOT_FOUND')}")
     
     # Get data from geo_data
     geo_name = geo_data.get('name', 'Hawaii')
