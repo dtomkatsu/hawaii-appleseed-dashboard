@@ -987,6 +987,7 @@ class DataLoader:
             'median_home_value': self._safe_get(geo_row, 'median_home_value'),
             'median_rent': median_rent,  # Use the value we already retrieved
             'homeownership_rate': self._safe_get(geo_row, 'homeownership_rate'),
+            'renter_rate': self._safe_get(geo_row, 'renter_rate'),  # Add renter rate
             'rent_burden_rate': self._safe_get(geo_row, 'rent_burden_rate'),
             'severe_rent_burden_rate': self._safe_get(geo_row, 'severe_rent_burden_rate')
         }

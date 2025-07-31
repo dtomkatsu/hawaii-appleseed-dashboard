@@ -203,6 +203,10 @@ def prepare_geo_data(geo_data):
     
     # Add housing cost burden data if available
     if 'housing' in geo_data:
+        # Move renter_rate to top level for easy access in the template
+        if 'renter_rate' in geo_data['housing']:
+            geo_data['renter_rate'] = geo_data['housing']['renter_rate']
+        
         # Standard housing cost burden (30%+ of income on rent)
         if 'rent_burden_rate' in geo_data['housing']:
             rent_burden = geo_data['housing']['rent_burden_rate']
