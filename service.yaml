@@ -1,0 +1,34 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hawaii-appleseed-dashboard
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "1"
+        run.googleapis.com/timeout: "3600s"
+        run.googleapis.com/max-instances: "10"
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: gcr.io/YOUR_PROJECT_ID/hawaii-appleseed-dashboard
+        ports:
+        - containerPort: 8080
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8080"
+        - name: STREAMLIT_SERVER_ADDRESS
+          value: "0.0.0.0"
+        - name: STREAMLIT_SERVER_HEADLESS
+          value: "true"
+        - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+          value: "false"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
