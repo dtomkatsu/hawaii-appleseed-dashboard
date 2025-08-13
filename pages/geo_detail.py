@@ -48,45 +48,24 @@ from src.data.data_loader import DataLoader
 # Initialize the data loader
 data_loader = DataLoader()
 
+# Suppress deprecation warnings
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+# Import and apply full-width layout utility
+from src.ui.full_width_utils import set_full_width_layout
+set_full_width_layout()
+
+# Set page config
 st.set_page_config(
     page_title="Geographic Detail - Hawaii Appleseed Dashboard",
     page_icon="🏝️",
     layout="wide"
 )
 
-# Custom CSS for full-width display
+# Additional custom styles specific to this page
 st.markdown("""
     <style>
-        /* Main container adjustments */
-        .main .block-container {
-            padding: 2rem 1rem !important;
-            max-width: 100% !important;
-            width: 100% !important;
-        }
-        
-        /* Full width for the main content area */
-        .main {
-            padding: 0 !important;
-            max-width: 100% !important;
-        }
-        
-        /* Ensure content takes full width */
-        .stApp {
-            max-width: 100% !important;
-            padding: 0 !important;
-        }
-        
-        /* Fix for streamlit report view */
-        .reportview-container .main .block-container {
-            padding: 0 !important;
-            max-width: 100% !important;
-        }
-        
-        /* Make sure all direct children take full width */
-        .stApp > div {
-            max-width: 100% !important;
-        }
-        
         /* Chart and content containers */
         .stPlotlyChart, .stDataFrame, .element-container {
             width: 100% !important;
