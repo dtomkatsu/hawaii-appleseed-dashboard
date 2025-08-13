@@ -23,6 +23,46 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Custom CSS for full-width display
+st.markdown("""
+    <style>
+        /* Main container adjustments */
+        .main .block-container {
+            padding: 2rem 1rem !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        
+        /* Full width for the main content area */
+        .main {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        /* Ensure content takes full width */
+        .stApp {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        
+        /* Fix for streamlit report view */
+        .reportview-container .main .block-container {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        /* Make sure all direct children take full width */
+        .stApp > div {
+            max-width: 100% !important;
+        }
+        
+        /* Chart and content containers */
+        .stPlotlyChart, .stDataFrame, .element-container {
+            width: 100% !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Add logo and header
 col1, col2 = st.columns([1, 10])
 with col1:
