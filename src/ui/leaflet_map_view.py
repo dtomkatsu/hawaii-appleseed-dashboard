@@ -283,7 +283,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                         if key not in ['name', 'NAME', 'geoid', 'GEOID', 'district', 'DISTRICT']:
                             feature['properties'][key] = value
     
-    # Map controls with cascading dropdowns
+    # Add custom styles for the map container and UI elements
     st.markdown("""
     <style>
         /* Style for dropdown container */
@@ -291,12 +291,14 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             display: flex;
             gap: 20px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         /* Style for dropdown wrapper */
         .dropdown-wrapper {
             position: relative;
             min-width: 200px;
+            flex: 1;
         }
         
         /* Style for dropdown labels */
@@ -304,24 +306,39 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             font-weight: 600;
             margin-bottom: 4px;
             color: #1E88E5;
+            display: block;
         }
         
         /* Style for dropdown hover effect */
         .stSelectbox > div > div[data-baseweb="select"] {
             transition: all 0.2s ease;
-            border-radius: 4px;
+            border-radius: 6px;
             border: 1px solid #e0e0e0;
+            background: white;
         }
         
         .stSelectbox > div > div[data-baseweb="select"]:hover {
             border-color: #1E88E5;
-            box-shadow: 0 0 0 1px #1E88E5;
+            box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
         }
         
         /* Style for dropdown options */
         [data-baseweb="popover"] {
             z-index: 1000 !important;
             position: fixed !important;
+        }
+        
+        /* Map container styles */
+        .map-container {
+            width: 100% !important;
+            height: 70vh !important;
+            min-height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 0 0 20px 0 !important;
+            padding: 0 !important;
+            position: relative;
         }
         
         /* Force proper dropdown positioning and scrolling */

@@ -1,4 +1,7 @@
 """Geographic Detail Page for Hawaii Appleseed Dashboard."""
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
 import base64
 import json
 import os
@@ -1671,8 +1674,8 @@ def main():
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     
     # Get the geo_id from query parameters
-    query_params = st.experimental_get_query_params()
-    geo_id = query_params.get('geo_id', [None])[0]
+    query_params = st.query_params
+    geo_id = query_params.get('geo_id', None)
     
     # Create a container that will hold our content
     container = st.container()

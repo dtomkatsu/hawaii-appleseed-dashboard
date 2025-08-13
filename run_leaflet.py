@@ -19,13 +19,77 @@ from utils.logging_utils import setup_logging, log_error
 from ui.sidebar import create_sidebar
 from ui.leaflet_map_view import create_leaflet_map_view, create_data_summary
 
-# Set page config
+# Set page config with wide layout and viewport settings
 st.set_page_config(
-    page_title="Data Dashboard",
-    page_icon="📊",
+    page_title="Hawaii Appleseed Dashboard",
+    page_icon="🌴",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.hawaiiappleseed.org/',
+        'About': "### Hawaii Appleseed Dashboard\nInteractive data visualization tool for Hawaii"
+    }
 )
+
+# Suppress deprecation warnings
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+# Custom CSS for full-width display
+st.markdown("""
+    <style>
+        /* Main container adjustments */
+        .main .block-container {
+            padding: 2rem 1rem !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        
+        /* Full width for the main content area */
+        .main {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        /* Map container styles */
+        .stMap, .map-container, .leaflet-container {
+            width: 100% !important;
+            height: 70vh !important;
+            min-height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* Adjust sidebar */
+        section[data-testid="stSidebar"] {
+            width: 300px !important;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0 1rem 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Ensure content takes full width */
+        .stApp {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        
+        /* Fix for streamlit report view */
+        .reportview-container .main .block-container {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        /* Make sure all direct children take full width */
+        .stApp > div {
+            max-width: 100% !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Hide the sidebar and its toggle button
 st.markdown("""
@@ -283,8 +347,8 @@ def main():
     logger = logging.getLogger(__name__)
     
     # Check if this is a request for a static file or API endpoint
-    query_params = st.experimental_get_query_params()
-    request_path = query_params.get('__path__', ['/'])[0]
+    query_params = st.query_params
+    request_path = query_params.get('__path__', '/')
     
     # Handle static file requests
     if request_path.startswith('/static/'):
