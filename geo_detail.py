@@ -15,13 +15,7 @@ from ui.geo_detail_view import display_geo_detail_view
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Set page config
-st.set_page_config(
-    page_title="Geography Detail View",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# Note: set_page_config is handled in the main app file (run_leaflet.py)
 
 # Suppress deprecation warnings
 import warnings

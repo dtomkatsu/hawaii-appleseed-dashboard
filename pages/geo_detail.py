@@ -56,12 +56,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 from src.ui.full_width_utils import set_full_width_layout
 set_full_width_layout()
 
-# Set page config
-st.set_page_config(
-    page_title="Geographic Detail - Hawaii Appleseed Dashboard",
-    page_icon="🏝️",
-    layout="wide"
-)
+# Note: set_page_config is handled in the main app file (run_leaflet.py)
 
 # Additional custom styles specific to this page
 st.markdown("""
