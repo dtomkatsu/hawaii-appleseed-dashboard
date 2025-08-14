@@ -466,9 +466,49 @@ class LeafletMapComponent:
                         '</div>'
                     ].join('');
                     
-                    layer.bindPopup(popupContent, {{
-                        maxWidth: 600,
-                        className: 'custom-popup'
+                    // Handle click to show popup at screen center while keeping feature visible
+                    layer.on('click', function(e) {{
+                        L.DomEvent.stop(e);
+                        
+                        // Get feature bounds
+                        const featureBounds = layer.getBounds ? layer.getBounds() : 
+                                            (layer.getLatLng ? L.latLngBounds([layer.getLatLng(), layer.getLatLng()]) : null);
+                        
+                        if (featureBounds) {{
+                            // First, adjust the view to show the feature with extra space for popup
+                            const featurePadding = [100, 100]; // Extra padding for popup space
+                            map.fitBounds(featureBounds, {{
+                                padding: featurePadding,
+                                animate: true,
+                                duration: 0.25
+                            }});
+                            
+                            // After view adjustment, calculate optimal popup position
+                            setTimeout(() => {{
+                                const mapContainer = map.getContainer();
+                                const containerBounds = mapContainer.getBoundingClientRect();
+                                
+                                // Calculate a position that's centered horizontally but positioned 
+                                // lower vertically to account for popup height (popups extend upward)
+                                const popupPosition = map.containerPointToLatLng([
+                                    containerBounds.width / 2,  // Centered horizontally
+                                    containerBounds.height * 0.65  // 65% down from top (leaves room above)
+                                ]);
+                                
+                                // Create popup at the calculated position
+                                const popup = L.popup({{
+                                    maxWidth: 600,
+                                    className: 'custom-popup',
+                                    autoPan: false,
+                                    closeOnClick: false
+                                }})
+                                .setLatLng(popupPosition)
+                                .setContent(popupContent);
+                                
+                                // Open popup at the calculated position
+                                popup.openOn(map);
+                            }}, 300); // Wait for map animation to complete
+                        }}
                     }});
                     
                     layer.bindTooltip(
@@ -569,10 +609,10 @@ class LeafletMapComponent:
         </div>
         """
         
-        # Render component
+        # Render component with extra height for popups
         components.html(
             component_html,
-            height=map_height + 50,
+            height=map_height + 200,
             scrolling=False
         )
 
