@@ -494,7 +494,7 @@ class LeafletMapComponent:
                                 // lower vertically to account for popup height (popups extend upward)
                                 const popupPosition = map.containerPointToLatLng([
                                     containerBounds.width / 2,  // Centered horizontally
-                                    containerBounds.height * 0.65  // 65% down from top (leaves room above)
+                                    containerBounds.height * 0.85  // 85% down from top (moves popup lower)
                                 ]);
                                 
                                 // Create popup at the calculated position
