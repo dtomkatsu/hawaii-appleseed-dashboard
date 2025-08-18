@@ -406,7 +406,9 @@ class LeafletMapComponent:
                     const snapHtml = utils.createSnapHtml(props);
                     
                     // Create three columns for the popup content
-                    const featureId = props.id || 
+                    // Use unique_id first to avoid conflicts, then fall back to other IDs
+                    const featureId = props.unique_id || 
+                                    props.id || 
                                     props.GEOID || 
                                     props.geoid || 
                                     props.fips || 

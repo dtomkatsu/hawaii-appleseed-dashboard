@@ -173,8 +173,19 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                         f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
                         f"{county_name}, Hawaii"  # Without 'County' but with state
                     ]
-                # Use the display name as the primary ID, but store formats for matching
-                feature_id = display_name
+                # Create unique county ID with prefix to avoid conflicts
+                county_fips = feature['properties'].get('county_fips')
+                state_fips = feature['properties'].get('state_fips', '15')
+                if county_fips:
+                    feature_id = f"county_{state_fips}{county_fips}"
+                else:
+                    # Fallback for counties without FIPS (like Oahu)
+                    county_map = {'Hawaii': '001', 'Honolulu': '003', 'Kauai': '007', 'Maui': '009', 'Oahu': '003'}
+                    county_fips = county_map.get(county_name, '999')
+                    feature_id = f"county_{state_fips}{county_fips}"
+                
+                # Store the unique ID in the feature properties
+                feature['properties']['unique_id'] = feature_id
                 feature_formats = formats
             elif geo_level == 'house':
                 # Extract district number from different possible property names
@@ -190,11 +201,14 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                     if match:
                         district_num = match.group(1)
                 
-                feature_id = f"State House District {district_num} (2022); Hawaii"
-                # Also store a simpler display name
+                # Create unique house district ID with prefix
+                feature_id = f"house_{district_num:05d}"  # e.g., house_00001
+                
+                # Store the unique ID and display name
+                feature['properties']['unique_id'] = feature_id
                 feature['properties']['display_name'] = f"House District {district_num}"
                 # Debug: Log the feature ID we're looking for
-                logger.info(f"Looking for house district with NAME: {feature_id}")
+                logger.info(f"Created unique house district ID: {feature_id}")
             elif geo_level == 'senate':
                 # Extract district number from different possible property names
                 district_num = None
@@ -209,11 +223,14 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                     if match:
                         district_num = match.group(1)
                 
-                feature_id = f"State Senate District {district_num} (2022); Hawaii"
-                # Also store a simpler display name
+                # Create unique senate district ID with prefix
+                feature_id = f"senate_{district_num:05d}"  # e.g., senate_00001
+                
+                # Store the unique ID and display name
+                feature['properties']['unique_id'] = feature_id
                 feature['properties']['display_name'] = f"Senate District {district_num}"
                 # Debug: Log the feature ID we're looking for
-                logger.info(f"Looking for senate district with NAME: {feature_id}")
+                logger.info(f"Created unique senate district ID: {feature_id}")
             else:
                 feature_id = None
             

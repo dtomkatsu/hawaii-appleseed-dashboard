@@ -1059,66 +1059,43 @@ class DataLoader:
         print("=== End of debug output ===\n")
         return result
     
-    def _determine_geo_level(self, geo_id: str) -> Optional[GeoLevel]:
-        """Determine geographic level from ID length and format."""
-        geo_id_str = str(geo_id)
-        geo_id_len = len(geo_id_str)
+    def _determine_geo_level(self, geo_id_str: str) -> Optional[GeoLevel]:
+        """Determine the geographic level based on the geo_id format."""
+        geo_id_str = str(geo_id_str).strip()
         
-        print(f"DEBUG: Determining geo level for ID: {geo_id_str} (length: {geo_id_len})")
+        print(f"DEBUG: Determining geo level for ID: '{geo_id_str}'")
         
-        if geo_id_len == 2:
-            return GeoLevel.STATE
-        elif geo_id_len == 5:
-            # Need to distinguish between county and house district
-            # There's a conflict: some house districts have the same geoids as counties
-            # Counties: 15001 (Hawaii), 15003 (Honolulu), 15007 (Kauai), 15009 (Maui)
-            # House districts: 15001-15051
-            
-            # Try both levels and see which one has data
-            print(f"DEBUG: 5-digit ID {geo_id_str} - checking both county and house data")
-            
-            # First check if it's a known county code
-            county_codes = {'15001', '15003', '15007', '15009'}
-            
-            if geo_id_str in county_codes:
-                # This could be either a county or a house district with conflicting ID
-                # Check which data source has this ID
-                try:
-                    # Try to load house district data first (more specific)
-                    house_data = self.get_data('house')
-                    if house_data is not None and not house_data.empty:
-                        house_match = house_data[house_data['geoid'].astype(str) == geo_id_str]
-                        if not house_match.empty:
-                            print(f"DEBUG: Found {geo_id_str} in HOUSE data")
-                            return GeoLevel.HOUSE
-                    
-                    # Try county data
-                    county_data = self.get_data('county')
-                    if county_data is not None and not county_data.empty:
-                        county_match = county_data[county_data['geoid'].astype(str) == geo_id_str]
-                        if not county_match.empty:
-                            print(f"DEBUG: Found {geo_id_str} in COUNTY data")
-                            return GeoLevel.COUNTY
-                    
-                    # Default to house district if both or neither found
-                    print(f"DEBUG: Defaulting to HOUSE district for {geo_id_str}")
-                    return GeoLevel.HOUSE
-                    
-                except Exception as e:
-                    print(f"DEBUG: Error checking data sources: {e}")
-                    # Default to house district
-                    return GeoLevel.HOUSE
-            else:
-                # Not a conflicting county code, assume house district
-                print(f"DEBUG: Identified as HOUSE district: {geo_id_str}")
-                return GeoLevel.HOUSE
-        elif geo_id_len == 6:
-            # 6-digit IDs are house districts (15001X format)
+        # Check for prefixed IDs (new format)
+        if geo_id_str.startswith('county_'):
+            print(f"DEBUG: Identified as COUNTY from prefix: {geo_id_str}")
+            return GeoLevel.COUNTY
+        elif geo_id_str.startswith('house_'):
+            print(f"DEBUG: Identified as HOUSE from prefix: {geo_id_str}")
             return GeoLevel.HOUSE
-        elif geo_id_len == 7:
+        elif geo_id_str.startswith('senate_'):
+            print(f"DEBUG: Identified as SENATE from prefix: {geo_id_str}")
+            return GeoLevel.SENATE
+        elif geo_id_str.lower() == 'hawaii':
+            return GeoLevel.STATE
+        
+        # Fallback for legacy IDs without prefixes
+        geo_id_len = len(geo_id_str)
+        if geo_id_len == 5:
+            # For legacy 5-digit IDs, try to determine from data presence
+            county_codes = {'15001', '15003', '15007', '15009'}
+            if geo_id_str in county_codes:
+                print(f"DEBUG: Legacy county code detected: {geo_id_str}")
+                return GeoLevel.COUNTY
+            else:
+                print(f"DEBUG: Legacy house district code detected: {geo_id_str}")
+                return GeoLevel.HOUSE
+        elif geo_id_len == 6 or geo_id_len == 7:
             return GeoLevel.HOUSE
         elif geo_id_len == 8:
             return GeoLevel.SENATE
+        else:
+            print(f"DEBUG: Unknown geo_id format: {geo_id_str}")
+            return None
         
         print(f"DEBUG: Could not determine geo level for ID: {geo_id_str}")
         return None
