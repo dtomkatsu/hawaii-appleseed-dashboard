@@ -545,12 +545,17 @@ class SNAPDataLoader(BaseDataLoader):
             except (ValueError, IndexError):
                 pass
         
-        # Handle numeric district IDs (e.g., '1001' -> '151001')
+        # Handle numeric district IDs 
         elif geoid_str.isdigit():
-            if len(geoid_str) == 4:  # State + 2-digit district
-                return f'15{geoid_str}'
-            elif len(geoid_str) == 5:  # State + 3-digit district
-                return f'15{geoid_str[2:]}'  # Remove state FIPS if present
+            if len(geoid_str) == 4:  # State + 2-digit district (e.g., '1501' -> '15001')
+                return f'15{geoid_str[2:].zfill(3)}'
+            elif len(geoid_str) == 5:  # Already correct format (e.g., '15001')
+                return geoid_str
+            elif len(geoid_str) == 6:  # Extra prefix format (e.g., '151501' -> '15001')
+                if geoid_str.startswith('1515'):
+                    return f'15{geoid_str[4:].zfill(3)}'
+                elif geoid_str.startswith('15'):
+                    return geoid_str[2:]  # Remove extra '15' prefix
         
         # Handle existing FIPS patterns
         if len(geoid_str) == 4 and geoid_str.startswith('15'):
@@ -774,7 +779,7 @@ class GeoJSONProcessor:
         for col in possible_columns:
             if col in data.columns:
                 # Convert to string and extract numbers for comparison
-                data_col = data[col].astype(str).str.extract('(\d+)')[0]
+                data_col = data[col].astype(str).str.extract(r'(\d+)')[0]
                 matches = data[data_col == district_num]
                 if len(matches) > 0:
                     return matches.iloc[0].to_dict()
@@ -789,7 +794,7 @@ class GeoJSONProcessor:
                     return matches.iloc[0].to_dict()
                 
                 # Try to match just the district number part
-                data['district_part'] = data['geoid_str'].str.extract('(\d{1,3})$')
+                data['district_part'] = data['geoid_str'].str.extract(r'(\d{1,3})$')
                 matches = data[data['district_part'] == district_num]
                 if len(matches) > 0:
                     return matches.iloc[0].to_dict()
@@ -992,6 +997,10 @@ class DataLoader:
                 
             print(f"DEBUG: Determined geo_level: {geo_level}")
             
+            # Convert prefixed ID to numeric geoid for data matching
+            numeric_geoid = self._convert_to_numeric_geoid(geo_id, geo_level)
+            print(f"DEBUG: Converted {geo_id} to numeric geoid: {numeric_geoid}")
+            
             # Get merged data for the geographic level
             data = self.get_data(geo_level.value)
             if data is None or data.empty:
@@ -1000,18 +1009,18 @@ class DataLoader:
                 
             print(f"DEBUG: Loaded data with {len(data)} rows and columns: {data.columns.tolist()}")
             
-            # Find the specific geography
-            print(f"\nDEBUG: Looking for geo_id: {geo_id} in data")
+            # Find the specific geography using numeric geoid
+            print(f"\nDEBUG: Looking for numeric geoid: {numeric_geoid} in data")
             print(f"DEBUG: First 10 geoids: {data['geoid'].head(10).tolist() if 'geoid' in data.columns else 'No geoid column'}")
             
-            # Try exact match first
-            geo_row = data[data['geoid'].astype(str) == str(geo_id)]
+            # Try exact match with numeric geoid
+            geo_row = data[data['geoid'].astype(str) == str(numeric_geoid)]
             
             # If no exact match, try more flexible matching for districts
             if geo_row.empty and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
-                print(f"DEBUG: No exact match for {geo_id}, trying flexible matching...")
+                print(f"DEBUG: No exact match for {numeric_geoid}, trying flexible matching...")
                 # Try matching just the district number part
-                district_num = str(geo_id)[-3:] if len(str(geo_id)) >= 3 else str(geo_id)
+                district_num = str(numeric_geoid)[-3:] if len(str(numeric_geoid)) >= 3 else str(numeric_geoid)
                 print(f"DEBUG: Trying to match district number: {district_num}")
                 
                 # Try matching the last 3 digits of the geoid
@@ -1021,7 +1030,7 @@ class DataLoader:
                 # If still no match, try extracting just the numeric part
                 if geo_row.empty:
                     print("DEBUG: Trying to extract numeric part from geoid")
-                    data['district_num'] = data['geoid_str'].str.extract('(\d{1,3})$')
+                    data['district_num'] = data['geoid_str'].str.extract(r'(\d{1,3})$')
                     geo_row = data[data['district_num'] == district_num]
             
             if geo_row.empty:
@@ -1059,43 +1068,79 @@ class DataLoader:
         print("=== End of debug output ===\n")
         return result
     
-    def _determine_geo_level(self, geo_id_str: str) -> Optional[GeoLevel]:
-        """Determine the geographic level based on the geo_id format."""
-        geo_id_str = str(geo_id_str).strip()
+    def _convert_to_numeric_geoid(self, geo_id: str, geo_level: GeoLevel) -> str:
+        """Convert prefixed geo ID to numeric geoid for data matching."""
+        geo_id_str = str(geo_id).strip()
+        
+        # If it's already numeric, return as-is
+        if geo_id_str.isdigit():
+            return geo_id_str
+            
+        # Handle prefixed IDs
+        if geo_id_str.startswith('county_'):
+            # Extract numeric part after 'county_'
+            return geo_id_str.replace('county_', '')
+        elif geo_id_str.startswith('house_'):
+            # Convert house_00001 to 15001 format (5-digit geoid)
+            district_num = geo_id_str.replace('house_', '').lstrip('0')
+            return f"15{district_num.zfill(3)}"
+        elif geo_id_str.startswith('senate_'):
+            # Convert senate_00001 to 15001 format (5-digit geoid)
+            district_num = geo_id_str.replace('senate_', '').lstrip('0')
+            return f"15{district_num.zfill(3)}"
+        
+        # Fallback: return original ID
+        return geo_id_str
+
+    def _determine_geo_level(self, geo_id: str) -> Optional[GeoLevel]:
+        """Determine the geographic level from a geo ID."""
+        geo_id_str = str(geo_id).strip()
         
         print(f"DEBUG: Determining geo level for ID: '{geo_id_str}'")
         
-        # Check for prefixed IDs (new format)
+        # Handle prefixed IDs (new system)
         if geo_id_str.startswith('county_'):
-            print(f"DEBUG: Identified as COUNTY from prefix: {geo_id_str}")
+            print("DEBUG: Detected county prefix")
             return GeoLevel.COUNTY
         elif geo_id_str.startswith('house_'):
-            print(f"DEBUG: Identified as HOUSE from prefix: {geo_id_str}")
+            print("DEBUG: Detected house prefix")
             return GeoLevel.HOUSE
         elif geo_id_str.startswith('senate_'):
-            print(f"DEBUG: Identified as SENATE from prefix: {geo_id_str}")
+            print("DEBUG: Detected senate prefix")
             return GeoLevel.SENATE
-        elif geo_id_str.lower() == 'hawaii':
-            return GeoLevel.STATE
         
-        # Fallback for legacy IDs without prefixes
-        geo_id_len = len(geo_id_str)
-        if geo_id_len == 5:
-            # For legacy 5-digit IDs, try to determine from data presence
-            county_codes = {'15001', '15003', '15007', '15009'}
-            if geo_id_str in county_codes:
-                print(f"DEBUG: Legacy county code detected: {geo_id_str}")
-                return GeoLevel.COUNTY
-            else:
-                print(f"DEBUG: Legacy house district code detected: {geo_id_str}")
-                return GeoLevel.HOUSE
-        elif geo_id_len == 6 or geo_id_len == 7:
-            return GeoLevel.HOUSE
-        elif geo_id_len == 8:
+        # Handle legacy numeric IDs (fallback)
+        print("DEBUG: No prefix detected, checking legacy numeric ID patterns")
+        
+        # Check if it's a 5-digit ID that could be county or district
+        if len(geo_id_str) == 5 and geo_id_str.isdigit():
+            print(f"DEBUG: 5-digit ID detected: {geo_id_str}")
+            
+            # Check if this ID exists in house district data
+            house_data = self.data_cache.get(f"{DataType.ACS.value}_house")
+            if house_data is not None and 'geoid' in house_data.columns:
+                house_match = house_data[house_data['geoid'].astype(str) == geo_id_str]
+                if not house_match.empty:
+                    print(f"DEBUG: Found {geo_id_str} in house district data")
+                    return GeoLevel.HOUSE
+            
+            # Check if this ID exists in county data
+            county_data = self.data_cache.get(f"{DataType.ACS.value}_county")
+            if county_data is not None and 'geoid' in county_data.columns:
+                county_match = county_data[county_data['geoid'].astype(str) == geo_id_str]
+                if not county_match.empty:
+                    print(f"DEBUG: Found {geo_id_str} in county data")
+                    return GeoLevel.COUNTY
+        
+        # Check for 2-digit senate districts
+        elif len(geo_id_str) == 2 and geo_id_str.isdigit():
+            print(f"DEBUG: 2-digit ID detected, assuming senate district: {geo_id_str}")
             return GeoLevel.SENATE
-        else:
-            print(f"DEBUG: Unknown geo_id format: {geo_id_str}")
-            return None
+        
+        # Check for state-level ID
+        elif geo_id_str in ['15', '15000']:
+            print(f"DEBUG: State-level ID detected: {geo_id_str}")
+            return GeoLevel.STATE
         
         print(f"DEBUG: Could not determine geo level for ID: {geo_id_str}")
         return None
