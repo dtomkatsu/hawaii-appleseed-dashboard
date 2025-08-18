@@ -137,6 +137,9 @@ class LeafletMapComponent:
                 display: block;
                 margin-bottom: 2px;
             }
+            .custom-popup {
+                opacity: 0.75 !important;
+            }
             .custom-popup .leaflet-popup-content {
                 margin: 10px 12px;
                 line-height: 1.4;
@@ -439,29 +442,22 @@ class LeafletMapComponent:
                         ].join('');
                     }}
                     
+                    // Create popup content with string concatenation
                     const popupContent = [
-                        '<div style="font-family: Segoe UI, sans-serif; font-size: 13px; line-height: 1.4; min-width: 500px;">',
-                        '  <div style="text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #1a73e8;">',
-                        '    <strong style="font-size: 15px; color: #1a73e8;">', name, '</strong>',
-                        '  </div>',
+                        '<div style="max-width: 500px; padding: 12px;">',
                         '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
                         '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                         '  </div>',
-                        '  <div style="display: flex; gap: 10px; margin-top: 8px;">',
+                        '  <div style="display: flex; gap: 10px; margin-top: 8px; justify-content: space-between;">',
                         '    <!-- Key Metrics Column -->',
-                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                        '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
                         '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
                         '      ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
                         '    </div>',
                         '    <!-- SNAP Column -->',
-                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                        '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
                         '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
-                        '      ', snapHtml,
-                        '    </div>',
-                        '    <!-- Tax Credits Column -->',
-                        '    <div style="flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Tax Credits</div>',
-                        '      <div style="color: #999; text-align: center; font-style: italic;">Coming soon</div>',
+                        '      ', (snapHtml || ''),
                         '    </div>',
                         '  </div>',
                         detailLinkHtml,
@@ -470,7 +466,12 @@ class LeafletMapComponent:
                     
                     // Handle click to show popup at screen center while keeping feature visible
                     layer.on('click', function(e) {{
+                        console.log('Layer clicked');
                         L.DomEvent.stop(e);
+                        
+                        // Close any existing popup first
+                        map.closePopup();
+                        console.log('Closed existing popup');
                         
                         // Get feature bounds
                         const featureBounds = layer.getBounds ? layer.getBounds() : 
@@ -482,7 +483,7 @@ class LeafletMapComponent:
                             map.fitBounds(featureBounds, {{
                                 padding: featurePadding,
                                 animate: true,
-                                duration: 0.25
+                                duration: 0.12
                             }});
                             
                             // After view adjustment, calculate optimal popup position
@@ -490,16 +491,15 @@ class LeafletMapComponent:
                                 const mapContainer = map.getContainer();
                                 const containerBounds = mapContainer.getBoundingClientRect();
                                 
-                                // Calculate a position that's centered horizontally but positioned 
-                                // lower vertically to account for popup height (popups extend upward)
+                                // Calculate position that's centered horizontally and 85% down from the top
                                 const popupPosition = map.containerPointToLatLng([
                                     containerBounds.width / 2,  // Centered horizontally
-                                    containerBounds.height * 0.85  // 85% down from top (moves popup lower)
+                                    containerBounds.height * 0.85  // 85% down from top
                                 ]);
                                 
                                 // Create popup at the calculated position
                                 const popup = L.popup({{
-                                    maxWidth: 600,
+                                    maxWidth: 500,
                                     className: 'custom-popup',
                                     autoPan: false,
                                     closeOnClick: false
@@ -507,8 +507,10 @@ class LeafletMapComponent:
                                 .setLatLng(popupPosition)
                                 .setContent(popupContent);
                                 
-                                // Open popup at the calculated position
+                                console.log('Opening popup at position:', popupPosition);
+                                console.log('Popup content:', popupContent);
                                 popup.openOn(map);
+                                console.log('Popup should be visible now');
                             }}, 300); // Wait for map animation to complete
                         }}
                     }});
