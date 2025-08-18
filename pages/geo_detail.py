@@ -1506,7 +1506,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                 <!-- Moved Stat Boxes Below -->
                 <div class="four-stats" style="clear: both; margin-top: 20px;">
                     <div class="small-stat-box">
-                        <span class="small-stat-number">50%</span>
+                        <span class="small-stat-number">--</span>
                         <div class="small-stat-label">SNAP households with children</div>
                     </div>
                     <div class="small-stat-box">
@@ -1527,11 +1527,11 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         </div>
                     </div>
                     <div class="small-stat-box">
-                        <span class="small-stat-number">50%</span>
+                        <span class="small-stat-number">--</span>
                         <div class="small-stat-label">SNAP households with older adults</div>
                     </div>
                     <div class="small-stat-box">
-                        <span class="small-stat-number">50%</span>
+                        <span class="small-stat-number">--</span>
                         <div class="small-stat-label">SNAP households with disabilities</div>
                     </div>
                 </div>
@@ -1553,10 +1553,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                     STRENGTHEN SNAP, STRENGTHEN {geo_name.upper()}
                 </div>
                 
-                <div class="call-to-action">
-                    <strong>TAKE ACTION: REJECT PROPOSALS THAT CUT OR RESTRICT ACCESS TO SNAP BENEFITS.</strong><br>
-                    Proposed cuts mean fewer federal funds supporting local economies, children losing school meals, and decreasing WIC participation for babies and toddlers ages 0–4. These cuts would increase hunger by taking food away from Americans in need, decrease local revenue, and overwhelm already strained food pantries. For every meal a pantry provides, SNAP offers nine.
-                </div>
+                <!-- Call to action section removed as requested -->
             </div>
             
             <div class="footer">

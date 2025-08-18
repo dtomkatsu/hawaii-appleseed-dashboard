@@ -138,7 +138,7 @@ class LeafletMapComponent:
                 margin-bottom: 2px;
             }
             .custom-popup {
-                opacity: 0.75 !important;
+                opacity: 0.92 !important;
             }
             .custom-popup .leaflet-popup-content {
                 margin: 10px 12px;
