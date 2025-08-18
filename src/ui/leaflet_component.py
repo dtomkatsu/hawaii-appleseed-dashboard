@@ -445,6 +445,9 @@ class LeafletMapComponent:
                     // Create popup content with string concatenation
                     const popupContent = [
                         '<div style="max-width: 500px; padding: 12px;">',
+                        '  <div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
+                        '    ', name,
+                        '  </div>',
                         '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
                         '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                         '  </div>',
