@@ -21,7 +21,6 @@ class LeafletMapComponent:
     
     # Default metrics to display in popups
     DEFAULT_METRICS = [
-        {'key': 'population', 'label': 'Population', 'type': 'count'},
         {'key': 'poverty_rate', 'label': 'Poverty Rate', 'type': 'percentage'},
         {'key': 'median_income', 'label': 'Median Income', 'type': 'currency'},
         {'key': 'unemployment_rate', 'label': 'Unemployment Rate', 'type': 'percentage'},

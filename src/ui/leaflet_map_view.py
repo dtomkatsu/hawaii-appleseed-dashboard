@@ -55,7 +55,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         # Define all valid variables including SNAP variables
         valid_variables = [
-            'poverty_rate', 'median_income', 'unemployment_rate', 'population', 
+            'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
             'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total'
         ]
@@ -569,7 +569,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'population': 'Population',
                 'rent_burden_rate': 'Housing Cost Burden',
                 'snap_household_rate': 'SNAP Households (%)',
                 'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
@@ -580,7 +579,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'population': 'Population',
                 'rent_burden_rate': 'Housing Cost Burden',
                 'snap_household_rate': 'SNAP Households (%)',
                 'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
