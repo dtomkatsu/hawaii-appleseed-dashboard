@@ -215,11 +215,25 @@ class LeafletMapComponent:
                     const numValue = parseFloat(value);
                     if (isNaN(numValue)) return 'N/A';
                     
-                    if (variableType.includes('rate') || variableType.includes('pct')) {{
+                    // Check for percentage types
+                    if (variableType === 'percentage' || 
+                        variableType.includes('rate') || 
+                        variableType.includes('pct') ||
+                        variableType.includes('percent')) {{
                         return numValue.toFixed(1) + '%';
-                    }} else if (variableType.includes('income') || variableType.includes('value')) {{
+                    }} 
+                    // Check for currency types
+                    else if (variableType === 'currency' || 
+                             variableType.includes('income') || 
+                             variableType.includes('value') ||
+                             variableType.includes('benefit')) {{
                         return '$' + numValue.toLocaleString();
                     }}
+                    // Check for count types (population, etc.)
+                    else if (variableType === 'count') {{
+                        return numValue.toLocaleString();
+                    }}
+                    
                     return numValue.toLocaleString();
                 }},
                 
