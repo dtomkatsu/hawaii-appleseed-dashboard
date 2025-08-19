@@ -1,0 +1,52 @@
+/* Force light theme for all UI elements */
+.stApp,
+.stApp > div[data-testid="stAppViewContainer"],
+.stApp > div[data-testid="stAppViewContainer"] > .main > .block-container,
+.stApp > div[data-testid="stAppViewContainer"] > .main > .block-container > div,
+.stApp > div[data-testid="stAppViewContainer"] > .main > .block-container > div > div {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* Force light theme for form controls */
+.stSelectbox > div > div,
+.stMultiSelect > div > div > div,
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSlider > div > div > div,
+.stCheckbox > div > label,
+.stRadio > div > div > label,
+.stButton > button {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  border-color: #ced4da !important;
+}
+
+/* Force light theme for tabs */
+.stTabs > div > div > div > div[role="tablist"] > div[role="button"] {
+  background-color: #f8f9fa !important;
+  color: #495057 !important;
+  border-color: #dee2e6 !important;
+}
+
+.stTabs > div > div > div > div[role="tablist"] > div[role="button"][aria-selected="true"] {
+  color: #1a73e8 !important;
+  border-bottom-color: #1a73e8 !important;
+}
+
+/* Force light theme for dataframes */
+.stDataFrame,
+.stDataFrame th,
+.stDataFrame td {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  border-color: #dee2e6 !important;
+}
+
+/* Force light theme for tooltips */
+.stTooltip,
+.stTooltip > div {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  border-color: #dee2e6 !important;
+}

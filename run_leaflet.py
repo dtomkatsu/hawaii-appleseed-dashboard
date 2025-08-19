@@ -315,10 +315,17 @@ def handle_geo_api(geo_id):
     except Exception as e:
         return json.dumps({'error': str(e)}), 'application/json', 500
 
+def load_css():
+    """Load custom CSS to force light theme."""
+    css_file = Path(__file__).parent / "static" / "css" / "force-light-theme.css"
+    with open(css_file) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
 def main():
     """Main application function for the Leaflet version."""
-    # Set up logging
+    # Set up logging and load CSS
     logger = logging.getLogger(__name__)
+    load_css()
     
     # Check if this is a request for a static file or API endpoint
     query_params = st.query_params
