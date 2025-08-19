@@ -176,7 +176,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 # Create unique county ID with prefix to avoid conflicts
                 county_fips = feature['properties'].get('county_fips')
                 state_fips = feature['properties'].get('state_fips', '15')
-                if county_fips:
+                if county_fips and county_fips != 'null':
                     feature_id = f"county_{state_fips}{county_fips}"
                 else:
                     # Fallback for counties without FIPS (like Oahu)

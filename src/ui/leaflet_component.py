@@ -423,16 +423,23 @@ class LeafletMapComponent:
                     const snapHtml = utils.createSnapHtml(props);
                     
                     // Create three columns for the popup content
-                    // Use unique_id first to avoid conflicts, then fall back to other IDs
-                    const featureId = props.unique_id || 
-                                    props.id || 
-                                    props.GEOID || 
-                                    props.geoid || 
-                                    props.fips || 
-                                    props.FIPS || 
-                                    props.feature_id ||
-                                    props.geo_id ||
-                                    feature.id;
+                    // Use unique_id first, but add fallback with geo level prefix
+                    let featureId = props.unique_id;
+                    
+                    // If unique_id is not available, create a prefixed ID based on current layer
+                    if (!featureId || featureId === 'undefined' || featureId === 'null') {{
+                        const rawId = props.GEOID || props.geoid || props.id || feature.id;
+                        if (rawId) {{
+                            // Determine prefix based on active layer or feature properties
+                            let prefix = 'county'; // default to county
+                            if (window.location.search.includes('house') || props.DISTRICT || props.house_id) {{
+                                prefix = 'house';
+                            }} else if (window.location.search.includes('senate') || props.senate_id) {{
+                                prefix = 'senate';
+                            }}
+                            featureId = prefix + '_' + rawId;
+                        }}
+                    }}
                     
                     console.log('Feature properties:', props);
                     console.log('Selected feature ID:', featureId);
