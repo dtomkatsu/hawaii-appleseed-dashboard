@@ -295,6 +295,49 @@ class LeafletMapComponent:
                     return html;
                 }},
                 
+                getRepresentativeInfo(properties) {{
+                    // Simple hardcoded representative data
+                    const repData = {{
+                        "1": {{"name": "Matthias Kusch", "party": "D", "areas": "Hāmākua, portion of Hilo, Ka'ūmana"}},
+                        "2": {{"name": "Sue L. Keohokapu-Lee Loy", "party": "D", "areas": "Hilo"}},
+                        "3": {{"name": "Chris Todd", "party": "D", "areas": "Portion of Hilo, Keaukaha, Orchidlands Estate"}},
+                        "22": {{"name": "Diamond Garcia", "party": "D", "areas": "Waipahu, Village Park, Waikele"}},
+                        "47": {{"name": "Della Au Belatti", "party": "D", "areas": "Kaimuki, Kāhala, Diamond Head"}}
+                    }};
+                    
+                    // Extract district number from various ID formats
+                    const extractDistrictNumber = (id) => {{
+                        if (!id) return null;
+                        if (String(id).startsWith('150') && String(id).length === 5) {{
+                            return String(parseInt(String(id).slice(3)));
+                        }}
+                        try {{
+                            return String(parseInt(id));
+                        }} catch (e) {{
+                            return null;
+                        }}
+                    }};
+                    
+                    const districtId = properties.GEOID || properties.geoid || properties.id;
+                    const districtNum = extractDistrictNumber(districtId);
+                    
+                    if (districtNum && repData[districtNum]) {{
+                        const rep = repData[districtNum];
+                        return {{
+                            html: [
+                                '<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-left: 3px solid #1a73e8; border-radius: 4px;">',
+                                '  <div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 4px;">Representative</div>',
+                                '  <div style="font-size: 12px; color: #333; margin-bottom: 2px;">' + rep.name + ' (' + rep.party + ')</div>',
+                                '  <div style="font-size: 11px; color: #666; font-style: italic;">Areas: ' + rep.areas + '</div>',
+                                '</div>'
+                            ].join(''),
+                            hasData: true
+                        }};
+                    }}
+                    
+                    return {{ html: '', hasData: false }};
+                }},
+                
                 createSnapHtml(properties) {{
                     const snapMetrics = [
                         {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
@@ -421,6 +464,9 @@ class LeafletMapComponent:
                     const metricsHtml = utils.createMetricHtml(null, props);
                     const snapHtml = utils.createSnapHtml(props);
                     
+                    // Get representative information for house districts
+                    const repInfo = utils.getRepresentativeInfo(props);
+                    
                     // Create three columns for the popup content
                     // Use unique_id first, but add fallback with geo level prefix
                     let featureId = props.unique_id;
@@ -468,6 +514,7 @@ class LeafletMapComponent:
                         '  <div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
                         '    ', name,
                         '  </div>',
+                        repInfo.html,
                         '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
                         '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                         '  </div>',
