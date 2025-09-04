@@ -296,79 +296,130 @@ class LeafletMapComponent:
                 }},
                 
                 getRepresentativeInfo(properties) {{
-                    // Simple hardcoded representative data
+                    // Representative data with prefixed keys to distinguish House vs Senate
                     const repData = {{
-                        "1": {{"name": "Matthias Kusch", "party": "D", "areas": "Hāmākua, portion of Hilo, Ka'ūmana"}},
-                        "2": {{"name": "Sue L. Keohokapu-Lee Loy", "party": "D", "areas": "Hilo"}},
-                        "3": {{"name": "Chris Todd", "party": "D", "areas": "Portion of Hilo, Keaukaha, Orchidlands Estate"}},
-                        "4": {{"name": "Greggor Ilagan", "party": "D", "areas": "Puna"}},
-                        "5": {{"name": "Jeanné Kapela", "party": "D", "areas": "North Kona, South Kona"}},
-                        "6": {{"name": "Nicole Lowen", "party": "D", "areas": "North Kona"}},
-                        "7": {{"name": "David Tarnas", "party": "D", "areas": "North Kona, South Kohala"}},
-                        "8": {{"name": "Troy Hashimoto", "party": "D", "areas": "Kahakuloa, Waiheʻe, Waiehu, Wailuku"}},
-                        "9": {{"name": "Justin Woodson", "party": "D", "areas": "Kahului, Puʻunēnē, Old Sand Hills, Maui Lani"}},
-                        "10": {{"name": "Angus McKelvey", "party": "D", "areas": "West Maui, Māʻalaea, North Kīhei"}},
-                        "11": {{"name": "Tina Wildberger", "party": "D", "areas": "South Maui"}},
-                        "12": {{"name": "Kyle Yamashita", "party": "D", "areas": "Upcountry Maui"}},
-                        "13": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Molokaʻi, Lānaʻi, Kahoʻolawe"}},
-                        "14": {{"name": "Nadine Nakamura", "party": "D", "areas": "Hanalei, Princeville, Kilauea"}},
-                        "15": {{"name": "James Tokioka", "party": "D", "areas": "Wailua Homesteads, Hanamāʻulu, Līhuʻe, Puhi"}},
-                        "16": {{"name": "Luke Evslin", "party": "D", "areas": "Wailua, Kapaʻa, Anahola"}},
-                        "17": {{"name": "Dee Morikawa", "party": "D", "areas": "Niʻihau, Lehua, Kōloa, Waimea"}},
-                        "18": {{"name": "Mark Hashem", "party": "D", "areas": "Hahaʻione, Kuliʻouʻou, Niu Valley, ʻĀina Haina"}},
-                        "19": {{"name": "Bertrand Kobayashi", "party": "D", "areas": "Kāhala, Kaimukī, Diamond Head"}},
-                        "20": {{"name": "Jackson Sayama", "party": "D", "areas": "St. Louis Heights, Pālolo, Mānoa"}},
-                        "21": {{"name": "Scot Matayoshi", "party": "D", "areas": "Kāneʻohe, Maunawili, Olomana"}},
-                        "22": {{"name": "Diamond Garcia", "party": "D", "areas": "Waipahu, Village Park, Waikele"}},
-                        "23": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Kāneʻohe MCAB, Kailua, Waimānalo"}},
-                        "24": {{"name": "Adrian Tam", "party": "D", "areas": "Waikīkī, Ala Moana"}},
-                        "25": {{"name": "Sylvia Luke", "party": "D", "areas": "Makiki, Punchbowl, Nuʻuanu, Pauoa"}},
-                        "26": {{"name": "Della Au Belatti", "party": "D", "areas": "Makiki, Tantalus, Papakōlea, McCully"}},
-                        "27": {{"name": "Takashi Ohno", "party": "D", "areas": "Nuʻuanu, Liliha, ʻĀlewa Heights, Puʻunui"}},
-                        "28": {{"name": "John Mizuno", "party": "D", "areas": "Kamehameha Heights, Kalihi Valley, Fort Shafter"}},
-                        "29": {{"name": "Daniel Holt", "party": "D", "areas": "Kalihi, Pālama, Iwilei, Chinatown"}},
-                        "30": {{"name": "Sonny Ganaden", "party": "D", "areas": "Kalihi, Hālawa, ʻAiea, Pearlridge"}},
-                        "31": {{"name": "Aaron Ling Johanson", "party": "D", "areas": "Moanalua, Āliamanu, Foster Village, Hickam"}},
-                        "32": {{"name": "Linda Ichiyama", "party": "D", "areas": "Moanalua Valley, Moanalua, Āliamanu, Foster Village"}},
-                        "33": {{"name": "Sam Kong", "party": "D", "areas": "ʻAiea, Pearl City"}},
-                        "34": {{"name": "Gregg Takayama", "party": "D", "areas": "Pearl City, Waimalu, Pacific Palisades"}},
-                        "35": {{"name": "Cory Chun", "party": "D", "areas": "Pearl City, Waipahu, Crestview"}},
-                        "36": {{"name": "Rachele Lamosao", "party": "D", "areas": "Pearl City, Waipahu, Crestview, Manana"}},
-                        "37": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Haleiwa, Waimea, Sunset Beach"}},
-                        "38": {{"name": "Elijah Pierick", "party": "R", "areas": "Wahiawā, Mililani, Waipiʻo Acres"}},
-                        "39": {{"name": "Stacelynn Eli", "party": "D", "areas": "Mililani, Waipiʻo, Waikele"}},
-                        "40": {{"name": "Rose Martinez", "party": "D", "areas": "Makakilo, Kapolei, Ewa Villages"}},
-                        "41": {{"name": "Matthew LoPresti", "party": "D", "areas": "Ewa Beach, Ewa by Gentry, Ocean Pointe"}},
-                        "42": {{"name": "Sharon Har", "party": "D", "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale"}},
-                        "43": {{"name": "Darius Kila", "party": "D", "areas": "Honolulu, Waikīkī, Ala Moana, Kakaʻako"}},
-                        "44": {{"name": "Cedric Asuega Gates", "party": "D", "areas": "Waianae, Nanakuli, Maili"}},
-                        "45": {{"name": "Kanani Souza", "party": "D", "areas": "Waianae, Makaha, Makua"}},
-                        "46": {{"name": "Elijah Pierick", "party": "R", "areas": "North Shore, Wahiawā, Whitmore Village"}},
-                        "47": {{"name": "Della Au Belatti", "party": "D", "areas": "Kaimuki, Kāhala, Diamond Head"}},
-                        "48": {{"name": "Patrick Branco", "party": "R", "areas": "Kailua, Waimānalo, Hawaiʻi Kai"}},
-                        "49": {{"name": "Lisa Marten", "party": "D", "areas": "Hawaiʻi Kai, Portlock, Koko Head"}},
-                        "50": {{"name": "Gene Ward", "party": "R", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
-                        "51": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Heʻeia, Ahuimanu"}}
+                        // House Representatives (house_1 - house_51)
+                        "house_1": {{"name": "Matthias Kusch", "party": "D", "areas": "Hāmākua, portion of Hilo, Ka'ūmana"}},
+                        "house_2": {{"name": "Sue L. Keohokapu-Lee Loy", "party": "D", "areas": "Hilo"}},
+                        "house_3": {{"name": "Chris Todd", "party": "D", "areas": "Portion of Hilo, Keaukaha, Orchidlands Estate"}},
+                        "house_4": {{"name": "Greggor Ilagan", "party": "D", "areas": "Puna"}},
+                        "house_5": {{"name": "Jeanné Kapela", "party": "D", "areas": "North Kona, South Kona"}},
+                        "house_6": {{"name": "Nicole Lowen", "party": "D", "areas": "North Kona"}},
+                        "house_7": {{"name": "David Tarnas", "party": "D", "areas": "North Kona, South Kohala"}},
+                        "house_8": {{"name": "Troy Hashimoto", "party": "D", "areas": "Kahakuloa, Waiheʻe, Waiehu, Wailuku"}},
+                        "house_9": {{"name": "Justin Woodson", "party": "D", "areas": "Kahului, Puʻunēnē, Old Sand Hills, Maui Lani"}},
+                        "house_10": {{"name": "Angus McKelvey", "party": "D", "areas": "West Maui, Māʻalaea, North Kīhei"}},
+                        "house_11": {{"name": "Tina Wildberger", "party": "D", "areas": "South Maui"}},
+                        "house_12": {{"name": "Kyle Yamashita", "party": "D", "areas": "Upcountry Maui"}},
+                        "house_13": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Molokaʻi, Lānaʻi, Kahoʻolawe"}},
+                        "house_14": {{"name": "Nadine Nakamura", "party": "D", "areas": "Hanalei, Princeville, Kilauea"}},
+                        "house_15": {{"name": "James Tokioka", "party": "D", "areas": "Wailua Homesteads, Hanamāʻulu, Līhuʻe, Puhi"}},
+                        "house_16": {{"name": "Luke Evslin", "party": "D", "areas": "Wailua, Kapaʻa, Anahola"}},
+                        "house_17": {{"name": "Dee Morikawa", "party": "D", "areas": "Niʻihau, Lehua, Kōloa, Waimea"}},
+                        "house_18": {{"name": "Mark Hashem", "party": "D", "areas": "Hahaʻione, Kuliʻouʻou, Niu Valley, ʻĀina Haina"}},
+                        "house_19": {{"name": "Bertrand Kobayashi", "party": "D", "areas": "Kāhala, Kaimukī, Diamond Head"}},
+                        "house_20": {{"name": "Jackson Sayama", "party": "D", "areas": "St. Louis Heights, Pālolo, Mānoa"}},
+                        "house_21": {{"name": "Scot Matayoshi", "party": "D", "areas": "Kāneʻohe, Maunawili, Olomana"}},
+                        "house_22": {{"name": "Diamond Garcia", "party": "D", "areas": "Waipahu, Village Park, Waikele"}},
+                        "house_23": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Kāneʻohe MCAB, Kailua, Waimānalo"}},
+                        "house_24": {{"name": "Adrian Tam", "party": "D", "areas": "Waikīkī, Ala Moana"}},
+                        "house_25": {{"name": "Sylvia Luke", "party": "D", "areas": "Makiki, Punchbowl, Nuʻuanu, Pauoa"}},
+                        "house_26": {{"name": "Della Au Belatti", "party": "D", "areas": "Makiki, Tantalus, Papakōlea, McCully"}},
+                        "house_27": {{"name": "Takashi Ohno", "party": "D", "areas": "Nuʻuanu, Liliha, ʻĀlewa Heights, Puʻunui"}},
+                        "house_28": {{"name": "John Mizuno", "party": "D", "areas": "Kamehameha Heights, Kalihi Valley, Fort Shafter"}},
+                        "house_29": {{"name": "Daniel Holt", "party": "D", "areas": "Kalihi, Pālama, Iwilei, Chinatown"}},
+                        "house_30": {{"name": "Sonny Ganaden", "party": "D", "areas": "Kalihi, Hālawa, ʻAiea, Pearlridge"}},
+                        "house_31": {{"name": "Aaron Ling Johanson", "party": "D", "areas": "Moanalua, Āliamanu, Foster Village, Hickam"}},
+                        "house_32": {{"name": "Linda Ichiyama", "party": "D", "areas": "Moanalua Valley, Moanalua, Āliamanu, Foster Village"}},
+                        "house_33": {{"name": "Sam Kong", "party": "D", "areas": "ʻAiea, Pearl City"}},
+                        "house_34": {{"name": "Gregg Takayama", "party": "D", "areas": "Pearl City, Waimalu, Pacific Palisades"}},
+                        "house_35": {{"name": "Cory Chun", "party": "D", "areas": "Pearl City, Waipahu, Crestview"}},
+                        "house_36": {{"name": "Rachele Lamosao", "party": "D", "areas": "Pearl City, Waipahu, Crestview, Manana"}},
+                        "house_37": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Haleiwa, Waimea, Sunset Beach"}},
+                        "house_38": {{"name": "Elijah Pierick", "party": "R", "areas": "Wahiawā, Mililani, Waipiʻo Acres"}},
+                        "house_39": {{"name": "Stacelynn Eli", "party": "D", "areas": "Mililani, Waipiʻo, Waikele"}},
+                        "house_40": {{"name": "Rose Martinez", "party": "D", "areas": "Makakilo, Kapolei, Ewa Villages"}},
+                        "house_41": {{"name": "Matthew LoPresti", "party": "D", "areas": "Ewa Beach, Ewa by Gentry, Ocean Pointe"}},
+                        "house_42": {{"name": "Sharon Har", "party": "D", "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale"}},
+                        "house_43": {{"name": "Darius Kila", "party": "D", "areas": "Honolulu, Waikīkī, Ala Moana, Kakaʻako"}},
+                        "house_44": {{"name": "Cedric Asuega Gates", "party": "D", "areas": "Waianae, Nanakuli, Maili"}},
+                        "house_45": {{"name": "Kanani Souza", "party": "D", "areas": "Waianae, Makaha, Makua"}},
+                        "house_46": {{"name": "Elijah Pierick", "party": "R", "areas": "North Shore, Wahiawā, Whitmore Village"}},
+                        "house_47": {{"name": "Della Au Belatti", "party": "D", "areas": "Kaimuki, Kāhala, Diamond Head"}},
+                        "house_48": {{"name": "Patrick Branco", "party": "R", "areas": "Kailua, Waimānalo, Hawaiʻi Kai"}},
+                        "house_49": {{"name": "Lisa Marten", "party": "D", "areas": "Hawaiʻi Kai, Portlock, Koko Head"}},
+                        "house_50": {{"name": "Gene Ward", "party": "R", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
+                        "house_51": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Heʻeia, Ahuimanu"}},
+                        
+                        // Senate Representatives (senate_1 - senate_25)
+                        "senate_1": {{"name": "Lorraine R. Inouye", "party": "D", "areas": "Hilo, Pauka'a, Papaikou, Pepe'ekeo"}},
+                        "senate_2": {{"name": "Joy A. San Buenaventura", "party": "D", "areas": "Puna"}},
+                        "senate_3": {{"name": "Dru Mamo Kanuha", "party": "D", "areas": "Kona, Ka'ū, Volcano"}},
+                        "senate_4": {{"name": "Herbert M. 'Tim' Richards III", "party": "D", "areas": "North Hilo, Hāmākua, Kohala, Waimea, Waikoloa, North Kona"}},
+                        "senate_5": {{"name": "Troy N. Hashimoto", "party": "D", "areas": "Wailuku, Kahului, Waihe'e, Waikapu Mauka, Wai'ehu"}},
+                        "senate_6": {{"name": "Angus L.K. McKelvey", "party": "D", "areas": "West Maui, South Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
+                        "senate_7": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
+                        "senate_8": {{"name": "Ronald D. Kouchi", "party": "D", "areas": "Kaua'i, Ni'ihau"}},
+                        "senate_9": {{"name": "Stanley Chang", "party": "D", "areas": "Hawai'i Kai, Waikīkī, Ala Moana, Kaka'ako"}},
+                        "senate_10": {{"name": "Les Ihara", "party": "D", "areas": "Pālolo, St. Louis Heights, Kaimukī, Kāhala"}},
+                        "senate_11": {{"name": "Carol Fukunaga", "party": "D", "areas": "Makiki, Mānoa, Pūowaina, Ala Wai"}},
+                        "senate_12": {{"name": "Sharon Y. Moriwaki", "party": "D", "areas": "Waikīkī, McCully, Mōʻiliʻili, Ala Wai"}},
+                        "senate_13": {{"name": "Karl Rhoads", "party": "D", "areas": "Downtown, Iwilei, Kalihi, Nu'uanu"}},
+                        "senate_14": {{"name": "Donna Mercado Kim", "party": "D", "areas": "Kalihi Valley, Liliha, 'Ālewa Heights, Pu'unui"}},
+                        "senate_15": {{"name": "Glenn Wakai", "party": "D", "areas": "Kalihi, Mapunapuna, Airport, Salt Lake, Āliamanu"}},
+                        "senate_16": {{"name": "Brandon J.C. Elefante", "party": "D", "areas": "'Aiea, Hālawa, Pearlridge, 'Aiea Heights"}},
+                        "senate_17": {{"name": "Donovan M. Dela Cruz", "party": "D", "areas": "Wahiawā, Mililani, Mililani Mauka, Waipi'o Acres, Whitmore Village"}},
+                        "senate_18": {{"name": "Michelle N. Kidani", "party": "D", "areas": "Mililani Town, Waipi'o Gentry, Crestview, Waikele"}},
+                        "senate_19": {{"name": "Henry J.C. Aquino", "party": "D", "areas": "Waipahu, Crestview, Village Park, Waikele"}},
+                        "senate_20": {{"name": "Kurt Fevella", "party": "R", "areas": "Ewa Beach, Ocean Pointe, Ewa by Gentry, Iroquois Point"}},
+                        "senate_21": {{"name": "Mike Gabbard", "party": "D", "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale, Ko Olina"}},
+                        "senate_22": {{"name": "Samantha DeCorte", "party": "R", "areas": "Kapolei, 'Ewa Beach, Ocean Pointe, 'Ewa by Gentry"}},
+                        "senate_23": {{"name": "Brenton Awa", "party": "R", "areas": "Ko'olauloa, Ko'olaupoko, Kahuku, La'ie, Hau'ula, Punalu'u"}},
+                        "senate_24": {{"name": "Jarrett Keohokalole", "party": "D", "areas": "Kāne'ohe, Kailua, He'eia, Ahuimanu"}},
+                        "senate_25": {{"name": "Chris Lee", "party": "D", "areas": "Kailua, Lanikai, Waimānalo, Hawai'i Kai"}}
                     }};
                     
-                    // Extract district number from various ID formats
-                    const extractDistrictNumber = (id) => {{
-                        if (!id) return null;
-                        if (String(id).startsWith('150') && String(id).length === 5) {{
-                            return String(parseInt(String(id).slice(3)));
+                    // Determine district type and number
+                    const getDistrictInfo = (properties) => {{
+                        let districtType = null;
+                        let districtNum = null;
+                        
+                        // Check if it's a House district
+                        if (properties.house_id) {{
+                            districtType = 'house';
+                            districtNum = String(properties.house_id);
                         }}
-                        try {{
-                            return String(parseInt(id));
-                        }} catch (e) {{
-                            return null;
+                        // Check if it's a Senate district
+                        else if (properties.senate_id) {{
+                            districtType = 'senate';
+                            districtNum = String(properties.senate_id);
                         }}
+                        // Fallback to generic ID extraction
+                        else {{
+                            const rawId = properties.GEOID || properties.geoid || properties.id;
+                            if (rawId) {{
+                                if (String(rawId).startsWith('150') && String(rawId).length === 5) {{
+                                    districtNum = String(parseInt(String(rawId).slice(3)));
+                                }} else {{
+                                    try {{
+                                        districtNum = String(parseInt(rawId));
+                                    }} catch (e) {{
+                                        return {{ type: null, num: null, key: null }};
+                                    }}
+                                }}
+                                // Default to house if we can't determine type
+                                districtType = 'house';
+                            }}
+                        }}
+                        
+                        const key = districtType && districtNum ? `${{districtType}}_${{districtNum}}` : null;
+                        return {{ type: districtType, num: districtNum, key: key }};
                     }};
                     
-                    const districtId = properties.GEOID || properties.geoid || properties.id;
-                    const districtNum = extractDistrictNumber(districtId);
+                    const districtInfo = getDistrictInfo(properties);
                     
-                    if (districtNum && repData[districtNum]) {{
-                        const rep = repData[districtNum];
+                    if (districtInfo.key && repData[districtInfo.key]) {{
+                        const rep = repData[districtInfo.key];
                         return {{
                             html: [
                                 '<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-left: 3px solid #1a73e8; border-radius: 4px;">',
