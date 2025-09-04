@@ -658,10 +658,10 @@ class LeafletMapComponent:
                                 const mapContainer = map.getContainer();
                                 const containerBounds = mapContainer.getBoundingClientRect();
                                 
-                                // Calculate position that's centered horizontally and 85% down from the top
+                                // Calculate position that's centered horizontally and 45% down from the top
                                 const popupPosition = map.containerPointToLatLng([
                                     containerBounds.width / 2,  // Centered horizontally
-                                    containerBounds.height * 0.85  // 85% down from top
+                                    containerBounds.height * 0.95  // 45% down from top
                                 ]);
                                 
                                 // Create popup at the calculated position
