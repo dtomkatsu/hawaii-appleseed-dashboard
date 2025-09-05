@@ -561,8 +561,16 @@ class LeafletMapComponent:
                     const metricsHtml = utils.createMetricHtml(null, props);
                     const snapHtml = utils.createSnapHtml(props);
                     
-                    // Get representative information for house districts
-                    const repInfo = utils.getRepresentativeInfo(props);
+                    // Only get representative/senator info for house/senate districts
+                    const isHouseDistrict = window.location.search.includes('house') || props.DISTRICT || props.house_id;
+                    const isSenateDistrict = window.location.search.includes('senate') || props.senate_id;
+                    let repInfo = {{ html: '' }}; // Default empty
+                    if (isHouseDistrict || isSenateDistrict) {{
+                        const repData = utils.getRepresentativeInfo(props);
+                        if (repData && repData.html) {{
+                            repInfo = repData;
+                        }}
+                    }}
                     
                     // Create three columns for the popup content
                     // Use unique_id first, but add fallback with geo level prefix
@@ -611,7 +619,7 @@ class LeafletMapComponent:
                         '  <div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
                         '    ', name,
                         '  </div>',
-                        repInfo.html,
+                        (repInfo && repInfo.html ? repInfo.html : ''),
                         '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
                         '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                         '  </div>',
