@@ -72,6 +72,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'color_scheme' not in st.session_state:
             st.session_state['color_scheme'] = 'blue'
             
+        # Initialize food security variable (starts as None - no selection)
+        if 'selected_food_security_variable' not in st.session_state:
+            st.session_state['selected_food_security_variable'] = None
+            
     except Exception as e:
         logger.error(f"Error initializing session state: {e}")
         # Force reset to safe defaults
@@ -535,7 +539,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """, unsafe_allow_html=True)
     
     # Create a container for the dropdowns
-    col1, col2 = st.columns([1, 3])
+    col1, col2, col3 = st.columns([1, 2, 2])
     
     with col1:
         # First dropdown: Geography
@@ -563,81 +567,104 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Second dropdown: Data Variable (depends on Geography)
         st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
         
-        # Define available variables based on geography with ALICE Households first
+        # Define available variables based on geography (SNAP variables moved to Food Security)
         if active_layer == 'State Boundary':
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'snap_household_rate': 'SNAP Households (%)',
-                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+                'rent_burden_rate': 'Housing Cost Burden'
             }
         elif active_layer == 'Counties':
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'snap_household_rate': 'SNAP Households (%)',
-                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+                'rent_burden_rate': 'Housing Cost Burden'
             }
         else:  # House and Senate Districts
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'snap_household_rate': 'SNAP Households (%)',
-                'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-                'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+                'rent_burden_rate': 'Housing Cost Burden'
             }
         
-        # Get the current index, defaulting to 0 if not found
-        try:
-            current_index = list(variable_options.keys()).index(selected_variable) if selected_variable in variable_options else 0
-        except (ValueError, KeyError):
-            # Fallback to first option if there's any error
-            current_index = 0
+        # Create options list with blank option for mutual exclusion
+        data_var_options = [None] + list(variable_options.keys())
+        data_var_format_func = lambda x: "Select Data Variable..." if x is None else variable_options[x]
+        
+        # Handle mutual exclusion - if food security is selected, show blank option
+        if st.session_state.get('selected_food_security_variable') is not None:
+            current_index = 0  # Select blank option
+        else:
+            # Get the current index, defaulting to 1 (first real option) if not found
+            try:
+                current_index = data_var_options.index(selected_variable) if selected_variable in data_var_options else 1
+            except (ValueError, KeyError):
+                # Fallback to first real option if there's any error
+                current_index = 1
         
         selected_var = st.selectbox(
             "",
-            options=list(variable_options.keys()),
-            format_func=lambda x: variable_options[x],
+            options=data_var_options,
+            format_func=data_var_format_func,
             index=current_index,
             key="variable_selector",
             label_visibility="collapsed"
         )
         
-        # Update session state if selection changes
-        if selected_var != selected_variable:
-            try:
-                # Double-check that the selected variable is valid before setting it
-                if selected_var in list(variable_options.keys()):
-                    st.session_state['selected_variable'] = selected_var
-                    logger.debug(f"Successfully updated selected variable to: {selected_var}")
-                    st.rerun()
-                else:
-                    logger.warning(f"Attempted to select invalid variable: {selected_var}")
-                    # Keep the current selection if the new one is invalid
-                    pass
-            except Exception as e:
-                logger.error(f"Error updating selected variable from '{selected_variable}' to '{selected_var}': {e}")
-                # Try to keep current state, only reset as last resort
-                try:
-                    if selected_variable in list(variable_options.keys()):
-                        # Current variable is still valid, keep it
-                        pass
-                    else:
-                        # Current variable is also invalid, reset to safe default
-                        st.session_state['selected_variable'] = 'poverty_rate'
-                        st.rerun()
-                except:
-                    # Last resort: force reset
-                    st.session_state['selected_variable'] = 'poverty_rate'
-                    st.rerun()
+        # Update session state only if no food security variable is selected and user made a change
+        if st.session_state.get('selected_food_security_variable') is None and selected_var != selected_variable:
+            st.session_state['selected_variable'] = selected_var
+            if selected_var is not None:
+                logger.debug(f"Selected data variable: {selected_var}")
+            st.rerun()
+    
+    with col3:
+        # Third dropdown: Food Security
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        
+        # Define Food Security variables (SNAP variables)
+        food_security_options = {
+            'snap_household_rate': 'SNAP Households (%)',
+            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+        }
+        
+        # Get current food security variable
+        selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
+        
+        # Create options list with blank option first
+        fs_options = [None] + list(food_security_options.keys())
+        fs_format_func = lambda x: "Select Food Security Variable..." if x is None else food_security_options[x]
+        
+        # Get current index
+        try:
+            fs_current_index = fs_options.index(selected_food_security_var) if selected_food_security_var in fs_options else 0
+        except (ValueError, KeyError):
+            fs_current_index = 0
+        
+        selected_fs_var = st.selectbox(
+            "",
+            options=fs_options,
+            format_func=fs_format_func,
+            index=fs_current_index,
+            key="food_security_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Handle mutual exclusion and update session state
+        if selected_fs_var != selected_food_security_var:
+            st.session_state['selected_food_security_variable'] = selected_fs_var
+            if selected_fs_var is not None:
+                # Food security variable selected - clear data variable selection
+                st.session_state['selected_variable'] = None
+                logger.debug(f"Selected food security variable: {selected_fs_var}")
+            else:
+                # Cleared food security selection - set default data variable
+                st.session_state['selected_variable'] = 'alice_rate'
+            st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
@@ -656,15 +683,28 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
     }
     
+    # Determine which variable to use for the map
+    food_security_var = st.session_state.get('selected_food_security_variable')
+    data_var = st.session_state.get('selected_variable')
+    
+    # Use food security variable if selected, otherwise use data variable
+    if food_security_var is not None:
+        map_variable = food_security_var
+    elif data_var is not None:
+        map_variable = data_var
+    else:
+        # Default to alice_rate if nothing is selected, but don't update session state to avoid loops
+        map_variable = 'alice_rate'
+    
     # Create the map
     create_leaflet_map(
         geojson_data=geojson_data,
-        selected_variable=selected_variable,
-        variable_display_name=variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title()),
+        selected_variable=map_variable,
+        variable_display_name=variable_display_names.get(map_variable, map_variable.replace('_', ' ').title()),
         color_scheme=color_scheme,
         active_layer=active_layer,
         map_height=500,
-        key=f"map-{active_layer}-{selected_variable}-{color_scheme}"
+        key=f"map-{active_layer}-{map_variable}-{color_scheme}"
     )
     
     # Display feature details if a feature is selected
