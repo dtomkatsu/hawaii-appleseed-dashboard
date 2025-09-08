@@ -197,8 +197,11 @@ class LeafletMapComponent:
             const MAP_CONFIG = {{
                 center: [20.7984, -156.3319],
                 zoom: 7,
-                zoomSnap: 0.1,
-                zoomDelta: 0.5
+                zoomSnap: 0.6,      // Increased from 0.1 for faster zooming
+                zoomDelta: 0.8,       // Increased from 0.5 for larger zoom steps
+                zoomAnimationThreshold: 4,  // Fewer animation frames
+                fadeAnimation: false,       // Disable fade animation
+                markerZoomAnimation: false   // Disable marker animation
             }};
             
             const COLOR_SCHEMES = {json.dumps(self.COLOR_SCHEMES)};
@@ -482,7 +485,14 @@ class LeafletMapComponent:
                 zoomControl: false,
                 attributionControl: false,
                 zoomSnap: MAP_CONFIG.zoomSnap,
-                zoomDelta: MAP_CONFIG.zoomDelta
+                zoomDelta: MAP_CONFIG.zoomDelta,
+                zoomAnimation: true,
+                zoomAnimationThreshold: MAP_CONFIG.zoomAnimationThreshold,
+                fadeAnimation: MAP_CONFIG.fadeAnimation,
+                markerZoomAnimation: MAP_CONFIG.markerZoomAnimation,
+                preferCanvas: true,  // Better performance for vector layers
+                updateWhenIdle: true,  // Only update when pan/zoom ends
+                updateWhenZooming: false  // Don't update during zoom animation
             }});
             
             // Set background color
