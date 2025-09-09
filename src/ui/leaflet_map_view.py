@@ -592,7 +592,17 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         # Create options list with blank option for mutual exclusion
         data_var_options = [None] + list(variable_options.keys())
-        data_var_format_func = lambda x: "Select Data Variable..." if x is None else variable_options[x]
+        
+        # Custom format function that shows if option is disabled
+        def data_var_format_func(x):
+            if x is None:
+                # Only disable if THIS dropdown has had a selection
+                has_data_var_selection = st.session_state.get('selected_variable') is not None
+                if has_data_var_selection:
+                    return "Select Data Variable... (disabled)"
+                else:
+                    return "Select Data Variable..."
+            return variable_options[x]
         
         # Handle mutual exclusion - if food security is selected, show blank option
         if st.session_state.get('selected_food_security_variable') is not None:
@@ -614,12 +624,19 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
-        # Update session state only if no food security variable is selected and user made a change
-        if st.session_state.get('selected_food_security_variable') is None and selected_var != selected_variable:
-            st.session_state['selected_variable'] = selected_var
-            if selected_var is not None:
-                logger.debug(f"Selected data variable: {selected_var}")
-            st.rerun()
+        # Update session state when user makes a change
+        if selected_var != selected_variable:
+            # Don't allow going back to None if THIS dropdown already has a selection
+            if selected_var is None and st.session_state.get('selected_variable') is not None:
+                # Ignore the attempt to select the placeholder in this dropdown
+                pass
+            else:
+                st.session_state['selected_variable'] = selected_var
+                # Clear food security selection when data variable is selected
+                if selected_var is not None:
+                    st.session_state['selected_food_security_variable'] = None
+                    logger.debug(f"Selected data variable: {selected_var}")
+                st.rerun()
     
     with col3:
         # Third dropdown: Food Security
@@ -637,7 +654,17 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         # Create options list with blank option first
         fs_options = [None] + list(food_security_options.keys())
-        fs_format_func = lambda x: "Select Food Security Variable..." if x is None else food_security_options[x]
+        
+        # Custom format function that shows if option is disabled
+        def fs_format_func(x):
+            if x is None:
+                # Only disable if THIS dropdown has had a selection
+                has_food_security_selection = st.session_state.get('selected_food_security_variable') is not None
+                if has_food_security_selection:
+                    return "Select Food Security Variable... (disabled)"
+                else:
+                    return "Select Food Security Variable..."
+            return food_security_options[x]
         
         # Get current index
         try:
@@ -656,15 +683,20 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         # Handle mutual exclusion and update session state
         if selected_fs_var != selected_food_security_var:
-            st.session_state['selected_food_security_variable'] = selected_fs_var
-            if selected_fs_var is not None:
-                # Food security variable selected - clear data variable selection
-                st.session_state['selected_variable'] = None
-                logger.debug(f"Selected food security variable: {selected_fs_var}")
+            # Don't allow going back to None if THIS dropdown already has a selection
+            if selected_fs_var is None and st.session_state.get('selected_food_security_variable') is not None:
+                # Ignore the attempt to select the placeholder in this dropdown
+                pass
             else:
-                # Cleared food security selection - set default data variable
-                st.session_state['selected_variable'] = 'alice_rate'
-            st.rerun()
+                st.session_state['selected_food_security_variable'] = selected_fs_var
+                # Clear data variable selection when food security variable is selected
+                if selected_fs_var is not None:
+                    st.session_state['selected_variable'] = None
+                    logger.debug(f"Selected food security variable: {selected_fs_var}")
+                else:
+                    # Cleared food security selection - set default data variable
+                    st.session_state['selected_variable'] = 'alice_rate'
+                st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
