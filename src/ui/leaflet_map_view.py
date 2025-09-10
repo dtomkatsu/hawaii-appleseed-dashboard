@@ -53,11 +53,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'active_layer' not in st.session_state:
             st.session_state['active_layer'] = 'State Boundary'
         
-        # Define all valid variables including SNAP variables
+        # Define all valid variables including SNAP and transportation variables
         valid_variables = [
             'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
-            'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total'
+            'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
+            'public_transportation_pct'
         ]
         
         # Ensure selected_variable is valid
@@ -80,14 +81,13 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         logger.error(f"Error initializing session state: {e}")
         # Force reset to safe defaults
         st.session_state['active_layer'] = 'State Boundary'
-        st.session_state['selected_variable'] = 'poverty_rate'
+        st.session_state['selected_variable'] = 'alice_rate'
         st.session_state['color_scheme'] = 'blue'
         
     active_layer = st.session_state['active_layer']
     selected_variable = st.session_state['selected_variable']
     color_scheme = st.session_state['color_scheme']
     
-    # Debug: Print the selected variable
     logger.info(f"Selected variable: {selected_variable}")
     logger.info(f"Active layer: {active_layer}")
     logger.info(f"Color scheme: {color_scheme}")
@@ -573,21 +573,24 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'public_transportation_pct': 'Public Transportation Commuters (%)'
             }
         elif active_layer == 'Counties':
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'public_transportation_pct': 'Public Transportation Commuters (%)'
             }
         else:  # House and Senate Districts
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden'
+                'rent_burden_rate': 'Housing Cost Burden',
+                'public_transportation_pct': 'Public Transportation Commuters (%)'
             }
         
         # Create options list with blank option for mutual exclusion
@@ -608,12 +611,15 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if st.session_state.get('selected_food_security_variable') is not None:
             current_index = 0  # Select blank option
         else:
-            # Get the current index, defaulting to 1 (first real option) if not found
+            # Get the current index, defaulting to 0 (None/blank) if not found
             try:
-                current_index = data_var_options.index(selected_variable) if selected_variable in data_var_options else 1
-            except (ValueError, KeyError):
-                # Fallback to first real option if there's any error
-                current_index = 1
+                if selected_variable in data_var_options:
+                    current_index = data_var_options.index(selected_variable)
+                else:
+                    current_index = 0  # Default to None/blank instead of first real option
+            except (ValueError, KeyError) as e:
+                # Fallback to blank option if there's any error
+                current_index = 0
         
         selected_var = st.selectbox(
             "",
@@ -624,19 +630,29 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
+        logger.info(f"DROPDOWN DEBUG: selected_var from dropdown: {selected_var}")
+        logger.info(f"DROPDOWN DEBUG: selected_variable from session: {selected_variable}")
+        logger.info(f"DROPDOWN DEBUG: current_index: {current_index}")
+        logger.info(f"DROPDOWN DEBUG: data_var_options: {data_var_options}")
+        
         # Update session state when user makes a change
         if selected_var != selected_variable:
+            logger.info(f"DROPDOWN DEBUG: User changed selection from {selected_variable} to {selected_var}")
             # Don't allow going back to None if THIS dropdown already has a selection
             if selected_var is None and st.session_state.get('selected_variable') is not None:
                 # Ignore the attempt to select the placeholder in this dropdown
+                logger.info("DROPDOWN DEBUG: Ignoring attempt to select placeholder")
                 pass
             else:
+                logger.info(f"DROPDOWN DEBUG: Updating session state to {selected_var}")
                 st.session_state['selected_variable'] = selected_var
                 # Clear food security selection when data variable is selected
                 if selected_var is not None:
                     st.session_state['selected_food_security_variable'] = None
                     logger.debug(f"Selected data variable: {selected_var}")
                 st.rerun()
+        else:
+            logger.info("DROPDOWN DEBUG: No change in selection")
     
     with col3:
         # Third dropdown: Food Security
@@ -712,7 +728,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'alice_rate': 'ALICE Households (%)',
         'snap_household_rate': 'SNAP Households (%)',
         'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
+        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+        'public_transportation_pct': 'Public Transportation Commuters (%)'
     }
     
     # Determine which variable to use for the map
@@ -899,7 +916,7 @@ def create_data_summary():
     
     # Get the active layer and selected variable
     active_layer = st.session_state.get('active_layer', 'State Boundary')
-    selected_variable = st.session_state.get('selected_variable', 'poverty_rate')
+    selected_variable = st.session_state.get('selected_variable', 'alice_rate')
     
     # Load data
     data_loader = DataLoader()

@@ -230,23 +230,94 @@ class BaseDataLoader(ABC):
 class ACSDataLoader(BaseDataLoader):
     """Loader for American Community Survey data."""
     
+    def __init__(self, data_dir: Path, config: DataConfig):
+        super().__init__(data_dir, config)
+        # Don't initialize ACSDataFetcher unless needed - it's slow
+        self.fetcher = None
+    
     def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
         """Load ACS data for a geographic level."""
         if not self._validate_geo_level(geo_level):
             logger.error(f"Invalid geographic level: {geo_level}")
             return None
         
+        # First try to load from CSV file (for backwards compatibility)
         file_path = self.data_dir / self.config.file_patterns[geo_level.value]
-        if not file_path.exists():
-            logger.error(f"ACS data file not found: {file_path}")
-            return None
+        if file_path.exists():
+            try:
+                df = pd.read_csv(file_path, dtype={'geoid': str})
+                
+                # Transportation data is now permanently included in ACS CSV files
+                
+                logger.debug(f"Loaded ACS {geo_level.value} data: {df.shape}")
+                return df
+            except Exception as e:
+                logger.error(f"Error loading ACS {geo_level.value} data from CSV: {e}")
         
+        # If CSV doesn't exist or failed, fetch from API
+        logger.info(f"Fetching ACS {geo_level.value} data from API")
+        return self._fetch_from_api(geo_level)
+    
+    def _add_transportation_variables(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Add transportation variables to existing ACS data."""
         try:
-            df = pd.read_csv(file_path, dtype={'geoid': str})
-            logger.debug(f"Loaded ACS {geo_level.value} data: {df.shape}")
-            return df
+            # Try to load pre-generated transportation data from CSV
+            transport_file = self.data_dir / f'hawaii_{geo_level.value}_transport_2023.csv'
+            
+            if transport_file.exists():
+                logger.info(f"Loading pre-generated transportation data for {geo_level.value}")
+                transport_data = pd.read_csv(transport_file, dtype={'GEOID': str})
+                
+                if transport_data is not None and not transport_data.empty and 'public_transportation_pct' in transport_data.columns:
+                    # Find geoid columns for merging
+                    df_geoid_col = None
+                    transport_geoid_col = None
+                    
+                    for col in ['geoid', 'GEOID', 'geo_id']:
+                        if col in df.columns:
+                            df_geoid_col = col
+                            break
+                            
+                    for col in ['geoid', 'GEOID', 'geo_id']:
+                        if col in transport_data.columns:
+                            transport_geoid_col = col
+                            break
+                    
+                    if df_geoid_col and transport_geoid_col:
+                        # Select only the transportation percentage columns
+                        transport_cols = [transport_geoid_col, 'public_transportation_pct']
+                        merge_data = transport_data[transport_cols]
+                        
+                        # Rename columns to match for merge
+                        if df_geoid_col != transport_geoid_col:
+                            merge_data = merge_data.rename(columns={transport_geoid_col: df_geoid_col})
+                        
+                        # Convert decimal to percentage before merging
+                        if 'public_transportation_pct' in merge_data.columns:
+                            merge_data['public_transportation_pct'] = merge_data['public_transportation_pct'] * 100
+                        
+                        df = df.merge(merge_data, on=df_geoid_col, how='left')
+                        logger.info(f"Added transportation variables to {len(df)} {geo_level.value} records")
+                    else:
+                        logger.warning(f"Cannot merge transportation data - df_geoid: {df_geoid_col}, transport_geoid: {transport_geoid_col}")
+                else:
+                    logger.warning(f"Invalid transportation data for {geo_level.value}")
+            else:
+                logger.warning(f"Transportation data file not found: {transport_file}")
+                
         except Exception as e:
-            logger.error(f"Error loading ACS {geo_level.value} data: {e}")
+            logger.error(f"Error adding transportation variables: {e}")
+        
+        return df
+    
+    def _fetch_from_api(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Fetch ACS data directly from API."""
+        try:
+            # This would implement full API fetching if needed
+            logger.warning(f"API fetching not fully implemented for {geo_level.value}")
+            return None
+        except Exception as e:
+            logger.error(f"Error fetching ACS data from API: {e}")
             return None
 
 
@@ -833,8 +904,8 @@ class DataLoader:
         # Available variables for the dashboard
         self.available_variables = self._get_available_variables()
         
-        # Preload all data
-        self._preload_data()
+        # Don't preload all data - load on demand for better performance
+        # self._preload_data()
     
     def _init_data_loaders(self):
         """Initialize data loaders for different data types."""
@@ -899,7 +970,8 @@ class DataLoader:
             'alice_rate': 'ALICE Households (%)',
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+            'public_transportation_pct': 'Public Transportation Commuters (%)'
         }
     
     def _preload_data(self):
@@ -918,18 +990,7 @@ class DataLoader:
         if cache_key not in self.data_cache:
             loader = self.loaders.get(data_type)
             if loader:
-                print(f"DEBUG: Loading {data_type.value} data for {geo_level.value}")
                 data = loader.load_data(geo_level)
-                
-                # Log the columns in the loaded data for debugging
-                if data is not None and not data.empty:
-                    print(f"DEBUG: Loaded {data_type.value} data columns: {data.columns.tolist()}")
-                    if 'median_rent' in data.columns:
-                        print(f"DEBUG: Found median_rent in {data_type.value} data. First 5 values: {data['median_rent'].head().tolist()}")
-                    elif 'b25064_001e' in [col.lower() for col in data.columns]:
-                        print(f"DEBUG: Found b25064_001e in {data_type.value} data. First 5 values: {data['b25064_001e'].head().tolist()}")
-                    else:
-                        print(f"DEBUG: median_rent NOT FOUND in {data_type.value} data columns")
                 
                 self.data_cache[cache_key] = data
     
@@ -937,41 +998,26 @@ class DataLoader:
         """Get combined data for a geographic level."""
         geo_enum = GeoLevel(geo_level)
         
+        # Load data on-demand if not cached
+        for data_type in DataType:
+            cache_key = f"{data_type.value}_{geo_level}"
+            if cache_key not in self.data_cache:
+                self._load_and_cache_data(data_type, geo_enum)
+        
         # Get individual datasets
         acs_data = self.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
         
-        # Log the datasets we found
-        print(f"DEBUG: Found datasets - ACS: {acs_data is not None}, ALICE: {alice_data is not None}, SNAP: {snap_data is not None}")
-        
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
         
-        # Log ACS data columns before merging
-        if merged_data is not None:
-            print(f"DEBUG: ACS data columns before merging: {merged_data.columns.tolist()}")
-            if 'median_rent' in merged_data.columns:
-                print(f"DEBUG: median_rent in ACS data before merging: {merged_data['median_rent'].head().tolist()}")
-        
         # Merge additional datasets
         if merged_data is not None and alice_data is not None:
-            print(f"DEBUG: Merging ALICE data")
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
-            print(f"DEBUG: After ALICE merge, columns: {merged_data.columns.tolist()}")
         
         if merged_data is not None and snap_data is not None:
-            print(f"DEBUG: Merging SNAP data")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
-            print(f"DEBUG: After SNAP merge, columns: {merged_data.columns.tolist()}")
-            
-        # Log final columns and median_rent if available
-        if merged_data is not None:
-            print(f"DEBUG: Final merged data columns: {merged_data.columns.tolist()}")
-            if 'median_rent' in merged_data.columns:
-                print(f"DEBUG: median_rent in final merged data: {merged_data['median_rent'].head().tolist()}")
-            else:
-                print("DEBUG: median_rent NOT FOUND in final merged data columns")
         
         return merged_data
     

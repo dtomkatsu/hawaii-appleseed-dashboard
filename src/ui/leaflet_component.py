@@ -30,7 +30,8 @@ class LeafletMapComponent:
         {'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'},
         {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
         {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
-        {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}
+        {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
+        {'key': 'public_transportation_pct', 'label': 'Public Transportation Commuters', 'type': 'percentage'}
     ]
     
     def __init__(self):
@@ -48,10 +49,10 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
-        # For SNAP variables, be more lenient since they might be merged later
-        snap_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
-        if selected_variable in snap_variables:
-            self.logger.info(f"SNAP variable '{selected_variable}' expected to be merged - proceeding")
+        # For SNAP and transportation variables, be more lenient since they might be merged later
+        special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 'public_transportation_pct']
+        if selected_variable in special_variables:
+            self.logger.info(f"Special variable '{selected_variable}' expected to be merged - proceeding")
             return True
         
         self.logger.warning(f"Selected variable '{selected_variable}' not found in feature properties")
@@ -245,7 +246,10 @@ class LeafletMapComponent:
                     
                     // Dynamic thresholds based on variable type
                     let thresholds;
-                    if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
+                    if (SELECTED_VARIABLE === 'public_transportation_pct') {{
+                        // Custom thresholds for transportation percentages (0-60%)
+                        thresholds = [0.5, 1, 2, 5, 10, 15, 25, 35, 50];
+                    }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
                         thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];

@@ -868,7 +868,8 @@ def main():
             'native_hawaiian_pi_pct': 'Native Hawaiian/Pacific Islander (%)',
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)'
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+            'public_transportation_pct': 'Public Transportation Commuters (%)'
         }
         
         # Initialize selected variable if not set

@@ -350,7 +350,9 @@ class ACSDataFetcher:
                 'b15003_001e': 'pop_25_plus',
                 'b25003_003e': 'renter_occupied',
                 'b25003_001e': 'total_housing_units',
-                'b25064_001e': 'median_rent'  # Added median rent variable
+                'b25064_001e': 'median_rent',  # Added median rent variable
+                'b08301_001e': 'total_workers',  # Total workers 16 years and over
+                'b08301_010e': 'public_transit_workers'  # Workers using public transportation
             }
             
             # Only rename columns that exist in the dataframe
@@ -364,6 +366,9 @@ class ACSDataFetcher:
                 if not df.empty:
                     f.write(f"First row: {df.iloc[0].to_dict()}\n")
             
+            # Calculate poverty rate and other metrics
+            df = self.calculate_poverty_rate(df)
+            
             return df
             
         except Exception as e:
@@ -376,6 +381,118 @@ class ACSDataFetcher:
                 
             raise
     
+    def calculate_poverty_rate(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate poverty rate and other metrics from ACS data.
+        
+        Args:
+            df: DataFrame with ACS data
+            
+        Returns:
+            DataFrame with calculated metrics
+        """
+        # Make a copy to avoid modifying the original
+        df = df.copy()
+        
+        # Calculate poverty rate if we have the data
+        if 'income_below_poverty_level' in df.columns and 'poverty_status_determined' in df.columns:
+            df['poverty_rate'] = (df['income_below_poverty_level'] / df['poverty_status_determined']) * 100
+            
+        # Calculate public transportation rate if we have the data
+        if 'public_transportation_workers' in df.columns and 'total_workers' in df.columns:
+            df['public_transportation_rate'] = (df['public_transportation_workers'] / df['total_workers']) * 100
+            
+        # Calculate transportation metrics from S0802 if available
+        # Check for both standard names and ACS Subject Table variable names
+        total_workers_col = None
+        if 'total_workers_16_plus' in df.columns:
+            total_workers_col = 'total_workers_16_plus'
+        elif 's0802_c01_001e' in df.columns:
+            total_workers_col = 's0802_c01_001e'
+            
+        if total_workers_col is not None:
+            # Map ACS Subject Table variables to readable names
+            transport_mapping = {
+                's0802_c01_002e': 'drove_alone',
+                's0802_c01_003e': 'carpooled', 
+                's0802_c01_004e': 'public_transportation',
+                's0802_c01_005e': 'walked',
+                's0802_c01_006e': 'bicycle',
+                's0802_c01_007e': 'taxi_motorcycle_other',
+                's0802_c01_008e': 'worked_from_home'
+            }
+            
+            # Calculate mode share percentages
+            for acs_var, mode_name in transport_mapping.items():
+                if acs_var in df.columns:
+                    df[f'{mode_name}_pct'] = (df[acs_var] / df[total_workers_col]) * 100
+                elif mode_name in df.columns:
+                    df[f'{mode_name}_pct'] = (df[mode_name] / df[total_workers_col]) * 100
+            
+            # Calculate summary metrics
+            if 'drove_alone_pct' in df.columns and 'carpooled_pct' in df.columns:
+                df['drove_alone_or_carpooled_pct'] = df['drove_alone_pct'] + df['carpooled_pct']
+                
+            if 'public_transportation_pct' in df.columns and 'walked_pct' in df.columns and 'bicycle_pct' in df.columns:
+                df['active_transportation_pct'] = df['public_transportation_pct'] + df['walked_pct'] + df['bicycle_pct']
+        
+        # Calculate homeownership rate if we have the data
+        if 'owner_occupied_units' in df.columns and 'total_housing_units' in df.columns:
+            df['homeownership_rate'] = (df['owner_occupied_units'] / df['total_housing_units']) * 100
+            
+        # Calculate unemployment rate if we have the data
+        if 'unemployed' in df.columns and 'in_labor_force' in df.columns:
+            df['unemployment_rate'] = (df['unemployed'] / df['in_labor_force']) * 100
+            
+        # Calculate educational attainment rates if we have the data
+        if 'bachelors_degree' in df.columns and 'education_total' in df.columns:
+            df['bachelors_degree_rate'] = (df['bachelors_degree'] / df['education_total']) * 100
+            
+        if 'masters_degree' in df.columns and 'education_total' in df.columns:
+            df['masters_degree_rate'] = (df['masters_degree'] / df['education_total']) * 100
+            
+        if 'professional_degree' in df.columns and 'education_total' in df.columns:
+            df['professional_degree_rate'] = (df['professional_degree'] / df['education_total']) * 100
+            
+        if 'doctorate_degree' in df.columns and 'education_total' in df.columns:
+            df['doctorate_degree_rate'] = (df['doctorate_degree'] / df['education_total']) * 100
+            
+        # Calculate high school or higher
+        if 'education_total' in df.columns and 'bachelors_degree' in df.columns:
+            # This is a simplification - would need more detailed variables for accurate calculation
+            df['high_school_plus_rate'] = 100 - ((df['education_total'] - df['bachelors_degree']) / df['education_total'] * 100)
+            
+        # Calculate race/ethnicity percentages
+        if 'white_alone' in df.columns and 'total_race' in df.columns:
+            df['white_pct'] = (df['white_alone'] / df['total_race']) * 100
+            
+        if 'black_african_american_alone' in df.columns and 'total_race' in df.columns:
+            df['black_pct'] = (df['black_african_american_alone'] / df['total_race']) * 100
+            
+        if 'asian_alone' in df.columns and 'total_race' in df.columns:
+            df['asian_pct'] = (df['asian_alone'] / df['total_race']) * 100
+            
+        if 'native_hawaiian_pacific_islander_alone' in df.columns and 'total_race' in df.columns:
+            df['nhpi_pct'] = (df['native_hawaiian_pacific_islander_alone'] / df['total_race']) * 100
+            
+        if 'hispanic_latino' in df.columns and 'total_race' in df.columns:
+            df['hispanic_latino_pct'] = (df['hispanic_latino'] / df['total_race']) * 100
+            
+        # Calculate housing metrics
+        if 'vacant_units' in df.columns and 'total_housing_units_occupancy' in df.columns:
+            df['vacancy_rate'] = (df['vacant_units'] / df['total_housing_units_occupancy']) * 100
+            
+        # Calculate vehicle availability metrics
+        if 'owner_no_vehicle' in df.columns and 'owner_1_vehicle' in df.columns and 'renter_no_vehicle' in df.columns and 'renter_1_vehicle' in df.columns:
+            df['no_vehicle_pct'] = ((df['owner_no_vehicle'] + df['renter_no_vehicle']) / 
+                                  (df['owner_no_vehicle'] + df['owner_1_vehicle'] + 
+                                   df['renter_no_vehicle'] + df['renter_1_vehicle'])) * 100
+            
+            df['one_vehicle_pct'] = ((df['owner_1_vehicle'] + df['renter_1_vehicle']) / 
+                                   (df['owner_no_vehicle'] + df['owner_1_vehicle'] + 
+                                    df['renter_no_vehicle'] + df['renter_1_vehicle'])) * 100
+        
+        return df
+        
     def _add_simple_geoid(self, df: pd.DataFrame, level: str) -> None:
         """Add a simple GEOID column to the DataFrame based on the geographic level.
         
@@ -425,64 +542,217 @@ class ACSDataFetcher:
             # Log to debug file
             with open(self.debug_log_file, 'a', encoding='utf-8') as f:
                 f.write(f"Error adding simple GEOID: {str(e)}\n")
-                f.write(f"DataFrame columns: {df.columns.tolist()}\n")
-                f.write(traceback.format_exc())
     
     @staticmethod
-    def get_common_variables() -> Dict[str, str]:
+    def get_common_variables():
         """Get a dictionary of common ACS variables.
         
         Returns:
             Dictionary mapping variable codes to descriptions
         """
         return {
-            'B01001_001E': 'Total Population',
-            'B17001_002E': 'Income below poverty level',
-            'B17001_001E': 'Total population for poverty calculation',
-            'B19013_001E': 'Median household income',
-            'B19013_001M': 'Median household income margin of error',
-            'B15003_022E': 'Bachelor\'s degree or higher',
-            'B15003_001E': 'Population 25 years and over',
-            'B25003_003E': 'Renter-occupied housing units',
-            'B25003_001E': 'Total housing units',
-            'B25064_001E': 'Median gross rent',
-            'B25070_001E': 'Gross rent as percentage of household income',
-            'B25070_007E': '30.0 to 34.9 percent',
-            'B25070_008E': '35.0 to 39.9 percent',
-            'B25070_009E': '40.0 to 49.9 percent',
-            'B25070_010E': '50.0 percent or more'
+            # Population
+            'B01003_001E': 'total_population',
+            
+            # Age and Sex
+            'B01001_001E': 'total_population_sex',
+            'B01001_002E': 'male_population',
+            'B01001_026E': 'female_population',
+            'B01002_001E': 'median_age',
+            
+            # Race and Ethnicity
+            'B03002_001E': 'total_race',
+            'B03002_003E': 'white_alone',
+            'B03002_004E': 'black_african_american_alone',
+            'B03002_005E': 'american_indian_alaska_native_alone',
+            'B03002_006E': 'asian_alone',
+            'B03002_007E': 'native_hawaiian_pacific_islander_alone',
+            'B03002_008E': 'other_race_alone',
+            'B03002_009E': 'two_or_more_races',
+            'B03002_012E': 'hispanic_latino',
+            
+            # Income and Poverty
+            'B19013_001E': 'median_household_income',
+            'B17001_002E': 'income_below_poverty_level',
+            'B17001_001E': 'poverty_status_determined',
+            'B25064_001E': 'median_gross_rent',
+            'B25077_001E': 'median_home_value',
+            'B25070_001E': 'gross_rent_as_percentage_of_income',
+            'B25071_001E': 'median_gross_rent_as_percentage_of_household_income',
+            
+            # Education
+            'B15003_001E': 'education_total',
+            'B15003_022E': 'bachelors_degree',
+            'B15003_023E': 'masters_degree',
+            'B15003_024E': 'professional_degree',
+            'B15003_025E': 'doctorate_degree',
+            
+            # Employment
+            'B23025_001E': 'employment_status_total',
+            'B23025_002E': 'in_labor_force',
+            'B23025_004E': 'employed',
+            'B23025_005E': 'unemployed',
+            'B23025_007E': 'not_in_labor_force',
+            
+            # Transportation to Work (B08301)
+            'B08301_001E': 'total_workers',
+            'B08301_010E': 'public_transportation_workers',
+            
+            # S0802 - Means of Transportation to Work by Selected Characteristics (Subject Table)
+            'S0802_C01_001E': 'total_workers_16_plus',
+            'S0802_C01_002E': 'drove_alone',
+            'S0802_C01_003E': 'carpooled',
+            'S0802_C01_010E': 'public_transportation',
+            'S0802_C01_011E': 'walked',
+            'S0802_C01_012E': 'bicycle',
+            'S0802_C01_013E': 'taxi_motorcycle_other',
+            'S0802_C01_014E': 'worked_from_home',
+            
+            # Housing
+            'B25003_001E': 'total_housing_units',
+            'B25003_002E': 'owner_occupied_units',
+            'B25003_003E': 'renter_occupied_units',
+            'B25002_001E': 'total_housing_units_occupancy',
+            'B25002_002E': 'occupied_units',
+            'B25002_003E': 'vacant_units',
+            'B25035_001E': 'median_year_structure_built',
+            'B25032_001E': 'total_units_in_structure',
+            'B25032_002E': 'single_family_homes',
+            'B25032_003E': 'mobile_homes',
+            'B25032_004E': 'units_in_2_to_4_plex',
+            'B25032_005E': 'units_in_5_to_9_plex',
+            'B25032_006E': 'units_in_10_to_19_plex',
+            'B25032_007E': 'units_in_20_to_49_plex',
+            'B25032_008E': 'units_in_50_plus_plex',
+            'B25032_009E': 'mobile_home_parks',
+            'B25032_010E': 'boat_rv_van_etc',
+            'B25032_011E': 'other_units',
+            
+            # Vehicles Available (B25044)
+            'B25044_001E': 'total_vehicles',
+            'B25044_003E': 'owner_no_vehicle',
+            'B25044_004E': 'owner_1_vehicle',
+            'B25044_010E': 'renter_no_vehicle',
+            'B25044_011E': 'renter_1_vehicle',
+            
+            # Health Insurance
+            'B27010_001E': 'health_insurance_coverage_total',
+            'B27010_017E': 'no_health_insurance'
         }
-    
-    def calculate_poverty_rate(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate poverty rate and other metrics from ACS data.
+        
+    def get_acs_subject_data(
+        self,
+        variables: List[str],
+        level: str = 'county',
+        state: str = '15',
+        year: int = None
+    ) -> pd.DataFrame:
+        """Fetch data from ACS Subject Tables API.
         
         Args:
-            df: DataFrame with ACS data
+            variables: List of ACS variable codes from Subject Tables (e.g., 'S0802_C01_001E')
+            level: Geographic level ('state', 'county', 'state_lower', 'state_upper')
+            state: State FIPS code (default: '15' for Hawaii)
+            year: ACS year (default: None, uses instance year)
             
         Returns:
-            DataFrame with calculated metrics
+            DataFrame with the requested ACS Subject Tables data
+            
+        Raises:
+            ValueError: If required parameters are missing or invalid
+            ConnectionError: If there's an error connecting to the Census API
         """
+        if year is None:
+            year = self.year
+            
+        base_url = f"https://api.census.gov/data/{year}/acs/acs5/subject"
+        
+        # Map our level names to Census API geography names
+        geo_mapping = {
+            'state': ('state', '15'),  # 15 is Hawaii's FIPS code
+            'county': ('county', '*'),
+            'state_lower': ('state legislative district (lower chamber)', '*'),
+            'state_upper': ('state legislative district (upper chamber)', '*')
+        }
+        
+        if level not in geo_mapping:
+            raise ValueError(f"Unsupported level: {level}. Must be one of {list(geo_mapping.keys())}")
+        
+        # Special handling for state level
+        if level == 'state':
+            params = {
+                'get': 'NAME,' + ','.join(variables),
+                'for': 'state:15',
+                'key': self.api_key
+            }
+        else:
+            geo_type, geo_value = geo_mapping[level]
+            params = {
+                'get': 'NAME,' + ','.join(variables),
+                'for': f'{geo_type}:{geo_value}',
+                'in': f'state:{state}',
+                'key': self.api_key
+            }
+        
         try:
-            # Create a copy to avoid modifying the original
-            result = df.copy()
+            # Log the request (with redacted API key)
+            log_params = params.copy()
+            if 'key' in log_params:
+                log_params['key'] = 'REDACTED'
+            logger.debug(f"ACS Subject Tables API request: {base_url}?{urlencode(log_params, safe=':,')}")
             
-            # Calculate poverty rate
-            if 'below_poverty' in result.columns and 'total_population' in result.columns:
-                result['poverty_rate'] = (result['below_poverty'] / result['total_population'] * 100).round(2)
+            # Make the request
+            response = requests.get(base_url, params=params)
+            response.raise_for_status()
             
-            # Calculate percentage with bachelor's degree or higher
-            if 'bachelors_plus' in result.columns and 'pop_25_plus' in result.columns:
-                result['bachelors_rate'] = (result['bachelors_plus'] / result['pop_25_plus'] * 100).round(2)
+            # Parse the JSON response
+            data = response.json()
             
-            # Calculate percentage of renter-occupied housing
-            if 'renter_occupied' in result.columns and 'total_housing_units' in result.columns:
-                result['renter_rate'] = (result['renter_occupied'] / result['total_housing_units'] * 100).round(2)
+            # First row contains headers
+            headers = [h.lower() for h in data[0]]
+            rows = data[1:]
             
-            return result
+            # Convert to DataFrame
+            df = pd.DataFrame(rows, columns=headers)
+            
+            # Standardize column names based on common variables
+            var_mapping = {v.lower(): k for k, v in self.get_common_variables().items() 
+                          if v.lower() in [h.lower() for h in headers]}
+            
+            df = df.rename(columns=var_mapping)
+            
+            # Add standardized GEOID if possible
+            if 'state' in df.columns and 'county' in df.columns and 'tract' in df.columns:
+                # For tract level
+                df['GEOID'] = df['state'] + df['county'] + df['tract']
+            elif 'state' in df.columns and 'county' in df.columns:
+                # For county level
+                df['GEOID'] = df['state'] + df['county']
+            elif 'state' in df.columns:
+                # For state level
+                df['GEOID'] = df['state']
+            
+            # Convert numeric columns to appropriate types
+            for col in df.columns:
+                if col not in ['GEOID', 'NAME', 'state', 'county', 'tract', 
+                              'state legislative district (lower chamber)', 
+                              'state legislative district (upper chamber)']:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            return df
             
         except Exception as e:
-            logger.error(f"Error calculating metrics: {str(e)}", exc_info=True)
-            return df
+            error_msg = f"Error fetching ACS Subject Tables data: {str(e)}"
+            logger.error(error_msg)
+            
+            # Log the error to debug file
+            with open(self.debug_log_file, 'a', encoding='utf-8') as f:
+                f.write(f"{error_msg}\n")
+                if hasattr(e, 'response') and e.response is not None:
+                    f.write(f"Response status: {e.response.status_code}\n")
+                    f.write(f"Response content: {e.response.text}\n")
+            
+            raise ConnectionError(error_msg) from e
     
     def save_to_csv(self, df: pd.DataFrame, filename: str) -> str:
         """Save DataFrame to a CSV file.
