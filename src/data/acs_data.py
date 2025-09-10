@@ -422,9 +422,11 @@ class ACSDataFetcher:
             }
             
             # Calculate mode share percentages
+            # Note: S0802 table already provides percentages, not raw counts
             for acs_var, mode_name in transport_mapping.items():
                 if acs_var in df.columns:
-                    df[f'{mode_name}_pct'] = (df[acs_var] / df[total_workers_col]) * 100
+                    # S0802 variables are already percentages, so use them directly
+                    df[f'{mode_name}_pct'] = df[acs_var]
                 elif mode_name in df.columns:
                     df[f'{mode_name}_pct'] = (df[mode_name] / df[total_workers_col]) * 100
             

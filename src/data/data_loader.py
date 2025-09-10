@@ -292,9 +292,7 @@ class ACSDataLoader(BaseDataLoader):
                         if df_geoid_col != transport_geoid_col:
                             merge_data = merge_data.rename(columns={transport_geoid_col: df_geoid_col})
                         
-                        # Convert decimal to percentage before merging
-                        if 'public_transportation_pct' in merge_data.columns:
-                            merge_data['public_transportation_pct'] = merge_data['public_transportation_pct'] * 100
+                        # S0802 data already contains percentages, no conversion needed
                         
                         df = df.merge(merge_data, on=df_geoid_col, how='left')
                         logger.info(f"Added transportation variables to {len(df)} {geo_level.value} records")
