@@ -434,8 +434,8 @@ class ACSDataFetcher:
             if 'drove_alone_pct' in df.columns and 'carpooled_pct' in df.columns:
                 df['drove_alone_or_carpooled_pct'] = df['drove_alone_pct'] + df['carpooled_pct']
                 
-            if 'public_transportation_pct' in df.columns and 'walked_pct' in df.columns and 'bicycle_pct' in df.columns:
-                df['active_transportation_pct'] = df['public_transportation_pct'] + df['walked_pct'] + df['bicycle_pct']
+            if 'travel_time_to_work_minutes' in df.columns and 'walked_pct' in df.columns and 'bicycle_pct' in df.columns:
+                df['active_transportation_pct'] = df['walked_pct'] + df['bicycle_pct']
         
         # Calculate homeownership rate if we have the data
         if 'owner_occupied_units' in df.columns and 'total_housing_units' in df.columns:

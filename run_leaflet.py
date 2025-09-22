@@ -869,7 +869,12 @@ def main():
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-            'public_transportation_pct': 'Public Transportation Commuters (%)'
+            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+            'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+            'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+            'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+            'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
         }
         
         # Initialize selected variable if not set

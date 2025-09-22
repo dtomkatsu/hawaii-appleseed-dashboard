@@ -53,12 +53,13 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'active_layer' not in st.session_state:
             st.session_state['active_layer'] = 'State Boundary'
         
-        # Define all valid variables including SNAP and transportation variables
+        # Define all valid variables including SNAP, transportation, and tax credit variables
         valid_variables = [
             'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
             'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
-            'public_transportation_pct'
+            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
+            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount'
         ]
         
         # Ensure selected_variable is valid
@@ -574,7 +575,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'public_transportation_pct': 'Public Transportation Commuters (%)'
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         elif active_layer == 'Counties':
             variable_options = {
@@ -582,7 +588,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'public_transportation_pct': 'Public Transportation Commuters (%)'
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         else:  # House and Senate Districts
             variable_options = {
@@ -590,7 +601,12 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
-                'public_transportation_pct': 'Public Transportation Commuters (%)'
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         
         # Create options list with blank option for mutual exclusion
@@ -729,7 +745,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'snap_household_rate': 'SNAP Households (%)',
         'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
         'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-        'public_transportation_pct': 'Public Transportation Commuters (%)'
+        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)'
     }
     
     # Determine which variable to use for the map

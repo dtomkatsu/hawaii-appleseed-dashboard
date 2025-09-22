@@ -248,8 +248,14 @@ class ACSDataLoader(BaseDataLoader):
                 df = pd.read_csv(file_path, dtype={'geoid': str})
                 
                 # Add transportation data if not already included
-                if 'public_transportation_pct' not in df.columns:
+                if 'travel_time_to_work_minutes' not in df.columns:
                     df = self._add_transportation_variables(df, geo_level)
+                
+                # Add tax credit data if not already included
+                tax_credit_vars = ['ctc_avg_amount', 'ctc_participation_rate', 'federal_eitc_avg_amount', 
+                                 'eitc_participation_rate', 'state_eitc_avg_amount']
+                if not any(var in df.columns for var in tax_credit_vars):
+                    df = self._add_tax_credit_variables(df, geo_level)
                 
                 logger.debug(f"Loaded ACS {geo_level.value} data: {df.shape}")
                 return df
@@ -261,19 +267,40 @@ class ACSDataLoader(BaseDataLoader):
         return self._fetch_from_api(geo_level)
     
     def _add_transportation_variables(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
-        """Add transportation variables to existing ACS data."""
+        """Transportation variables are now included in main ACS CSV files."""
+        # Transportation data is now consolidated into main ACS files
+        # No separate merging needed
+        if 'travel_time_to_work_minutes' in df.columns:
+            logger.info(f"Transportation variable already present in {geo_level.value} data")
+        else:
+            logger.warning(f"Transportation variable not found in {geo_level.value} data")
+        
+        return df
+    
+    def _add_tax_credit_variables(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Add tax credit variables to existing ACS data."""
         try:
-            # Try to load pre-generated transportation data from CSV
-            transport_file = self.data_dir / f'hawaii_{geo_level.value}_transport_2023.csv'
+            # Try to load pre-generated tax credit data from CSV
+            if geo_level == GeoLevel.STATE:
+                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_state_tax_credits_2022.csv'
+            elif geo_level == GeoLevel.COUNTY:
+                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_county_tax_credits_2022.csv'
+            elif geo_level == GeoLevel.HOUSE_DISTRICT:
+                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_house_district_tax_credits_2022.csv'
+            elif geo_level == GeoLevel.SENATE_DISTRICT:
+                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_senate_district_tax_credits_2022.csv'
+            else:
+                logger.warning(f"Tax credit data not available for {geo_level.value}")
+                return df
             
-            if transport_file.exists():
-                logger.info(f"Loading pre-generated transportation data for {geo_level.value}")
-                transport_data = pd.read_csv(transport_file, dtype={'GEOID': str})
+            if tax_credit_file.exists():
+                logger.info(f"Loading tax credit data for {geo_level.value}")
+                tax_credit_data = pd.read_csv(tax_credit_file, dtype={'geoid': str})
                 
-                if transport_data is not None and not transport_data.empty and 'public_transportation_pct' in transport_data.columns:
+                if tax_credit_data is not None and not tax_credit_data.empty:
                     # Find geoid columns for merging
                     df_geoid_col = None
-                    transport_geoid_col = None
+                    tax_credit_geoid_col = None
                     
                     for col in ['geoid', 'GEOID', 'geo_id']:
                         if col in df.columns:
@@ -281,32 +308,42 @@ class ACSDataLoader(BaseDataLoader):
                             break
                             
                     for col in ['geoid', 'GEOID', 'geo_id']:
-                        if col in transport_data.columns:
-                            transport_geoid_col = col
+                        if col in tax_credit_data.columns:
+                            tax_credit_geoid_col = col
                             break
                     
-                    if df_geoid_col and transport_geoid_col:
-                        # Select only the transportation percentage columns
-                        transport_cols = [transport_geoid_col, 'public_transportation_pct']
-                        merge_data = transport_data[transport_cols]
+                    if df_geoid_col and tax_credit_geoid_col:
+                        # Merge tax credit data with main DataFrame
+                        df = pd.merge(df, tax_credit_data, on=df_geoid_col, how='left', suffixes=('', '_tax'))
                         
-                        # Rename columns to match for merge
-                        if df_geoid_col != transport_geoid_col:
-                            merge_data = merge_data.rename(columns={transport_geoid_col: df_geoid_col})
+                        # Convert participation rates from decimal to percentage format
+                        participation_rate_cols = ['ctc_participation_rate', 'eitc_participation_rate']
+                        for col in participation_rate_cols:
+                            if col in df.columns:
+                                df[col] = df[col] * 100
                         
-                        # S0802 data already contains percentages, no conversion needed
+                        # Add tax credit variables to the DataFrame
+                        tax_credit_vars = ['ctc_avg_amount', 'ctc_participation_rate', 'federal_eitc_avg_amount', 
+                                         'eitc_participation_rate', 'state_eitc_avg_amount']
+                        added_vars = []
+                        for var in tax_credit_vars:
+                            if var in tax_credit_data.columns:
+                                added_vars.append(var)
                         
-                        df = df.merge(merge_data, on=df_geoid_col, how='left')
-                        logger.info(f"Added transportation variables to {len(df)} {geo_level.value} records")
+                        if added_vars:
+                            logger.info(f"Successfully added tax credit variables: {added_vars}")
+                            logger.info(f"Added {len(added_vars)} tax credit variables to {len(df)} {geo_level.value} records")
+                        else:
+                            logger.warning(f"No tax credit variables found in {tax_credit_file}")
                     else:
-                        logger.warning(f"Cannot merge transportation data - df_geoid: {df_geoid_col}, transport_geoid: {transport_geoid_col}")
+                        logger.warning(f"Cannot merge tax credit data - df_geoid: {df_geoid_col}, tax_credit_geoid: {tax_credit_geoid_col}")
                 else:
-                    logger.warning(f"Invalid transportation data for {geo_level.value}")
+                    logger.warning(f"Invalid tax credit data for {geo_level.value}")
             else:
-                logger.warning(f"Transportation data file not found: {transport_file}")
+                logger.warning(f"Tax credit data file not found: {tax_credit_file}")
                 
         except Exception as e:
-            logger.error(f"Error adding transportation variables: {e}")
+            logger.error(f"Error adding tax credit variables: {e}")
         
         return df
     
@@ -971,7 +1008,13 @@ class DataLoader:
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-            'public_transportation_pct': 'Public Transportation Commuters (%)'
+            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+            'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+            'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+            'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+            'state_eitc_avg_amount': 'State EITC - Average Amount ($)',
+            'new_variable': 'New Variable (%)'
         }
     
     def _preload_data(self):

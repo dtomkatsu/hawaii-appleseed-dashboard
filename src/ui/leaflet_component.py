@@ -31,7 +31,12 @@ class LeafletMapComponent:
         {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
         {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
         {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
-        {'key': 'public_transportation_pct', 'label': 'Public Transportation Commuters', 'type': 'percentage'}
+        {'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time to Work', 'type': 'minutes'},
+        {'key': 'ctc_avg_amount', 'label': 'Child Tax Credit - Average Amount', 'type': 'currency'},
+        {'key': 'ctc_participation_rate', 'label': 'Child Tax Credit - Participation Rate', 'type': 'percentage'},
+        {'key': 'federal_eitc_avg_amount', 'label': 'Federal EITC - Average Amount', 'type': 'currency'},
+        {'key': 'eitc_participation_rate', 'label': 'Federal EITC - Participation Rate', 'type': 'percentage'},
+        {'key': 'state_eitc_avg_amount', 'label': 'State EITC - Average Amount', 'type': 'currency'}
     ]
     
     def __init__(self):
@@ -49,8 +54,10 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
-        # For SNAP and transportation variables, be more lenient since they might be merged later
-        special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 'public_transportation_pct']
+        # For SNAP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
+        special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
+                           'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
+                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 'median_income']
         if selected_variable in special_variables:
             self.logger.info(f"Special variable '{selected_variable}' expected to be merged - proceeding")
             return True
@@ -246,9 +253,15 @@ class LeafletMapComponent:
                     
                     // Dynamic thresholds based on variable type
                     let thresholds;
-                    if (SELECTED_VARIABLE === 'public_transportation_pct') {{
-                        // Custom thresholds optimized for Hawaii transportation data (36-45% range)
-                        thresholds = [36, 37, 38, 39, 40, 41, 42, 43, 44];
+                    if (SELECTED_VARIABLE === 'travel_time_to_work_minutes') {{
+                        // Custom thresholds for travel time to work in minutes (30-50 minute range)
+                        thresholds = [30, 32, 35, 37, 40, 42, 45, 47, 50];
+                    }} else if (SELECTED_VARIABLE === 'ctc_avg_amount' || SELECTED_VARIABLE === 'federal_eitc_avg_amount' || SELECTED_VARIABLE === 'state_eitc_avg_amount') {{
+                        // Custom thresholds for tax credit amounts ($500-$3000 range)
+                        thresholds = [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000];
+                    }} else if (SELECTED_VARIABLE === 'ctc_participation_rate' || SELECTED_VARIABLE === 'eitc_participation_rate') {{
+                        // Custom thresholds for tax credit participation rates (5-25% range)
+                        thresholds = [5, 8, 10, 12, 15, 18, 20, 22, 25];
                     }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
