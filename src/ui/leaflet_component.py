@@ -247,8 +247,8 @@ class LeafletMapComponent:
                     // Dynamic thresholds based on variable type
                     let thresholds;
                     if (SELECTED_VARIABLE === 'public_transportation_pct') {{
-                        // Custom thresholds for transportation percentages (0-60%)
-                        thresholds = [0.5, 1, 2, 5, 10, 15, 25, 35, 50];
+                        // Custom thresholds optimized for Hawaii transportation data (36-45% range)
+                        thresholds = [36, 37, 38, 39, 40, 41, 42, 43, 44];
                     }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{

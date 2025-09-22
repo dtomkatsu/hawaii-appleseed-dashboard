@@ -247,7 +247,9 @@ class ACSDataLoader(BaseDataLoader):
             try:
                 df = pd.read_csv(file_path, dtype={'geoid': str})
                 
-                # Transportation data is now permanently included in ACS CSV files
+                # Add transportation data if not already included
+                if 'public_transportation_pct' not in df.columns:
+                    df = self._add_transportation_variables(df, geo_level)
                 
                 logger.debug(f"Loaded ACS {geo_level.value} data: {df.shape}")
                 return df
