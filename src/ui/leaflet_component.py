@@ -310,10 +310,18 @@ class LeafletMapComponent:
                             {{'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}}
                         ],
                         'Transportation': [
-                            {{'key': 'travel_time_to_work_minutes', 'label': 'Travel Time to Work', 'type': 'minutes'}}
+                            {{'key': 'travel_time_to_work_minutes', 'label': 'Avg Commute Time', 'type': 'minutes'}},
+                            {{'key': 'public_transportation_pct', 'label': 'Public Transportation %', 'type': 'percentage'}}
                         ],
                         'Education': [
                             {{'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'}}
+                        ],
+                        'Tax Credits': [
+                            {{'key': 'ctc_avg_amount', 'label': 'Avg Child Tax Credit', 'type': 'currency'}},
+                            {{'key': 'ctc_participation_rate', 'label': 'CTC Participation', 'type': 'percentage'}},
+                            {{'key': 'federal_eitc_avg_amount', 'label': 'Avg Federal EITC', 'type': 'currency'}},
+                            {{'key': 'eitc_participation_rate', 'label': 'EITC Participation', 'type': 'percentage'}},
+                            {{'key': 'state_eitc_avg_amount', 'label': 'Avg State EITC', 'type': 'currency'}}
                         ]
                     }};
                     
