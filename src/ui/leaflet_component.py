@@ -292,37 +292,80 @@ class LeafletMapComponent:
                     return colors[0];
                 }},
                 
-                createMetricHtml(metrics, properties) {{
-                    const metricsConfig = {json.dumps(self.DEFAULT_METRICS)};
-                    const snapKeys = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total'];
+                createCategorizedMetricsHtml(properties) {{
+                    const categories = {{
+                        'Economic Security': [
+                            {{'key': 'alice_rate', 'label': 'ALICE Households', 'type': 'percentage'}},
+                            {{'key': 'poverty_rate', 'label': 'Poverty Rate', 'type': 'percentage'}},
+                            {{'key': 'median_income', 'label': 'Median Income', 'type': 'currency'}},
+                            {{'key': 'unemployment_rate', 'label': 'Unemployment Rate', 'type': 'percentage'}}
+                        ],
+                        'Food Security': [
+                            {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
+                            {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'}},
+                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}}
+                        ],
+                        'Housing': [
+                            {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
+                            {{'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}}
+                        ],
+                        'Transportation': [
+                            {{'key': 'travel_time_to_work_minutes', 'label': 'Travel Time to Work', 'type': 'minutes'}}
+                        ],
+                        'Education': [
+                            {{'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'}}
+                        ]
+                    }};
+                    
                     let html = '';
                     
-                    metricsConfig.forEach(metric => {{
-                        // Skip SNAP metrics as they have their own column
-                        if (snapKeys.includes(metric.key)) {{
-                            return;
-                        }}
+                    Object.keys(categories).forEach(categoryName => {{
+                        const metrics = categories[categoryName];
+                        let categoryHtml = '';
+                        let hasCategoryData = false;
                         
-                        const value = properties[metric.key];
-                        if (value !== undefined && value !== null) {{
-                            const isSelected = metric.key === SELECTED_VARIABLE;
-                            const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
-                            const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
-                            const fontWeight = isSelected ? 'bold' : 'normal';
-                            
+                        metrics.forEach(metric => {{
+                            const value = properties[metric.key];
+                            if (value !== undefined && value !== null && !isNaN(value)) {{
+                                hasCategoryData = true;
+                                const isSelected = metric.key === SELECTED_VARIABLE;
+                                const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
+                                const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
+                                const fontWeight = isSelected ? 'bold' : 'normal';
+                                
+                                categoryHtml += 
+                                    '<div style="background: ' + bgColor + '; ' +
+                                    'border: 1px solid ' + borderColor + '; ' +
+                                    'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
+                                    'font-weight: ' + fontWeight + ';">' +
+                                    '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
+                                    metric.label + '</div>' +
+                                    '<div style="font-size: 12px; color: #333;">' + 
+                                    utils.formatValue(value, metric.type) + '</div>' +
+                                    '</div>';
+                            }}
+                        }});
+                        
+                        if (hasCategoryData) {{
                             html += 
-                                '<div style="background: ' + bgColor + '; ' +
-                                'border: 1px solid ' + borderColor + '; ' +
-                                'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
-                                'font-weight: ' + fontWeight + ';">' +
-                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
-                                metric.label + '</div>' +
-                                '<div style="font-size: 12px; color: #333;">' + 
-                                utils.formatValue(value, metric.type) + '</div>' +
+                                '<div style="margin-bottom: 12px;">' +
+                                '<div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #e0e0e0;">' + 
+                                categoryName + '</div>' +
+                                categoryHtml +
                                 '</div>';
                         }}
                     }});
+                    
+                    if (!html) {{
+                        html = '<div style="color: #999; text-align: center; font-style: italic;">No data available</div>';
+                    }}
+                    
                     return html;
+                }},
+
+                createMetricHtml(metrics, properties) {{
+                    // Use the new categorized metrics function
+                    return this.createCategorizedMetricsHtml(properties);
                 }},
                 
                 getRepresentativeInfo(properties) {{
@@ -681,27 +724,17 @@ class LeafletMapComponent:
                         console.log('Layer clicked');
                         L.DomEvent.stop(e);
                         
-                        // Update the info panel with the same content as popup
+                        // Update the info panel with categorized content
+                        const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
-                            '<div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
+                            '<div style="margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
                             '  ', name,
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
-                            '<div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
+                            '<div style="background: #1a73e8; color: white; padding: 8px 12px; border-radius: 6px; text-align: center; margin-bottom: 15px;">',
                             '  <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                             '</div>',
-                            '<div style="display: flex; gap: 10px; margin-top: 8px; justify-content: space-between;">',
-                            '  <!-- Key Metrics Column -->',
-                            '  <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                            '    <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
-                            '    ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
-                            '  </div>',
-                            '  <!-- SNAP Column -->',
-                            '  <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                            '    <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
-                            '    ', (snapHtml || ''),
-                            '  </div>',
-                            '</div>',
+                            categorizedMetrics,
                             detailLinkHtml
                         ].join('');
                         
