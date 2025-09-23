@@ -319,50 +319,70 @@ class LeafletMapComponent:
                     
                     let html = '';
                     
-                    Object.keys(categories).forEach(categoryName => {{
+                    Object.keys(categories).forEach(function(categoryName) {{
                         const metrics = categories[categoryName];
                         let categoryHtml = '';
                         let hasCategoryData = false;
+                        let metricCount = 0;
+                        let rowHtml = '';
                         
-                        metrics.forEach(metric => {{
+                        // Process metrics in pairs
+                        for (let i = 0; i < metrics.length; i++) {{
+                            const metric = metrics[i];
                             const value = properties[metric.key];
-                            if (value !== undefined && value !== null && !isNaN(value)) {{
-                                hasCategoryData = true;
-                                const isSelected = metric.key === SELECTED_VARIABLE;
-                                const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
-                                const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
-                                const fontWeight = isSelected ? 'bold' : 'normal';
-                                
-                                categoryHtml += 
-                                    '<div style="background: ' + bgColor + '; ' +
-                                    'border: 1px solid ' + borderColor + '; ' +
-                                    'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
-                                    'font-weight: ' + fontWeight + ';">' +
-                                    '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
-                                    metric.label + '</div>' +
-                                    '<div style="font-size: 12px; color: #333;">' + 
-                                    utils.formatValue(value, metric.type) + '</div>' +
-                                    '</div>';
+                            if (value === undefined || value === null || isNaN(value)) continue;
+                            
+                            hasCategoryData = true;
+                            const isSelected = metric.key === SELECTED_VARIABLE;
+                            const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
+                            const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
+                            const fontWeight = isSelected ? 'bold' : 'normal';
+                            
+                            // Start new row if needed
+                            if (metricCount % 2 === 0) {{
+                                rowHtml = '<div style="display: flex; margin: 0 -3px;">';
                             }}
-                        }});
+                            
+                            // Add metric card
+                            rowHtml += [
+                                '<div style="flex: 1; min-width: 0; margin: 3px;">',
+                                '<div style="background:', bgColor, '; border: 1px solid ', borderColor, ';',
+                                'border-radius: 4px; padding: 6px 8px; height: 100%; font-weight:', fontWeight, ';">',
+                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;',
+                                'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">',
+                                metric.label, '</div>',
+                                '<div style="font-size: 12px; color: #333;">',
+                                utils.formatValue(value, metric.type), '</div>',
+                                '</div></div>'
+                            ].join('');
+                            
+                            metricCount++;
+                            
+                            // Close row if we have two metrics or it's the last one
+                            if (metricCount % 2 === 0 || i === metrics.length - 1) {{
+                                rowHtml += '</div>';
+                                categoryHtml += rowHtml;
+                                rowHtml = '';
+                            }}
+                        }}
                         
+                        // Add category to HTML if it has data
                         if (hasCategoryData) {{
-                            html += 
-                                '<div style="margin-bottom: 12px;">' +
-                                '<div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #e0e0e0;">' + 
-                                categoryName + '</div>' +
-                                categoryHtml +
-                                '</div>';
+                            html += [
+                                '<div style="margin-bottom: 16px;">',
+                                '<div style="font-size: 13px; font-weight: 600; color: #1a73e8;',
+                                'margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0;">',
+                                categoryName, '</div>',
+                                '<div style="margin: 0 -3px;">', categoryHtml, '</div>',
+                                '</div>'
+                            ].join('');
                         }}
                     }});
                     
-                    if (!html) {{
-                        html = '<div style="color: #999; text-align: center; font-style: italic;">No data available</div>';
-                    }}
-                    
-                    return html;
+                    // Return final HTML or a message if no data
+                    return html || '<div style="color: #999; text-align: center; font-style: italic;">No data available</div>';
                 }},
-
+                
                 createMetricHtml(metrics, properties) {{
                     // Use the new categorized metrics function
                     return this.createCategorizedMetricsHtml(properties);
