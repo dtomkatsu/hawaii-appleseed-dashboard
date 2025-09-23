@@ -307,6 +307,8 @@ class LeafletMapComponent:
                         ],
                         'Housing': [
                             {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
+                            {{'key': 'median_rent', 'label': 'Median Rent', 'type': 'currency'}},
+                            {{'key': 'renter_rate', 'label': 'Renter-Occupied', 'type': 'percentage'}},
                             {{'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}}
                         ],
                         'Transportation': [
