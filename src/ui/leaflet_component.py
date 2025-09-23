@@ -82,18 +82,25 @@ class LeafletMapComponent:
                 position: absolute;
                 bottom: 20px;
                 left: 10px;
-                z-index: 1000;
-                background: rgba(255, 255, 255, 0.95);
-                padding: 8px 10px;
-                border-radius: 6px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            }
+            .info-panel {
+                width: 0;
+                height: 100%;
+                overflow: hidden;
+                background: rgba(255, 255, 255, 0.98);
+                border-left: 3px solid #1a73e8;
+                box-shadow: -2px 0 10px rgba(0,0,0,0.1);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 11px;
-                line-height: 1.3;
+                font-size: 12px;
+                line-height: 1.4;
                 color: #333;
-                border: 1px solid rgba(0,0,0,0.1);
-                min-width: 140px;
-                max-width: 200px;
+                transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
+                flex-shrink: 0;
+            }
+            .info-panel.visible {
+                width: 320px;
+                padding: 20px;
+                overflow-y: auto;
             }
             .legend-title {
                 font-weight: 600;
@@ -197,7 +204,7 @@ class LeafletMapComponent:
         """
     
     def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str, 
-                           variable_display_name: str, color_scheme: str) -> str:
+                           variable_display_name: str, color_scheme: str, show_side_panel: bool = True) -> str:
         """Generate JavaScript code for the map."""
         return f"""
         (function() {{
@@ -669,54 +676,49 @@ class LeafletMapComponent:
                         '</div>'
                     ].join('');
                     
-                    // Handle click to show popup at screen center while keeping feature visible
+                    // Handle click to update info panel (JavaScript-only approach)
                     layer.on('click', function(e) {{
                         console.log('Layer clicked');
                         L.DomEvent.stop(e);
                         
-                        // Close any existing popup first
-                        map.closePopup();
-                        console.log('Closed existing popup');
+                        // Update the info panel with the same content as popup
+                        const infoPanelContent = [
+                            '<div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
+                            '  ', name,
+                            '</div>',
+                            (repInfo && repInfo.html ? repInfo.html : ''),
+                            '<div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
+                            '  <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
+                            '</div>',
+                            '<div style="display: flex; gap: 10px; margin-top: 8px; justify-content: space-between;">',
+                            '  <!-- Key Metrics Column -->',
+                            '  <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                            '    <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
+                            '    ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
+                            '  </div>',
+                            '  <!-- SNAP Column -->',
+                            '  <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
+                            '    <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
+                            '    ', (snapHtml || ''),
+                            '  </div>',
+                            '</div>',
+                            detailLinkHtml
+                        ].join('');
                         
-                        // Get feature bounds
-                        const featureBounds = layer.getBounds ? layer.getBounds() : 
-                                            (layer.getLatLng ? L.latLngBounds([layer.getLatLng(), layer.getLatLng()]) : null);
-                        
-                        if (featureBounds) {{
-                            // First, adjust the view to show the feature with extra space for popup
-                            const featurePadding = [100, 100]; // Extra padding for popup space
-                            map.fitBounds(featureBounds, {{
-                                padding: featurePadding,
-                                animate: true,
-                                duration: 0.12
-                            }});
+                        // Update the info panel content
+                        const infoPanel = document.getElementById(MAP_ID + '-info-panel');
+                        if (infoPanel) {{
+                            infoPanel.innerHTML = infoPanelContent;
+                            infoPanel.style.display = 'block';
+                            infoPanel.classList.add('visible');
                             
-                            // After view adjustment, calculate optimal popup position
+                            // Trigger map resize after panel animation
                             setTimeout(() => {{
-                                const mapContainer = map.getContainer();
-                                const containerBounds = mapContainer.getBoundingClientRect();
-                                
-                                // Calculate position that's centered horizontally and 45% down from the top
-                                const popupPosition = map.containerPointToLatLng([
-                                    containerBounds.width / 2,  // Centered horizontally
-                                    containerBounds.height * 0.95  // 45% down from top
-                                ]);
-                                
-                                // Create popup at the calculated position
-                                const popup = L.popup({{
-                                    maxWidth: 500,
-                                    className: 'custom-popup',
-                                    autoPan: false,
-                                    closeOnClick: false
-                                }})
-                                .setLatLng(popupPosition)
-                                .setContent(popupContent);
-                                
-                                console.log('Opening popup at position:', popupPosition);
-                                console.log('Popup content:', popupContent);
-                                popup.openOn(map);
-                                console.log('Popup should be visible now');
-                            }}, 300); // Wait for map animation to complete
+                                const mapInstance = window[MAP_ID];
+                                if (mapInstance) {{
+                                    mapInstance.invalidateSize();
+                                }}
+                            }}, 400);
                         }}
                     }});
                     
@@ -757,7 +759,8 @@ class LeafletMapComponent:
         color_scheme: str = "blue",
         active_layer: str = "Counties",
         map_height: int = 500,
-        key: Optional[str] = None
+        key: Optional[str] = None,
+        show_side_panel: bool = True
     ) -> None:
         """
         Create a Leaflet map component in Streamlit.
@@ -770,6 +773,7 @@ class LeafletMapComponent:
             active_layer: Active layer name (for future use)
             map_height: Height of the map in pixels
             key: Unique key for the component
+            show_side_panel: Whether to show the JavaScript info panel (default True)
         
         Returns:
             None
@@ -791,37 +795,38 @@ class LeafletMapComponent:
         
         # Build HTML component
         component_html = f"""
-        <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative;">
+        <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative; display:flex;">
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             
             <style>{self._get_css_styles()}</style>
             
-            <div id="{map_id}" style="height:100%; width:100%;"></div>
+            <div id="{map_id}" style="height:100%; flex:1; transition: flex 0.3s ease-in-out;"></div>
             <div id="{map_id}-legend" class="map-legend">
                 <div class="legend-title">{variable_display_name}</div>
                 <div class="legend-items" id="{map_id}-legend-items"></div>
                 <div class="color-scheme-selector">
                     <label for="color-scheme-select">Color Scheme:</label>
                     <select id="color-scheme-select">
-                        <option value="blue" {'selected' if current_color_scheme == 'blue' else ''}>Blue Scale</option>
-                        <option value="green" {'selected' if current_color_scheme == 'green' else ''}>Green Scale</option>
-                        <option value="red" {'selected' if current_color_scheme == 'red' else ''}>Red Scale</option>
-                        <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple Scale</option>
+                        <option value="blue" {'selected' if current_color_scheme == 'blue' else ''}>Blue</option>
+                        <option value="red" {'selected' if current_color_scheme == 'red' else ''}>Red</option>
+                        <option value="green" {'selected' if current_color_scheme == 'green' else ''}>Green</option>
+                        <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple</option>
                     </select>
                 </div>
             </div>
+            {f'<div id="{map_id}-info-panel" class="info-panel" style="display:none;"><div style="text-align: center; color: #666; font-style: italic;">Click on a geography to see details</div></div>' if show_side_panel else ''}
             
             <script>
-                {self._get_javascript_code(map_id, geojson_str, selected_variable, variable_display_name, current_color_scheme)}
+                {self._get_javascript_code(map_id, geojson_str, selected_variable, variable_display_name, current_color_scheme, show_side_panel)}
             </script>
         </div>
         """
         
-        # Render component with extra height for popups
+        # Render component without key parameter (not supported by st.components.v1.html)
         components.html(
             component_html,
-            height=map_height + 200,
+            height=map_height,
             scrolling=False
         )
 
@@ -833,7 +838,8 @@ def create_leaflet_map(
     color_scheme: str = "blue", 
     active_layer: str = "Counties",
     map_height: int = 500, 
-    key: Optional[str] = None
+    key: Optional[str] = None,
+    show_side_panel: bool = True
 ) -> None:
     """
     Create a Leaflet map component in Streamlit.
@@ -849,6 +855,7 @@ def create_leaflet_map(
         active_layer: Active layer name (for future use)
         map_height: Height of the map in pixels
         key: Unique key for the component
+        show_side_panel: Whether to show the JavaScript info panel (default True)
     
     Returns:
         None
@@ -861,5 +868,6 @@ def create_leaflet_map(
         color_scheme=color_scheme,
         active_layer=active_layer,
         map_height=map_height,
-        key=key
+        key=key,
+        show_side_panel=show_side_panel
     )

@@ -764,7 +764,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Default to alice_rate if nothing is selected, but don't update session state to avoid loops
         map_variable = 'alice_rate'
     
-    # Create the map
+    # Create the map with built-in JavaScript info panel
     create_leaflet_map(
         geojson_data=geojson_data,
         selected_variable=map_variable,
@@ -772,16 +772,137 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         color_scheme=color_scheme,
         active_layer=active_layer,
         map_height=500,
-        key=f"map-{active_layer}-{map_variable}-{color_scheme}"
+        key=f"map-{active_layer}-{map_variable}-{color_scheme}",
+        show_side_panel=True  # Enable the JavaScript panel as a popup-style panel
     )
+
+def create_info_panel(selected_variable, geojson_data):
+    """Create the static info panel that shows selected geography details."""
+    st.markdown("### Geographic Info")
     
-    # Display feature details if a feature is selected
-    if 'selected_feature_id' in st.session_state and st.session_state['selected_feature_id']:
-        display_feature_details(
-            st.session_state['selected_feature_id'],
-            geojson_data,
-            selected_variable
-        )
+    # Initialize session state for selected geography if not exists
+    if 'selected_geography' not in st.session_state:
+        st.session_state.selected_geography = None
+    
+    # No need for additional JavaScript communication since we're using proper component return values
+    
+    # Variable display names mapping
+    variable_display_names = {
+        'poverty_rate': 'Poverty Rate (%)',
+        'median_income': 'Median Income ($)',
+        'college_educated_pct': 'College Educated (%)',
+        'rent_burden_rate': 'Housing Cost Burden (%)',
+        'alice_rate': 'ALICE Households (%)',
+        'snap_household_rate': 'SNAP Households (%)',
+        'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+        'public_transportation_pct': 'Public Transportation Commuters (%)',
+        'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+        'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+        'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+        'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+        'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
+    }
+    
+    # Display selected variable
+    if selected_variable:
+        var_name = variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title())
+        st.markdown(f"**Selected Variable:** {var_name}")
+    else:
+        st.markdown("**Selected Variable:** No variable selected")
+    
+    st.markdown("---")
+    
+    # Display selected geography info
+    if st.session_state.selected_geography:
+        geo_info = st.session_state.selected_geography
+        st.markdown(f"**{geo_info.get('name', 'Unknown')}**")
+        
+        # Show selected variable prominently
+        if selected_variable and selected_variable in geo_info:
+            value = geo_info[selected_variable]
+            var_name = variable_display_names.get(selected_variable, selected_variable.replace('_', ' ').title())
+            
+            if isinstance(value, (int, float)):
+                if selected_variable.endswith('_pct') or selected_variable.endswith('_rate'):
+                    formatted_value = f"{value:.1f}%"
+                elif 'income' in selected_variable or 'amount' in selected_variable:
+                    formatted_value = f"${value:,.0f}"
+                elif 'minutes' in selected_variable:
+                    formatted_value = f"{value:.1f} minutes"
+                else:
+                    formatted_value = f"{value:,.0f}"
+            else:
+                formatted_value = str(value)
+            
+            st.markdown(f"<div style='background: #1a73e8; color: white; padding: 8px; border-radius: 4px; text-align: center; margin: 10px 0;'><strong>{var_name}: {formatted_value}</strong></div>", unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Key Metrics Section
+        st.markdown("**Key Metrics**")
+        key_metrics = [
+            ('poverty_rate', 'Poverty Rate', 'percentage'),
+            ('median_income', 'Median Income', 'currency'),
+            ('unemployment_rate', 'Unemployment Rate', 'percentage'),
+            ('population', 'Population', 'number')
+        ]
+        
+        for metric_key, metric_label, metric_type in key_metrics:
+            if metric_key in geo_info:
+                value = geo_info[metric_key]
+                if isinstance(value, (int, float)):
+                    is_selected = metric_key == selected_variable
+                    style = "background: #e8f0fe; border: 1px solid #1a73e8; font-weight: bold;" if is_selected else "background: #f8f9fa; border: 1px solid #e0e0e0;"
+                    
+                    if metric_type == 'percentage':
+                        formatted = f"{value:.1f}%"
+                    elif metric_type == 'currency':
+                        formatted = f"${value:,.0f}"
+                    else:
+                        formatted = f"{value:,.0f}"
+                    
+                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # SNAP Section
+        st.markdown("**SNAP**")
+        snap_metrics = [
+            ('snap_household_rate', 'SNAP Households', 'percentage'),
+            ('snap_benefit_annual_per_household', 'Avg Annual Benefit', 'currency'),
+            ('snap_benefits_annual_total', 'Total Annual Benefits', 'currency')
+        ]
+        
+        for metric_key, metric_label, metric_type in snap_metrics:
+            if metric_key in geo_info:
+                value = geo_info[metric_key]
+                if isinstance(value, (int, float)):
+                    is_selected = metric_key == selected_variable
+                    style = "background: #e8f0fe; border: 1px solid #1a73e8; font-weight: bold;" if is_selected else "background: #f8f9fa; border: 1px solid #e0e0e0;"
+                    
+                    if metric_type == 'percentage':
+                        formatted = f"{value:.1f}%"
+                    elif metric_type == 'currency':
+                        formatted = f"${value:,.0f}"
+                    else:
+                        formatted = f"{value:,.0f}"
+                    
+                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # View Detailed Data Button
+        if 'unique_id' in geo_info and geo_info['unique_id']:
+            geo_id = geo_info['unique_id']
+            detail_url = f"/geo_detail?geo_id={geo_id}"
+            st.markdown(f"<div style='text-align: center; margin-top: 12px;'><a href='{detail_url}' target='_blank' style='display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;'>View Detailed Data</a></div>", unsafe_allow_html=True)
+        else:
+            st.markdown("<div style='text-align: center; margin-top: 12px;'><span style='display: inline-block; background-color: #ccc; color: #666; padding: 8px 16px; border-radius: 4px; font-style: italic;'>Detailed data unavailable</span></div>", unsafe_allow_html=True)
+    else:
+        st.markdown("**Location:** Click on the map to select a location")
+        st.markdown("**Value:** No location selected")
 
 def prepare_feature_details(feature_id, geojson_data):
     """Prepare the feature details data for display.
