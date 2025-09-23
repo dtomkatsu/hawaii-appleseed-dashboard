@@ -81,7 +81,7 @@ class LeafletMapComponent:
             .map-legend {
                 position: absolute;
                 bottom: 20px;
-                right: 10px;
+                left: 10px;
                 z-index: 1000;
                 background: rgba(255, 255, 255, 0.95);
                 padding: 8px 10px;
