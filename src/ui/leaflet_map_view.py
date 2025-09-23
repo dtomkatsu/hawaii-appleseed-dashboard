@@ -58,7 +58,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
             'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
-            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
+            'travel_time_to_work_minutes', 'public_transportation_pct', 'ctc_avg_amount', 'ctc_participation_rate', 
             'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount'
         ]
         
@@ -576,6 +576,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
                 'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -589,6 +590,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
                 'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -602,6 +604,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'median_income': 'Median Income',
                 'rent_burden_rate': 'Housing Cost Burden',
                 'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',

@@ -870,6 +870,7 @@ def main():
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
             'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            'public_transportation_pct': 'Public Transportation Commuters (%)',
             'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
             'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
             'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',

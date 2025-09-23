@@ -255,7 +255,10 @@ class LeafletMapComponent:
                     let thresholds;
                     if (SELECTED_VARIABLE === 'travel_time_to_work_minutes') {{
                         // Custom thresholds for travel time to work in minutes (30-50 minute range)
-                        thresholds = [30, 32, 35, 37, 40, 42, 45, 47, 50];
+                        thresholds = [30, 35, 40, 45, 50];
+                    }} else if (SELECTED_VARIABLE === 'public_transportation_pct') {{
+                        // Custom thresholds for public transportation percentage (0-6% range)
+                        thresholds = [0.5, 1.0, 2.0, 4.0, 6.0];
                     }} else if (SELECTED_VARIABLE === 'ctc_avg_amount' || SELECTED_VARIABLE === 'federal_eitc_avg_amount' || SELECTED_VARIABLE === 'state_eitc_avg_amount') {{
                         // Custom thresholds for tax credit amounts ($500-$3000 range)
                         thresholds = [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000];
