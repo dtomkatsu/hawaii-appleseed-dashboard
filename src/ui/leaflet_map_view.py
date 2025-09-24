@@ -562,7 +562,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state if selection changes
         if selected_layer != active_layer:
             st.session_state['active_layer'] = selected_layer
-            st.rerun()
+            # Don't call st.rerun() here - let the natural flow handle it
     
     with col2:
         # Second dropdown: Data Variable (depends on Geography)
@@ -669,7 +669,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 if selected_var is not None:
                     st.session_state['selected_food_security_variable'] = None
                     logger.debug(f"Selected data variable: {selected_var}")
-                st.rerun()
+                # Don't call st.rerun() here - let the natural flow handle it
         else:
             logger.info("DROPDOWN DEBUG: No change in selection")
     
@@ -731,7 +731,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 else:
                     # Cleared food security selection - set default data variable
                     st.session_state['selected_variable'] = 'alice_rate'
-                st.rerun()
+                # Don't call st.rerun() here - let the natural flow handle it
     
     # Create a mapping of variable names to display names
     variable_display_names = {
