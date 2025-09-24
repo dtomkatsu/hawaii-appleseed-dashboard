@@ -709,7 +709,7 @@ class LeafletMapComponent:
                         detailLinkHtml = [
                             '  <div style="margin-top: 12px; text-align: center;">',
                             '    <a href="/geo_detail?geo_id=' + encodeURIComponent(String(featureId)) + '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
-                            '      View Detailed Data',
+                            '      View/Print Fact Sheet',
                             '    </a>',
                             '  </div>'
                         ].join('');
@@ -761,11 +761,11 @@ class LeafletMapComponent:
                             '  ', name,
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
-                            '<div style="background: #1a73e8; color: white; padding: 8px 12px; border-radius: 6px; text-align: center; margin-bottom: 15px;">',
+                            '<div style="background: #1a73e8; color: white; padding: 8px 12px; border-radius: 6px; text-align: center; margin: 0 0 15px 0;">',
                             '  <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
                             '</div>',
-                            categorizedMetrics,
-                            detailLinkHtml
+                            detailLinkHtml,
+                            categorizedMetrics
                         ].join('');
                         
                         // Update the info panel content
