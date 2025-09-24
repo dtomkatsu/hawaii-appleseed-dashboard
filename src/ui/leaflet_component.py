@@ -707,7 +707,7 @@ class LeafletMapComponent:
                     let detailLinkHtml = '';
                     if (featureId && featureId !== 'undefined' && featureId !== 'null') {{
                         detailLinkHtml = [
-                            '  <div style="margin-top: 12px; text-align: center;">',
+                            '  <div style="margin: 12px 0 20px 0; text-align: center;">',
                             '    <a href="/geo_detail?geo_id=' + encodeURIComponent(String(featureId)) + '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
                             '      View/Print Fact Sheet',
                             '    </a>',
