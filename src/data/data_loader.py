@@ -285,9 +285,9 @@ class ACSDataLoader(BaseDataLoader):
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_state_tax_credits_2022.csv'
             elif geo_level == GeoLevel.COUNTY:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_county_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.HOUSE_DISTRICT:
+            elif geo_level == GeoLevel.HOUSE:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_house_district_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.SENATE_DISTRICT:
+            elif geo_level == GeoLevel.SENATE:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_senate_district_tax_credits_2022.csv'
             else:
                 logger.warning(f"Tax credit data not available for {geo_level.value}")

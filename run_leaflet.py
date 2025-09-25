@@ -912,9 +912,7 @@ def main():
             index=layer_index,
             key="sidebar_layer_selector"
         )
-        # Only update if changed to avoid unnecessary reruns
-        if active_layer != st.session_state.get('active_layer'):
-            st.session_state.active_layer = active_layer
+        st.session_state.active_layer = active_layer
         
         # Variable selection with custom label
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Data Variable:</p>', unsafe_allow_html=True)
@@ -932,9 +930,7 @@ def main():
             index=variable_index,
             key="sidebar_variable_selector"
         )
-        # Only update if changed to avoid unnecessary reruns
-        if selected_variable != st.session_state.get('selected_variable'):
-            st.session_state.selected_variable = selected_variable
+        st.session_state.selected_variable = selected_variable
         
         # Color scheme selection
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Color Scheme:</p>', unsafe_allow_html=True)
@@ -952,9 +948,7 @@ def main():
             index=color_index,
             key="sidebar_color_selector"
         )
-        # Only update if changed to avoid unnecessary reruns
-        if selected_color != st.session_state.get('color_scheme'):
-            st.session_state.color_scheme = selected_color
+        st.session_state.color_scheme = selected_color
         
         # Display options
         st.sidebar.markdown("### 🔧 Display Options")

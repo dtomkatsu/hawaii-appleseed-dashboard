@@ -17,6 +17,7 @@ from src.ui.leaflet_component import create_leaflet_map
 # Set up logging
 logger = logging.getLogger(__name__)
 
+@st.cache_data
 def load_geojson(layer_name):
     """Load GeoJSON data for the specified layer."""
     # Map layer names to file paths
@@ -42,6 +43,11 @@ def load_geojson(layer_name):
     except Exception as e:
         logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
         return None
+
+@st.cache_resource
+def get_data_loader():
+    """Get a cached DataLoader instance."""
+    return DataLoader()
 
 def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
@@ -101,7 +107,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         return
     
     # Load ACS data
-    data_loader = DataLoader()
+    data_loader = get_data_loader()
     
     # Map geo levels to their data loader equivalents
     geo_level_map = {
@@ -562,7 +568,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state if selection changes
         if selected_layer != active_layer:
             st.session_state['active_layer'] = selected_layer
-            # Don't call st.rerun() here - let the natural flow handle it
+            st.rerun()
     
     with col2:
         # Second dropdown: Data Variable (depends on Geography)
@@ -669,7 +675,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 if selected_var is not None:
                     st.session_state['selected_food_security_variable'] = None
                     logger.debug(f"Selected data variable: {selected_var}")
-                # Don't call st.rerun() here - let the natural flow handle it
+                st.rerun()
         else:
             logger.info("DROPDOWN DEBUG: No change in selection")
     
@@ -731,7 +737,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 else:
                     # Cleared food security selection - set default data variable
                     st.session_state['selected_variable'] = 'alice_rate'
-                # Don't call st.rerun() here - let the natural flow handle it
+                st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
@@ -1059,7 +1065,7 @@ def create_data_summary():
     selected_variable = st.session_state.get('selected_variable', 'alice_rate')
     
     # Load data
-    data_loader = DataLoader()
+    data_loader = get_data_loader()
     
     # Map geo levels to their data loader equivalents
     geo_level_map = {
