@@ -897,40 +897,8 @@ def main():
         # Data visualization controls
         st.sidebar.markdown("### 📊 Visualization Controls")
         
-        # Custom colored labels
-        st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Geography:</p>', unsafe_allow_html=True)
-        
-        # Safe layer index calculation
-        try:
-            layer_index = layer_options.index(st.session_state.active_layer)
-        except (ValueError, KeyError):
-            layer_index = 0
-            
-        active_layer = st.sidebar.selectbox(
-            "",
-            options=layer_options,
-            index=layer_index,
-            key="sidebar_layer_selector"
-        )
-        st.session_state.active_layer = active_layer
-        
-        # Variable selection with custom label
-        st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Data Variable:</p>', unsafe_allow_html=True)
-        
-        # Safe variable index calculation
-        try:
-            variable_index = list(variable_options.keys()).index(st.session_state.selected_variable)
-        except (ValueError, KeyError):
-            variable_index = 0
-            
-        selected_variable = st.sidebar.selectbox(
-            "",
-            options=list(variable_options.keys()),
-            format_func=lambda x: variable_options[x],
-            index=variable_index,
-            key="sidebar_variable_selector"
-        )
-        st.session_state.selected_variable = selected_variable
+        # Note: Geography and variable selection moved to main content area
+        # This provides better layout and prevents sidebar/main content conflicts
         
         # Color scheme selection
         st.sidebar.markdown('<p style="color:#2a5a0c; font-family:Roboto; font-weight:600; margin-bottom:0px;">Color Scheme:</p>', unsafe_allow_html=True)

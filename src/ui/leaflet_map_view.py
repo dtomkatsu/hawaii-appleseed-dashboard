@@ -565,10 +565,147 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     </script>
     """, unsafe_allow_html=True)
     
-    # Note: Geography selection is handled by the sidebar in run_leaflet.py
-    # This avoids duplicate dropdowns that cause infinite rerun loops
-    # All dropdown controls are handled by the sidebar in run_leaflet.py
-    # This prevents duplicate dropdowns that cause infinite rerun loops in cloud environment
+    # Create dropdown controls in main content area
+    col1, col2, col3 = st.columns([1, 2, 2])
+    
+    with col1:
+        # Geography dropdown
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+        layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
+        try:
+            layer_index = layer_options.index(active_layer)
+        except (ValueError, KeyError):
+            layer_index = 0
+            
+        selected_layer = st.selectbox(
+            "",
+            layer_options,
+            index=layer_index,
+            key="layer_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state only if selection actually changes (prevents infinite loops)
+        if selected_layer != active_layer:
+            st.session_state['active_layer'] = selected_layer
+            st.rerun()
+    
+    with col2:
+        # Data Variable dropdown
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
+        
+        # Define available variables based on geography
+        if active_layer == 'State Boundary':
+            variable_options = {
+                'alice_rate': 'ALICE Households',
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'rent_burden_rate': 'Housing Cost Burden',
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
+            }
+        elif active_layer == 'Counties':
+            variable_options = {
+                'alice_rate': 'ALICE Households',
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'rent_burden_rate': 'Housing Cost Burden',
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
+            }
+        else:  # House and Senate Districts
+            variable_options = {
+                'alice_rate': 'ALICE Households',
+                'poverty_rate': 'Poverty Rate',
+                'median_income': 'Median Income',
+                'rent_burden_rate': 'Housing Cost Burden',
+                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+                'public_transportation_pct': 'Public Transportation Commuters (%)',
+                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
+                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
+                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
+                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
+                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
+            }
+        
+        # Get current variable index
+        try:
+            var_index = list(variable_options.keys()).index(selected_variable)
+        except (ValueError, KeyError):
+            var_index = 0
+            
+        selected_var = st.selectbox(
+            "",
+            options=list(variable_options.keys()),
+            format_func=lambda x: variable_options[x],
+            index=var_index,
+            key="variable_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state only if selection actually changes (prevents infinite loops)
+        if selected_var != selected_variable:
+            st.session_state['selected_variable'] = selected_var
+            # Clear food security selection when data variable is selected
+            if 'selected_food_security_variable' in st.session_state:
+                st.session_state['selected_food_security_variable'] = None
+            st.rerun()
+    
+    with col3:
+        # Food Security dropdown
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        
+        food_security_options = {
+            'snap_household_rate': 'SNAP Households (%)',
+            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+        }
+        
+        # Add None option for mutual exclusion
+        fs_options = [None] + list(food_security_options.keys())
+        
+        def fs_format_func(x):
+            if x is None:
+                return "Select Food Security Variable..."
+            return food_security_options[x]
+        
+        # Get current food security variable
+        selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
+        
+        try:
+            fs_index = fs_options.index(selected_food_security_var)
+        except (ValueError, TypeError):
+            fs_index = 0
+            
+        selected_fs_var = st.selectbox(
+            "",
+            options=fs_options,
+            format_func=fs_format_func,
+            index=fs_index,
+            key="food_security_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state only if selection actually changes (prevents infinite loops)
+        if selected_fs_var != selected_food_security_var:
+            st.session_state['selected_food_security_variable'] = selected_fs_var
+            # Clear data variable selection when food security variable is selected
+            if selected_fs_var is not None:
+                st.session_state['selected_variable'] = None
+            else:
+                # Set default data variable when food security is cleared
+                st.session_state['selected_variable'] = 'alice_rate'
+            st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
