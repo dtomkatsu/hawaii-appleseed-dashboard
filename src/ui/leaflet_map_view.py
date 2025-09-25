@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 @st.cache_data
 def load_geojson(layer_name):
     """Load GeoJSON data for the specified layer."""
+    import gzip
+    
     # Map layer names to file paths
     layer_files = {
         'State Boundary': 'hawaii_state_boundary.geojson',
@@ -32,14 +34,30 @@ def load_geojson(layer_name):
         logger.error(f"Unknown layer: {layer_name}")
         return None
     
-    # Construct the file path
-    file_path = Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons' / layer_files[layer_name]
+    # Construct the file paths (try compressed first)
+    base_path = Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons'
+    compressed_path = base_path / f"{layer_files[layer_name]}.gz"
+    original_path = base_path / layer_files[layer_name]
     
     try:
-        with open(file_path, 'r') as f:
-            geojson_data = json.load(f)
-            logger.info(f"Successfully loaded GeoJSON for {layer_name} from {file_path}")
-            return geojson_data
+        # Try compressed file first
+        if compressed_path.exists():
+            with gzip.open(compressed_path, 'rt') as f:
+                geojson_data = json.load(f)
+                logger.info(f"Successfully loaded compressed GeoJSON for {layer_name}")
+                return geojson_data
+        
+        # Fallback to original file
+        elif original_path.exists():
+            with open(original_path, 'r') as f:
+                geojson_data = json.load(f)
+                logger.info(f"Successfully loaded GeoJSON for {layer_name} from {original_path}")
+                return geojson_data
+        
+        else:
+            logger.error(f"Neither compressed nor original GeoJSON file found for {layer_name}")
+            return None
+            
     except Exception as e:
         logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
         return None
@@ -99,28 +117,30 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     logger.info(f"Active layer: {active_layer}")
     logger.info(f"Color scheme: {color_scheme}")
     
-    # Load GeoJSON data for the selected layer
-    geojson_data = load_geojson(active_layer)
+    # Load GeoJSON data for the selected layer with progress indicator
+    with st.spinner(f"Loading {active_layer} geographic data..."):
+        geojson_data = load_geojson(active_layer)
     
     if geojson_data is None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
     
-    # Load ACS data
-    data_loader = get_data_loader()
-    
-    # Map geo levels to their data loader equivalents
-    geo_level_map = {
-        'State Boundary': 'state',
-        'Counties': 'county',
-        'House Districts': 'house',
-        'Senate Districts': 'senate'
-    }
-    
-    geo_level = geo_level_map.get(active_layer, 'state')
-    
-    # Get merged ACS + ALICE data for the current geographic level
-    combined_data = data_loader.get_data(geo_level)
+    # Load data with progress indicator
+    with st.spinner(f"Loading {active_layer} statistical data..."):
+        data_loader = get_data_loader()
+        
+        # Map geo levels to their data loader equivalents
+        geo_level_map = {
+            'State Boundary': 'state',
+            'Counties': 'county',
+            'House Districts': 'house',
+            'Senate Districts': 'senate'
+        }
+        
+        geo_level = geo_level_map.get(active_layer, 'state')
+        
+        # Get combined data for the selected geographic level
+        combined_data = data_loader.get_data(geo_level)
     
     if combined_data is not None:
         # Debug: Print combined data columns and first row

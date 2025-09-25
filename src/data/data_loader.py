@@ -934,15 +934,13 @@ class DataLoader:
         # Initialize data loaders
         self._init_data_loaders()
         
-        # Initialize processors
+        # Skip preloading for cloud performance - load on demand instead
+        # self._preload_data()
         self.merger = DataMerger(self._get_geo_name_mapping())
         self.geojson_processor = GeoJSONProcessor(self.base_dir)
         
         # Available variables for the dashboard
         self.available_variables = self._get_available_variables()
-        
-        # Don't preload all data - load on demand for better performance
-        # self._preload_data()
     
     def _init_data_loaders(self):
         """Initialize data loaders for different data types."""
