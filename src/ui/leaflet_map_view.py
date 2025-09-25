@@ -837,7 +837,7 @@ def create_info_panel(selected_variable, geojson_data):
                     else:
                         formatted = f"{value:,.0f}"
                     
-                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -863,7 +863,7 @@ def create_info_panel(selected_variable, geojson_data):
                     else:
                         formatted = f"{value:,.0f}"
                     
-                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
         st.markdown("---")
         

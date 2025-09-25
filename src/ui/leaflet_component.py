@@ -85,8 +85,9 @@ class LeafletMapComponent:
             }
             .info-panel {
                 width: 0;
-                height: 100%;
-                overflow: hidden;
+                height: 90vh;  /* Use viewport height with a small margin */
+                overflow-y: auto;  /* Enable vertical scrolling */
+                overflow-x: hidden;  /* Prevent horizontal scrolling */
                 background: rgba(255, 255, 255, 0.98);
                 border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
@@ -96,11 +97,18 @@ class LeafletMapComponent:
                 color: #333;
                 transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
                 flex-shrink: 0;
+                position: fixed;
+                right: 0;
+                top: 0;
+                z-index: 1000;
+                padding: 15px 0 0 0;  /* Consistent padding with visible state */
+                box-sizing: border-box;  /* Ensure padding is included in width */
             }
             .info-panel.visible {
-                width: 320px;
-                padding: 20px;
+                width: 350px;  /* Increased from 320px to 350px */
+                padding: 15px;  /* Reduced from 20px to 15px */
                 overflow-y: auto;
+                box-sizing: border-box;  /* Ensure padding is included in width */
             }
             .legend-title {
                 font-weight: 600;

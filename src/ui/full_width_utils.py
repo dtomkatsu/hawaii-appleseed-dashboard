@@ -13,9 +13,9 @@ def set_full_width_layout():
     <style>
         /* Base container adjustments */
         .stApp {
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
+            max-width: 95% !important;  /* Increased from 75% to 95% for better space utilization */
+            margin: 0 auto !important;  /* Center the container */
+            padding: 0 1rem !important;  /* Add small side padding */
         }
         
         /* Main content area */
@@ -62,7 +62,7 @@ def set_full_width_layout():
         
         @media (min-width: 1200px) {
             .main .block-container {
-                padding: 2rem 5rem 2rem 5rem !important;
+                padding: 2rem 2rem 2rem 2rem !important;  /* Reduced side padding for more content space */
             }
         }
         
