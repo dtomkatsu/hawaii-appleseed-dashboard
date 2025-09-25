@@ -82,10 +82,18 @@ class LeafletMapComponent:
                 position: absolute;
                 bottom: 20px;
                 left: 10px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 8px 12px;
+                border-radius: 4px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                max-width: 180px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .info-panel {
                 width: 0;
-                height: 90vh;  /* Use viewport height with a small margin */
+                height: 100vh;  /* Full viewport height */
                 overflow-y: auto;  /* Enable vertical scrolling */
                 overflow-x: hidden;  /* Prevent horizontal scrolling */
                 background: rgba(255, 255, 255, 0.98);
@@ -96,19 +104,82 @@ class LeafletMapComponent:
                 line-height: 1.4;
                 color: #333;
                 transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
-                flex-shrink: 0;
                 position: fixed;
                 right: 0;
                 top: 0;
                 z-index: 1000;
-                padding: 15px 0 0 0;  /* Consistent padding with visible state */
-                box-sizing: border-box;  /* Ensure padding is included in width */
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+                /* Hide default scrollbar for WebKit */
+                scrollbar-width: none;  /* Firefox */
+                -ms-overflow-style: none;  /* IE and Edge */
+            }
+            
+            /* Hide scrollbar for WebKit browsers */
+            .info-panel::-webkit-scrollbar {
+                display: none;
             }
             .info-panel.visible {
-                width: 350px;  /* Increased from 320px to 350px */
-                padding: 15px;  /* Reduced from 20px to 15px */
+                width: 350px;
+                padding: 20px;
                 overflow-y: auto;
-                box-sizing: border-box;  /* Ensure padding is included in width */
+                height: 100vh;
+                box-sizing: border-box;
+                position: fixed;
+                right: 0;
+                top: 0;
+                z-index: 1000;
+                background: white;
+                border-left: 3px solid #1a73e8;
+                box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            }
+            
+            /* Scroll indicator arrow */
+            .scroll-indicator {
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                width: 36px;
+                height: 36px;
+                background: #1a73e8;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                cursor: pointer;
+                z-index: 2000;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+                transition: all 0.3s ease;
+                user-select: none;
+                opacity: 0.9;
+                border: 2px solid white;
+            }
+            
+            .scroll-indicator:hover {
+                background: #1557b0;
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+            }
+            
+            .scroll-indicator.up {
+                animation: pulse-up 1s ease-in-out infinite alternate;
+            }
+            
+            .scroll-indicator.down {
+                animation: pulse-down 1s ease-in-out infinite alternate;
+            }
+            
+            @keyframes pulse-up {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-3px); }
+            }
+            
+            @keyframes pulse-down {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(3px); }
             }
             .legend-title {
                 font-weight: 600;
@@ -817,11 +888,123 @@ class LeafletMapComponent:
             legendManager.update();
             legendManager.setupColorSchemeHandler();
             
+            // Scroll indicator functionality - embedded directly
+            (function() {{
+                'use strict';
+
+                // Scroll indicator functionality
+                function initScrollIndicator() {{
+                    var panel = document.querySelector('.info-panel.visible');
+                    if (!panel) {{
+                        console.log('No visible panel found, retrying...');
+                        setTimeout(initScrollIndicator, 500);
+                        return;
+                    }}
+
+                    // Remove any existing scroll indicators
+                    var existingIndicator = document.querySelector('.scroll-indicator');
+                    if (existingIndicator) {{
+                        existingIndicator.remove();
+                    }}
+
+                    // Create scroll indicator arrow
+                    var scrollArrow = document.createElement('div');
+                    scrollArrow.className = 'scroll-indicator down';
+                    scrollArrow.innerHTML = '▼';
+                    document.body.appendChild(scrollArrow);
+                    
+                    console.log('Scroll indicator created:', scrollArrow);
+
+                    function updateScrollIndicator() {{
+                        var scrollTop = panel.scrollTop;
+                        var scrollHeight = panel.scrollHeight;
+                        var clientHeight = panel.clientHeight;
+                        
+                        // Check if content is scrollable
+                        if (scrollHeight <= clientHeight) {{
+                            scrollArrow.style.display = 'none';
+                            return;
+                        }}
+                        
+                        scrollArrow.style.display = 'flex';
+                        
+                        // Check if at bottom
+                        var isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+                        
+                        if (isAtBottom) {{
+                            scrollArrow.innerHTML = '▲';
+                            scrollArrow.className = 'scroll-indicator up';
+                        }} else {{
+                            scrollArrow.innerHTML = '▼';
+                            scrollArrow.className = 'scroll-indicator down';
+                        }}
+                    }}
+
+                    // Click handler for scroll arrow
+                    scrollArrow.addEventListener('click', function() {{
+                        var scrollTop = panel.scrollTop;
+                        var scrollHeight = panel.scrollHeight;
+                        var clientHeight = panel.clientHeight;
+                        var isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+                        
+                        if (isAtBottom) {{
+                            // Scroll to top
+                            panel.scrollTo({{
+                                top: 0,
+                                behavior: 'smooth'
+                            }});
+                        }} else {{
+                            // Scroll to bottom
+                            panel.scrollTo({{
+                                top: scrollHeight,
+                                behavior: 'smooth'
+                            }});
+                        }}
+                    }});
+
+                    // Initial update
+                    updateScrollIndicator();
+                    
+                    // Update on scroll
+                    panel.addEventListener('scroll', updateScrollIndicator);
+                    
+                    // Update on resize (with debounce)
+                    var resizeTimer;
+                    window.addEventListener('resize', function() {{
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(updateScrollIndicator, 100);
+                    }});
+                    
+                    // Cleanup function
+                    var cleanup = function() {{
+                        console.log('Cleaning up scroll indicator');
+                        panel.removeEventListener('scroll', updateScrollIndicator);
+                        window.removeEventListener('resize', updateScrollIndicator);
+                        if (scrollArrow && scrollArrow.parentNode) {{
+                            scrollArrow.parentNode.removeChild(scrollArrow);
+                        }}
+                    }};
+                    
+                    // Clean up when panel is closed
+                    var observer = new MutationObserver(function(mutations) {{
+                        if (!document.body.contains(panel)) {{
+                            cleanup();
+                            observer.disconnect();
+                        }}
+                    }});
+                    observer.observe(document.body, {{ childList: true, subtree: true }});
+                    
+                    return cleanup;
+                }}
+
+                // Initialize with a delay to ensure DOM is ready
+                setTimeout(initScrollIndicator, 1000);
+            }})();
+            
             // Store map reference for debugging
             window[MAP_ID] = map;
         }})();
         """
-    
     def create_map(
         self,
         geojson_data: Union[Dict[str, Any], str],
