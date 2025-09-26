@@ -1,0 +1,297 @@
+school_id,school_name,school_type,is_charter,address,city,zip,county,state,island,complex_name,complex_area_name,complex_district,is_cep,enrollment,last_updated
+335,Ahuimanu Elem School,Elementary,False,47-470 Hui Aeko Place,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,280,2025-09-25 17:44:44
+200,Aiea Elem School,Elementary,False,99-370 Moanalua Road,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,True,303,2025-09-25 17:44:44
+202,Aiea High School,High School,False,98-1276 Ulune Street,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,849,2025-09-25 17:44:44
+201,Aiea Inter School,Middle / Inter,False,99-600 Kulawea Street,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,468,2025-09-25 17:44:44
+300,Aikahi Elem School,Elementary,False,281 Ilihau Street,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+100,Aina Haina Elem School,Elementary,False,801 West Hind Drive,Honolulu,96821,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+101,Ala Wai Elem School,Elementary,False,503 Kamoku Street,Honolulu,96826,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,386,2025-09-25 17:44:44
+203,Aliamanu Elem School,Elementary,False,3265 Salt Lake Blvd.,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+204,Aliamanu Middle School,Middle / Inter,False,3271 Salt Lake Blvd.,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+102,Aliiolani Elem School,Elementary,False,1240 7th Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,False,228,2025-09-25 17:44:44
+103,Anuenue School,K - 12,False,2528 10th Avenue,Honolulu,96816,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,True,419,2025-09-25 17:44:44
+250,August Ahrens Elem School,Elementary,False,94-1170 Waipahu Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,1163,2025-09-25 17:44:44
+400,Baldwin High School,High School,False,1650 Kaahumanu Avenue,Wailuku,96793,Maui,HI,Maui,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,1263,2025-09-25 17:44:44
+251,Barbers Point Elem School,Elementary,False,3001 Boxer Road,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,True,510,2025-09-25 17:44:44
+252,Campbell High School,High School,False,91-980 North Road,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,2917,2025-09-25 17:44:44
+301,Castle High School,High School,False,45-386 Kaneohe Bay Drive,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,986,2025-09-25 17:44:44
+351,DeSilva Elem School,Elementary,False,278 Ainako Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,False,426,2025-09-25 17:44:44
+105,Dole Middle School,Middle / Inter,False,1803 Kamehameha IV Road,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,549,2025-09-25 17:44:44
+451,Eleele Elem School,Elementary,False,4750 Uliuli Road,Eleele,96705,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,383,2025-09-25 17:44:44
+302,Enchanted Lake Elem School,Elementary,False,770 Keolu Drive,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,267,2025-09-25 17:44:44
+254,Ewa Beach Elem School,Elementary,False,91-740 Papipi Road,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,708,2025-09-25 17:44:44
+253,Ewa Elem School,Elementary,False,91-1280 Renton Road,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,1255,2025-09-25 17:44:44
+296,Ewa Makai Middle School,Middle / Inter,False,91-6291 Kapolei Parkway,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,1196,2025-09-25 17:44:44
+106,Farrington High School,High School,False,1564 North King Street,Honolulu,96817,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,False,2053,2025-09-25 17:44:44
+107,Fern Elem School,Elementary,False,1121 Middle Street,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,429,2025-09-25 17:44:44
+352,Haaheo Elem School,Elementary,False,121 Haaheo Road,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,False,118,2025-09-25 17:44:44
+108,Hahaione Elem School,Elementary,False,595 Pepeekeo Street,Honolulu,96825,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+401,Haiku Elem School,Elementary,False,105 Pauwela Road,Haiku,96708,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,346,2025-09-25 17:44:44
+206,Haleiwa Elem School,Elementary,False,66-505 Haleiwa Road,Haleiwa,96712,Honolulu,HI,Oahu,Waialua,Leilehua-Mililani-Waialua,Central,False,214,2025-09-25 17:44:44
+402,Hana High & Elem School,K - 12,False,4111 Hana Highway,Hana,96713,Maui,HI,Maui,Hana,Hana-Lahainaluna-Lanai-Molokai,Maui,True,401,2025-09-25 17:44:44
+452,Hanalei Elem School,Elementary,False,5-5415 Kuhio Highway,Hanalei,96714,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,194,2025-09-25 17:44:44
+303,Hauula Elem School,Elementary,False,54-046 Kamehameha Highway,Hauula,96717,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,True,399,2025-09-25 17:44:44
+304,Heeia Elem School,Elementary,False,46-202 Haiku Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,375,2025-09-25 17:44:44
+208,Helemano Elem School,Elementary,False,1001 Ihi Ihi Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,533,2025-09-25 17:44:44
+470,HI School for the Deaf & Blind,K - 12,False,3440 Leahi Avenue,Honolulu,96815,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,True,47,2025-09-25 17:44:44
+209,Hickam Elem School,Elementary,False,Manzelman Circle,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+255,Highlands Inter School,Middle / Inter,False,1460 Hoolaulea Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,834,2025-09-25 17:44:44
+355,Hilo High School,High School,False,556 Waianuenue Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,1167,2025-09-25 17:44:44
+356,Hilo Inter School,Middle / Inter,False,587 Waianuenue Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,551,2025-09-25 17:44:44
+357,Hilo Union Elem School,Elementary,False,506 Waianuenue Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,460,2025-09-25 17:44:44
+109,Hokulani Elem School,Elementary,False,2940 Kamakini Street,Honolulu,96816,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+280,Holomua Elem School,Elementary,False,91-1561 Keaunui Drive,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,1118,2025-09-25 17:44:44
+358,Holualoa Elem School,Elementary,False,76-5957 Mamalahoa Highway,Holualoa,96725,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,448,2025-09-25 17:44:44
+359,Honaunau Elem School,Elementary,False,83-5360 Mamalahoa Highway,Captain Cook,96704,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,173,2025-09-25 17:44:44
+361,Honokaa Elem School,Elementary,False,45-534 Pakalana Street,Honokaa,96727,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,407,2025-09-25 17:44:44
+360,Honokaa High & Inter School,Middle - High,False,45-527 Pakalana Street,Honokaa,96727,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,686,2025-09-25 17:44:44
+297,Honouliuli Middle School,Middle / Inter,False,91-559 Maunakapu Street,Ewa Beach,96706,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,787,2025-09-25 17:44:44
+276,Honowai Elem School,Elementary,False,94-600 Honowai Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,True,608,2025-09-25 17:44:44
+293,Hookele Elem School,Elementary,False,511 Kunehi Street,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,709,2025-09-25 17:44:44
+363,Hookena Elem School,Elementary,False,86-4355 Mamalahoa Highway,Captain Cook,96704,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,113,2025-09-25 17:44:44
+404,Iao Inter School,Middle / Inter,False,260 South Market Street,Wailuku,96793,Maui,HI,Maui,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,890,2025-09-25 17:44:44
+210,Iliahi Elem School,Elementary,False,2035 California Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,344,2025-09-25 17:44:44
+279,Ilima Inter School,Middle / Inter,False,91-884 Fort Weaver Road,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,728,2025-09-25 17:44:44
+207,Inouye Elem School,Elementary,False,1 Ayres Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+256,Iroquois Point Elem School,Elementary,False,5553 Cormorant Avenue,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,578,2025-09-25 17:44:44
+110,Jarrett Middle School,Middle / Inter,False,1903 Palolo Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,285,2025-09-25 17:44:44
+111,Jefferson Elem School,Elementary,False,324 Kapahulu Avenue,Honolulu,96815,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,False,353,2025-09-25 17:44:44
+305,Kaaawa Elem School,Elementary,False,51-296 Kamehameha Highway,Kaaawa,96730,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,True,124,2025-09-25 17:44:44
+112,Kaahumanu Elem School,Elementary,False,1141 Kinau Street,Honolulu,96814,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,True,477,2025-09-25 17:44:44
+211,Kaala Elem School,Elementary,False,130 California Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,True,388,2025-09-25 17:44:44
+330,Kaelepulu Elem School,Elementary,False,530 Keolu Drive,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+113,Kaewai Elem School,Elementary,False,1929 Kamehameha IV Road,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,269,2025-09-25 17:44:44
+371,Kahakai Elem School,Elementary,False,76-147 Royal Poinciana Drive,Kailua-Kona,96740,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,552,2025-09-25 17:44:44
+114,Kahala Elem School,Elementary,False,4559 Kilauea Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+306,Kahaluu Elem School,Elementary,False,47-280 Waihee Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,True,247,2025-09-25 17:44:44
+331,Kahuku Elem School,Elementary,False,56-170 Pualalea Street,Kahuku,96731,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,False,329,2025-09-25 17:44:44
+307,Kahuku High & Inter School,Middle - High,False,56-490 Kamehameha Highway,Kahuku,96731,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,False,1427,2025-09-25 17:44:44
+405,Kahului Elem School,Elementary,False,410 South Hina Avenue,Kahului,96732,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,796,2025-09-25 17:44:44
+308,Kailua Elem School,Elementary,False,315 Kuulei Road,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,286,2025-09-25 17:44:44
+309,Kailua High School,High School,False,451 Ulumanu Drive,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,769,2025-09-25 17:44:44
+310,Kailua Inter School,Middle / Inter,False,145 South Kainalu Drive,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+281,Kaimiloa Elem School,Elementary,False,91-1028 Kaunolu Street,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,686,2025-09-25 17:44:44
+115,Kaimuki High School,High School,False,2705 Kaimuki Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,527,2025-09-25 17:44:44
+116,Kaimuki Middle School,Middle / Inter,False,631 18th Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+311,Kainalu Elem School,Elementary,False,165 Kaiholu Street,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+154,Kaiser High School,High School,False,511 Lunalilo Home Road,Honolulu,96825,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+117,Kaiulani Elem School,Elementary,False,783 North King Street,Honolulu,96817,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,True,240,2025-09-25 17:44:44
+453,Kalaheo Elem School,Elementary,False,4400 Maka Road,Kalaheo,96741,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,367,2025-09-25 17:44:44
+312,Kalaheo High School,High School,False,730 Iliaina Street,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+118,Kalakaua Middle School,Middle / Inter,False,821 Kalihi Street,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,926,2025-09-25 17:44:44
+420,Kalama Inter School,Middle / Inter,False,120 Makani Road,Makawao,96768,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,931,2025-09-25 17:44:44
+119,Kalani High School,High School,False,4680 Kalanianaole Highway,Honolulu,96821,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+365,Kalanianaole Elem,Elementary,False,27-330 Old Mamalahoa Highway,Papaikou,96781,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,180,2025-09-25 17:44:44
+287,Kaleiopuu Elem School,Elementary,False,94-665 Kaaholo Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,730,2025-09-25 17:44:44
+120,Kalihi Elem School,Elementary,False,2471 Kula Kolea Drive,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,212,2025-09-25 17:44:44
+121,Kalihi-Kai Elem School,Elementary,False,626 McNeil Street,Honolulu,96817,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,False,549,2025-09-25 17:44:44
+122,Kalihi-Uka Elem School,Elementary,False,2411 Kalihi Street,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,False,274,2025-09-25 17:44:44
+123,Kalihi-Waena Elem School,Elementary,False,1240 Gulick Avenue,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,439,2025-09-25 17:44:44
+448,Kamakahelei Middle School,Middle / Inter,False,4431 Nuhou St.,Lihue,96766,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,822,2025-09-25 17:44:44
+431,Kamalii Elem School,Elementary,False,180 Kealii Alanui,Kihei,96753,Maui,HI,Maui,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,336,2025-09-25 17:44:44
+406,Kamehameha III Elem School,Elementary,False,100 Akahele,Lahaina,96761,Maui,HI,Maui,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,False,377,2025-09-25 17:44:44
+155,Kamiloiki Elem School,Elementary,False,7788 Hawaii Kai Drive,Honolulu,96825,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+313,Kaneohe Elem School,Elementary,False,45-495 Kamehameha Highway,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,540,2025-09-25 17:44:44
+283,Kanoelani Elem School,Elementary,False,94-1091 Oli Loop,Waipahu,96797,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,730,2025-09-25 17:44:44
+454,Kapaa Elem School,Elementary,False,4886 Kawaihau Road,Kapaa,96746,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,True,854,2025-09-25 17:44:44
+455,Kapaa High School,High School,False,4695 Mailihuna Road,Kapaa,96746,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,986,2025-09-25 17:44:44
+447,Kapaa Middle School,Middle / Inter,False,4867 Olohena Road,Kapaa,96746,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,501,2025-09-25 17:44:44
+124,Kapalama Elem School,Elementary,False,1601 North School Street,Honolulu,96817,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,False,500,2025-09-25 17:44:44
+367,Kapiolani Elem School,Elementary,False,966 Kilauea Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,373,2025-09-25 17:44:44
+282,Kapolei Elem School,Elementary,False,91-1119 Kamaaha Loop,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,663,2025-09-25 17:44:44
+292,Kapolei High School,High School,False,91-5007 Kapolei Parkway,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,1781,2025-09-25 17:44:44
+291,Kapolei Middle School,Middle / Inter,False,91-5335 Kapolei Parkway,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,737,2025-09-25 17:44:44
+315,Kapunahala Elem School,Elementary,False,45-828 Anoi Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,453,2025-09-25 17:44:44
+368,Kau High & Pahala Elem School,K - 12,False,96-3150 Pikake Street,Pahala,96777,Hawaii,HI,Hawaii,Kau,Kau-Keaau-Pahoa,Hawaii,True,483,2025-09-25 17:44:44
+456,Kauai High School,High School,False,3577 Lala Road,Lihue,96766,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,1002,2025-09-25 17:44:44
+125,Kauluwela Elem School,Elementary,False,1486 Aala Street,Honolulu,96817,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,True,408,2025-09-25 17:44:44
+369,Kaumana Elem School,Elementary,False,1710 Kaumana Drive,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,False,233,2025-09-25 17:44:44
+457,Kaumualii Elem School,Elementary,False,4380 Hanamaulu Road,Lihue,96766,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,528,2025-09-25 17:44:44
+407,Kaunakakai Elem School,Elementary,False,30 Ailoa,Kaunakakai,96748,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,297,2025-09-25 17:44:44
+126,Kawananakoa Middle School,Middle / Inter,False,49 Funchal Street,Honolulu,96813,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,605,2025-09-25 17:44:44
+378,Ke Kula O Ehunuikaimalino,K - 12,False,81-1041 Konawaena School Road,Kealakekua,96750,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,266,2025-09-25 17:44:44
+353,Keaau Elem School,Elementary,False,16-680 Keaau-Pahoa Road,Keaau,96749,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,True,886,2025-09-25 17:44:44
+354,Keaau High School,High School,False,16-725 Keaau-Pahoa Road,Keaau,96749,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,True,1050,2025-09-25 17:44:44
+370,Keaau Middle School,Middle / Inter,False,16-565  Keaau-Pahoa Road,Keaau,96749,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,True,699,2025-09-25 17:44:44
+388,Kealakehe Elem School,Elementary,False,74-5118 Kealakaa Street,Kailua-Kona,96740,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,934,2025-09-25 17:44:44
+392,Kealakehe High School,High School,False,74-5000 Puohulihuli Street,Kailua-Kona,96740,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,1417,2025-09-25 17:44:44
+390,Kealakehe Inter School,Middle / Inter,False,74-5062 Onipaa Street,Kailua-Kona,96740,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,680,2025-09-25 17:44:44
+372,Keaukaha Elem School,Elementary,False,240 Desha Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,True,355,2025-09-25 17:44:44
+104,Keelikolani Middle School,Middle / Inter,False,1302 Queen Emma Street,Honolulu,96813,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,True,370,2025-09-25 17:44:44
+458,Kekaha Elem School,Elementary,False,8140 Kekaha Road,Kekaha,96752,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,True,353,2025-09-25 17:44:44
+435,Kekaulike High School,High School,False,121 Kula Highway,Pukalani,96768,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,1229,2025-09-25 17:44:44
+317,Keolu Elem School,Elementary,False,1416 Keolu Drive,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,136,2025-09-25 17:44:44
+391,Keonepoko Elem School,Elementary,False,15-890 Kahakai Boulevard,Pahoa,96778,Hawaii,HI,Hawaii,Pahoa,Kau-Keaau-Pahoa,Hawaii,True,591,2025-09-25 17:44:44
+294,Keoneula Elem School,Elementary,False,91-970 Kaileolea Drive,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,,2025-09-25 17:44:44
+409,Kihei Elem School,Elementary,False,250 E. Lipoa Street,Kihei,96753,Maui,HI,Maui,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,730,2025-09-25 17:44:44
+459,Kilauea Elem School,Elementary,False,2440 Kolo Road,Kilauea,96754,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,305,2025-09-25 17:44:44
+410,Kilohana Elem School,Elementary,False,Kamehameha V Highway,Kaunakakai,96748,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,93,2025-09-25 17:44:44
+318,King Inter School,Middle / Inter,False,46-155 Kamehameha Highway,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,526,2025-09-25 17:44:44
+212,Kipapa Elem School,Elementary,False,95-076 Kipapa Drive,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,485,2025-09-25 17:44:44
+395,Kohala Elem School,Elementary,False,54-3609 Akoni Pule Highway,Kapaau,96755,Hawaii,HI,Hawaii,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,399,2025-09-25 17:44:44
+373,Kohala High School,High School,False,54-3611 Akoni Pule Highway,Kapaau,96755,Hawaii,HI,Hawaii,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,253,2025-09-25 17:44:44
+366,Kohala Middle School,Middle / Inter,False,53-4155 Akoni Pule Highway,Kapaau,96755,Hawaii,HI,Hawaii,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,171,2025-09-25 17:44:44
+127,Koko Head Elem School,Elementary,False,189 Lunalilo Home Road,Honolulu,96825,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+460,Koloa Elem School,Elementary,False,3223 Poipu Road,Koloa,96756,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,True,360,2025-09-25 17:44:44
+375,Konawaena Elem School,Elementary,False,81-901 Onouli Road,Kealakekua,96750,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,497,2025-09-25 17:44:44
+374,Konawaena High School,High School,False,81-1043 Konawaena School Road,Kealakekua,96750,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,924,2025-09-25 17:44:44
+376,Konawaena Middle School,Middle / Inter,False,81-1045 Konawaena School Road,Kealakekua,96750,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,623,2025-09-25 17:44:44
+128,Kuhio Elem School,Elementary,False,2759 South King Street,Honolulu,96826,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,202,2025-09-25 17:44:44
+412,Kula Elem School,Elementary,False,5000 Kula Highway,Kula,96790,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,356,2025-09-25 17:44:44
+437,Kulanihakoi High School,High School,False,901 Piilani Highway,Kihei,96753,Maui,HI,Maui,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,360,2025-09-25 17:44:44
+413,Lahaina Inter School,Middle / Inter,False,871 Lahainaluna Road,Lahaina,96761,Maui,HI,Maui,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,False,479,2025-09-25 17:44:44
+414,Lahainaluna High School,High School,False,980 Lahainaluna Road,Lahaina,96761,Maui,HI,Maui,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,False,790,2025-09-25 17:44:44
+319,Laie Elem School,Elementary,False,55-109 Kulanui Street,Laie,96762,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,False,659,2025-09-25 17:44:44
+415,Lanai High & Elem School,K - 12,False,555 Fraser Avenue,Lanai City,96763,Maui,HI,Lanai,Lanai,Hana-Lahainaluna-Lanai-Molokai,Maui,False,624,2025-09-25 17:44:44
+129,Lanakila Elem School,Elementary,False,717 North Kuakini Street,Honolulu,96817,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,False,311,2025-09-25 17:44:44
+268,Lehua Elem School,Elementary,False,791 Lehua Avenue,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,True,267,2025-09-25 17:44:44
+271,Leihoku Elem School,Elementary,False,86-285 Leihoku Street,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,796,2025-09-25 17:44:44
+214,Leilehua High School,High School,False,1515 California Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,1515,2025-09-25 17:44:44
+416,Lihikai Elem School,Elementary,False,335 South Papa Avenue,Kahului,96732,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,640,2025-09-25 17:44:44
+130,Liholiho Elem School,Elementary,False,3430 Maunaloa Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+131,Likelike Elem School,Elementary,False,1618 Palama Street,Honolulu,96817,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,True,247,2025-09-25 17:44:44
+133,Linapuni Elem School,Elementary,False,1434 Linapuni Street,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,160,2025-09-25 17:44:44
+134,Lincoln Elem School,Elementary,False,615 Auwaiolimu Street,Honolulu,96813,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,True,377,2025-09-25 17:44:44
+430,Lokelani Inter School,Middle / Inter,False,1401 Liloa Drive,Kihei,96753,Maui,HI,Maui,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,471,2025-09-25 17:44:44
+135,Lunalilo Elem School,Elementary,False,810 Pumehana Street,Honolulu,96826,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,249,2025-09-25 17:44:44
+136,Maemae Elem School,Elementary,False,319 Wyllie Street,Honolulu,96817,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+257,Maili Elem School,Elementary,False,87-360 Kulaaupuni Street,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,624,2025-09-25 17:44:44
+258,Makaha Elem School,Elementary,False,84-200 Ala Naauao Place,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,417,2025-09-25 17:44:44
+259,Makakilo Elem School,Elementary,False,92-675 Anipeahi Street,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,437,2025-09-25 17:44:44
+215,Makalapa Elem School,Elementary,False,4435 Salt Lake Blvd.,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+417,Makawao Elem School,Elementary,False,3542 Baldwin Avenue,Makawao,96768,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,478,2025-09-25 17:44:44
+260,Manana Elem School,Elementary,False,1147 Kumano Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,270,2025-09-25 17:44:44
+137,Manoa Elem School,Elementary,False,3155 Manoa Road,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+418,Maui High School,High School,False,660 South Lono Avenue,Kahului,96732,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,1670,2025-09-25 17:44:44
+428,Maui Waena Inter School,Middle / Inter,False,795 Onehee Street,Kahului,96732,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,1010,2025-09-25 17:44:44
+286,Mauka Lani Elem School,Elementary,False,92-1300 Panana Street,Kapolei,96707,Honolulu,HI,Oahu,Kapolei,Campbell-Kapolei,Leeward,False,543,2025-09-25 17:44:44
+419,Maunaloa Elem School,Elementary,False,Maunaloa Highway,Maunaloa,96770,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,59,2025-09-25 17:44:44
+321,Maunawili Elem School,Elementary,False,1465 Ulupii Street,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+138,McKinley High School,High School,False,1039 South King Street,Honolulu,96814,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,False,1228,2025-09-25 17:44:44
+216,Mililani High School,High School,False,95-1200 Meheula Parkway,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+240,Mililani Ike Elem School,Elementary,False,95-1330 Lehiwa Drive,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+241,Mililani Mauka Elem School,Elementary,False,95-1111 Makaikai Street,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+238,Mililani Middle School,Middle / Inter,False,95-1140 Lehiwa Drive,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+242,Mililani Uka Elem School,Elementary,False,94-380 Kuahelani Avenue,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,691,2025-09-25 17:44:44
+234,Mililani Waena Elem School,Elementary,False,95-502 Kipapa Drive,Mililani,96789,Honolulu,HI,Oahu,Mililani,Leilehua-Mililani-Waialua,Central,False,667,2025-09-25 17:44:44
+217,Moanalua Elem School,Elementary,False,1337 Mahiole Street,Honolulu,96819,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+218,Moanalua High School,High School,False,2825 Ala Ilima Street,Honolulu,96818,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+219,Moanalua Middle School,Middle / Inter,False,1289 Mahiole Street,Honolulu,96819,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+322,Mokapu Elem School,Elementary,False,1193 Mokapu Blvd.   KMCB Bldg.,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+220,Mokulele Elem School,Elementary,False,250 Aupaka Street,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+421,Molokai High School,High School,False,2140 Farrington Avenue,Hoolehua,96729,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,332,2025-09-25 17:44:44
+434,Molokai Middle School,Middle / Inter,False,2175 Lihipali Avenue,Hoolehua,96729,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,167,2025-09-25 17:44:44
+285,Momilani Elem School,Elementary,False,2130 Hookiekie Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,,2025-09-25 17:44:44
+379,Mountain View Elem School,Elementary,False,18-1235 Volcano Highway,Mountain View,96771,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,True,523,2025-09-25 17:44:44
+380,Naalehu Elem School,Elementary,False,95-5545 Mamalahoa Highway,Naalehu,96772,Hawaii,HI,Hawaii,Kau,Kau-Keaau-Pahoa,Hawaii,True,464,2025-09-25 17:44:44
+429,Nahienaena Elem School,Elementary,False,816 Niheu Street,Lahaina,96761,Maui,HI,Maui,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,False,478,2025-09-25 17:44:44
+261,Nanaikapono Elem School,Elementary,False,89-153 Mano Avenue,Waianae,96792,Honolulu,HI,Oahu,Nanakuli,Nanakuli-Waianae,Leeward,True,736,2025-09-25 17:44:44
+262,Nanakuli Elem School,Elementary,False,89-778 Haleakala Avenue,Waianae,96792,Honolulu,HI,Oahu,Nanakuli,Nanakuli-Waianae,Leeward,True,418,2025-09-25 17:44:44
+263,Nanakuli High & Inter School,Middle - High,False,89-980 Nanakuli Avenue,Waianae,96792,Honolulu,HI,Oahu,Nanakuli,Nanakuli-Waianae,Leeward,True,914,2025-09-25 17:44:44
+461,Niihau High & Elem School,K - 12,False,c/o Department of Education  Kauai Complex Area Office 3060 Eiwa Street  Suite 305,Lihue,96766,Kauai,HI,Niihau,Waimea,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+221,Nimitz Elem School,Elementary,False,520 Main Street,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+139,Niu Valley Middle School,Middle / Inter,False,310 Halemaumau Street,Honolulu,96821,Honolulu,HI,Oahu,Kaiser,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+140,Noelani Elem School,Elementary,False,2655 Woodlawn Drive,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+141,Nuuanu Elem School,Elementary,False,3055 Puiwa Lane,Honolulu,96817,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+475,Olomana School,Middle - High,False,42-522 Kalanianaole Highway,Kailua,96734,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,True,93,2025-09-25 17:44:44
+382,Paauilo Elem & Inter School,Elem - Middle,False,43-1497 Old Main Road,Paauilo,96776,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,191,2025-09-25 17:44:44
+381,Pahoa Elem School,Elementary,False,15-3030 Pahoa Village Road,Pahoa,96778,Hawaii,HI,Hawaii,Pahoa,Kau-Keaau-Pahoa,Hawaii,True,426,2025-09-25 17:44:44
+383,Pahoa High & Inter School,Middle - High,False,15-3038 Puna Road,Pahoa,96778,Hawaii,HI,Hawaii,Pahoa,Kau-Keaau-Pahoa,Hawaii,True,724,2025-09-25 17:44:44
+422,Paia Elem School,Elementary,False,955 Baldwin Avenue,Paia,96779,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,411,2025-09-25 17:44:44
+264,Palisades Elem School,Elementary,False,2306 Auhuhu Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,355,2025-09-25 17:44:44
+142,Palolo Elem School,Elementary,False,2106 10th Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,254,2025-09-25 17:44:44
+323,Parker Elem School,Elementary,False,45-259 Waikalua Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,True,265,2025-09-25 17:44:44
+143,Pauoa Elem School,Elementary,False,2301 Pauoa Road,Honolulu,96813,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,358,2025-09-25 17:44:44
+265,Pearl City Elem School,Elementary,False,1090 Waimano Home Road,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,408,2025-09-25 17:44:44
+266,Pearl City High School,High School,False,2100 Hookiekie Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,1471,2025-09-25 17:44:44
+267,Pearl City Highlands Elem,Elementary,False,1419 Waimano Home Road,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,529,2025-09-25 17:44:44
+222,Pearl Harbor Elem School,Elementary,False,1 Moanalua Ridge,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,408,2025-09-25 17:44:44
+223,Pearl Harbor Kai Elem School,Elementary,False,1 C Avenue,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+243,Pearl Ridge Elem School,Elementary,False,98-940 Moanalua Road,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+269,Pohakea Elem School,Elementary,False,91-750 Fort Weaver Road,Ewa Beach,96706,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,518,2025-09-25 17:44:44
+433,Pomaikai Elem School,Elementary,False,4650 S. Kamehameha Avenue,Kahului,96732,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,,2025-09-25 17:44:44
+324,Pope Elem School,Elementary,False,41-133 Huli Street,Waimanalo,96795,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,True,245,2025-09-25 17:44:44
+426,Pukalani Elem School,Elementary,False,2945 Iolani Street,Pukalani,96768,Maui,HI,Maui,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,486,2025-09-25 17:44:44
+314,Puohala Elem School,Elementary,False,45-233 Kulauli Street,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,True,274,2025-09-25 17:44:44
+436,Puu Kukui Elem School,Elementary,False,3700 Kehalani Mauka Parkway,Wailuku,96793,Maui,HI,Maui,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,770,2025-09-25 17:44:44
+145,Puuhale Elem School,Elementary,False,345 Puuhale Road,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,True,273,2025-09-25 17:44:44
+224,Radford High School,High School,False,4361 Salt Lake Blvd.,Honolulu,96818,Honolulu,HI,Oahu,Radford,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+225,Red Hill Elem School,Elementary,False,1265 Ala Kula Place,Honolulu,96819,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+146,Roosevelt High School,High School,False,1120 Nehoa Street,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,1320,2025-09-25 17:44:44
+147,Royal Elem School,Elementary,False,1519 Queen Emma Street,Honolulu,96813,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,False,298,2025-09-25 17:44:44
+239,Salt Lake Elem School,Elementary,False,1131 Ala Lilikoi Street,Honolulu,96818,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,653,2025-09-25 17:44:44
+227,Scott Elem School,Elementary,False,98-1230 Moanalua Road,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,453,2025-09-25 17:44:44
+228,Shafter Elem School,Elementary,False,2 Fort Shafter,Honolulu,96819,Honolulu,HI,Oahu,Moanalua,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+226,Solomon Elem School,Elementary,False,211 Carpenter Street,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+148,Stevenson Middle School,Middle / Inter,False,1202 Prospect Street,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,571,2025-09-25 17:44:44
+325,Sunset Beach Elem School,Elementary,False,59-360 Kamehameha Highway,Haleiwa,96712,Honolulu,HI,Oahu,Kahuku,Castle-Kahuku,Windward,False,,2025-09-25 17:44:44
+229,Wahiawa Elem School,Elementary,False,1402 Glen Avenue,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,True,461,2025-09-25 17:44:44
+230,Wahiawa Middle School,Middle / Inter,False,275 Rose Street,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,True,692,2025-09-25 17:44:44
+326,Waiahole Elem School,Elementary,False,48-215 Waiahole Valley Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,True,117,2025-09-25 17:44:44
+384,Waiakea Elem School,Elementary,False,180 West Puainako Street,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,True,721,2025-09-25 17:44:44
+389,Waiakea High School,High School,False,155 W. Kawili Street,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,False,1156,2025-09-25 17:44:44
+385,Waiakea Inter School,Middle / Inter,False,200 West Puainako Street,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,False,869,2025-09-25 17:44:44
+386,Waiakeawaena Elem School,Elementary,False,2420 Kilauea Avenue,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,True,673,2025-09-25 17:44:44
+231,Waialua Elem School,Elementary,False,67-020 Waialua Beach Road,Waialua,96791,Honolulu,HI,Oahu,Waialua,Leilehua-Mililani-Waialua,Central,False,459,2025-09-25 17:44:44
+232,Waialua High & Inter School,Middle - High,False,67-160 Farrington Highway,Waialua,96791,Honolulu,HI,Oahu,Waialua,Leilehua-Mililani-Waialua,Central,False,559,2025-09-25 17:44:44
+270,Waianae Elem School,Elementary,False,85-220 McArthur Street,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,436,2025-09-25 17:44:44
+272,Waianae High School,High School,False,85-251 Farrington Highway,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,1509,2025-09-25 17:44:44
+273,Waianae Inter School,Middle / Inter,False,85-626 Farrington Highway,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,752,2025-09-25 17:44:44
+288,Waiau Elem School,Elementary,False,98-450 Hookanike Street,Pearl City,96782,Honolulu,HI,Oahu,Pearl City,Pearl City-Waipahu,Leeward,False,489,2025-09-25 17:44:44
+424,Waihee Elem School,Elementary,False,2125 Kahekili Highway,Wailuku,96793,Maui,HI,Maui,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,True,574,2025-09-25 17:44:44
+290,Waikele Elem School,Elementary,False,94-1035 Kukula Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,534,2025-09-25 17:44:44
+150,Waikiki Elem School,Elementary,False,3710 Leahi Avenue,Honolulu,96815,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+393,Waikoloa School,Elem - Middle,False,68-1730 Hooko Street,Waikoloa,96738,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,742,2025-09-25 17:44:44
+425,Wailuku Elem School,Elementary,False,355 South High Street,Wailuku,96793,Maui,HI,Maui,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,True,554,2025-09-25 17:44:44
+233,Waimalu Elem School,Elementary,False,98-825 Moanalua Road,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,316,2025-09-25 17:44:44
+327,Waimanalo Elem & Inter School,Elem - Middle,False,41-1330 Kalanianaole Highway,Waimanalo,96795,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,True,380,2025-09-25 17:44:44
+464,Waimea Canyon School,Middle / Inter,False,9555 Huakai Road,Waimea,96796,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,477,2025-09-25 17:44:44
+387,Waimea Elem School,Elementary,False,67-1225 Mamalahoa Highway,Kamuela,96743,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,True,480,2025-09-25 17:44:44
+462,Waimea High School,High School,False,9707 Tsuchiya Road,Waimea,96796,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,713,2025-09-25 17:44:44
+274,Waipahu Elem School,Elementary,False,94-465 Waipahu Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,True,823,2025-09-25 17:44:44
+277,Waipahu High School,High School,False,94-1211 Farrington Highway,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,2508,2025-09-25 17:44:44
+278,Waipahu Inter School,Middle / Inter,False,94-445 Farrington Highway,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,1109,2025-09-25 17:44:44
+152,Washington Middle School,Middle / Inter,False,1633 South King Street,Honolulu,96826,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,True,579,2025-09-25 17:44:44
+235,Webling Elem School,Elementary,False,99-370 Paihi Street,Aiea,96701,Honolulu,HI,Oahu,Aiea,Aiea-Moanalua-Radford,Central,False,,2025-09-25 17:44:44
+236,Wheeler Elem School,Elementary,False,1 Wheeler Army Air Field,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+237,Wheeler Middle School,Middle / Inter,False,2 Wheeler Army Air Field,Wahiawa,96786,Honolulu,HI,Oahu,Leilehua,Leilehua-Mililani-Waialua,Central,False,,2025-09-25 17:44:44
+463,Wilcox Elem School,Elementary,False,4319 Hardy Street,Lihue,96766,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,754,2025-09-25 17:44:44
+558,Alakai o Kauai - PCS,Elementary,True,2-4035 Kaumualii Hwy,Koloa,96746,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+396,Connections - PCS,K - 12,True,174 Kamehameha Avenue,Hilo,96720,Hawaii,HI,Hawaii,Hilo,Hilo-Waiakea,Hawaii,False,,2025-09-25 17:44:44
+568,DreamHouse Ewa Beach - PCS,Middle - High,True,91-1245 Franklin D. Roosevelt Avenue,Kapolei,96707,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,,2025-09-25 17:44:44
+546,Hakipuu Academy - PCS,Middle - High,True,45-720 Keaahala Road,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,,2025-09-25 17:44:44
+540,Halau Ku Mana - PCS,K - 12,True,2101 Makiki Heights Drive,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+551,Hawaii Technology Academy-PCS,K - 12,True,94-450 Mokuola Street,Waipahu,96797,Honolulu,HI,Oahu,Waipahu,Pearl City-Waipahu,Leeward,False,,2025-09-25 17:44:44
+561,HI Academy of Arts & Sci - PCS,K - 12,True,15-1397 Homestead Road,Pahoa,96778,Hawaii,HI,Hawaii,Pahoa,Kau-Keaau-Pahoa,Hawaii,False,,2025-09-25 17:44:44
+548,Innovations - PCS,Elem - Middle,True,75-5815 Queen Kaahumanu Highway,Kailua-Kona,96740,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,,2025-09-25 17:44:44
+562,Ka Umeke Kaeo - PCS,K - 12,True,1500 Kalanianaole Avenue,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,False,,2025-09-25 17:44:44
+545,Ka Waihona O Ka Naauao - PCS,Elem - Middle,True,89-195 Farrington Highway,Wai'anae,96792,Honolulu,HI,Oahu,Nanakuli,Nanakuli-Waianae,Leeward,True,685,2025-09-25 17:44:44
+275,Kamaile Academy - PCS,K - 12,True,85-180 Ala Akau Street,Waianae,96792,Honolulu,HI,Oahu,Waianae,Nanakuli-Waianae,Leeward,True,951,2025-09-25 17:44:44
+547,Kamakau School - PCS,K - 12,True,46-500 Kuneki Street,Kaneohe,96744,Honolulu,HI,Oahu,Castle,Castle-Kahuku,Windward,False,,2025-09-25 17:44:44
+397,Kanu O Ka Aina - PCS,K - 12,True,64-1043 Hi'iaka St.,Kamuela,96743,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,,2025-09-25 17:44:44
+564,Kanuikapono - PCS,K - 12,True,4333 Kukuihale Road,Anahola,96703,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+320,Kaohao Public Charter School,Elementary,True,140 Alala Road,Kailua,96734,Honolulu,HI,Oahu,Kalaheo,Kailua-Kalaheo,Windward,False,,2025-09-25 17:44:44
+555,Kapolei Charter School PCS,High School,True,2140 Lauwiliwili Street,Kapolei,96707,Honolulu,HI,Oahu,Campbell,Campbell-Kapolei,Leeward,False,,2025-09-25 17:44:44
+565,Kawaikini NCPCS,K - 12,True,3-1821 J Kaumualii Hwy,Lihue,96766,Kauai,HI,Kauai,Kauai,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+549,Ke Ana Laahana-PCS,Middle - High,True,162 Baker Avenue,Hilo,96720,Hawaii,HI,Hawaii,Waiakea,Hilo-Waiakea,Hawaii,True,34,2025-09-25 17:44:44
+556,Ke Kula Niihau O Kekaha-LPCS,K - 12,True,8135 Kekaha Road,Kekaha,96752,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+554,Kihei Charter School,K - 12,True,300 Ohukai Road  #209,Kihei,96753,Maui,HI,Maui,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,False,730,2025-09-25 17:44:44
+566,Kona Pacific PCS,Elem - Middle,True,79-7595 Mamamlahoa Highway,Kealakekua,96750,Hawaii,HI,Hawaii,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,,2025-09-25 17:44:44
+557,Kua O Ka La - NCPCS,Elem - Middle,True,345 Makalika St,Hilo,96720,Hawaii,HI,Hawaii,Pahoa,Kau-Keaau-Pahoa,Hawaii,False,,2025-09-25 17:44:44
+411,Kualapuu Elem School - PCS,Elementary,True,260 Farrington Avenue,Kualapuu,96757,Maui,HI,Molokai,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,True,310,2025-09-25 17:44:44
+466,Kula Aupuni Niihau - PCS,K - 12,True,8315 Kekaha Road  Suite P,Kekaha,96752,Kauai,HI,Kauai,Waimea,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+569,Kulia Academy,Middle - High,True,2340 Omilo Lane,Honolulu,96819,Honolulu,HI,Oahu,Farrington,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+377,Laupahoehoe Community - PCS,K - 12,True,35-2065 Old Mamalahoa Highway,Laupahoehoe,96764,Hawaii,HI,Hawaii,Laupahoehoe,Hilo-Waiakea,Hawaii,True,302,2025-09-25 17:44:44
+550,Malama Honua - PCS,Elem - Middle,True,41-054 Ehukai Street,Waimanalo,96795,Honolulu,HI,Oahu,Kailua,Kailua-Kalaheo,Windward,False,165,2025-09-25 17:44:44
+544,Myron B. Thompson Academy,K - 12,True,1040 Richards St.  Ste. 220,Honolulu,96813,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+398,Na Wai Ola - PCS,Elementary,True,18-1355 Volcano Highway  P.O. Box 711539,Mountain View,96771,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,True,132,2025-09-25 17:44:44
+591,Namahana School,Middle - High,True,4551 Kapuna Road,Kilauea,96754,Kauai,HI,Kauai,Kapaa,Kapaa-Kauai-Waimea,Kauai,False,,2025-09-25 17:44:44
+563,Nawahi - PCS,Elem - Middle,True,16-120 Opukahaia Street  Suite 2,Keaau,96749,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,False,,2025-09-25 17:44:44
+567,SEEQS - PCS,Middle / Inter,True,1728 Nuuanu Ave,Honolulu,96817,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+543,University Laboratory School,K - 12,True,1776 University Avenue  UHS Bldg 3  #121,Honolulu,96822,Honolulu,HI,Oahu,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+560,Volcano School of Arts & Sci,K - 12,True,99-128 Old Volcano Road,Volcano,96785,Hawaii,HI,Hawaii,Keaau,Kau-Keaau-Pahoa,Hawaii,False,,2025-09-25 17:44:44
+541,Voyager - PCS,Elem - Middle,True,2428 Wilder Avenue,Honolulu,96822,Honolulu,HI,Oahu,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+149,Waialae Elem School - PCS,Elementary,True,1045 19th Avenue,Honolulu,96816,Honolulu,HI,Oahu,Kalani,Farrington-Kaiser-Kalani,Honolulu,False,,2025-09-25 17:44:44
+592,Waikiki Community Preschool,Elementary,True,310 Paoakalani Avenue,Honolulu,96815,Honolulu,HI,Oahu,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,False,,2025-09-25 17:44:44
+394,Waimea Middle School - PCS,Middle / Inter,True,67-1229 Mamalahoa Hwy.,Kamuela,96743,Hawaii,HI,Hawaii,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,,2025-09-25 17:44:44
+399,West Hawaii Explorations - PCS,Middle - High,True,73-4460 Queen Kaahumanu Hwy.  PMB 503 Highway  Suite #105,Kailua-Kona,96740,Hawaii,HI,Hawaii,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,False,,2025-09-25 17:44:44
