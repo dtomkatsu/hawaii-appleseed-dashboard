@@ -5,6 +5,7 @@ import json
 import logging
 from pathlib import Path
 import sys
+import plotly.express as px
 
 # Add the parent directory to the path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -1090,17 +1091,99 @@ def create_data_summary():
                 # Sort data by the selected variable for better visualization
                 sorted_data = data.sort_values(by=selected_variable, ascending=False)
                 
-                # Create a bar chart
-                st.bar_chart(
-                    data=sorted_data,
-                    x='name',
-                    y=selected_variable,
-                    use_container_width=True,
-                    height=400
-                )
+                # Calculate appropriate width based on number of data points
+                num_items = len(sorted_data)
+                
+                # For many items (districts), hide x-axis labels to avoid crowding
+                if num_items > 10:
+                    # Create the chart with custom hover template
+                    fig = px.bar(
+                        sorted_data,
+                        x='name',
+                        y=selected_variable,
+                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
+                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
+                    )
+                    
+                    # Format the variable name for display
+                    variable_display_name = selected_variable.replace('_', ' ').title()
+                    
+                    # Create custom hover template similar to map hover
+                    hover_template = f"""
+                    <b>%{{x}}</b><br>
+                    {variable_display_name}: %{{y}}<br>
+                    <extra></extra>
+                    """
+                    
+                    # Update traces with custom hover template
+                    fig.update_traces(
+                        hovertemplate=hover_template,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            bordercolor="black",
+                            font_size=12,
+                            font_family="Arial"
+                        )
+                    )
+                    
+                    # Update layout - hide x-axis labels for districts
+                    fig.update_layout(
+                        height=400,
+                        margin=dict(l=50, r=50, t=50, b=50),
+                        showlegend=False,
+                        title_x=0.5
+                    )
+                    
+                    # Hide x-axis labels and ticks for cleaner look
+                    fig.update_xaxes(
+                        showticklabels=False,
+                        title_text=""
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                else:
+                    # For fewer items, use regular chart with custom hover
+                    fig = px.bar(
+                        sorted_data,
+                        x='name',
+                        y=selected_variable,
+                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
+                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
+                    )
+                    
+                    # Format the variable name for display
+                    variable_display_name = selected_variable.replace('_', ' ').title()
+                    
+                    # Create custom hover template similar to map hover
+                    hover_template = f"""
+                    <b>%{{x}}</b><br>
+                    {variable_display_name}: %{{y}}<br>
+                    <extra></extra>
+                    """
+                    
+                    # Update traces with custom hover template
+                    fig.update_traces(
+                        hovertemplate=hover_template,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            bordercolor="black",
+                            font_size=12,
+                            font_family="Arial"
+                        )
+                    )
+                    
+                    fig.update_layout(
+                        height=400,
+                        xaxis_tickangle=-45,
+                        margin=dict(l=50, r=50, t=50, b=100),
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
                 
                 # Add some context about the chart
-                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}")
+                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}. Chart is horizontally scrollable for better readability.")
             else:
                 st.warning(f"Selected variable '{selected_variable}' not found in the data.")
         
