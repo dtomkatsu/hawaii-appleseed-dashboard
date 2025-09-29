@@ -26,6 +26,7 @@ class DataType(Enum):
     ACS = "acs"
     ALICE = "alice"
     SNAP = "snap"
+    CEP = "cep"  # Community Eligibility Provision data
 
 
 @dataclass
@@ -674,6 +675,110 @@ class SNAPDataLoader(BaseDataLoader):
         return geoid_str
 
 
+class CEPDataLoader(BaseDataLoader):
+    """Loader for Community Eligibility Provision (CEP) data."""
+    
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load CEP data for a geographic level."""
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Invalid geographic level for CEP: {geo_level}")
+            return None
+        
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
+        if not file_path.exists():
+            logger.error(f"CEP data file not found: {file_path}")
+            return None
+        
+        try:
+            # Read the CSV file
+            df = pd.read_csv(file_path)
+            
+            # Standardize the data
+            df = self._standardize_cep_data(df, geo_level)
+            
+            # Add geoid based on district number
+            df = self._add_geoid(df, geo_level)
+            
+            logger.info(f"Loaded CEP {geo_level.value} data: {df.shape}")
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error loading CEP {geo_level.value} data: {e}", exc_info=True)
+            return None
+    
+    def _add_geoid(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Add geoid column based on district number."""
+        df = df.copy()
+        
+        if 'geoid' in df.columns:
+            return df
+            
+        # Extract district number from district code (e.g., 'H01' -> 1, '1' -> 1)
+        if 'district' in df.columns:
+            df['district_num'] = df['district'].str.extract(r'(\d+)').astype(int)
+            
+            # Create geoid based on geographic level
+            if geo_level == GeoLevel.HOUSE:
+                # For house districts: 15 + 2-digit district number (e.g., 15001, 15051)
+                df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
+            elif geo_level == GeoLevel.SENATE:
+                # For senate districts: 15 + 2-digit district number (same as house for now)
+                df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
+            elif geo_level == GeoLevel.COUNTY:
+                # For counties, use FIPS codes (15001, 15003, 15007, 15009)
+                county_codes = {
+                    'Hawaii': '15001',
+                    'Honolulu': '15003',
+                    'Kauai': '15007',
+                    'Maui': '15009'
+                }
+                df['geoid'] = df['district'].map(county_codes)
+            
+            # Add NAME field for consistency with other data sources
+            if 'NAME' not in df.columns:
+                if geo_level == GeoLevel.HOUSE:
+                    df['NAME'] = 'State House District ' + df['district'].str.replace('H', '')
+                elif geo_level == GeoLevel.SENATE:
+                    df['NAME'] = 'State Senate District ' + df['district']
+                elif geo_level == GeoLevel.COUNTY:
+                    df['NAME'] = df['district'] + ' County'
+        
+        return df
+    
+    def _standardize_cep_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Standardize CEP data format."""
+        df = df.copy()
+        
+        # Ensure district code is in the expected format
+        if 'district' in df.columns:
+            df['district'] = df['district'].astype(str).str.strip()
+            
+            # Convert to standard format (e.g., '1' -> 'H01' for house districts)
+            if geo_level == GeoLevel.HOUSE and df['district'].str.match(r'^\d+$').all():
+                df['district'] = 'H' + df['district'].str.zfill(2)
+        
+        # Ensure numeric columns are properly typed
+        numeric_cols = ['total_schools', 'cep_schools', 'cep_percentage']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Calculate any derived fields if needed
+        if 'cep_percentage' not in df.columns and 'cep_schools' in df.columns and 'total_schools' in df.columns:
+            df['cep_percentage'] = (df['cep_schools'] / df['total_schools']) * 100
+        
+        if 'cep_display' not in df.columns and 'cep_schools' in df.columns and 'total_schools' in df.columns:
+            df['cep_display'] = df.apply(
+                lambda x: f"{int(x['cep_schools'])}/{int(x['total_schools'])} CEP schools",
+                axis=1
+            )
+        
+        # Add state FIPS code for consistency
+        df['state'] = '15'
+        
+        return df
+
+
 class GeoJSONProcessor:
     """Handles GeoJSON processing and data merging."""
     
@@ -948,33 +1053,46 @@ class DataLoader:
         acs_config = DataConfig({
             'state': 'hawaii_state_acs_2023.csv',
             'county': 'hawaii_counties_acs_2023.csv',
-            'house': 'hawaii_house_districts_acs_2023.csv',
-            'senate': 'hawaii_senate_districts_acs_2023.csv'
+            'house': 'hawaii_house_district_acs_2023.csv',
+            'senate': 'hawaii_senate_district_acs_2023.csv',
         })
         
         # ALICE data configuration
-        alice_config = DataConfig(
-            file_patterns={},
-            sheet_patterns={
-                'state': 'State',
-                'county': 'Counties',
-                'house': 'House',
-                'senate': 'Senate'
-            }
-        )
+        alice_config = DataConfig({
+            'state': 'hawaii_state_alice_2023.csv',
+            'county': 'hawaii_counties_alice_2023.csv',
+            'house': 'hawaii_house_district_alice_2023.csv',
+            'senate': 'hawaii_senate_district_alice_2023.csv',
+        })
         
         # SNAP data configuration
         snap_config = DataConfig({
             'state': 'hawaii_state_snap_2023.csv',
             'county': 'hawaii_county_snap_2023.csv',
             'house': 'hawaii_house_district_snap_2023.csv',
-            'senate': 'hawaii_senate_district_snap_2023.csv'
+            'senate': 'hawaii_senate_district_snap_2023.csv',
         })
         
+        # CEP data configuration - using existing file names
+        cep_config = DataConfig({
+            'state': 'hawaii_state_cep_2023.csv',  # Note: This file doesn't exist yet
+            'county': 'hawaii_counties_cep.csv',
+            'house': 'hawaii_house_districts_cep.csv',
+            'senate': 'hawaii_senate_districts_cep.csv',
+        })
+        
+        # Initialize loaders
+        self.acs_loader = ACSDataLoader(self.data_dir / 'acs', acs_config)
+        self.alice_loader = ALICEDataLoader(self.data_dir / 'alice', alice_config)
+        self.snap_loader = SNAPDataLoader(self.data_dir / 'snap_benefits', snap_config)
+        self.cep_loader = CEPDataLoader(self.data_dir / 'cep_schools', cep_config)
+        
+        # Map data types to their loaders
         self.loaders = {
-            DataType.ACS: ACSDataLoader(self.data_dir, acs_config),
-            DataType.ALICE: ALICEDataLoader(self.data_dir, alice_config),
-            DataType.SNAP: SNAPDataLoader(self.data_dir, snap_config)
+            DataType.ACS: self.acs_loader,
+            DataType.ALICE: self.alice_loader,
+            DataType.SNAP: self.snap_loader,
+            DataType.CEP: self.cep_loader,
         }
     
     def _get_geo_name_mapping(self) -> Dict[str, Dict[str, str]]:
@@ -991,6 +1109,7 @@ class DataLoader:
     def _get_available_variables(self) -> Dict[str, str]:
         """Get available variables and their display names."""
         return {
+            # ACS Variables
             'poverty_rate': 'Poverty Rate (%)',
             'median_income': 'Median Household Income ($)',
             'population': 'Total Population',
@@ -1002,16 +1121,32 @@ class DataLoader:
             'renter_occupied': 'Renter-Occupied Housing (%)',
             'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
             'no_health_insurance': 'No Health Insurance (%)',
+            
+            # ALICE Variables
             'alice_rate': 'ALICE Households (%)',
+            
+            # SNAP Variables
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+            
+            # Transportation Variables
             'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            
+            # Tax Credit Variables
             'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
             'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
             'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
             'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
             'state_eitc_avg_amount': 'State EITC - Average Amount ($)',
+            
+            # CEP Variables
+            'cep_percentage': 'Schools with CEP (%)',
+            'cep_schools': 'Number of CEP Schools',
+            'total_schools': 'Total Number of Schools',
+            'cep_display': 'CEP Schools (Count)',
+            
+            # Placeholder for new variables
             'new_variable': 'New Variable (%)'
         }
     
