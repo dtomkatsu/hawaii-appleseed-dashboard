@@ -1053,17 +1053,20 @@ class DataLoader:
         acs_config = DataConfig({
             'state': 'hawaii_state_acs_2023.csv',
             'county': 'hawaii_counties_acs_2023.csv',
-            'house': 'hawaii_house_district_acs_2023.csv',
-            'senate': 'hawaii_senate_district_acs_2023.csv',
+            'house': 'hawaii_house_districts_acs_2023.csv',
+            'senate': 'hawaii_senate_districts_acs_2023.csv',
         })
         
         # ALICE data configuration
-        alice_config = DataConfig({
-            'state': 'hawaii_state_alice_2023.csv',
-            'county': 'hawaii_counties_alice_2023.csv',
-            'house': 'hawaii_house_district_alice_2023.csv',
-            'senate': 'hawaii_senate_district_alice_2023.csv',
-        })
+        alice_config = DataConfig(
+            file_patterns={},
+            sheet_patterns={
+                'state': 'State',
+                'county': 'Counties',
+                'house': 'House',
+                'senate': 'Senate'
+            }
+        )
         
         # SNAP data configuration
         snap_config = DataConfig({
@@ -1081,8 +1084,8 @@ class DataLoader:
             'senate': 'hawaii_senate_districts_cep.csv',
         })
         
-        # Initialize loaders
-        self.acs_loader = ACSDataLoader(self.data_dir / 'acs', acs_config)
+        # Initialize loaders - ACS files are in root processed directory
+        self.acs_loader = ACSDataLoader(self.data_dir, acs_config)
         self.alice_loader = ALICEDataLoader(self.data_dir / 'alice', alice_config)
         self.snap_loader = SNAPDataLoader(self.data_dir / 'snap_benefits', snap_config)
         self.cep_loader = CEPDataLoader(self.data_dir / 'cep_schools', cep_config)
