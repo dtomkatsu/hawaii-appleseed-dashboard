@@ -82,7 +82,12 @@ class DataMerger:
             base_county_name = base_row.get('NAME', '')
             
             for merge_idx, merge_row in merge_data.iterrows():
-                merge_county = merge_row.get('name' if data_type == DataType.ALICE else 'NAME', '')
+                if data_type == DataType.ALICE:
+                    merge_county = merge_row.get('name', '')
+                elif data_type == DataType.CEP:
+                    merge_county = merge_row.get('county', '')
+                else:
+                    merge_county = merge_row.get('NAME', '')
                 
                 if self._counties_match(base_county_name, merge_county, county_mapping):
                     self._add_columns_by_type(merged, merge_row, data_type, base_idx)
@@ -94,7 +99,8 @@ class DataMerger:
     def _merge_district_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
                            data_type: DataType) -> pd.DataFrame:
         """Merge district-level data."""
-        if data_type == DataType.SNAP and 'geoid' in merge_data.columns:
+        # Use geoid-based merge for SNAP and CEP data if geoid column exists
+        if data_type in [DataType.SNAP, DataType.CEP] and 'geoid' in merge_data.columns:
             return self._merge_by_geoid(base_data, merge_data, data_type)
         
         return self._merge_by_district(base_data, merge_data, data_type)
@@ -131,6 +137,13 @@ class DataMerger:
                 'Maui County, Hawaii': ['Maui'],
                 'Kauai County, Hawaii': ['Kauai']
             }
+        elif data_type == DataType.CEP:
+            return {
+                'Honolulu County, Hawaii': ['Honolulu'],
+                'Hawaii County, Hawaii': ['Hawaii'],
+                'Maui County, Hawaii': ['Maui'],
+                'Kauai County, Hawaii': ['Kauai']
+            }
         else:
             return {
                 'Honolulu County, Hawaii': ['HONOLULU'],
@@ -155,6 +168,9 @@ class DataMerger:
         elif data_type == DataType.SNAP:
             snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             return base_cols + [col for col in snap_cols if col in merge_data.columns]
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            return base_cols + [col for col in cep_cols if col in merge_data.columns]
         
         return base_cols
     
@@ -188,6 +204,10 @@ class DataMerger:
             snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
                 self._set_value(df, col, source_row.get(col), target_idx)
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            for col in cep_cols:
+                self._set_value(df, col, source_row.get(col), target_idx)
     
     def _initialize_columns_by_type(self, df: pd.DataFrame, data_type: DataType):
         """Initialize columns in DataFrame based on data type."""
@@ -196,6 +216,10 @@ class DataMerger:
         elif data_type == DataType.SNAP:
             snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
+                df[col] = None
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            for col in cep_cols:
                 df[col] = None
     
     def _set_value(self, df: pd.DataFrame, column: str, value: Any, 
@@ -707,10 +731,26 @@ class CEPDataLoader(BaseDataLoader):
             return None
     
     def _add_geoid(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
-        """Add geoid column based on district number."""
+        """Add geoid column based on district number or county name."""
         df = df.copy()
         
         if 'geoid' in df.columns:
+            return df
+        
+        # Handle county-level data (uses 'county' field instead of 'district')
+        if geo_level == GeoLevel.COUNTY and 'county' in df.columns:
+            county_codes = {
+                'Hawaii': '15001',
+                'Honolulu': '15003',
+                'Kauai': '15007',
+                'Maui': '15009'
+            }
+            df['geoid'] = df['county'].map(county_codes)
+            
+            # Add NAME field for consistency with other data sources
+            if 'NAME' not in df.columns:
+                df['NAME'] = df['county'] + ' County, Hawaii'
+            
             return df
             
         # Extract district number from district code (e.g., 'H01' -> 1, '1' -> 1)
@@ -719,20 +759,11 @@ class CEPDataLoader(BaseDataLoader):
             
             # Create geoid based on geographic level
             if geo_level == GeoLevel.HOUSE:
-                # For house districts: 15 + 2-digit district number (e.g., 15001, 15051)
+                # For house districts: 15 + 3-digit district number (e.g., 15001, 15051)
                 df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
             elif geo_level == GeoLevel.SENATE:
-                # For senate districts: 15 + 2-digit district number (same as house for now)
+                # For senate districts: 15 + 3-digit district number (same as house for now)
                 df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
-            elif geo_level == GeoLevel.COUNTY:
-                # For counties, use FIPS codes (15001, 15003, 15007, 15009)
-                county_codes = {
-                    'Hawaii': '15001',
-                    'Honolulu': '15003',
-                    'Kauai': '15007',
-                    'Maui': '15009'
-                }
-                df['geoid'] = df['district'].map(county_codes)
             
             # Add NAME field for consistency with other data sources
             if 'NAME' not in df.columns:
@@ -740,8 +771,6 @@ class CEPDataLoader(BaseDataLoader):
                     df['NAME'] = 'State House District ' + df['district'].str.replace('H', '')
                 elif geo_level == GeoLevel.SENATE:
                     df['NAME'] = 'State Senate District ' + df['district']
-                elif geo_level == GeoLevel.COUNTY:
-                    df['NAME'] = df['district'] + ' County'
         
         return df
     
@@ -1187,6 +1216,7 @@ class DataLoader:
         acs_data = self.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
+        cep_data = self.data_cache.get(f"{DataType.CEP.value}_{geo_level}")
         
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
@@ -1197,6 +1227,11 @@ class DataLoader:
         
         if merged_data is not None and snap_data is not None:
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
+        
+        if merged_data is not None and cep_data is not None:
+            logger.info(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
+            merged_data = self.merger.merge_datasets(merged_data, cep_data, geo_enum, DataType.CEP)
+            logger.info(f"After CEP merge, data shape: {merged_data.shape}")
         
         return merged_data
     
