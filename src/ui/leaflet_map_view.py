@@ -104,6 +104,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'selected_food_security_variable' not in st.session_state:
             st.session_state['selected_food_security_variable'] = None
             
+        # Initialize housing/transportation variable (starts as None - no selection)
+        if 'selected_housing_transportation_variable' not in st.session_state:
+            st.session_state['selected_housing_transportation_variable'] = None
+            
     except Exception as e:
         logger.error(f"Error initializing session state: {e}")
         # Force reset to safe defaults
@@ -568,7 +572,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """, unsafe_allow_html=True)
     
     # Create dropdown controls in main content area
-    col1, col2, col3 = st.columns([1, 2, 2])
+    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
     
     with col1:
         # Geography dropdown
@@ -602,9 +606,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -616,12 +617,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
-                'cep_percentage': 'Schools with CEP (%)',
-                'cep_schools': 'Number of CEP Schools',
-                'total_schools': 'Total Number of Schools',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -633,12 +628,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
-                'cep_percentage': 'Schools with CEP (%)',
-                'cep_schools': 'Number of CEP Schools',
-                'total_schools': 'Total Number of Schools',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -664,9 +653,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
-            # Clear food security selection when data variable is selected
+            # Clear food security and housing/transportation selections when data variable is selected
             if 'selected_food_security_variable' in st.session_state:
                 st.session_state['selected_food_security_variable'] = None
+            if 'selected_housing_transportation_variable' in st.session_state:
+                st.session_state['selected_housing_transportation_variable'] = None
             st.rerun()
     
     with col3:
@@ -676,7 +667,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits',
+            'cep_percentage': 'Schools with CEP (%)',
+            'cep_schools': 'Number of CEP Schools',
+            'total_schools': 'Total Number of Schools'
         }
         
         # Add None option for mutual exclusion
@@ -707,11 +701,61 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
-            # Clear data variable selection when food security variable is selected
+            # Clear data variable and housing/transportation selections when food security variable is selected
             if selected_fs_var is not None:
                 st.session_state['selected_variable'] = None
+                if 'selected_housing_transportation_variable' in st.session_state:
+                    st.session_state['selected_housing_transportation_variable'] = None
             else:
                 # Set default data variable when food security is cleared
+                st.session_state['selected_variable'] = 'alice_rate'
+            st.rerun()
+    
+    with col4:
+        # Housing and Transportation dropdown
+        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+        
+        housing_transportation_options = {
+            'rent_burden_rate': 'Housing Cost Burden (%)',
+            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            'public_transportation_pct': 'Public Transportation Commuters (%)'
+        }
+        
+        # Add None option for mutual exclusion
+        ht_options = [None] + list(housing_transportation_options.keys())
+        
+        def ht_format_func(x):
+            if x is None:
+                return "Select Housing/Transportation Variable..."
+            return housing_transportation_options[x]
+        
+        # Get current housing/transportation variable
+        selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
+        
+        try:
+            ht_index = ht_options.index(selected_housing_transportation_var)
+        except (ValueError, TypeError):
+            ht_index = 0
+            
+        selected_ht_var = st.selectbox(
+            "",
+            options=ht_options,
+            format_func=ht_format_func,
+            index=ht_index,
+            key="housing_transportation_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state only if selection actually changes (prevents infinite loops)
+        if selected_ht_var != selected_housing_transportation_var:
+            st.session_state['selected_housing_transportation_variable'] = selected_ht_var
+            # Clear data variable and food security selections when housing/transportation variable is selected
+            if selected_ht_var is not None:
+                st.session_state['selected_variable'] = None
+                if 'selected_food_security_variable' in st.session_state:
+                    st.session_state['selected_food_security_variable'] = None
+            else:
+                # Set default data variable when housing/transportation is cleared
                 st.session_state['selected_variable'] = 'alice_rate'
             st.rerun()
     
@@ -738,11 +782,14 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     # Determine which variable to use for the map
     food_security_var = st.session_state.get('selected_food_security_variable')
+    housing_transportation_var = st.session_state.get('selected_housing_transportation_variable')
     data_var = st.session_state.get('selected_variable')
     
-    # Use food security variable if selected, otherwise use data variable
+    # Use food security variable if selected, otherwise housing/transportation, otherwise data variable
     if food_security_var is not None:
         map_variable = food_security_var
+    elif housing_transportation_var is not None:
+        map_variable = housing_transportation_var
     elif data_var is not None:
         map_variable = data_var
     else:
