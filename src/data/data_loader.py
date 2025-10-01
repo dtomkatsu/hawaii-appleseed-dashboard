@@ -1479,6 +1479,15 @@ class DataLoader:
             'snap_benefits_annual_total': self._safe_get(geo_row, 'snap_benefits_annual_total')
         }
         
+        # Tax credit data
+        result['tax_credits'] = {
+            'ctc_avg_amount': self._safe_get(geo_row, 'ctc_avg_amount'),
+            'ctc_participation_rate': self._safe_get(geo_row, 'ctc_participation_rate'),
+            'federal_eitc_avg_amount': self._safe_get(geo_row, 'federal_eitc_avg_amount'),
+            'eitc_participation_rate': self._safe_get(geo_row, 'eitc_participation_rate'),
+            'state_eitc_avg_amount': self._safe_get(geo_row, 'state_eitc_avg_amount')
+        }
+        
         # Log the final result structure
         print("\nDEBUG: Final result structure:")
         for section, values in result.items():

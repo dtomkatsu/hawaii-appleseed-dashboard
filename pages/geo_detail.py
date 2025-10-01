@@ -446,6 +446,14 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     retailers_count = eco_defaults['retailers_count']
     retailers_redemption = eco_defaults['retailers_redemption']
     
+    # Get tax credit data
+    tax_credit_data = geo_data.get('tax_credits', {})
+    ctc_avg_amount = format_number(tax_credit_data.get('ctc_avg_amount'), is_currency=True, decimals=0)
+    ctc_participation_rate = format_number(tax_credit_data.get('ctc_participation_rate'), is_percent=True)
+    federal_eitc_avg_amount = format_number(tax_credit_data.get('federal_eitc_avg_amount'), is_currency=True, decimals=0)
+    eitc_participation_rate = format_number(tax_credit_data.get('eitc_participation_rate'), is_percent=True)
+    state_eitc_avg_amount = format_number(tax_credit_data.get('state_eitc_avg_amount'), is_currency=True, decimals=0)
+    
     javascript_code = """
     function printFactSheet() {
         window.print();
@@ -1534,6 +1542,15 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         <span class="small-stat-number">--</span>
                         <div class="small-stat-label">SNAP households with disabilities</div>
                     </div>
+                </div>
+                
+                <div class="impact-section">
+                    <div class="impact-title">TAX CREDITS & ECONOMIC SUPPORT IN {geo_name.upper()}</div>
+                    <ul class="bullet-points">
+                        <li><strong>Child Tax Credit (CTC):</strong> Families in this area receive an average of <span class="stat-highlight">{ctc_avg_amount}</span> per year, with a participation rate of <span class="stat-highlight">{ctc_participation_rate}</span>. The CTC helps families afford basic necessities like food, housing, and childcare.</li>
+                        <li><strong>Federal Earned Income Tax Credit (EITC):</strong> Working families receive an average of <span class="stat-highlight">{federal_eitc_avg_amount}</span> annually, with <span class="stat-highlight">{eitc_participation_rate}</span> of eligible families participating. The EITC rewards work and lifts families out of poverty.</li>
+                        <li><strong>State EITC:</strong> Hawaii's state EITC provides an additional <span class="stat-highlight">{state_eitc_avg_amount}</span> on average to working families, supplementing federal support and keeping more money in local communities.</li>
+                    </ul>
                 </div>
                 
                 <div class="impact-section">
