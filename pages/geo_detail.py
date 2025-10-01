@@ -197,6 +197,14 @@ def prepare_geo_data(geo_data):
     
     snap_data = geo_data['snap']
     
+    # Debug: Print SNAP data
+    print("\n=== DEBUG: SNAP DATA ===")
+    print(f"Raw SNAP data: {snap_data}")
+    print(f"snap_household_count: {snap_data.get('snap_household_count')}")
+    print(f"snap_household_rate: {snap_data.get('snap_household_rate')}")
+    print(f"snap_benefit_annual_per_household: {snap_data.get('snap_benefit_annual_per_household')}")
+    print(f"snap_benefits_annual_total: {snap_data.get('snap_benefits_annual_total')}")
+    
     # Map SNAP data fields for consistency
     snap_data.update({
         'household_count': snap_data.get('snap_household_count', 0),
@@ -204,6 +212,10 @@ def prepare_geo_data(geo_data):
         'benefits_annual_total': snap_data.get('snap_benefits_annual_total', 0),
         'benefit_annual_per_household': snap_data.get('snap_benefit_annual_per_household', 0)
     })
+    
+    print(f"After mapping - household_count: {snap_data.get('household_count')}")
+    print(f"After mapping - benefit_annual_per_household: {snap_data.get('benefit_annual_per_household')}")
+    print("=== END SNAP DEBUG ===\n")
     
     # Calculate derived values
     annual_per_household = snap_data.get('benefit_annual_per_household', 0)
@@ -453,6 +465,11 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     federal_eitc_avg_amount = format_number(tax_credit_data.get('federal_eitc_avg_amount'), is_currency=True, decimals=0)
     eitc_participation_rate = format_number(tax_credit_data.get('eitc_participation_rate'), is_percent=True)
     state_eitc_avg_amount = format_number(tax_credit_data.get('state_eitc_avg_amount'), is_currency=True, decimals=0)
+    
+    # Get transportation data
+    transportation_data = geo_data.get('transportation', {})
+    travel_time_minutes = format_number(transportation_data.get('travel_time_to_work_minutes'), decimals=1)
+    public_transportation_pct = format_number(transportation_data.get('public_transportation_pct'), is_percent=True)
     
     javascript_code = """
     function printFactSheet() {
@@ -1475,8 +1492,9 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                 </div>
                 
                 <div style="display: flex; gap: 20px; margin-bottom: 20px; clear: both;">
-                    <!-- First Column -->
+                    <!-- Left Column: SNAP and Transportation -->
                     <div style="flex: 1;">
+                        <!-- SNAP Section -->
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
                             <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
                             <div class="snap-tooltip">
@@ -1490,9 +1508,25 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
                             <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
                         </ul>
+                        
+                        <!-- Transportation Section -->
+                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px; margin-top: 30px; position: relative;">
+                            <span class="snap-title">Transportation</span>
+                            <div class="snap-tooltip">
+                                <p><strong>Transportation</strong> data shows how residents commute to work and the time spent traveling.</p>
+                                <p>This includes information about average commute times and the percentage of residents using public transportation.</p>
+                                <p>Understanding transportation patterns helps identify accessibility challenges and the need for improved transit infrastructure.</p>
+                            </div>
+                        </h3>
+                        <ul class="bullet-points housing-bullets">
+                            <li>The average travel time to work is <strong style="color: black;">{travel_time_minutes} minutes</strong>, reflecting the daily commute burden on workers in the area.</li>
+                            <li><strong style="color: black;">{public_transportation_pct}</strong> of workers use public transportation to commute to work, indicating reliance on transit systems.</li>
+                            <li>Longer commute times can reduce quality of life, increase transportation costs, and limit time available for family and community engagement.</li>
+                            <li>Access to reliable public transportation is essential for low-income families who may not own vehicles.</li>
+                        </ul>
                     </div>
                     
-                    <!-- Housing Column -->
+                    <!-- Right Column: Housing -->
                     <div style="flex: 1;">
                         <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
                             <span class="snap-title">Housing</span>
@@ -1550,15 +1584,6 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         <li><strong>Child Tax Credit (CTC):</strong> Families in this area receive an average of <span class="stat-highlight">{ctc_avg_amount}</span> per year, with a participation rate of <span class="stat-highlight">{ctc_participation_rate}</span>. The CTC helps families afford basic necessities like food, housing, and childcare.</li>
                         <li><strong>Federal Earned Income Tax Credit (EITC):</strong> Working families receive an average of <span class="stat-highlight">{federal_eitc_avg_amount}</span> annually, with <span class="stat-highlight">{eitc_participation_rate}</span> of eligible families participating. The EITC rewards work and lifts families out of poverty.</li>
                         <li><strong>State EITC:</strong> Hawaii's state EITC provides an additional <span class="stat-highlight">{state_eitc_avg_amount}</span> on average to working families, supplementing federal support and keeping more money in local communities.</li>
-                    </ul>
-                </div>
-                
-                <div class="impact-section">
-                    <div class="impact-title">SNAP'S IMPACT IN {geo_name.upper()}</div>
-                    <ul class="bullet-points">
-                        <li><strong>SNAP supports working families.</strong> Between 2019–2023, an average of <span class="stat-highlight">{working_families_rate}</span> of SNAP households in {geo_name.upper()} included someone who was working.</li>
-                        <li><strong>SNAP stimulates the economy and creates jobs.</strong> Each SNAP dollar has up to a <span class="stat-highlight">{economic_impact}</span> impact during economic downturns, supporting the supply chain from farmer to store.</li>
-                        <li><strong>SNAP supports local businesses,</strong> including <span class="stat-highlight">{retailers_count}</span> retailers in {geo_name.upper()}, which redeemed a total of <span class="stat-highlight">{retailers_redemption}</span> in 2023. Retailers include grocery stores and farmers' markets, which contribute to local taxes that fund services like schools and health care.</li>
                     </ul>
                 </div>
                 

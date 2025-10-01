@@ -63,9 +63,10 @@ def load_geojson(layer_name):
         logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
         return None
 
-@st.cache_resource
-def get_data_loader():
+@st.cache_resource(ttl=None, show_spinner=False, hash_funcs={})
+def get_data_loader(_cache_version="v3"):
     """Get a cached DataLoader instance."""
+    # _cache_version parameter forces cache invalidation when changed
     return DataLoader()
 
 def create_leaflet_map_view(debug_info: bool = False) -> None:
@@ -82,7 +83,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         valid_variables = [
             'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
-            'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
+            'snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
             'travel_time_to_work_minutes', 'public_transportation_pct', 'ctc_avg_amount', 'ctc_participation_rate', 
             'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount',
             'cep_percentage', 'cep_schools', 'total_schools'

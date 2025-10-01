@@ -166,7 +166,7 @@ class DataMerger:
         if data_type == DataType.ALICE:
             return base_cols + ['alice_rate']
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             return base_cols + [col for col in snap_cols if col in merge_data.columns]
         elif data_type == DataType.CEP:
             cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
@@ -201,7 +201,7 @@ class DataMerger:
         if data_type == DataType.ALICE:
             self._set_value(df, 'alice_rate', source_row.get('alice_rate'), target_idx)
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
                 self._set_value(df, col, source_row.get(col), target_idx)
         elif data_type == DataType.CEP:
@@ -214,7 +214,7 @@ class DataMerger:
         if data_type == DataType.ALICE:
             df['alice_rate'] = None
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
                 df[col] = None
         elif data_type == DataType.CEP:
@@ -628,7 +628,8 @@ class SNAPDataLoader(BaseDataLoader):
             logger.error(f"Invalid geographic level for SNAP: {geo_level}")
             return None
         
-        file_path = self.data_dir / 'snap_benefits' / self.config.file_patterns[geo_level.value]
+        # data_dir already points to snap_benefits directory, don't add it again
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
         if not file_path.exists():
             logger.error(f"SNAP data file not found: {file_path}")
             return None
@@ -645,6 +646,18 @@ class SNAPDataLoader(BaseDataLoader):
     def _standardize_snap_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
         """Standardize SNAP data format."""
         df = df.copy()
+        
+        # Add geoid for counties if missing
+        if geo_level == GeoLevel.COUNTY and ('geoid' not in df.columns or df['geoid'].isna().all()):
+            county_mapping = {
+                'HAWAII': '15001',
+                'HONOLULU': '15003',
+                'KAUAI': '15007',
+                'MAUI': '15009'
+            }
+            if 'NAME' in df.columns:
+                df['geoid'] = df['NAME'].str.strip().str.upper().map(county_mapping)
+                logger.info(f"Added geoid column to county SNAP data based on NAME column")
         
         # Fix geoid format for districts
         if geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE] and 'geoid' in df.columns:
@@ -1226,7 +1239,14 @@ class DataLoader:
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
         
         if merged_data is not None and snap_data is not None:
+            logger.info(f"Merging SNAP data for {geo_level}, SNAP data shape: {snap_data.shape}")
+            logger.info(f"SNAP columns: {snap_data.columns.tolist()}")
+            logger.info(f"Sample SNAP data:\n{snap_data.head(2)}")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
+            logger.info(f"After SNAP merge, merged data shape: {merged_data.shape}")
+            # Check if SNAP columns are in merged data
+            snap_cols_in_merged = [col for col in ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household'] if col in merged_data.columns]
+            logger.info(f"SNAP columns in merged data: {snap_cols_in_merged}")
         
         if merged_data is not None and cep_data is not None:
             logger.info(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
@@ -1474,6 +1494,7 @@ class DataLoader:
         
         # SNAP data
         result['snap'] = {
+            'snap_household_count': self._safe_get(geo_row, 'snap_households'),  # Use snap_households from data
             'snap_household_rate': self._safe_get(geo_row, 'snap_household_rate'),
             'snap_benefit_annual_per_household': self._safe_get(geo_row, 'snap_benefit_annual_per_household'),
             'snap_benefits_annual_total': self._safe_get(geo_row, 'snap_benefits_annual_total')
@@ -1486,6 +1507,12 @@ class DataLoader:
             'federal_eitc_avg_amount': self._safe_get(geo_row, 'federal_eitc_avg_amount'),
             'eitc_participation_rate': self._safe_get(geo_row, 'eitc_participation_rate'),
             'state_eitc_avg_amount': self._safe_get(geo_row, 'state_eitc_avg_amount')
+        }
+        
+        # Transportation data
+        result['transportation'] = {
+            'travel_time_to_work_minutes': self._safe_get(geo_row, 'travel_time_to_work_minutes'),
+            'public_transportation_pct': self._safe_get(geo_row, 'public_transportation_pct')
         }
         
         # Log the final result structure
