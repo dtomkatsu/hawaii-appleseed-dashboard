@@ -364,16 +364,32 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         }
         
         /* Style for dropdown hover effect */
+        .stSelectbox {
+            width: 100% !important;
+        }
+        
+        .stSelectbox > div {
+            width: 100% !important;
+        }
+        
         .stSelectbox > div > div[data-baseweb="select"] {
             transition: all 0.2s ease;
             border-radius: 6px;
             border: 1px solid #e0e0e0;
             background: white;
+            width: 100% !important;
+            min-height: 38px !important;
         }
         
         .stSelectbox > div > div[data-baseweb="select"]:hover {
             border-color: #1E88E5;
             box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+        }
+        
+        /* Control the selected value display */
+        .stSelectbox > div > div[data-baseweb="select"] > div {
+            padding: 6px 12px !important;
+            font-size: 14px !important;
         }
         
         /* Style for dropdown options */
@@ -572,7 +588,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """, unsafe_allow_html=True)
     
     # Create dropdown controls in main content area
-    col1, col2, col3, col4 = st.columns([1, 2, 2, 2])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
     with col1:
         # Geography dropdown
