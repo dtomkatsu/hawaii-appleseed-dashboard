@@ -351,6 +351,12 @@ class LeafletMapComponent:
                     }} else if (SELECTED_VARIABLE === 'ctc_participation_rate' || SELECTED_VARIABLE === 'eitc_participation_rate') {{
                         // Custom thresholds for tax credit participation rates (5-25% range)
                         thresholds = [5, 8, 10, 12, 15, 18, 20, 22, 25];
+                    }} else if (SELECTED_VARIABLE === 'cep_percentage') {{
+                        // Custom thresholds for CEP percentage (0-100% range with more granularity)
+                        thresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+                    }} else if (SELECTED_VARIABLE === 'cep_schools' || SELECTED_VARIABLE === 'total_schools') {{
+                        // Custom thresholds for number of schools (0-60 range)
+                        thresholds = [5, 10, 15, 20, 25, 30, 40, 50, 60];
                     }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
