@@ -14,28 +14,41 @@ from pathlib import Path
 def get_image_base64(image_path: str) -> str:
     """Get base64 encoded image or return empty string if not found."""
     try:
-        # Try direct path first
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
+        # Find project root by looking for run_leaflet.py or requirements.txt
+        current_dir = Path(__file__).parent.absolute()
+        project_root = current_dir
         
-        # Try relative to the script directory
-        script_dir = Path(__file__).parent.absolute()
-        rel_path = script_dir / image_path
-        if os.path.exists(rel_path):
-            with open(rel_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
-                
-        # Try relative to the project root
-        root_path = script_dir.parent / image_path
-        if os.path.exists(root_path):
-            with open(root_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
+        # Walk up the directory tree to find project root
+        max_levels = 5
+        for _ in range(max_levels):
+            if (project_root / 'run_leaflet.py').exists() or (project_root / 'requirements.txt').exists():
+                break
+            if project_root.parent == project_root:  # Reached filesystem root
+                break
+            project_root = project_root.parent
         
-        print(f"Warning: Image not found at {image_path}")
+        # Try multiple path strategies
+        paths_to_try = [
+            Path(image_path),  # Absolute path
+            project_root / image_path,  # Relative to project root
+            current_dir / image_path,  # Relative to current script
+            current_dir.parent / image_path,  # One level up from current script
+        ]
+        
+        for path in paths_to_try:
+            if path.exists():
+                with open(path, "rb") as img_file:
+                    return base64.b64encode(img_file.read()).decode('utf-8')
+        
+        # Log all attempted paths for debugging
+        print(f"Warning: Image not found. Tried paths:")
+        for path in paths_to_try:
+            print(f"  - {path} (exists: {path.exists()})")
         return ""
     except Exception as e:
         print(f"Error loading image {image_path}: {e}")
+        import traceback
+        traceback.print_exc()
         return ""
 
 import sys
@@ -661,9 +674,9 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     """
     
     # Load and encode the logo
-    logo_path = "static/images/leaf_only.png"
+    logo_path = "static/images/appleseed_logo.png"
     logo_base64 = get_image_base64(logo_path)
-    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo" alt="Logo">' if logo_base64 else ''
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo" alt="Hawaii Appleseed Logo">' if logo_base64 else ''
     
     return f"""
     <!DOCTYPE html>
