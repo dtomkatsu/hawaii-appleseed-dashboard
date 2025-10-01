@@ -64,7 +64,7 @@ def load_geojson(layer_name):
         return None
 
 @st.cache_resource(ttl=None, show_spinner=False, hash_funcs={})
-def get_data_loader(_cache_version="v5"):
+def get_data_loader(_cache_version="v6"):
     """Get a cached DataLoader instance."""
     # _cache_version parameter forces cache invalidation when changed
     return DataLoader()

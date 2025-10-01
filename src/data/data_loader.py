@@ -733,6 +733,10 @@ class CEPDataLoader(BaseDataLoader):
             logger.error(f"Invalid geographic level for CEP: {geo_level}")
             return None
         
+        # For state level, aggregate from county data
+        if geo_level == GeoLevel.STATE:
+            return self._aggregate_state_cep_from_counties()
+        
         file_path = self.data_dir / self.config.file_patterns[geo_level.value]
         if not file_path.exists():
             logger.error(f"CEP data file not found: {file_path}")
@@ -753,6 +757,39 @@ class CEPDataLoader(BaseDataLoader):
             
         except Exception as e:
             logger.error(f"Error loading CEP {geo_level.value} data: {e}", exc_info=True)
+            return None
+    
+    def _aggregate_state_cep_from_counties(self) -> Optional[pd.DataFrame]:
+        """Aggregate county-level CEP data to create state-level data."""
+        try:
+            # Load county-level CEP data
+            county_file = self.data_dir / self.config.file_patterns['county']
+            if not county_file.exists():
+                logger.error(f"County CEP data file not found: {county_file}")
+                return None
+            
+            county_df = pd.read_csv(county_file)
+            
+            # Aggregate totals
+            total_schools = county_df['total_schools'].sum()
+            cep_schools = county_df['cep_schools'].sum()
+            cep_percentage = (cep_schools / total_schools * 100) if total_schools > 0 else 0
+            
+            # Create state-level dataframe
+            state_df = pd.DataFrame([{
+                'geoid': '15',
+                'NAME': 'Hawaii',
+                'total_schools': total_schools,
+                'cep_schools': cep_schools,
+                'cep_percentage': cep_percentage,
+                'cep_display': f"{int(cep_schools)}/{int(total_schools)} CEP schools"
+            }])
+            
+            logger.info(f"Aggregated state CEP data: {cep_schools}/{total_schools} schools ({cep_percentage:.1f}%)")
+            return state_df
+            
+        except Exception as e:
+            logger.error(f"Error aggregating state CEP data: {e}", exc_info=True)
             return None
     
     def _add_geoid(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
