@@ -1345,7 +1345,7 @@ class DataLoader:
             # Try exact match with numeric geoid
             geo_row = data[data['geoid'].astype(str) == str(numeric_geoid)]
             
-            # If no exact match, try more flexible matching for districts
+            # If no exact match, try more flexible matching ONLY for districts (not state)
             if geo_row.empty and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
                 print(f"DEBUG: No exact match for {numeric_geoid}, trying flexible matching...")
                 # Try matching just the district number part
@@ -1361,6 +1361,11 @@ class DataLoader:
                     print("DEBUG: Trying to extract numeric part from geoid")
                     data['district_num'] = data['geoid_str'].str.extract(r'(\d{1,3})$')
                     geo_row = data[data['district_num'] == district_num]
+            elif geo_row.empty and geo_level == GeoLevel.STATE:
+                # For state level, we should only have one row
+                print(f"DEBUG: State level - using first row of data")
+                if len(data) > 0:
+                    geo_row = data.iloc[[0]]  # Get first row as DataFrame
             
             if geo_row.empty:
                 logger.warning(f"No data found for geography ID: {geo_id}")
@@ -1461,15 +1466,15 @@ class DataLoader:
                     print(f"DEBUG: Found {geo_id_str} in county data")
                     return GeoLevel.COUNTY
         
+        # Check for state-level ID FIRST (before 2-digit check)
+        elif geo_id_str in ['15', '15000']:
+            print(f"DEBUG: State-level ID detected: {geo_id_str}")
+            return GeoLevel.STATE
+        
         # Check for 2-digit senate districts
         elif len(geo_id_str) == 2 and geo_id_str.isdigit():
             print(f"DEBUG: 2-digit ID detected, assuming senate district: {geo_id_str}")
             return GeoLevel.SENATE
-        
-        # Check for state-level ID
-        elif geo_id_str in ['15', '15000']:
-            print(f"DEBUG: State-level ID detected: {geo_id_str}")
-            return GeoLevel.STATE
         
         print(f"DEBUG: Could not determine geo level for ID: {geo_id_str}")
         return None

@@ -781,8 +781,11 @@ class LeafletMapComponent:
                                 prefix = 'house';
                             }} else if (window.location.search.includes('senate') || props.senate_id) {{
                                 prefix = 'senate';
+                            }} else if (window.location.search.includes('state') || rawId === '15' || rawId === 15) {{
+                                // State level - don't add prefix
+                                prefix = null;
                             }}
-                            featureId = prefix + '_' + rawId;
+                            featureId = prefix ? (prefix + '_' + rawId) : rawId;
                         }}
                     }}
                     
