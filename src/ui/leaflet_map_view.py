@@ -86,7 +86,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
             'travel_time_to_work_minutes', 'public_transportation_pct', 'ctc_avg_amount', 'ctc_participation_rate', 
             'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount',
-            'cep_percentage', 'cep_schools', 'total_schools'
+            'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
         ]
         
         # Ensure selected_variable is valid
@@ -686,8 +686,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits',
             'cep_percentage': 'Schools with CEP (%)',
-            'cep_schools': 'Number of CEP Schools',
-            'total_schools': 'Total Number of Schools'
+            'cep_display': 'Number of CEP Schools'
         }
         
         # Add None option for mutual exclusion

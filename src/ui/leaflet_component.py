@@ -308,6 +308,11 @@ class LeafletMapComponent:
                 formatValue(value, variableType) {{
                     if (value === undefined || value === null) return 'N/A';
                     
+                    // Special handling for cep_display - it's already formatted
+                    if (variableType === 'cep_display') {{
+                        return value;  // Already formatted as "35/55 CEP schools"
+                    }}
+                    
                     const numValue = parseFloat(value);
                     if (isNaN(numValue)) return 'N/A';
                     
