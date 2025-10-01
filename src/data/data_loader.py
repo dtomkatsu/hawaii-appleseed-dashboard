@@ -337,6 +337,18 @@ class ACSDataLoader(BaseDataLoader):
                             tax_credit_geoid_col = col
                             break
                     
+                    # Fix geoid format for districts - convert 4-digit to 5-digit (e.g., 1501 -> 15001)
+                    if tax_credit_geoid_col and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
+                        def fix_district_geoid(geoid_str):
+                            geoid_str = str(geoid_str).strip()
+                            if len(geoid_str) == 4:
+                                # Insert '0' after first 2 digits: 1501 -> 15001
+                                return geoid_str[:2] + '0' + geoid_str[2:]
+                            return geoid_str
+                        
+                        tax_credit_data[tax_credit_geoid_col] = tax_credit_data[tax_credit_geoid_col].apply(fix_district_geoid)
+                        logger.info(f"Fixed tax credit geoid format for {geo_level.value}: sample geoids {tax_credit_data[tax_credit_geoid_col].head(3).tolist()}")
+                    
                     if df_geoid_col and tax_credit_geoid_col:
                         # Merge tax credit data with main DataFrame
                         df = pd.merge(df, tax_credit_data, on=df_geoid_col, how='left', suffixes=('', '_tax'))
