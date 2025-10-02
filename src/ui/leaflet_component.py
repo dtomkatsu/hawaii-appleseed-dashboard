@@ -710,8 +710,10 @@ class LeafletMapComponent:
             
             const mapHandlers = {{
                 style(feature) {{
+                    // Use cep_percentage for coloring when cep_display is selected
+                    const colorVariable = SELECTED_VARIABLE === 'cep_display' ? 'cep_percentage' : SELECTED_VARIABLE;
                     return {{
-                        fillColor: utils.getColorForValue(feature.properties[SELECTED_VARIABLE]),
+                        fillColor: utils.getColorForValue(feature.properties[colorVariable]),
                         weight: 1,
                         opacity: 1,
                         color: '#666',
@@ -888,7 +890,16 @@ class LeafletMapComponent:
                             if (closeBtn) {{
                                 closeBtn.onclick = function(e) {{
                                     e.stopPropagation();
+                                    
+                                    // Remove scroll indicator immediately when closing panel
+                                    const scrollIndicator = document.querySelector('.scroll-indicator');
+                                    if (scrollIndicator) {{
+                                        scrollIndicator.style.display = 'none';
+                                        scrollIndicator.remove();
+                                    }}
+                                    
                                     infoPanel.classList.remove('visible');
+                                    
                                     setTimeout(() => {{
                                         infoPanel.style.display = 'none';
                                         const mapInstance = window[MAP_ID];
