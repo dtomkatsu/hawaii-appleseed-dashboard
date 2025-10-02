@@ -31,6 +31,9 @@ class LeafletMapComponent:
         {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
         {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
         {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
+        {'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'},
+        {'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'},
+        {'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'},
         {'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time to Work', 'type': 'minutes'},
         {'key': 'ctc_avg_amount', 'label': 'Child Tax Credit - Average Amount', 'type': 'currency'},
         {'key': 'ctc_participation_rate', 'label': 'Child Tax Credit - Participation Rate', 'type': 'percentage'},
@@ -54,8 +57,9 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
-        # For SNAP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
+        # For SNAP, CEP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
         special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
+                           'cep_percentage', 'cep_schools', 'total_schools',
                            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
                            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 'median_income']
         if selected_variable in special_variables:
@@ -393,7 +397,10 @@ class LeafletMapComponent:
                         'Food Security': [
                             {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
                             {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'}},
-                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}}
+                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}},
+                            {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
+                            {{'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'}},
+                            {{'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'}}
                         ],
                         'Housing': [
                             {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
@@ -632,7 +639,10 @@ class LeafletMapComponent:
                     const snapMetrics = [
                         {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
                         {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual Benefit', 'type': 'currency'}},
-                        {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}}
+                        {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}},
+                        {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
+                        {{'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'}},
+                        {{'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'}}
                     ];
                     
                     let html = '';

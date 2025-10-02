@@ -942,6 +942,30 @@ def create_info_panel(selected_variable, geojson_data):
                     
                     st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
+        # CEP Section
+        st.markdown("**CEP Schools**")
+        cep_metrics = [
+            ('cep_percentage', 'Schools with CEP', 'percentage'),
+            ('cep_schools', 'Number of CEP Schools', 'number'),
+            ('total_schools', 'Total Schools', 'number')
+        ]
+        
+        for metric_key, metric_label, metric_type in cep_metrics:
+            if metric_key in geo_info:
+                value = geo_info[metric_key]
+                if isinstance(value, (int, float)):
+                    is_selected = metric_key == selected_variable
+                    style = "background: #e8f0fe; border: 1px solid #1a73e8; font-weight: bold;" if is_selected else "background: #f8f9fa; border: 1px solid #e0e0e0;"
+                    
+                    if metric_type == 'percentage':
+                        formatted = f"{value:.1f}%"
+                    elif metric_type == 'currency':
+                        formatted = f"${value:,.0f}"
+                    else:
+                        formatted = f"{value:,.0f}"
+                    
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+        
         st.markdown("---")
         
         # View Detailed Data Button
@@ -1002,11 +1026,13 @@ def prepare_feature_details(feature_id, geojson_data):
         "ALICE Households": format_number(properties.get('alice_rate', 'N/A'), suffix='%')
     }
     
-    # SNAP data section
+    # SNAP and CEP data section
     snap_data = {
         "SNAP Households": format_number(properties.get('snap_household_rate', 'N/A'), suffix='%'),
         "Avg Annual SNAP Benefit": format_number(properties.get('snap_benefit_annual_per_household', 'N/A'), prefix='$'),
-        "Total Annual SNAP Benefits": format_number(properties.get('snap_benefits_annual_total', 'N/A'), prefix='$')
+        "Total Annual SNAP Benefits": format_number(properties.get('snap_benefits_annual_total', 'N/A'), prefix='$'),
+        "Schools with CEP": format_number(properties.get('cep_percentage', 'N/A'), suffix='%'),
+        "Number of CEP Schools": properties.get('cep_display', 'N/A')
     }
     
     housing = {
@@ -1061,13 +1087,16 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
                 st.metric("ALICE Households", details['economic']['ALICE Households'])
         
         with tab2:
-            # SNAP tab
+            # SNAP and CEP tab
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("SNAP Households", details['snap']['SNAP Households'])
                 st.metric("Avg Annual SNAP Benefit", details['snap']['Avg Annual SNAP Benefit'])
+                st.metric("Schools with CEP", details['snap']['Schools with CEP'])
             with col2:
                 st.metric("Total Annual SNAP Benefits", details['snap']['Total Annual SNAP Benefits'])
+                st.metric("Number of CEP Schools", details['snap']['Number of CEP Schools'])
+                st.markdown("<div style='height: 38px;'></div>", unsafe_allow_html=True)  # Spacer for alignment
         
         with tab3:
             # Demographics tab
