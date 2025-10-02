@@ -8,6 +8,8 @@ const legendManager = {
         
         const colorSchemeSelect = document.getElementById('color-scheme-select');
         const currentScheme = colorSchemeSelect ? colorSchemeSelect.value : '{color_scheme}';
+        
+        // Use the selected color scheme (default to blue)
         const colors = COLOR_SCHEMES[currentScheme] || COLOR_SCHEMES.blue;
         
         let title = SELECTED_VARIABLE.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -22,7 +24,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '+' : from + '-' + grades[i+1];
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'public_transportation_pct') {
             title = 'Public Transportation (%)';
@@ -31,7 +33,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '%+' : from + '-' + grades[i+1] + '%';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'ctc_avg_amount' || SELECTED_VARIABLE === 'federal_eitc_avg_amount' || SELECTED_VARIABLE === 'state_eitc_avg_amount') {
             title += ' ($)';
@@ -40,7 +42,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? '$' + (from/1000).toFixed(1) + 'k+' : '$' + (from/1000).toFixed(1) + 'k-' + (grades[i+1]/1000).toFixed(1) + 'k';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'ctc_participation_rate' || SELECTED_VARIABLE === 'eitc_participation_rate') {
             title += ' (%)';
@@ -49,7 +51,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '%+' : from + '-' + grades[i+1] + '%';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'cep_percentage') {
             title = 'Schools with CEP (%)';
@@ -58,7 +60,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '%+' : from + '-' + grades[i+1] + '%';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'cep_schools' || SELECTED_VARIABLE === 'total_schools' || SELECTED_VARIABLE === 'cep_display') {
             title = 'Number of Schools';
@@ -67,7 +69,19 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '+' : from + '-' + grades[i+1];
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
+            }
+        } else if (SELECTED_VARIABLE === 'snap_benefit_annual_per_household') {
+            title = 'Average Annual SNAP Benefit ($)';
+            // More distinct thresholds for average SNAP benefits ($2,500 to $7,000+)
+            grades = [2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 7000];
+            for (let i = 0; i < grades.length; i++) {
+                const from = grades[i];
+                const isLast = i === grades.length - 1;
+                const range = isLast 
+                    ? '$' + from.toLocaleString() + '+' 
+                    : '$' + from.toLocaleString() + '-' + (grades[i+1]-1).toLocaleString();
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE === 'snap_benefits_annual_total') {
             title = 'Total Annual SNAP Benefits ($)';
@@ -75,8 +89,10 @@ const legendManager = {
             for (let i = 0; i < grades.length; i++) {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
-                const range = isLast ? '$' + (from/1000000) + 'M+' : '$' + (from/1000000) + 'M-' + (grades[i+1]/1000000) + 'M';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                const range = isLast 
+                    ? '$' + (from/1000000).toFixed(1) + 'M+' 
+                    : '$' + (from/1000000).toFixed(1) + 'M-' + (grades[i+1]/1000000).toFixed(1) + 'M';
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {
             title += ' (%)';
@@ -85,7 +101,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? from + '%+' : from + '-' + grades[i+1] + '%';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else if (SELECTED_VARIABLE.includes('income')) {
             title += ' ($)';
@@ -94,7 +110,7 @@ const legendManager = {
                 const from = grades[i];
                 const isLast = i === grades.length - 1;
                 const range = isLast ? '$' + (from/1000) + 'k+' : '$' + (from/1000) + 'k-' + (grades[i+1]/1000) + 'k';
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         } else {
             title += ' (Count)';
@@ -110,7 +126,7 @@ const legendManager = {
                 } else {
                     range = from + '-' + grades[i+1];
                 }
-                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '"></i>' + range + '</div>');
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
         }
         
@@ -139,13 +155,17 @@ const legendManager = {
                     }
                 });
                 
+                // Update legend
                 legendManager.update();
                 
-                window.parent.postMessage({
-                    type: 'color_scheme_change',
-                    color_scheme: newScheme,
-                    map_id: MAP_ID
-                }, '*');
+                // Notify parent if in iframe
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'color_scheme_change',
+                        color_scheme: newScheme,
+                        map_id: MAP_ID
+                    }, '*');
+                }
             });
         }
     }
