@@ -614,8 +614,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col2:
-        # Data Variable dropdown
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
+        # Economic Security dropdown with 'Choose your variable' text
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.7em; margin-bottom: 4px;">Choose your variable</div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
@@ -678,8 +679,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col3:
-        # Food Security dropdown
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        # Food Security dropdown - Empty div for consistent spacing
+        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
         
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
@@ -728,8 +730,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col4:
-        # Housing and Transportation dropdown
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+        # Housing and Transportation dropdown - Empty div for consistent spacing
+        st.markdown('<div style="height: 19px; margin-bottom: 1px;"></div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
             'rent_burden_rate': 'Housing Cost Burden (%)',
