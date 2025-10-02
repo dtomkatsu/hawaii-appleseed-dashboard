@@ -32,8 +32,7 @@ class LeafletMapComponent:
         {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
         {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
         {'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'},
-        {'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'},
-        {'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'},
+        {'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'},
         {'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time to Work', 'type': 'minutes'},
         {'key': 'ctc_avg_amount', 'label': 'Child Tax Credit - Average Amount', 'type': 'currency'},
         {'key': 'ctc_participation_rate', 'label': 'Child Tax Credit - Participation Rate', 'type': 'percentage'},
@@ -59,7 +58,7 @@ class LeafletMapComponent:
         
         # For SNAP, CEP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
         special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
-                           'cep_percentage', 'cep_schools', 'total_schools',
+                           'cep_percentage', 'cep_display', 'cep_schools', 'total_schools',
                            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
                            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 'median_income']
         if selected_variable in special_variables:
@@ -312,9 +311,9 @@ class LeafletMapComponent:
                 formatValue(value, variableType) {{
                     if (value === undefined || value === null) return 'N/A';
                     
-                    // Special handling for cep_display - it's already formatted
-                    if (variableType === 'cep_display') {{
-                        return value;  // Already formatted as "35/55 CEP schools"
+                    // Special handling for text types - return as-is
+                    if (variableType === 'text' || variableType === 'cep_display') {{
+                        return value;  // Already formatted (e.g., "35/55 CEP schools")
                     }}
                     
                     const numValue = parseFloat(value);
@@ -399,8 +398,7 @@ class LeafletMapComponent:
                             {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'}},
                             {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}},
                             {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
-                            {{'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'}},
-                            {{'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'}}
+                            {{'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'}}
                         ],
                         'Housing': [
                             {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
@@ -437,7 +435,9 @@ class LeafletMapComponent:
                         for (let i = 0; i < metrics.length; i++) {{
                             const metric = metrics[i];
                             const value = properties[metric.key];
-                            if (value === undefined || value === null || isNaN(value)) continue;
+                            // Skip if undefined/null, or if it's a number type and NaN
+                            if (value === undefined || value === null) continue;
+                            if (metric.type !== 'text' && isNaN(value)) continue;
                             
                             hasCategoryData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
@@ -641,8 +641,7 @@ class LeafletMapComponent:
                         {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual Benefit', 'type': 'currency'}},
                         {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}},
                         {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
-                        {{'key': 'cep_schools', 'label': 'Number of CEP Schools', 'type': 'number'}},
-                        {{'key': 'total_schools', 'label': 'Total Schools', 'type': 'number'}}
+                        {{'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'}}
                     ];
                     
                     let html = '';
@@ -650,12 +649,16 @@ class LeafletMapComponent:
                     
                     snapMetrics.forEach(metric => {{
                         const value = properties[metric.key];
-                        if (value !== undefined && value !== null && !isNaN(value)) {{
+                        // Allow text fields or numeric fields
+                        const isValid = value !== undefined && value !== null && (metric.type === 'text' || !isNaN(value));
+                        if (isValid) {{
                             hasData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
                             const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
                             const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
                             const fontWeight = isSelected ? 'bold' : 'normal';
+                            
+                            const formattedValue = utils.formatValue(value, metric.type);
                             
                             html += 
                                 '<div style="background: ' + bgColor + '; ' +
@@ -665,7 +668,7 @@ class LeafletMapComponent:
                                 '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
                                 metric.label + '</div>' +
                                 '<div style="font-size: 12px; color: #333;">' + 
-                                utils.formatValue(value, metric.type) + '</div>' +
+                                formattedValue + '</div>' +
                                 '</div>';
                         }}
                     }});

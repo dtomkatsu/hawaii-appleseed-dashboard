@@ -946,23 +946,25 @@ def create_info_panel(selected_variable, geojson_data):
         st.markdown("**CEP Schools**")
         cep_metrics = [
             ('cep_percentage', 'Schools with CEP', 'percentage'),
-            ('cep_schools', 'Number of CEP Schools', 'number'),
-            ('total_schools', 'Total Schools', 'number')
+            ('cep_display', 'CEP Schools', 'text')
         ]
         
         for metric_key, metric_label, metric_type in cep_metrics:
             if metric_key in geo_info:
                 value = geo_info[metric_key]
-                if isinstance(value, (int, float)):
+                # Handle both numeric and text values
+                if isinstance(value, (int, float)) or (isinstance(value, str) and value):
                     is_selected = metric_key == selected_variable
                     style = "background: #e8f0fe; border: 1px solid #1a73e8; font-weight: bold;" if is_selected else "background: #f8f9fa; border: 1px solid #e0e0e0;"
                     
-                    if metric_type == 'percentage':
+                    if metric_type == 'percentage' and isinstance(value, (int, float)):
                         formatted = f"{value:.1f}%"
-                    elif metric_type == 'currency':
+                    elif metric_type == 'currency' and isinstance(value, (int, float)):
                         formatted = f"${value:,.0f}"
+                    elif metric_type == 'text':
+                        formatted = str(value)
                     else:
-                        formatted = f"{value:,.0f}"
+                        formatted = f"{value:,.0f}" if isinstance(value, (int, float)) else str(value)
                     
                     st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
