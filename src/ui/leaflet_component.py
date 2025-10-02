@@ -677,6 +677,7 @@ class LeafletMapComponent:
                         html = '<div style="color: #999; text-align: center; font-style: italic;">No SNAP data available</div>';
                     }}
                     
+                    console.log('SNAP HTML length:', html.length, 'hasData:', hasData);
                     return html;
                 }}
             }};
@@ -863,7 +864,8 @@ class LeafletMapComponent:
                         // Update the info panel with categorized content
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
-                            '<div style="margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
+                            '<div style="position: relative; margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
+                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: -4px; background: none; border: none; font-size: 24px; color: #666; cursor: pointer; padding: 0; width: 30px; height: 30px; line-height: 30px; border-radius: 4px; transition: all 0.2s;">&times;</button>',
                             '  ', name,
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
@@ -880,6 +882,32 @@ class LeafletMapComponent:
                             infoPanel.innerHTML = infoPanelContent;
                             infoPanel.style.display = 'block';
                             infoPanel.classList.add('visible');
+                            
+                            // Add close button handler
+                            const closeBtn = document.getElementById(MAP_ID + '-close-panel');
+                            if (closeBtn) {{
+                                closeBtn.onclick = function(e) {{
+                                    e.stopPropagation();
+                                    infoPanel.classList.remove('visible');
+                                    setTimeout(() => {{
+                                        infoPanel.style.display = 'none';
+                                        const mapInstance = window[MAP_ID];
+                                        if (mapInstance) {{
+                                            mapInstance.invalidateSize();
+                                        }}
+                                    }}, 300);
+                                }};
+                                
+                                // Add hover effects
+                                closeBtn.onmouseover = function() {{
+                                    this.style.background = '#f0f0f0';
+                                    this.style.color = '#333';
+                                }};
+                                closeBtn.onmouseout = function() {{
+                                    this.style.background = 'none';
+                                    this.style.color = '#666';
+                                }};
+                            }}
                             
                             // Trigger map resize after panel animation
                             setTimeout(() => {{
