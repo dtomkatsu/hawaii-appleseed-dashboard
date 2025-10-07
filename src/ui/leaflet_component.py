@@ -930,11 +930,26 @@ class LeafletMapComponent:
                         }}
                     }});
                     
-                    layer.bindTooltip(
-                        '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
-                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>',
-                        {{ className: 'custom-tooltip', offset: [0, -10] }}
-                    );
+                    // Build tooltip content with representative info if available
+                    let tooltipContent = '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
+                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>';
+                    
+                    // Add representative info to tooltip if available
+                    if (repInfo && repInfo.hasData) {{
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = repInfo.html;
+                        const repNameElement = tempDiv.querySelector('div:nth-child(2)');
+                        const areasElement = tempDiv.querySelector('div:nth-child(3)');
+                        
+                        if (repNameElement && areasElement) {{
+                            const repName = repNameElement.textContent.trim();
+                            const areas = areasElement.textContent.replace('Areas: ', '').trim();
+                            tooltipContent += '<br><br><strong>Representative:</strong> ' + repName;
+                            tooltipContent += '<br><strong>Areas:</strong> ' + areas;
+                        }}
+                    }}
+                    
+                    layer.bindTooltip(tooltipContent, {{ className: 'custom-tooltip', offset: [0, -10] }});
                 }}
             }};
             
