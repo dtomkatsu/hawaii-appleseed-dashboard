@@ -735,6 +735,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                    '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
+            'median_rent': 'Median Rent ($)',
             'rent_burden_rate': 'Housing Cost Burden (%)',
             'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
             'public_transportation_pct': 'Public Transportation Commuters (%)'

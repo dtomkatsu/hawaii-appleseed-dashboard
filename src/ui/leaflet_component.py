@@ -60,7 +60,8 @@ class LeafletMapComponent:
         special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
                            'cep_percentage', 'cep_display', 'cep_schools', 'total_schools',
                            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
-                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 'median_income']
+                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 
+                           'median_income', 'median_rent']
         if selected_variable in special_variables:
             self.logger.info(f"Special variable '{selected_variable}' expected to be merged - proceeding")
             return True
@@ -369,6 +370,10 @@ class LeafletMapComponent:
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
                         thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
+                    }} else if (SELECTED_VARIABLE === 'median_rent') {{
+                        // Custom thresholds for median rent to make differences more apparent
+                        // Typical rent range in Hawaii is ~$1000-$4000
+                        thresholds = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
                     }} else if (SELECTED_VARIABLE === 'snap_benefits_annual_total') {{
                         // Custom scale for total SNAP benefits to show more variation
                         // Using logarithmic-like scale for better distribution
