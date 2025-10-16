@@ -89,9 +89,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
         ]
         
-        # Ensure selected_variable is valid
+        # Ensure selected_variable is valid (allow None for when other dropdowns are selected)
         current_var = st.session_state.get('selected_variable', 'alice_rate')
-        if current_var not in valid_variables:
+        if current_var is not None and current_var not in valid_variables:
             logger.warning(f"Invalid variable '{current_var}' in session state, resetting to alice_rate")
             st.session_state['selected_variable'] = 'alice_rate'
         elif 'selected_variable' not in st.session_state:
@@ -593,7 +593,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col1:
         # Geography dropdown
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 3.5px;">1. Select Geography</div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)
@@ -615,8 +616,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.7em; margin-bottom: 4px;">Choose your variable</div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>', unsafe_allow_html=True)
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">2. Choose one variable</div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security & Tax Credits</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
@@ -658,14 +659,15 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         
         def var_format_func(x):
             if x is None:
-                return "Select Data Variable..."
+                return "Select Variable"
             return variable_options[x]
         
         # Get current variable index
-        try:
-            var_index = var_options.index(selected_variable)
-        except (ValueError, TypeError):
+        # If selected_variable is None or not in options, show placeholder (index 0)
+        if selected_variable is None or selected_variable not in variable_options:
             var_index = 0
+        else:
+            var_index = var_options.index(selected_variable)
             
         selected_var = st.selectbox(
             "",

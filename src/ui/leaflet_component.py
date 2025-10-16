@@ -104,7 +104,7 @@ class LeafletMapComponent:
                 border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 12px;
+                font-size: 14px;
                 line-height: 1.4;
                 color: #333;
                 transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
@@ -189,19 +189,19 @@ class LeafletMapComponent:
                 font-weight: 600;
                 margin-bottom: 6px;
                 text-align: center;
-                font-size: 12px;
+                font-size: 16px;
                 color: #1a73e8;
             }
             .legend-item {
                 display: flex;
                 align-items: center;
                 margin: 3px 0;
-                font-size: 10px;
+                font-size: 15px;
             }
             .legend-item i {
                 display: inline-block;
                 width: 18px;
-                height: 10px;
+                height: 12px;
                 margin-right: 6px;
                 border: 1px solid rgba(0,0,0,0.2);
                 border-radius: 2px;
@@ -213,7 +213,7 @@ class LeafletMapComponent:
             }
             .color-scheme-selector select {
                 width: 100%;
-                font-size: 10px;
+                font-size: 12px;
                 padding: 4px 6px;
                 border: 1px solid #ddd;
                 border-radius: 4px;
@@ -228,7 +228,7 @@ class LeafletMapComponent:
                 box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
             }
             .color-scheme-selector label {
-                font-size: 10px;
+                font-size: 12px;
                 font-weight: 600;
                 color: #555;
                 display: block;
@@ -460,10 +460,10 @@ class LeafletMapComponent:
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
                                 '<div style="background:', bgColor, '; border: 1px solid ', borderColor, ';',
                                 'border-radius: 4px; padding: 6px 8px; height: 100%; font-weight:', fontWeight, ';">',
-                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;',
+                                '<div style="font-size: 12px; color: #666; margin-bottom: 2px;',
                                 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">',
                                 metric.label, '</div>',
-                                '<div style="font-size: 12px; color: #333;">',
+                                '<div style="font-size: 14px; color: #333;">',
                                 utils.formatValue(value, metric.type), '</div>',
                                 '</div></div>'
                             ].join('');
@@ -482,7 +482,7 @@ class LeafletMapComponent:
                         if (hasCategoryData) {{
                             html += [
                                 '<div style="margin-bottom: 16px;">',
-                                '<div style="font-size: 13px; font-weight: 600; color: #1a73e8;',
+                                '<div style="font-size: 15px; font-weight: 600; color: #1a73e8;',
                                 'margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0;">',
                                 categoryName, '</div>',
                                 '<div style="margin: 0 -3px;">', categoryHtml, '</div>',
