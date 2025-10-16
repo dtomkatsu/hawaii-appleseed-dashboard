@@ -1,4 +1,4 @@
-"""Geographic Detail Page for Hawaii Appleseed Dashboard."""
+"""Geographic Detail Page for Hawaii Appleseed Dashboard - New Design."""
 import warnings
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
@@ -11,49 +11,16 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-def get_image_base64(image_path: str) -> str:
-    """Get base64 encoded image or return empty string if not found."""
-    try:
-        # Try direct path first
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
-        
-        # Try relative to the script directory
-        script_dir = Path(__file__).parent.absolute()
-        rel_path = script_dir / image_path
-        if os.path.exists(rel_path):
-            with open(rel_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
-                
-        # Try relative to the project root
-        root_path = script_dir.parent / image_path
-        if os.path.exists(root_path):
-            with open(root_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode('utf-8')
-        
-        print(f"Warning: Image not found at {image_path}")
-        return ""
-    except Exception as e:
-        print(f"Error loading image {image_path}: {e}")
-        return ""
-
+# Import data loader and other utilities
 import sys
-
-# Add the src directory to the path
-sys.path.append(str(Path(__file__).parent.parent))
-
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.data.data_loader import DataLoader
+from src.ui.full_width_utils import set_full_width_layout
 
-# Initialize the data loader
+# Initialize data loader
 data_loader = DataLoader()
 
-# Suppress deprecation warnings
-import warnings
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-
-# Import and apply full-width layout utility
-from src.ui.full_width_utils import set_full_width_layout
+# Set full width layout
 set_full_width_layout()
 
 # Note: set_page_config is handled in the main app file (run_leaflet.py)
@@ -68,12 +35,52 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Constants for economic impact (would ideally come from data)
+def get_image_base64(image_path: str) -> str:
+    """Get base64 encoded image or return empty string if not found."""
+    try:
+        # Find project root by looking for run_leaflet.py or requirements.txt
+        current_dir = Path(__file__).parent.absolute()
+        project_root = current_dir
+        
+        # Walk up the directory tree to find project root
+        max_levels = 5
+        for _ in range(max_levels):
+            if (project_root / 'run_leaflet.py').exists() or (project_root / 'requirements.txt').exists():
+                break
+            if project_root.parent == project_root:  # Reached filesystem root
+                break
+            project_root = project_root.parent
+        
+        # Try multiple path strategies
+        paths_to_try = [
+            Path(image_path),  # Absolute path
+            project_root / image_path,  # Relative to project root
+            current_dir / image_path,  # Relative to current script
+            current_dir.parent / image_path,  # One level up from current script
+        ]
+        
+        for path in paths_to_try:
+            if path.exists():
+                with open(path, "rb") as img_file:
+                    return base64.b64encode(img_file.read()).decode('utf-8')
+        
+        # Log all attempted paths for debugging
+        print(f"Warning: Image not found. Tried paths:")
+        for path in paths_to_try:
+            print(f"  - {path} (exists: {path.exists()})")
+        return ""
+    except Exception as e:
+        print(f"Error loading image {image_path}: {e}")
+        import traceback
+        traceback.print_exc()
+        return ""
+
+# Economic impact defaults for areas without specific data
 ECONOMIC_IMPACT_DEFAULTS = {
-    'working_families_rate': "84%",
-    'economic_impact': "$1.80",
-    'retailers_count': "941",
-    'retailers_redemption': "$858,976,504"
+    'working_families_rate': 75,  # 75% of SNAP households have working family members
+    'economic_impact': 1.79,      # Every $1 in SNAP generates $1.79 in economic activity
+    'retailers_count': 150,       # Approximate number of retailers accepting SNAP
+    'retailers_redemption': 85    # 85% of SNAP benefits redeemed at grocery stores
 }
 
 def format_number(value, is_percent=False, is_currency=False, decimals=0):
@@ -83,21 +90,14 @@ def format_number(value, is_percent=False, is_currency=False, decimals=0):
     try:
         if is_currency:
             return f"${float(value):,.{decimals}f}"
-        elif is_percent:
+        if is_percent:
             return f"{float(value):.1f}%"
         return f"{float(value):,.0f}"
     except (ValueError, TypeError):
         return str(value)
 
 def get_comparison_text(current_value, comparison_value, comparison_type='state', is_currency=True):
-    """Generate comparison text between current value and comparison value.
-    
-    Args:
-        current_value: The current value to compare
-        comparison_value: The value to compare against (e.g., state/county average)
-        comparison_type: Either 'state' or 'county' to specify the comparison
-        is_currency: Whether the values are currency amounts (default: True)
-    """
+    """Generate comparison text between current value and comparison value."""
     if current_value is None or comparison_value is None or comparison_value == 0:
         return ""
     
@@ -143,15 +143,7 @@ def get_snap_comparison_text(geo_data, parent_geo):
         return f"This is {abs(diff):.1f} percentage points lower than the {parent_type} average of {parent_rate:.1f}%."
 
 def get_fraction_text(rate, household_suffix="households"):
-    """Convert a percentage rate to a fraction with qualifiers.
-    
-    Args:
-        rate: The rate as a percentage (e.g., 42.5)
-        household_suffix: Text to append after fraction (default: "households")
-        
-    Returns:
-        str: Formatted string like "just over 2 in 5 households"
-    """
+    """Convert a percentage rate to a fraction with qualifiers."""
     if not rate or rate <= 0:
         return ""
         
@@ -184,16 +176,10 @@ def get_fraction_text(rate, household_suffix="households"):
 
 def prepare_geo_data(geo_data):
     """Prepare and enhance geography data with calculated fields."""
-    # Debug: Print available top-level keys
-    print("Top-level keys in geo_data:", list(geo_data.keys()))
-    
     # Ensure all required data fields are present
     geo_data.setdefault('snap', {})
     geo_data.setdefault('demographics', {})
     geo_data.setdefault('economic', {})
-    
-    # Debug: Print available demographics keys
-    print("Demographics keys:", list(geo_data['demographics'].keys()))
     
     snap_data = geo_data['snap']
     
@@ -220,37 +206,24 @@ def prepare_geo_data(geo_data):
     
     # Add housing cost burden data if available
     if 'housing' in geo_data:
-        print(f"DEBUG: Housing data available: {geo_data['housing']}")
-            
         # Process median rent
         if 'median_rent' in geo_data['housing']:
             median_rent = geo_data['housing']['median_rent']
-            print(f"DEBUG: Raw median_rent from housing: {median_rent} (type: {type(median_rent)})")
-                
             if median_rent is not None:
                 try:
-                    # Format as currency
                     geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
-                    print(f"DEBUG: Formatted median_rent: {geo_data['formatted_median_rent']}")
                 except (ValueError, TypeError) as e:
-                    print(f"DEBUG: Error formatting median_rent: {e}")
                     geo_data['formatted_median_rent'] = str(median_rent)
             else:
                 geo_data['formatted_median_rent'] = "N/A"
-                print("DEBUG: median_rent is None")
         else:
-            print("DEBUG: median_rent not found in housing data")
             geo_data['formatted_median_rent'] = "N/A"
             
         # Move renter_rate to top level for easy access in the template
         if 'renter_rate' in geo_data['housing']:
             raw_renter_rate = geo_data['housing']['renter_rate']
-            print(f"DEBUG: Raw renter_rate from housing: {raw_renter_rate} (type: {type(raw_renter_rate)})")
-                
-            # Format the renter_rate as a percentage if it's a decimal
             if raw_renter_rate is not None:
                 try:
-                    # Convert to float and format as percentage
                     renter_rate_float = float(raw_renter_rate)
                     # If the value is between 0 and 1, assume it's a decimal that needs to be converted to percentage
                     if 0 <= renter_rate_float <= 1:
@@ -259,15 +232,11 @@ def prepare_geo_data(geo_data):
                         formatted_renter_rate = renter_rate_float
                         
                     geo_data['renter_rate'] = round(formatted_renter_rate, 1)
-                    print(f"DEBUG: Formatted renter_rate: {geo_data['renter_rate']}")
                 except (ValueError, TypeError) as e:
-                    print(f"DEBUG: Error formatting renter_rate: {e}")
                     geo_data['renter_rate'] = raw_renter_rate
             else:
                 geo_data['renter_rate'] = None
-                print("DEBUG: renter_rate is None")
         else:
-            print("DEBUG: renter_rate not found in housing data")
             geo_data['renter_rate'] = None
         
         # Standard housing cost burden (30%+ of income on rent)
@@ -284,7 +253,6 @@ def prepare_geo_data(geo_data):
             severe_rent_burden = geo_data['housing']['severe_rent_burden_rate']
             geo_data['severe_housing_cost_burden'] = f"{float(severe_rent_burden):.1f}%" if severe_rent_burden is not None else "N/A"
             geo_data['severe_housing_cost_burden_fraction'] = get_fraction_text(severe_rent_burden, "renters") if severe_rent_burden is not None else "N/A"
-        # Fallback to combined severe housing burden if available
         elif 'severe_housing_burden_rate' in geo_data['housing']:
             severe_burden = geo_data['housing']['severe_housing_burden_rate']
             geo_data['severe_housing_cost_burden'] = f"{float(severe_burden):.1f}%" if severe_burden is not None else "N/A"
@@ -318,23 +286,13 @@ def prepare_geo_data(geo_data):
         population = geo_data['demographics']['population']
         if population is not None:
             geo_data['formatted_population'] = format_number(population, decimals=0)
-            
-    # Format median rent with debug logging and comparison
-    print("\n=== Debug: prepare_geo_data ===")
-    print("Debug - geo_data keys:", list(geo_data.keys()))  # Debug: Print all top-level keys
-    
-    if 'housing' in geo_data:
-        print("Debug - housing keys:", list(geo_data['housing'].keys()))  # Debug: Print housing keys
-        print("Debug - housing values:", {k: v for k, v in geo_data['housing'].items()})  # Debug: Print housing values
     
     # Process median rent comparison if not already done
     if 'housing' in geo_data and 'median_rent' in geo_data['housing'] and 'formatted_median_rent' not in geo_data:
         median_rent = geo_data['housing']['median_rent']
-        print(f"Debug - Raw median_rent value for comparison: {median_rent} (type: {type(median_rent)})")  # Debug: Print raw value and type
         
         if median_rent is not None and not (isinstance(median_rent, float) and np.isnan(median_rent)):
             geo_data['formatted_median_rent'] = format_number(median_rent, is_currency=True, decimals=0)
-            print(f"Debug - Formatted median_rent: {geo_data['formatted_median_rent']}")
             
             # Add comparison data for median rent
             geo_data['rent_comparison_state'] = get_comparison_text(
@@ -344,11 +302,9 @@ def prepare_geo_data(geo_data):
                 median_rent, county_avg_rent, comparison_type='county', is_currency=True
             )
         else:
-            print("Debug - median_rent is None or NaN")  # Debug: Log if None or NaN
             geo_data['rent_comparison_state'] = ""
             geo_data['rent_comparison_county'] = ""
     else:
-        print("Debug - median_rent not found in geo_data['housing']")  # Debug: Log if key not found
         geo_data['rent_comparison_state'] = ""
         geo_data['rent_comparison_county'] = ""
     
@@ -381,41 +337,52 @@ def get_parent_geography_data(geo_id: str) -> dict:
     return None
 
 def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
-    """Generate HTML content for the SNAP fact sheet."""
-    # Debug: Log the incoming geo_data structure
-    import json
-    print("\n=== DEBUG: RAW GEO DATA ===")
-    print(json.dumps(geo_data, indent=2, default=str))
-    
-    # Debug: Log specific values that are being used in the template
-    print("\n=== DEBUG: TEMPLATE VALUES ===")
-    print(f"renter_rate: {geo_data.get('renter_rate', 'NOT_FOUND')}")
-    print(f"formatted_median_rent: {geo_data.get('formatted_median_rent', 'NOT_FOUND')}")
-    print(f"housing data: {geo_data.get('housing', 'NOT_FOUND')}")
-    if 'housing' in geo_data:
-        print(f"housing.median_rent: {geo_data['housing'].get('median_rent', 'NOT_FOUND')}")
-        print(f"housing.renter_rate: {geo_data['housing'].get('renter_rate', 'NOT_FOUND')}")
+    """Generate HTML content for the new fact sheet design."""
     
     # Get data from geo_data
     geo_name = geo_data.get('name', 'Hawaii')
     geo_type = geo_data.get('type', 'area')
     
-    # Get economic data with debug info
-    econ_data = geo_data.get('economic', {})
-    print("\n=== DEBUG: ECONOMIC DATA ===")
-    print(f"ALICE rate: {econ_data.get('alice_rate')} (type: {type(econ_data.get('alice_rate'))})")
-    print(f"All economic data keys: {list(econ_data.keys())}")
+    # Debug: Print the original name and type
+    print(f"DEBUG: Original geo_name: '{geo_name}'")
+    print(f"DEBUG: geo_type: '{geo_type}'")
     
-    # Simplify county names
+    # Format names consistently based on geography type
     if ', Hawaii' in geo_name:
-        geo_name = geo_name.replace(' County, Hawaii', '')
-        geo_name = geo_name.replace(', Hawaii', '')
+        # Extract the base county name
+        base_name = geo_name.replace(' County, Hawaii', '').replace(', Hawaii', '')
         
-        # Special case for Hawaii County
-        if geo_name == 'Hawaii':
-            geo_name = 'Hawaii Island'
+        # Map to proper county names with correct spelling
+        county_mapping = {
+            'Honolulu': 'Honolulu County',
+            'Hawaii': 'Hawaiʻi County',
+            'Maui': 'Maui County',
+            'Kauai': 'Kauaʻi County'
+        }
+        
+        geo_name = county_mapping.get(base_name, f"{base_name} County")
+    elif 'House District' in geo_name or 'Senate District' in geo_name:
+        # Clean up House and Senate district names
+        # Remove everything after semicolon and "Hawaii" references
+        if ';' in geo_name:
+            geo_name = geo_name.split(';')[0].strip()
+        if ', Hawaii' in geo_name:
+            geo_name = geo_name.replace(', Hawaii', '').strip()
+        # Remove year references in parentheses like "(2022)"
+        import re
+        geo_name = re.sub(r'\s*\(\d{4}\)', '', geo_name).strip()
+        # Replace "House District" with "State House District" for consistency
+        if geo_name.startswith('House District'):
+            geo_name = geo_name.replace('House District', 'State House District')
+        elif geo_name.startswith('Senate District'):
+            geo_name = geo_name.replace('Senate District', 'State Senate District')
     
-    geo_name = f"{geo_name} Fact Sheet"
+    # Store original name for title
+    fact_sheet_title = f"Hawaiʻi Appleseed Fact Sheet: {geo_name}"
+    
+    # Debug: Print the final title
+    print(f"DEBUG: Final fact_sheet_title: '{fact_sheet_title}'")
+    
     snap_data = geo_data.get('snap', {})
     
     # Format all values
@@ -431,893 +398,184 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     # Format rates and fractions
     alice_rate_value = geo_data.get('economic', {}).get('alice_rate', 0)
     alice_rate = format_number(alice_rate_value, is_percent=True)
-    alice_fraction = get_fraction_text(alice_rate_value, "households")
     
-    snap_rate_value = snap_data.get('snap_household_rate', 0)
-    snap_fraction = get_fraction_text(snap_rate_value, "")
+    # Get tax credit data
+    tax_credit_data = geo_data.get('tax_credits', {})
+    ctc_avg_amount = format_number(tax_credit_data.get('ctc_avg_amount'), is_currency=True, decimals=0)
+    ctc_participation_rate = format_number(tax_credit_data.get('ctc_participation_rate'), is_percent=True)
+    federal_eitc_avg_amount = format_number(tax_credit_data.get('federal_eitc_avg_amount'), is_currency=True, decimals=0)
+    eitc_participation_rate = format_number(tax_credit_data.get('eitc_participation_rate'), is_percent=True)
+    state_eitc_avg_amount = format_number(tax_credit_data.get('state_eitc_avg_amount'), is_currency=True, decimals=0)
     
-    disability_rate = format_number(snap_data.get('snap_disability_rate'), is_percent=True)
-    veterans_count = format_number(snap_data.get('snap_veterans_count'))
-    
-    # Get economic impact data with defaults
-    eco_defaults = ECONOMIC_IMPACT_DEFAULTS
-    working_families_rate = eco_defaults['working_families_rate']
-    economic_impact = eco_defaults['economic_impact']
-    retailers_count = eco_defaults['retailers_count']
-    retailers_redemption = eco_defaults['retailers_redemption']
-    
-    javascript_code = """
-    function printFactSheet() {
-        window.print();
-    }
-    
-    // Setup tooltips function
-    function setupTooltips() {
-        // Get all tooltip pairs
-        const tooltipPairs = [
-            { trigger: '.alice-rate-text', tooltip: '.alice-tooltip' },
-            { trigger: '.snap-title', tooltip: '.snap-tooltip' },
-            { trigger: '.housing-title', tooltip: '.housing-tooltip' }
-        ];
-        
-        // Store persistent states
-        const persistentStates = {};
-        
-        tooltipPairs.forEach(pair => {
-            const triggerEl = document.querySelector(pair.trigger);
-            const tooltipEl = document.querySelector(pair.tooltip);
-            
-            if (!triggerEl || !tooltipEl) {
-                console.log('Missing element:', pair.trigger, 'or', pair.tooltip);
-                return;
-            }
-            
-            // Initialize persistent state
-            persistentStates[pair.trigger] = false;
-            
-            // Click to toggle persistent tooltip
-            triggerEl.addEventListener('click', function(e) {
-                e.stopPropagation();
-                e.preventDefault();
-                
-                persistentStates[pair.trigger] = !persistentStates[pair.trigger];
-                
-                if (persistentStates[pair.trigger]) {
-                    tooltipEl.classList.add('visible', 'persistent');
-                    
-                    // Close other tooltips
-                    tooltipPairs.forEach(otherPair => {
-                        if (otherPair.trigger !== pair.trigger) {
-                            const otherTooltip = document.querySelector(otherPair.tooltip);
-                            if (otherTooltip) {
-                                otherTooltip.classList.remove('visible', 'persistent');
-                                persistentStates[otherPair.trigger] = false;
-                            }
-                        }
-                    });
-                } else {
-                    tooltipEl.classList.remove('visible', 'persistent');
-                }
-            });
-            
-            // Show on hover (if not persistent)
-            triggerEl.addEventListener('mouseenter', function() {
-                if (!persistentStates[pair.trigger]) {
-                    tooltipEl.classList.add('visible');
-                }
-            });
-            
-            // Hide on mouse leave (if not persistent)
-            triggerEl.addEventListener('mouseleave', function() {
-                if (!persistentStates[pair.trigger]) {
-                    tooltipEl.classList.remove('visible');
-                }
-            });
-        });
-        
-        // Close all tooltips when clicking outside
-        document.addEventListener('click', function(e) {
-            tooltipPairs.forEach(pair => {
-                const triggerEl = document.querySelector(pair.trigger);
-                const tooltipEl = document.querySelector(pair.tooltip);
-                
-                if (!triggerEl || !tooltipEl) return;
-                
-                if (persistentStates[pair.trigger] && 
-                    !triggerEl.contains(e.target) && 
-                    !tooltipEl.contains(e.target)) {
-                    tooltipEl.classList.remove('visible', 'persistent');
-                    persistentStates[pair.trigger] = false;
-                }
-            });
-        });
-    }
-    
-    // Wait for DOM and then setup tooltips
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupTooltips);
-    } else {
-        // DOM is already loaded, but wait a bit for dynamic content
-        setTimeout(setupTooltips, 100);
-    }
-    
-    // Function to fix housing tooltip positioning
-    function fixHousingTooltipPosition() {
-        const housingTitle = document.querySelector('.housing-title');
-        const housingTooltip = document.querySelector('.housing-tooltip');
-        if (!housingTitle || !housingTooltip) return;
-        
-        // Move tooltip to body if not already there
-        if (housingTooltip.parentNode !== document.body) {
-            document.body.appendChild(housingTooltip);
-        }
-        
-        function positionTooltip() {
-            if (!housingTooltip) return;
-            
-            const rect = housingTitle.getBoundingClientRect();
-            const tooltipRect = housingTooltip.getBoundingClientRect();
-            
-            // Calculate position - center it more on the page
-            const viewportWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-            const viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-            
-            // Calculate centered position
-            let left = (viewportWidth - tooltipRect.width) / 2;
-            let top = (viewportHeight - tooltipRect.height) / 2;
-            
-            // Ensure it's not too close to the edges
-            const padding = 20;
-            left = Math.max(padding, Math.min(left, viewportWidth - tooltipRect.width - padding));
-            top = Math.max(padding, Math.min(top, viewportHeight - tooltipRect.height - padding));
-            
-            // Apply position with transform for better performance
-            housingTooltip.style.transform = `translate3d(${left}px, ${top}px, 0)`;
-            housingTooltip.style.webkitTransform = `translate3d(${left}px, ${top}px, 0)`;
-            housingTooltip.style.opacity = '1';
-        }
-        
-        // Initial position
-        positionTooltip();
-        
-        // Update position on hover
-        housingTitle.addEventListener('mouseenter', positionTooltip);
-        
-        // Update position when tooltip becomes visible
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.target === housingTooltip && 
-                    (housingTooltip.classList.contains('visible') || 
-                     housingTooltip.classList.contains('persistent'))) {
-                    positionTooltip();
-                }
-            });
-        });
-        
-        observer.observe(housingTooltip, {
-            attributes: true,
-            attributeFilter: ['class']
-        });
-        
-        // Update position on scroll/resize with debounce
-        let resizeTimer;
-        function handleResize() {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(positionTooltip, 100);
-        }
-        
-        window.addEventListener('scroll', handleResize, { passive: true });
-        window.addEventListener('resize', handleResize);
-        
-        // Clean up event listeners when tooltip is removed
-        return function cleanup() {
-            window.removeEventListener('scroll', handleResize);
-            window.removeEventListener('resize', handleResize);
-            observer.disconnect();
-            housingTitle.removeEventListener('mouseenter', positionTooltip);
-        };
-    }  
-    // Initialize everything
-    function initTooltips() {
-        setupTooltips();
-        fixHousingTooltipPosition();
-    }
-    
-    // Wait for DOM and then initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initTooltips);
-    } else {
-        // DOM is already loaded, but wait a bit for dynamic content
-        setTimeout(initTooltips, 100);
-    }
-    
-    // Also retry after a longer delay as a failsafe
-    setTimeout(initTooltips, 500);
-    """
+    # Get transportation data
+    transportation_data = geo_data.get('transportation', {})
+    travel_time_minutes = format_number(transportation_data.get('travel_time_to_work_minutes'), decimals=1)
+    public_transportation_pct = format_number(transportation_data.get('public_transportation_pct'), is_percent=True)
     
     # Load and encode the logo
-    logo_path = "static/images/leaf_only.png"
+    logo_path = "static/images/appleseed_logo.png"
     logo_base64 = get_image_base64(logo_path)
-    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo" alt="Logo">' if logo_base64 else ''
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" class="logo" alt="Hawaii Appleseed Logo">' if logo_base64 else ''
     
     return f"""
     <!DOCTYPE html>
-    <html style="height: 100%;">
+    <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{geo_name}</title>
+        <title>{fact_sheet_title}</title>
         <style>
-            /* Reset and base styles */
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+            
             * {{
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }}
             
-            html, body {{
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                font-family: Arial, sans-serif;
-            }}
-            
             body {{
-                display: flex;
-                flex-direction: column;
-                height: 100vh;
-                margin: 0;
-                padding: 0;
-                background: #f5f5f5;
+                font-family: 'Roboto', Arial, sans-serif;
+                line-height: 1.5;
+                color: #333;
+                background-color: #f5f5f5;
+                font-size: 14px;
             }}
             
             .fact-sheet-container {{
-                flex: 1;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                width: 100%;
-                max-width: 8in;
-                margin: 0 auto;
+                width: 8.5in;
+                margin: 20px auto;
                 background: white;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            }}
-            
-            .fact-sheet {{
-                padding: 20px;
-                width: 100%;
-                box-sizing: border-box;
-            }}
-            
-            .alice-section {{
-                background-color: #f0f4ff;
-                color: #000;
-                padding: 6px 10px;
-                margin: 5px auto 10px auto;
-                border: 1px solid #D4AF37;
-                font-size: 0.8em;
-                max-width: 50%;
-                color: white;
-                margin-left: 4px;
-                padding: 1px 4px;
-                border-radius: 3px;
-                background-color: #2A3B62;
-                border: 1px solid #2A3B62;
-            }}
-            
-            /* Base tooltip styles */
-            .alice-tooltip, .snap-tooltip {{
-                visibility: hidden;
-                width: 300px;
-                background-color: #f9f9f9;
-                color: #333;
-                text-align: left;
-                border-radius: 5px;
-                padding: 15px;
-                position: absolute;
-                z-index: 1100;
-                top: 100%;
-                left: 0;
-                margin-top: 10px;
-                opacity: 0;
-                transition: opacity 0.3s, visibility 0.3s;
-                font-size: 14px;
-                line-height: 1.5;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                pointer-events: none;
-                border: 1px solid #ddd;
-            }}
-            
-            .alice-tooltip p, .snap-tooltip p {{
-                margin: 0 0 10px 0;
-                color: #333;
-            }}
-            
-            .alice-tooltip p:last-child, .snap-tooltip p:last-child {{
-                margin-bottom: 0;
-            }}
-            
-            .alice-tooltip::after, .snap-tooltip::after {{
-                content: '';
-                position: absolute;
-                bottom: 100%;
-                left: 20px;
-                margin-left: -5px;
-                border-width: 5px;
-                border-style: solid;
-                border-color: transparent transparent #f9f9f9 transparent;
-            }}
-            
-            .alice-tooltip.visible, .snap-tooltip.visible {{
-                visibility: visible;
-                opacity: 1;
-                pointer-events: auto;
-            }}
-            
-            .alice-tooltip.persistent, .snap-tooltip.persistent {{
-                pointer-events: auto;
-            }}
-            
-            .snap-title {{
-                cursor: help;
-                border-bottom: 1px dotted #2A3B72;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                border-radius: 15px;
+                overflow: hidden;
                 position: relative;
-                display: inline-block;
-            }}
-            
-            /* Housing tooltip specific styles */
-            .housing-title {{
-                cursor: help;
-                border-bottom: 1px dashed #555;
-                display: inline-block;
-                position: relative;
-                z-index: 1;
-            }}
-            
-            /* Move tooltip to body level to avoid parent container issues */
-            /* Move tooltip to body level to avoid parent container issues */
-            .housing-tooltip {{
-                visibility: hidden;
-                width: 300px;
-                background-color: #2A3B72 !important;
-                color: #fff !important;
-                text-align: left;
-                border-radius: 8px;
-                padding: 15px;
-                position: fixed;
-                z-index: 2147483647;
-                opacity: 0;
-                transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
-                font-size: 14px;
-                line-height: 1.5;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                pointer-events: none;
-                max-width: 90vw;
-                border: none !important;
-                background-image: none !important;
-                transform: translate3d(0, 0, 0);
-                -webkit-transform: translate3d(0, 0, 0);
-                -webkit-backface-visibility: hidden;
-                -webkit-perspective: 1000;
-                -webkit-background-clip: padding-box;
-                background-clip: padding-box;
-                left: 0;
-                top: 0;
-                will-change: transform, opacity;
-            }}
-            
-            /* Tooltip content styling */
-            .housing-tooltip * {{
-                position: relative;
-                z-index: 2;
-                color: #fff !important;
-                text-shadow: none !important;
-            }}
-            
-            /* Background layer for tooltip */
-            .housing-tooltip::before {{
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: #2A3B72 !important;
-                border-radius: 8px;
-                z-index: 1;
-                /* Ensure this covers the entire tooltip */
-                box-shadow: 0 0 0 10px #2A3B72; /* Extend beyond borders */
-                margin: -10px;
-            }}
-            
-            .housing-tooltip.visible,
-            .housing-tooltip.persistent {{
-                visibility: visible;
-                opacity: 1;
-                pointer-events: auto;
-                background: #2A3B72 !important;
-                /* Keep the transform for positioning */
-                transform: translate3d(-50%, -5px, 0);
-                -webkit-transform: translate3d(-50%, -5px, 0);
-            }}
-            
-            .housing-title:hover + .housing-tooltip,
-            .housing-tooltip:hover {{
-                transform: translate3d(-50%, -8px, 0);
-                -webkit-transform: translate3d(-50%, -8px, 0);
-                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-            }}
-            
-            .housing-tooltip p {{
-                margin: 0 0 10px 0;
-            }}
-            
-            .housing-tooltip p:last-child {{
-                margin-bottom: 0;
-            }}
-            
-            .housing-tooltip::after {{
-                content: '';
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                margin-left: -10px;
-                border-width: 10px;
-                border-style: solid;
-                border-color: #2A3B72 transparent transparent transparent;
-                z-index: 99999;
-                pointer-events: none;
-                transition: all 0.3s ease;
-            }}
-            
-            .housing-tooltip.visible::after,
-            .housing-tooltip.persistent::after {{
-                border-width: 12px;
-                margin-left: -12px;
+                min-height: 11in;
             }}
             
             .header {{
-                background-color: #4a8c1a;  /* Lighter green color */
+                background: linear-gradient(135deg, #4a8c1a 0%, #5a9c2a 100%);
                 color: white;
-                padding: 15px 20px;
-                text-align: center;
+                padding: 25px 30px;
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
-            }}
-            
-            .alice-section {{
-                background-color: #f8f9fa;
-                color: #000;
-                padding: 12px 15px;
-                margin: 0 auto;
-                border: 1px solid #e0e0e0;
-                font-size: 0.95em;
-                max-width: 600px;
-                text-align: center;
-                border-radius: 5px;
-                position: relative;
-                z-index: 1;
-            }}
-            
-            .alice-rate {{
-                font-size: 15px;
-                color: #333;
-                line-height: 1.4;
-                position: relative;
-                display: inline-block;
-                cursor: help;
-            }}
-            
-            .alice-rate-text {{
-                position: relative;
-                display: inline-block;
-            }}
-            
-            .alice-tooltip {{
-                visibility: hidden;
-                width: 300px;
-                background-color: #f9f9f9;
-                color: #333;
-                text-align: left;
-                border-radius: 5px;
-                padding: 15px;
-                position: absolute;
-                z-index: 1100;
-                top: 100%;
-                left: 0;
-                margin-top: 10px;
-                opacity: 0;
-                transition: opacity 0.3s, visibility 0.3s;
-                font-size: 14px;
-                line-height: 1.5;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                pointer-events: none;
-                border: 1px solid #ddd;
-            }}
-            
-            .alice-tooltip:before {{
-                content: '';
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                margin-left: -5px;
-                border-width: 5px;
-                border-style: solid;
-                border-color: white transparent transparent transparent;
-            }}
-            
-            .alice-rate:hover .alice-tooltip {{
-                display: block;
-            }}
-            
-            .percentage-box {{
-                font-weight: 600;
-                color: #2A3B72;
-                margin: 0 2px;
-            }}
-            
-            .alice-rate-text {{
-                font-weight: 500;
-                cursor: pointer;
-                position: relative;
-                color: #333;
-                padding: 0;
-                margin: 0;
-                font-size: 1em;
-                line-height: 1.4;
-            }}
-            
-            .percentage-box {{
-                font-weight: 600;
-                color: #2A3B72;
-                margin: 0 2px;
+                border-radius: 15px 15px 0 0;
             }}
             
             .logo {{
-                max-height: 40px;
+                height: 50px;
                 width: auto;
-                margin-right: 15px;
+                margin-right: 20px;
+                filter: brightness(0) invert(1);
             }}
             
-            .logo-container {{
-                display: flex;
-                align-items: center;
-                grid-column: 1;
-                justify-self: start;
-                filter: brightness(0) invert(1);  /* Makes the logo white */
-            }}
-            
-            .header-content {{
+            .header-title {{
+                font-size: 32px;
+                font-weight: 700;
                 flex-grow: 1;
-                text-align: center;
-                font-size: 28px;
-                font-weight: bold;
-                color: white;
-                padding: 0 20px;
-            }}
-            
-            .print-button {{
-                grid-column: 3;
-                justify-self: end;
-            }}
-            
-            .print-button {{
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background-color: #fff;
-                color: #2c5f2d;
-                border: 1px solid #fff;
-                border-radius: 4px;
-                padding: 4px 10px;
-                font-size: 12px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                transition: all 0.2s;
-            }}
-            
-            .print-button:hover {{
-                background-color: #f0f0f0;
-            }}
-            
-            @media print {{
-                /* Reset print margins for full width */
-                @page {{
-                    size: letter;
-                    margin: 0.5in; /* Reduced margins for more content area */
-                }}
-                
-                /* Hide print button */
-                .print-button {{
-                    display: none !important;
-                }}
-                
-                /* Reset body styles for printing */
-                html, body {{
-                    height: auto !important;
-                    overflow: visible !important;
-                    background: white !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    width: 100% !important;
-                }}
-                
-                /* Make container take full width */
-                .fact-sheet-container {{
-                    width: 100% !important;
-                    max-width: none !important; /* Remove the 8in constraint */
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    box-shadow: none !important;
-                    overflow: visible !important;
-                    height: auto !important;
-                    background: white !important;
-                }}
-                
-                /* Ensure fact sheet content fills available space */
-                .fact-sheet {{
-                    width: 100% !important;
-                    max-width: none !important;
-                    margin: 0 !important;
-                    padding: 0 !important; /* Remove padding to maximize content area */
-                    box-shadow: none !important;
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                }}
-                
-                /* Adjust main content padding for print */
-                .main-content {{
-                    padding: 10px 0 !important; /* Minimal vertical padding */
-                    width: 100% !important;
-                }}
-                
-                /* Make header full width */
-                .header {{
-                    width: 100% !important;
-                    margin: 0 !important;
-                    padding: 10px 20px !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }}
-                
-                /* Ensure two-column layout uses full width */
-                .stats-grid {{
-                    width: 100% !important;
-                    grid-template-columns: 1fr 1fr !important; /* Equal columns */
-                    gap: 20px !important;
-                }}
-                
-                /* Four stats grid adjustments */
-                .four-stats {{
-                    width: 100% !important;
-                    grid-template-columns: repeat(4, 1fr) !important; /* Four columns in print */
-                    gap: 10px !important;
-                    margin: 15px 0 !important;
-                }}
-                
-                /* Stat boxes adjustments for print */
-                .small-stat-box {{
-                    padding: 10px !important;
-                    min-height: 70px !important;
-                    transform: none !important; /* Remove scaling */
-                }}
-                
-                /* Adjust the top stat boxes container */
-                .main-content > div:first-child {{
-                    width: 100% !important;
-                    margin: 10px 0 !important;
-                    justify-content: space-around !important;
-                }}
-                
-                /* ALICE section full width */
-                .alice-section {{
-                    max-width: none !important;
-                    width: 90% !important;
-                    margin: 10px auto !important;
-                }}
-                
-                /* Two column layout for SNAP and Housing */
-                .main-content > div[style*="display: flex"] {{
-                    width: 100% !important;
-                    gap: 30px !important;
-                }}
-                
-                /* Bullet points optimization */
-                .bullet-points {{
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }}
-                
-                .bullet-points li {{
-                    margin-bottom: 10px !important;
-                    padding: 5px 5px 5px 20px !important;
-                    page-break-inside: avoid !important;
-                }}
-                
-                /* Impact section */
-                .impact-section {{
-                    width: 100% !important;
-                    margin: 15px 0 !important;
-                }}
-                
-                /* Highlight box */
-                .highlight-box {{
-                    width: 100% !important;
-                    margin: 15px 0 !important;
-                    padding: 10px !important;
-                }}
-                
-                /* Strengthen section */
-                .strengthen-section {{
-                    width: 100% !important;
-                    margin: 15px 0 !important;
-                    padding: 10px !important;
-                }}
-                
-                /* Call to action */
-                .call-to-action {{
-                    width: 100% !important;
-                    margin: 15px 0 !important;
-                    padding: 10px !important;
-                }}
-                
-                /* Footer */
-                .footer {{
-                    width: 100% !important;
-                    margin: 0 !important;
-                    padding: 8px !important;
-                }}
-                
-                /* Prevent page breaks inside important sections */
-                .stats-grid, .four-stats, .bullet-points li, 
-                .impact-section, .highlight-box, .strengthen-section {{
-                    page-break-inside: avoid !important;
-                    break-inside: avoid !important;
-                }}
-                
-                /* Ensure text is black for better print contrast */
-                *:not(.header):not(.header *):not(.header-content):not(.header-content *) {{
-                    color: #000 !important;
-                }}
-                
-                /* Keep header elements white */
-                .header,
-                .header *,
-                .header-content,
-                .header-content *,
-                .logo-container {{
-                    color: #fff !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }}
-                
-                /* Hide tooltips in print */
-                .alice-tooltip,
-                .snap-tooltip,
-                .housing-tooltip {{
-                    display: none !important;
-                }}
-                
-                /* Font size adjustments for better print readability */
-                body {{
-                    font-size: 11pt !important;
-                }}
-                
-                .header-content {{
-                    font-size: 24pt !important;
-                }}
-                
-                .small-stat-number {{
-                    font-size: 20pt !important;
-                }}
-                
-                .impact-title {{
-                    font-size: 14pt !important;
-                }}
-                
-                /* Prevent page breaks inside important sections */
-                .stats-grid, .four-stats, .bullet-points li {{
-                    break-inside: avoid;
-                }}
-                
-                /* Ensure text is black for better print contrast, except header */
-                *:not(.header):not(.header *):not(.header-content):not(.header-content *) {{
-                    color: #000 !important;
-                }}
-                
-                /* Keep header text white when printing */
-                .header,
-                .header *,
-                .header-content,
-                .header-content * {{
-                    color: #fff !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }}
-                
-                /* Make sure links are visible in print */
-                a {{
-                    text-decoration: underline !important;
-                }}
             }}
             
             .main-content {{
-                padding: 20px;
+                padding: 30px;
             }}
             
-            .stats-grid {{
-                display: grid;
-                grid-template-columns: 1.2fr 0.8fr;
-                gap: 25px;
-                margin: 20px 0;
-                align-items: start;
-            }}
-            
-            /* Ensure the four-stats container doesn't create a stacking context */
-            .four-stats {{
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-                margin: 20px 0;
-                /* Remove any z-index or transform properties */
-                position: static;
-            }}
-            
-            /* Alternative approach if :has() is not supported */
-            .small-stat-box.tooltip-active {{
-                z-index: 1000 !important;
-            }}
-            
-            .small-stat-box {{
-                text-align: center;
-                padding: 15px 10px;
-                background-color: #f0f7f0;
-                border-radius: 5px;
-                min-height: 90px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                position: relative;
-                overflow: visible !important;
-                /* Remove z-index from stat boxes to prevent stacking issues */
-            }}
-            
-            /* Add hover state to temporarily increase z-index */
-            .small-stat-box:has(.housing-title:hover),
-            .small-stat-box:has(.housing-tooltip.visible) {{
-                z-index: 1000 !important;
-            }}
-            
-            .small-stat-number {{
-                font-size: 28px;
-                font-weight: 900;
-                color: #d32f2f;
-                display: block;
-                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            }}
-            
-            .small-stat-label {{
-                font-size: 12px;
-                color: #555;
-                margin-top: 5px;
-                text-align: center;
-                line-height: 1.2;
-                position: relative;
-                display: inline-block;
-                overflow: visible !important;
-                /* Remove z-index */
-            }}
-            
-            .impact-title {{
-                font-size: 18px;
-                font-weight: bold;
+            .did-you-know {{
+                background: linear-gradient(135deg, #b8d4a8 0%, #a8c498 100%);
                 color: #2c5f2d;
-                margin-bottom: 15px;
+                padding: 20px 25px;
+                margin: 0 0 30px 0;
+                border-radius: 20px;
+                text-align: center;
+                font-size: 16px;
+                font-weight: 500;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }}
+            
+            .did-you-know h3 {{
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 10px;
+                color: #2c5f2d;
+            }}
+            
+            .stats-row {{
+                display: flex;
+                gap: 20px;
+                margin: 30px 0;
+                justify-content: center;
+            }}
+            
+            .stat-card {{
+                background: white;
+                border: 2px solid #e0e0e0;
+                border-radius: 15px;
+                padding: 20px;
+                text-align: center;
+                min-width: 180px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                transition: transform 0.2s ease;
+            }}
+            
+            .stat-card:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }}
+            
+            .stat-number {{
+                font-size: 32px;
+                font-weight: 900;
+                color: #2c5f2d;
+                display: block;
+                margin-bottom: 8px;
+            }}
+            
+            .stat-label {{
+                font-size: 14px;
+                font-weight: 600;
+                color: #555;
+                margin-bottom: 8px;
+            }}
+            
+            .stat-comparison {{
+                font-size: 11px;
+                color: #666;
+                line-height: 1.3;
+            }}
+            
+            .content-grid {{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+                margin: 30px 0;
+            }}
+            
+            .content-grid.second {{
+                margin: 15px 0 30px 0;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }}
+            
+            .content-card {{
+                background: white;
+                border: 2px solid #e0e0e0;
+                border-radius: 20px;
+                padding: 25px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }}
+            
+            .content-card h3 {{
+                color: #4a8c1a;
+                font-size: 24px;
+                font-weight: 700;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+            }}
+            
+            .content-card h3:before {{
+                content: '▶';
+                color: #4a8c1a;
+                margin-right: 10px;
+                font-size: 16px;
             }}
             
             .bullet-points {{
@@ -1326,274 +584,286 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
             }}
             
             .bullet-points li {{
-                margin-bottom: 15px;
-                padding-left: 25px;
+                margin-bottom: 12px;
+                padding-left: 20px;
                 position: relative;
-                padding-top: 5px;
-                padding-bottom: 5px;
+                line-height: 1.5;
+                font-size: 14px;
             }}
             
-            .bullet-points li:nth-child(odd) {{
-                background-color: #f8fdf8;
-                border-radius: 6px;
-                padding: 8px 8px 8px 25px;
-                margin-left: -3px;
-                margin-right: -3px;
-            }}
-            
-            .bullet-points li:nth-child(even) {{
-                background-color: #fefffe;
-                border-radius: 6px;
-                padding: 8px 8px 8px 25px;
-                margin-left: -3px;
-                margin-right: -3px;
+            .bullet-points li:before {{
+                content: '▶';
+                color: #4a8c1a;
+                position: absolute;
+                left: 0;
+                font-size: 12px;
+                top: 2px;
             }}
             
             .bullet-points li strong {{
                 color: #2c5f2d;
-                font-weight: 900;
+                font-weight: 700;
             }}
             
-            .bullet-points li .stat-highlight {{
+            .stat-highlight {{
                 color: #d32f2f;
-                font-weight: 900;
-                font-size: 1.1em;
-            }}
-            
-            .bullet-points li:before {{
-                content: "▶";
-                color: #2c5f2d;
-                position: absolute;
-                left: 0;
-            }}
-            
-            /* Housing section specific styles */
-            .housing-bullets li:before {{
-                color: #CC5500;  /* Dark orange for housing section */
-            }}
-            
-            .highlight-box {{
-                background-color: #fff3cd;
-                border: 1px solid #ffeaa7;
-                padding: 15px;
-                margin: 20px 0;
-                border-radius: 5px;
-            }}
-            
-            .highlight-box strong {{
-                color: #2c5f2d;
-                font-weight: 900;
-                font-size: 1.05em;
-            }}
-            
-            .strengthen-section {{
-                background-color: #2c5f2d;
-                color: white;
-                padding: 15px;
-                margin: 20px 0;
-                text-align: center;
-                font-weight: bold;
-            }}
-            
-            .call-to-action {{
-                background-color: #d32f2f;
-                color: white;
-                padding: 15px;
-                margin: 20px 0;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
+                font-weight: 700;
+                background: #fff3cd;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 1em;
             }}
             
             .footer {{
-                background-color: #2c5f2d;
-                color: white;
-                padding: 10px 20px;
-                text-align: center;
+                background-color: #f8f9fa;
+                border-top: 2px solid #e0e0e0;
+                padding: 20px 30px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 font-size: 12px;
+                color: #666;
+            }}
+            
+            .footer-logo {{
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            
+            .footer-logo img {{
+                height: 30px;
+                width: auto;
+            }}
+            
+            .footer-website {{
+                font-weight: 600;
+                color: #4a8c1a;
+            }}
+            
+            .print-button {{
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4a8c1a;
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-size: 14px;
+                transition: background 0.2s ease;
+            }}
+            
+            .print-button:hover {{
+                background: #5a9c2a;
+            }}
+            
+            @media print {{
+                .print-button {{
+                    display: none !important;
+                }}
+            }}
+            
+            @media print {{
+                @page {{
+                    size: letter;
+                    margin: 0.5in;
+                }}
+                
+                * {{
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                body {{
+                    background: white !important;
+                }}
+                
+                .fact-sheet-container {{
+                    box-shadow: none !important;
+                    border-radius: 0 !important;
+                    margin: 0 !important;
+                }}
+                
+                .header {{
+                    background: linear-gradient(135deg, #4a8c1a 0%, #5a9c2a 100%) !important;
+                    color: white !important;
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                .did-you-know {{
+                    background: linear-gradient(135deg, #b8d4a8 0%, #a8c498 100%) !important;
+                    color: #2c5f2d !important;
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                .stat-highlight {{
+                    background: #fff3cd !important;
+                    color: #d32f2f !important;
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }}
+                
+                .content-grid {{
+                    margin: 20px 0;
+                }}
+                
+                .content-grid.second {{
+                    margin: 10px 0 20px 0;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }}
+                
+                .content-card {{
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }}
             }}
         </style>
     </head>
     <body>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save PDF</button>
         <div class="fact-sheet-container">
-            <div class="fact-sheet">
             <div class="header">
-                <div class="logo-container">
-                    {logo_html}
-                </div>
-                <div class="header-content">
-                    <h1 style="margin: 0; font-size: 28px; line-height: 1.2; flex-grow: 1; text-transform: none;">{geo_name}</h1>
-                </div>
-                <button class="print-button" onclick="printFactSheet()">
-                    <i class="fas fa-print"></i> Print/Save
-                </button>
+                {logo_html}
+                <div class="header-title">{fact_sheet_title}</div>
             </div>
             
             <div class="main-content">
-                <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-left: 20px; flex-wrap: wrap;">
-                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 140px;">
-                        <div class="small-stat-number" style="font-size: 22px; color: #2c5f2d; margin-bottom: 3px;">{geo_data.get('formatted_population', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Total Population</div>
+                <!-- Did You Know Section -->
+                <div class="did-you-know">
+                    <h3>Did you know?</h3>
+                    <p>over 3 in 7 households ({alice_rate}) households are employed, yet struggling to make ends meet.</p>
+                </div>
+                
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-number">{geo_data.get('formatted_population', 'N/A')}</div>
+                        <div class="stat-label">Total Population</div>
                     </div>
-                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 160px;">
-                        <div class="small-stat-number" style="font-size: 22px; color: #d9534f; margin-bottom: 3px;">{geo_data.get('formatted_median_income', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Median Income</div>
-                        <div class="comparison-text" style="font-size: 11px; color: #666; line-height: 1.3; margin-top: 3px;">
+                    <div class="stat-card">
+                        <div class="stat-number">{geo_data.get('formatted_median_income', 'N/A')}</div>
+                        <div class="stat-label">Median Income</div>
+                        <div class="stat-comparison">
                             {geo_data.get('income_comparison_state', '')}<br>
                             {geo_data.get('income_comparison_county', '')}
                         </div>
                     </div>
-                    <div class="small-stat-box" style="padding: 10px; transform: scale(0.9); min-width: 160px;">
-                        <div class="small-stat-number" style="font-size: 22px; color: #337ab7; margin-bottom: 3px;">{geo_data.get('formatted_median_rent', 'N/A')}</div>
-                        <div class="small-stat-label" style="font-size: 14px; line-height: 1.2; color: black; font-weight: 500;">Median Rent</div>
-                        <div class="comparison-text" style="font-size: 11px; color: #666; line-height: 1.3; margin-top: 3px;">
+                    <div class="stat-card">
+                        <div class="stat-number">{geo_data.get('formatted_median_rent', 'N/A')}</div>
+                        <div class="stat-label">Median Rent</div>
+                        <div class="stat-comparison">
                             {geo_data.get('rent_comparison_state', '')}<br>
                             {geo_data.get('rent_comparison_county', '')}
                         </div>
                     </div>
                 </div>
-                </div> <!-- Close the flex container for stat boxes -->
                 
-                <div style="width: 100%; margin: 15px 0;">
-                    <div class="alice-section">
-                        <div class="alice-rate">
-                            <span class="alice-rate-text">{alice_fraction} <span class="percentage-box">({alice_rate})</span> households are employed, yet struggling to make ends meet.
-                                <div class="alice-tooltip">
-                                <p><strong>ALICE</strong> stands for <strong>A</strong>sset <strong>L</strong>imited, <strong>I</strong>ncome <strong>C</strong>onstrained, <strong>E</strong>mployed.</p>
-                                <p>It describes people and families who have jobs but still struggle to afford basic needs like housing, food, child care, health care, and transportation.</p>
-                            </div>
-                        </div>
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Tax Credits Column -->
+                    <div class="content-card">
+                        <h3>Tax Credits</h3>
+                        
+                        <h4 style="font-style: italic; margin-bottom: 10px; color: #333;">Child Tax Credit (CTC)</h4>
+                        <ul class="bullet-points">
+                            <li>Families in this area receive an average of <span class="stat-highlight">{ctc_avg_amount}</span> per year, with a participation rate of <span class="stat-highlight">{ctc_participation_rate}</span>. The CTC helps families afford basic necessities like food, housing, and childcare.</li>
+                        </ul>
+                        
+                        <h4 style="font-style: italic; margin: 20px 0 10px 0; color: #333;">Federal Earned Income Tax Credit (EITC)</h4>
+                        <ul class="bullet-points">
+                            <li>Working families receive an average of <span class="stat-highlight">{federal_eitc_avg_amount}</span> annually, with <span class="stat-highlight">{eitc_participation_rate}</span> of eligible families participating. The EITC rewards work and lifts families out of poverty.</li>
+                        </ul>
+                        
+                        <h4 style="font-style: italic; margin: 20px 0 10px 0; color: #333;">State Earned Income Tax Credit (EITC)</h4>
+                        <ul class="bullet-points">
+                            <li>Hawaii's state EITC provides an additional <span class="stat-highlight">{state_eitc_avg_amount}</span> on average to working families, supplementing federal support and keeping more money in local communities.</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Food Security Column -->
+                    <div class="content-card">
+                        <h3>Food Security</h3>
+                        
+                        <h4 style="font-style: italic; margin-bottom: 10px; color: #333;">SNAP</h4>
+                        <ul class="bullet-points">
+                            <li>About <strong>1 in 6 households ({snap_participation_rate})</strong> participate in SNAP.</li>
+                            <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
+                            <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
+                        </ul>
+                        
+                        <h4 style="font-style: italic; margin: 20px 0 10px 0; color: #333;">School Meals</h4>
+                        <ul class="bullet-points">
+                            <li>As of SY2024-25, <strong>14.3% of schools</strong> in {geo_name.upper()} provided free meals to all students through CEP. That amounts to <strong>1/7 CEP schools</strong>.</li>
+                            <li>List of schools:<br>
+                                <div style="margin-left: 20px; margin-top: 5px;">
+                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 2px 0;">
+                                        <span><strong>School name</strong></span>
+                                        <span><strong>Enrollment number</strong></span>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                 </div>
                 
-                <div style="display: flex; gap: 20px; margin-bottom: 20px; clear: both;">
-                    <!-- First Column -->
-                    <div style="flex: 1;">
-                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
-                            <span class="snap-title">Supplemental Nutrition Assistance Program (SNAP)</span>
-                            <div class="snap-tooltip">
-                                <p><strong>SNAP</strong> stands for the Supplemental Nutrition Assistance Program, a government program that helps low-income people buy food.</p>
-                                <p>Recipients get monthly benefits on a special card, which they can use like a debit card at grocery stores and certain farmers' markets.</p>
-                                <p>The goal is to make sure everyone can avoid going hungry while having better access to healthy food.</p>
-                            </div>
-                        </h3>
+                <!-- Second Content Grid -->
+                <div class="content-grid second">
+                    <!-- Transportation Column -->
+                    <div class="content-card">
+                        <h3>Transportation</h3>
                         <ul class="bullet-points">
-                            <li>About <strong style="color: black;">{snap_fraction} households <span style="background-color: #006400; color: white; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({snap_participation_rate})</span></strong> participate in SNAP. <span style="color: red; font-weight: bold;">{comparison_text}</span></li>
-                            <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
-                            <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
+                            <li>The average travel time to work is <strong>{travel_time_minutes} minutes</strong>, reflecting the daily commute burden on workers in the area.</li>
+                            <li><strong>{public_transportation_pct}</strong> of workers use public transportation to commute to work, indicating reliance on transit systems.</li>
+                            <li>Longer commute times can reduce quality of life, increase transportation costs, and limit time available for family and community engagement.</li>
+                            <li>Access to reliable public transportation is essential for low-income families who may not own vehicles.</li>
                         </ul>
                     </div>
                     
                     <!-- Housing Column -->
-                    <div style="flex: 1;">
-                        <h3 style="font-weight: bold; color: black; margin-bottom: 10px; position: relative;">
-                            <span class="snap-title">Housing</span>
-                            <div class="snap-tooltip">
-                                <p><strong>Housing</strong> data provides insights into the living conditions and affordability in the area.</p>
-                                <p>This includes information about home ownership, rental rates, housing costs, and the percentage of income that residents spend on housing.</p>
-                                <p>Understanding housing trends helps identify areas where residents may be cost-burdened or at risk of housing instability.</p>
-                            </div>
-                        </h3>
-                        <ul class="bullet-points housing-bullets">
-                            <li><strong style="color: black;">{geo_data.get('renter_rate', 'N/A')}%</strong> of households are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
-                            <li><strong style="color: black;">{geo_data.get('housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('housing_cost_burden', 'N/A')})</span></strong> are cost-burdened, spending more than 30% of their income on housing.</li>
-                            <li><strong style="color: black;">{geo_data.get('severe_housing_cost_burden_fraction', 'N/A').capitalize()} renters <span style="background-color: #f0f0f0; color: #333; padding: 2px 6px; border-radius: 4px; margin: 0 2px;">({geo_data.get('severe_housing_cost_burden', 'N/A')})</span></strong> are <span style="color: #d62728; font-weight: bold;">severely</span> cost-burdened, spending more than 50% of their income on housing.</li>
-                            <li>The median home value in the area is approximately <span class="stat-highlight">{geo_data.get('formatted_median_home_value', 'N/A')}</span>.</li>
+                    <div class="content-card">
+                        <h3>Housing</h3>
+                        <ul class="bullet-points">
+                            <li><strong>{geo_data.get('renter_rate', 'N/A')}% of households</strong> are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
+                            <li>Over <strong>3 in 5 renters (61.6%)</strong> are cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li>Just under <strong>2 in 7 renters (27.9%)</strong> are <em>severely</em> cost-burdened, spending more than 50% of their income on housing.</li>
+                            <li>The median home value in the area is approximately <strong>N/A</strong>.</li>
                         </ul>
                     </div>
                 </div>
-                
-                <!-- Moved Stat Boxes Below -->
-                <div class="four-stats" style="clear: both; margin-top: 20px;">
-                    <div class="small-stat-box">
-                        <span class="small-stat-number">--</span>
-                        <div class="small-stat-label">SNAP households with children</div>
-                    </div>
-                    <div class="small-stat-box">
-                        <div class="small-stat-number">
-                            <div>{geo_data.get('housing_cost_burden', 'N/A')}</div>
-                            <div style="font-size: 14px; color: #d62728; margin-top: 5px;">
-                                {geo_data.get('severe_housing_cost_burden', 'N/A')} <span style="font-size: 12px;">(severe)</span>
-                            </div>
-                        </div>
-                        <div class="small-stat-label">
-                            <span class="housing-title">Households with housing cost burden</span>
-                            <div class="housing-tooltip">
-                                <p>A household is considered "housing cost burdened" by the Census if it spends more than 30% of its income on housing expenses, which include rent or mortgage payments, utilities, and related fees.</p>
-                                <p>If a household spends more than 50% of its income on these costs, it is classified as "severely cost burdened".</p>
-                                <p><strong>Top number:</strong> 30%+ of income on housing</p>
-                                <p><strong>Bottom number (red):</strong> 50%+ of income on housing</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="small-stat-box">
-                        <span class="small-stat-number">--</span>
-                        <div class="small-stat-label">SNAP households with older adults</div>
-                    </div>
-                    <div class="small-stat-box">
-                        <span class="small-stat-number">--</span>
-                        <div class="small-stat-label">SNAP households with disabilities</div>
-                    </div>
-                </div>
-                
-                <div class="impact-section">
-                    <div class="impact-title">SNAP'S IMPACT IN {geo_name.upper()}</div>
-                    <ul class="bullet-points">
-                        <li><strong>SNAP supports working families.</strong> Between 2019–2023, an average of <span class="stat-highlight">{working_families_rate}</span> of SNAP households in {geo_name.upper()} included someone who was working.</li>
-                        <li><strong>SNAP stimulates the economy and creates jobs.</strong> Each SNAP dollar has up to a <span class="stat-highlight">{economic_impact}</span> impact during economic downturns, supporting the supply chain from farmer to store.</li>
-                        <li><strong>SNAP supports local businesses,</strong> including <span class="stat-highlight">{retailers_count}</span> retailers in {geo_name.upper()}, which redeemed a total of <span class="stat-highlight">{retailers_redemption}</span> in 2023. Retailers include grocery stores and farmers' markets, which contribute to local taxes that fund services like schools and health care.</li>
-                    </ul>
-                </div>
-                
-                <div class="highlight-box">
-                    <strong>SNAP IS A PROVEN, COST-EFFECTIVE PROGRAM</strong> that reduces food insecurity, supports the health of children, older adults, and veterans. SNAP reduces health care costs, improves educational outcomes, and supports local economies. Support {geo_name.upper()} families by opposing any cuts to SNAP.
-                </div>
-                
-                <div class="strengthen-section">
-                    STRENGTHEN SNAP, STRENGTHEN {geo_name.upper()}
-                </div>
-                
-                <!-- Call to action section removed as requested -->
             </div>
             
             <div class="footer">
-                SOURCES FOR THIS FACT SHEET CAN BE FOUND IN THE TECHNICAL NOTES.
+                <div class="footer-logo">
+                    {logo_html}
+                    <span>HAWAIʻI APPLESEED<br><small>CENTER FOR LAW & ECONOMIC JUSTICE</small></span>
+                </div>
+                <div class="footer-website">www.hiappleseed.org/data-dashboard</div>
             </div>
         </div>
-        <script>{javascript_code}</script>
     </body>
     </html>
     """
 
 def display_snap_fact_sheet(geo_data: Dict[str, Any], show_errors: bool = True):
-    """Display the SNAP fact sheet with the given geographic data.
-    
-    Args:
-        geo_data: Dictionary containing geographic data
-        show_errors: Whether to show error messages (set to False for fallback display)
-    """
+    """Display the SNAP fact sheet with the given geographic data."""
     try:
         # Generate the HTML content for the fact sheet
         html_content = generate_fact_sheet_html(geo_data)
         
         # Display the HTML content in Streamlit
         st.components.v1.html(html_content, height=1200, scrolling=True)
-    except FileNotFoundError as e:
-        if show_errors:
-            st.warning("Could not find a required resource. Some images might not display correctly.")
-            st.error(f"Resource not found: {e}")
-        # Fallback to a simpler display if the main fact sheet fails
-        st.markdown(f"""
-        ## SNAP Fact Sheet
-        ### {geo_data.get('name', 'Hawaii')}
-        
-        *Note: Some resources could not be loaded. This is a simplified view.*
-        
-        **Population:** {format_number(geo_data.get('total_population', 0))}  
-        **Median Household Income:** {format_currency(geo_data.get('median_household_income', 0))}  
-        **Poverty Rate:** {format_number(geo_data.get('poverty_rate', 0), is_percent=True)}  
-        **ALICE Households:** {format_number(geo_data.get('economic', {}).get('alice_rate', 0), is_percent=True)}
-        """)
     except Exception as e:
         if show_errors:
             st.error(f"Error generating fact sheet: {e}")
@@ -1627,22 +897,6 @@ def display_geo_data(geo_id: str):
 def main():
     """Main function for the geographic detail page."""
     # Hide the title and other Streamlit UI elements
-    hide_streamlit_style = """
-    <style>
-        #MainMenu, header, .stApp [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        .stApp {
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        .block-container {
-            padding: 0 !important;
-            max-width: 100% !important;
-        }
-    </style>
-    """
-    # Enhanced CSS to handle scrolling and layout
     hide_streamlit_style = """
     <style>
         /* Hide Streamlit UI elements */

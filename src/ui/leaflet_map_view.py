@@ -5,6 +5,7 @@ import json
 import logging
 from pathlib import Path
 import sys
+import plotly.express as px
 
 # Add the parent directory to the path
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -17,8 +18,11 @@ from src.ui.leaflet_component import create_leaflet_map
 # Set up logging
 logger = logging.getLogger(__name__)
 
+@st.cache_data
 def load_geojson(layer_name):
     """Load GeoJSON data for the specified layer."""
+    import gzip
+    
     # Map layer names to file paths
     layer_files = {
         'State Boundary': 'hawaii_state_boundary.geojson',
@@ -31,17 +35,39 @@ def load_geojson(layer_name):
         logger.error(f"Unknown layer: {layer_name}")
         return None
     
-    # Construct the file path
-    file_path = Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons' / layer_files[layer_name]
+    # Construct the file paths (try compressed first)
+    base_path = Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons'
+    compressed_path = base_path / f"{layer_files[layer_name]}.gz"
+    original_path = base_path / layer_files[layer_name]
     
     try:
-        with open(file_path, 'r') as f:
-            geojson_data = json.load(f)
-            logger.info(f"Successfully loaded GeoJSON for {layer_name} from {file_path}")
-            return geojson_data
+        # Try compressed file first
+        if compressed_path.exists():
+            with gzip.open(compressed_path, 'rt') as f:
+                geojson_data = json.load(f)
+                logger.info(f"Successfully loaded compressed GeoJSON for {layer_name}")
+                return geojson_data
+        
+        # Fallback to original file
+        elif original_path.exists():
+            with open(original_path, 'r') as f:
+                geojson_data = json.load(f)
+                logger.info(f"Successfully loaded GeoJSON for {layer_name} from {original_path}")
+                return geojson_data
+        
+        else:
+            logger.error(f"Neither compressed nor original GeoJSON file found for {layer_name}")
+            return None
+            
     except Exception as e:
         logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
         return None
+
+@st.cache_resource(ttl=None, show_spinner=False, hash_funcs={})
+def get_data_loader(_cache_version="v7"):
+    """Get a cached DataLoader instance."""
+    # _cache_version parameter forces cache invalidation when changed
+    return DataLoader()
 
 def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
@@ -53,13 +79,14 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'active_layer' not in st.session_state:
             st.session_state['active_layer'] = 'State Boundary'
         
-        # Define all valid variables including SNAP, transportation, and tax credit variables
+        # Define all valid variables including SNAP, transportation, tax credit, and CEP variables
         valid_variables = [
             'poverty_rate', 'median_income', 'unemployment_rate',
             'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
-            'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
+            'snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
             'travel_time_to_work_minutes', 'public_transportation_pct', 'ctc_avg_amount', 'ctc_participation_rate', 
-            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount'
+            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount',
+            'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
         ]
         
         # Ensure selected_variable is valid
@@ -78,6 +105,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'selected_food_security_variable' not in st.session_state:
             st.session_state['selected_food_security_variable'] = None
             
+        # Initialize housing/transportation variable (starts as None - no selection)
+        if 'selected_housing_transportation_variable' not in st.session_state:
+            st.session_state['selected_housing_transportation_variable'] = None
+            
     except Exception as e:
         logger.error(f"Error initializing session state: {e}")
         # Force reset to safe defaults
@@ -93,28 +124,30 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     logger.info(f"Active layer: {active_layer}")
     logger.info(f"Color scheme: {color_scheme}")
     
-    # Load GeoJSON data for the selected layer
-    geojson_data = load_geojson(active_layer)
+    # Load GeoJSON data for the selected layer with progress indicator
+    with st.spinner(f"Loading {active_layer} geographic data..."):
+        geojson_data = load_geojson(active_layer)
     
     if geojson_data is None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
     
-    # Load ACS data
-    data_loader = DataLoader()
-    
-    # Map geo levels to their data loader equivalents
-    geo_level_map = {
-        'State Boundary': 'state',
-        'Counties': 'county',
-        'House Districts': 'house',
-        'Senate Districts': 'senate'
-    }
-    
-    geo_level = geo_level_map.get(active_layer, 'state')
-    
-    # Get merged ACS + ALICE data for the current geographic level
-    combined_data = data_loader.get_data(geo_level)
+    # Load data with progress indicator
+    with st.spinner(f"Loading {active_layer} statistical data..."):
+        data_loader = get_data_loader()
+        
+        # Map geo levels to their data loader equivalents
+        geo_level_map = {
+            'State Boundary': 'state',
+            'Counties': 'county',
+            'House Districts': 'house',
+            'Senate Districts': 'senate'
+        }
+        
+        geo_level = geo_level_map.get(active_layer, 'state')
+        
+        # Get combined data for the selected geographic level
+        combined_data = data_loader.get_data(geo_level)
     
     if combined_data is not None:
         # Debug: Print combined data columns and first row
@@ -332,16 +365,32 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         }
         
         /* Style for dropdown hover effect */
+        .stSelectbox {
+            width: 100% !important;
+        }
+        
+        .stSelectbox > div {
+            width: 100% !important;
+        }
+        
         .stSelectbox > div > div[data-baseweb="select"] {
             transition: all 0.2s ease;
             border-radius: 6px;
             border: 1px solid #e0e0e0;
             background: white;
+            width: 100% !important;
+            min-height: 38px !important;
         }
         
         .stSelectbox > div > div[data-baseweb="select"]:hover {
             border-color: #1E88E5;
             box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
+        }
+        
+        /* Control the selected value display */
+        .stSelectbox > div > div[data-baseweb="select"] > div {
+            padding: 6px 12px !important;
+            font-size: 14px !important;
         }
         
         /* Style for dropdown options */
@@ -539,11 +588,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     </script>
     """, unsafe_allow_html=True)
     
-    # Create a container for the dropdowns
-    col1, col2, col3 = st.columns([1, 2, 2])
+    # Create dropdown controls in main content area
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
     with col1:
-        # First dropdown: Geography
+        # Geography dropdown
         st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
@@ -559,24 +608,22 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
-        # Update session state if selection changes
+        # Update session state only if selection actually changes (prevents infinite loops)
         if selected_layer != active_layer:
             st.session_state['active_layer'] = selected_layer
-            # Don't call st.rerun() here - let the natural flow handle it
+            st.rerun()
     
     with col2:
-        # Second dropdown: Data Variable (depends on Geography)
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Data Variable</div>', unsafe_allow_html=True)
+        # Economic Security dropdown with 'Choose your variable' text
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.7em; margin-bottom: 4px;">Choose your variable</div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>', unsafe_allow_html=True)
         
-        # Define available variables based on geography (SNAP variables moved to Food Security)
+        # Define available variables based on geography
         if active_layer == 'State Boundary':
             variable_options = {
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -588,9 +635,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -602,9 +646,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'alice_rate': 'ALICE Households',
                 'poverty_rate': 'Poverty Rate',
                 'median_income': 'Median Income',
-                'rent_burden_rate': 'Housing Cost Burden',
-                'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-                'public_transportation_pct': 'Public Transportation Commuters (%)',
                 'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
                 'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
                 'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
@@ -612,126 +653,131 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         
-        # Create options list with blank option for mutual exclusion
-        data_var_options = [None] + list(variable_options.keys())
-        
-        # Custom format function that shows if option is disabled
-        def data_var_format_func(x):
-            if x is None:
-                # Only disable if THIS dropdown has had a selection
-                has_data_var_selection = st.session_state.get('selected_variable') is not None
-                if has_data_var_selection:
-                    return "Select Data Variable... (disabled)"
-                else:
-                    return "Select Data Variable..."
-            return variable_options[x]
-        
-        # Handle mutual exclusion - if food security is selected, show blank option
-        if st.session_state.get('selected_food_security_variable') is not None:
-            current_index = 0  # Select blank option
-        else:
-            # Get the current index, defaulting to 0 (None/blank) if not found
-            try:
-                if selected_variable in data_var_options:
-                    current_index = data_var_options.index(selected_variable)
-                else:
-                    current_index = 0  # Default to None/blank instead of first real option
-            except (ValueError, KeyError) as e:
-                # Fallback to blank option if there's any error
-                current_index = 0
-        
+        # Get current variable index
+        try:
+            var_index = list(variable_options.keys()).index(selected_variable)
+        except (ValueError, KeyError):
+            var_index = 0
+            
         selected_var = st.selectbox(
             "",
-            options=data_var_options,
-            format_func=data_var_format_func,
-            index=current_index,
+            options=list(variable_options.keys()),
+            format_func=lambda x: variable_options[x],
+            index=var_index,
             key="variable_selector",
             label_visibility="collapsed"
         )
         
-        logger.info(f"DROPDOWN DEBUG: selected_var from dropdown: {selected_var}")
-        logger.info(f"DROPDOWN DEBUG: selected_variable from session: {selected_variable}")
-        logger.info(f"DROPDOWN DEBUG: current_index: {current_index}")
-        logger.info(f"DROPDOWN DEBUG: data_var_options: {data_var_options}")
-        
-        # Update session state when user makes a change
+        # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
-            logger.info(f"DROPDOWN DEBUG: User changed selection from {selected_variable} to {selected_var}")
-            # Don't allow going back to None if THIS dropdown already has a selection
-            if selected_var is None and st.session_state.get('selected_variable') is not None:
-                # Ignore the attempt to select the placeholder in this dropdown
-                logger.info("DROPDOWN DEBUG: Ignoring attempt to select placeholder")
-                pass
-            else:
-                logger.info(f"DROPDOWN DEBUG: Updating session state to {selected_var}")
-                st.session_state['selected_variable'] = selected_var
-                # Clear food security selection when data variable is selected
-                if selected_var is not None:
-                    st.session_state['selected_food_security_variable'] = None
-                    logger.debug(f"Selected data variable: {selected_var}")
-                # Don't call st.rerun() here - let the natural flow handle it
-        else:
-            logger.info("DROPDOWN DEBUG: No change in selection")
+            st.session_state['selected_variable'] = selected_var
+            # Clear food security and housing/transportation selections when data variable is selected
+            if 'selected_food_security_variable' in st.session_state:
+                st.session_state['selected_food_security_variable'] = None
+            if 'selected_housing_transportation_variable' in st.session_state:
+                st.session_state['selected_housing_transportation_variable'] = None
+            st.rerun()
     
     with col3:
-        # Third dropdown: Food Security
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        # Food Security dropdown - Empty div for consistent spacing
+        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
         
-        # Define Food Security variables (SNAP variables)
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits'
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits',
+            'cep_percentage': 'Schools with CEP (%)',
+            'cep_display': 'Number of CEP Schools'
         }
+        
+        # Add None option for mutual exclusion
+        fs_options = [None] + list(food_security_options.keys())
+        
+        def fs_format_func(x):
+            if x is None:
+                return "Select Food Security Variable..."
+            return food_security_options[x]
         
         # Get current food security variable
         selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
         
-        # Create options list with blank option first
-        fs_options = [None] + list(food_security_options.keys())
-        
-        # Custom format function that shows if option is disabled
-        def fs_format_func(x):
-            if x is None:
-                # Only disable if THIS dropdown has had a selection
-                has_food_security_selection = st.session_state.get('selected_food_security_variable') is not None
-                if has_food_security_selection:
-                    return "Select Food Security Variable... (disabled)"
-                else:
-                    return "Select Food Security Variable..."
-            return food_security_options[x]
-        
-        # Get current index
         try:
-            fs_current_index = fs_options.index(selected_food_security_var) if selected_food_security_var in fs_options else 0
-        except (ValueError, KeyError):
-            fs_current_index = 0
-        
+            fs_index = fs_options.index(selected_food_security_var)
+        except (ValueError, TypeError):
+            fs_index = 0
+            
         selected_fs_var = st.selectbox(
             "",
             options=fs_options,
             format_func=fs_format_func,
-            index=fs_current_index,
+            index=fs_index,
             key="food_security_selector",
             label_visibility="collapsed"
         )
         
-        # Handle mutual exclusion and update session state
+        # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
-            # Don't allow going back to None if THIS dropdown already has a selection
-            if selected_fs_var is None and st.session_state.get('selected_food_security_variable') is not None:
-                # Ignore the attempt to select the placeholder in this dropdown
-                pass
+            st.session_state['selected_food_security_variable'] = selected_fs_var
+            # Clear data variable and housing/transportation selections when food security variable is selected
+            if selected_fs_var is not None:
+                st.session_state['selected_variable'] = None
+                if 'selected_housing_transportation_variable' in st.session_state:
+                    st.session_state['selected_housing_transportation_variable'] = None
             else:
-                st.session_state['selected_food_security_variable'] = selected_fs_var
-                # Clear data variable selection when food security variable is selected
-                if selected_fs_var is not None:
-                    st.session_state['selected_variable'] = None
-                    logger.debug(f"Selected food security variable: {selected_fs_var}")
-                else:
-                    # Cleared food security selection - set default data variable
-                    st.session_state['selected_variable'] = 'alice_rate'
-                # Don't call st.rerun() here - let the natural flow handle it
+                # Set default data variable when food security is cleared
+                st.session_state['selected_variable'] = 'alice_rate'
+            st.rerun()
+    
+    with col4:
+        # Housing and Transportation dropdown - Empty div for consistent spacing
+        st.markdown('<div style="height: 19px; margin-bottom: 1px;"></div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+        
+        housing_transportation_options = {
+            'median_rent': 'Median Rent ($)',
+            'rent_burden_rate': 'Housing Cost Burden (%)',
+            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            'public_transportation_pct': 'Public Transportation Commuters (%)'
+        }
+        
+        # Add None option for mutual exclusion
+        ht_options = [None] + list(housing_transportation_options.keys())
+        
+        def ht_format_func(x):
+            if x is None:
+                return "Select Housing/Transportation Variable..."
+            return housing_transportation_options[x]
+        
+        # Get current housing/transportation variable
+        selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
+        
+        try:
+            ht_index = ht_options.index(selected_housing_transportation_var)
+        except (ValueError, TypeError):
+            ht_index = 0
+            
+        selected_ht_var = st.selectbox(
+            "",
+            options=ht_options,
+            format_func=ht_format_func,
+            index=ht_index,
+            key="housing_transportation_selector",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state only if selection actually changes (prevents infinite loops)
+        if selected_ht_var != selected_housing_transportation_var:
+            st.session_state['selected_housing_transportation_variable'] = selected_ht_var
+            # Clear data variable and food security selections when housing/transportation variable is selected
+            if selected_ht_var is not None:
+                st.session_state['selected_variable'] = None
+                if 'selected_food_security_variable' in st.session_state:
+                    st.session_state['selected_food_security_variable'] = None
+            else:
+                # Set default data variable when housing/transportation is cleared
+                st.session_state['selected_variable'] = 'alice_rate'
+            st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
@@ -748,16 +794,22 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'snap_household_rate': 'SNAP Households (%)',
         'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
         'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)'
+        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+        'cep_percentage': 'Schools with CEP (%)',
+        'cep_schools': 'Number of CEP Schools',
+        'total_schools': 'Total Number of Schools'
     }
     
     # Determine which variable to use for the map
     food_security_var = st.session_state.get('selected_food_security_variable')
+    housing_transportation_var = st.session_state.get('selected_housing_transportation_variable')
     data_var = st.session_state.get('selected_variable')
     
-    # Use food security variable if selected, otherwise use data variable
+    # Use food security variable if selected, otherwise housing/transportation, otherwise data variable
     if food_security_var is not None:
         map_variable = food_security_var
+    elif housing_transportation_var is not None:
+        map_variable = housing_transportation_var
     elif data_var is not None:
         map_variable = data_var
     else:
@@ -863,7 +915,7 @@ def create_info_panel(selected_variable, geojson_data):
                     else:
                         formatted = f"{value:,.0f}"
                     
-                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -889,7 +941,33 @@ def create_info_panel(selected_variable, geojson_data):
                     else:
                         formatted = f"{value:,.0f}"
                     
-                    st.markdown(f"<div style='{style} padding: 6px 8px; margin: 3px 0; border-radius: 4px;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
+        
+        # CEP Section
+        st.markdown("**CEP Schools**")
+        cep_metrics = [
+            ('cep_percentage', 'Schools with CEP', 'percentage'),
+            ('cep_display', 'CEP Schools', 'text')
+        ]
+        
+        for metric_key, metric_label, metric_type in cep_metrics:
+            if metric_key in geo_info:
+                value = geo_info[metric_key]
+                # Handle both numeric and text values
+                if isinstance(value, (int, float)) or (isinstance(value, str) and value):
+                    is_selected = metric_key == selected_variable
+                    style = "background: #e8f0fe; border: 1px solid #1a73e8; font-weight: bold;" if is_selected else "background: #f8f9fa; border: 1px solid #e0e0e0;"
+                    
+                    if metric_type == 'percentage' and isinstance(value, (int, float)):
+                        formatted = f"{value:.1f}%"
+                    elif metric_type == 'currency' and isinstance(value, (int, float)):
+                        formatted = f"${value:,.0f}"
+                    elif metric_type == 'text':
+                        formatted = str(value)
+                    else:
+                        formatted = f"{value:,.0f}" if isinstance(value, (int, float)) else str(value)
+                    
+                    st.markdown(f"<div style='{style} padding: 4px 6px; margin: 2px 0; border-radius: 3px; line-height: 1.2;'><div style='font-size: 10px; color: #666;'>{metric_label}</div><div style='font-size: 12px; color: #333;'>{formatted}</div></div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -951,11 +1029,13 @@ def prepare_feature_details(feature_id, geojson_data):
         "ALICE Households": format_number(properties.get('alice_rate', 'N/A'), suffix='%')
     }
     
-    # SNAP data section
+    # SNAP and CEP data section
     snap_data = {
         "SNAP Households": format_number(properties.get('snap_household_rate', 'N/A'), suffix='%'),
         "Avg Annual SNAP Benefit": format_number(properties.get('snap_benefit_annual_per_household', 'N/A'), prefix='$'),
-        "Total Annual SNAP Benefits": format_number(properties.get('snap_benefits_annual_total', 'N/A'), prefix='$')
+        "Total Annual SNAP Benefits": format_number(properties.get('snap_benefits_annual_total', 'N/A'), prefix='$'),
+        "Schools with CEP": format_number(properties.get('cep_percentage', 'N/A'), suffix='%'),
+        "Number of CEP Schools": properties.get('cep_display', 'N/A')
     }
     
     housing = {
@@ -1010,13 +1090,16 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
                 st.metric("ALICE Households", details['economic']['ALICE Households'])
         
         with tab2:
-            # SNAP tab
+            # SNAP and CEP tab
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("SNAP Households", details['snap']['SNAP Households'])
                 st.metric("Avg Annual SNAP Benefit", details['snap']['Avg Annual SNAP Benefit'])
+                st.metric("Schools with CEP", details['snap']['Schools with CEP'])
             with col2:
                 st.metric("Total Annual SNAP Benefits", details['snap']['Total Annual SNAP Benefits'])
+                st.metric("Number of CEP Schools", details['snap']['Number of CEP Schools'])
+                st.markdown("<div style='height: 38px;'></div>", unsafe_allow_html=True)  # Spacer for alignment
         
         with tab3:
             # Demographics tab
@@ -1059,7 +1142,7 @@ def create_data_summary():
     selected_variable = st.session_state.get('selected_variable', 'alice_rate')
     
     # Load data
-    data_loader = DataLoader()
+    data_loader = get_data_loader()
     
     # Map geo levels to their data loader equivalents
     geo_level_map = {
@@ -1116,17 +1199,99 @@ def create_data_summary():
                 # Sort data by the selected variable for better visualization
                 sorted_data = data.sort_values(by=selected_variable, ascending=False)
                 
-                # Create a bar chart
-                st.bar_chart(
-                    data=sorted_data,
-                    x='name',
-                    y=selected_variable,
-                    use_container_width=True,
-                    height=400
-                )
+                # Calculate appropriate width based on number of data points
+                num_items = len(sorted_data)
+                
+                # For many items (districts), hide x-axis labels to avoid crowding
+                if num_items > 10:
+                    # Create the chart with custom hover template
+                    fig = px.bar(
+                        sorted_data,
+                        x='name',
+                        y=selected_variable,
+                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
+                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
+                    )
+                    
+                    # Format the variable name for display
+                    variable_display_name = selected_variable.replace('_', ' ').title()
+                    
+                    # Create custom hover template similar to map hover
+                    hover_template = f"""
+                    <b>%{{x}}</b><br>
+                    {variable_display_name}: %{{y}}<br>
+                    <extra></extra>
+                    """
+                    
+                    # Update traces with custom hover template
+                    fig.update_traces(
+                        hovertemplate=hover_template,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            bordercolor="black",
+                            font_size=12,
+                            font_family="Arial"
+                        )
+                    )
+                    
+                    # Update layout - hide x-axis labels for districts
+                    fig.update_layout(
+                        height=400,
+                        margin=dict(l=50, r=50, t=50, b=50),
+                        showlegend=False,
+                        title_x=0.5
+                    )
+                    
+                    # Hide x-axis labels and ticks for cleaner look
+                    fig.update_xaxes(
+                        showticklabels=False,
+                        title_text=""
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                else:
+                    # For fewer items, use regular chart with custom hover
+                    fig = px.bar(
+                        sorted_data,
+                        x='name',
+                        y=selected_variable,
+                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
+                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
+                    )
+                    
+                    # Format the variable name for display
+                    variable_display_name = selected_variable.replace('_', ' ').title()
+                    
+                    # Create custom hover template similar to map hover
+                    hover_template = f"""
+                    <b>%{{x}}</b><br>
+                    {variable_display_name}: %{{y}}<br>
+                    <extra></extra>
+                    """
+                    
+                    # Update traces with custom hover template
+                    fig.update_traces(
+                        hovertemplate=hover_template,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            bordercolor="black",
+                            font_size=12,
+                            font_family="Arial"
+                        )
+                    )
+                    
+                    fig.update_layout(
+                        height=400,
+                        xaxis_tickangle=-45,
+                        margin=dict(l=50, r=50, t=50, b=100),
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
                 
                 # Add some context about the chart
-                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}")
+                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}. Chart is horizontally scrollable for better readability.")
             else:
                 st.warning(f"Selected variable '{selected_variable}' not found in the data.")
         

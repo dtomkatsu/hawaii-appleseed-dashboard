@@ -1,0 +1,297 @@
+code,name,address,city,zip,phone,fax,principal,grade_from,grade_to,type,website,complex,complex_area,district,island,charter
+335,Ahuimanu Elem School,47-470 Hui Aeko Place,Kaneohe,96744,808.305.4800,808.239.3127,Kimi Ikeda,K,6,Elementary,http://www.ahuimanu.k12.hi.us,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+200,Aiea Elem School,99-370 Moanalua Road,Aiea,96701,808.305.4400,808.483.7201,Ryan Ishimoto,PreK,6,Elementary,https://www.aieael.k12.hi.us,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+202,Aiea High School,98-1276 Ulune Street,Aiea,96701,808.305.6500,808.483.7303,Wayne Guevara,9,12,High School,https://www.aieahs.k12.hi.us/,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+201,Aiea Inter School,99-600 Kulawea Street,Aiea,96701,808.305.9200,808.483.7235,Michael John Jose,7,8,Middle / Inter,http://www.aieais.k12.hi.us/,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+300,Aikahi Elem School,281 Ilihau Street,Kailua,96734,808.305.6700,808.254.7962,Lisa Anne DeLong,K,6,Elementary,http://www.aikahielementary.com/,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+100,Aina Haina Elem School,801 West Hind Drive,Honolulu,96821,808.305.2000,808.377.2426,Brendan Burns,PreK,5,Elementary,http://www.ainahaina.k12.hi.us,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+101,Ala Wai Elem School,503 Kamoku Street,Honolulu,96826,808.973.0070,808.973.0081,Michelle Debusca,PreK,5,Elementary,http://www.alawaielementary.org/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+203,Aliamanu Elem School,3265 Salt Lake Blvd.,Honolulu,96818,808.421.4280,808.421.4283,Sandra Yoshimi,K,6,Elementary,http://aliamanu.k12.hi.us/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+204,Aliamanu Middle School,3271 Salt Lake Blvd.,Honolulu,96818,808.307.8000,808.421.4103,Albert Hetrick,7,8,Middle / Inter,https://aliamanumiddleschool.org,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+102,Aliiolani Elem School,1240 7th Avenue,Honolulu,96816,808.733.4750,808.733.4758,Jennifer Ichiyama-Bangan,K,5,Elementary,https://www.aliiolanischool.com/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+103,Anuenue School,2528 10th Avenue,Honolulu,96816,808.307.3000,808.733.8467,Christopher Yim,K,12,K - 12,https://www.anuenue.org/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+250,August Ahrens Elem School,94-1170 Waipahu Street,Waipahu,96797,808.307.7200,808.675.0216,Hanh Nguyen,K,6,Elementary,http://www.augustahrens.org/,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+400,Baldwin High School,1650 Kaahumanu Avenue,Wailuku,96793,808.727.3200,808.984.5674,Christopher Wilhelm,9,12,High School,http://www.baldwin.k12.hi.us/,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+251,Barbers Point Elem School,3001 Boxer Road,Kapolei,96707,808.305.8400,808.673.7403,Sandy Calio,K,5,Elementary,http://barbers.k12.hi.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+252,Campbell High School,91-980 North Road,Ewa Beach,96706,808.305.3600,808.689.1255,Jonhenry Lee,9,12,High School,http://www.campbellhigh.org/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+301,Castle High School,45-386 Kaneohe Bay Drive,Kaneohe,96744,808.305.0700,808.233.5623,Bernadette Tyrell,9,12,High School,http://www.castlehs.k12.hi.us/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+351,DeSilva Elem School,278 Ainako Avenue,Hilo,96720,808.974.4855,808.974.4858,Dennis O'Brien,K,6,Elementary,http://www.ebdesilva.org/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+105,Dole Middle School,1803 Kamehameha IV Road,Honolulu,96819,808.305.5300,808.832.3349,Mavis Tasaka,6,8,Middle / Inter,https://www.dolemiddleschool.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+451,Eleele Elem School,4750 Uliuli Road,Eleele,96705,808.335.2111,808.335.8415,Allison Carveiro,PreK,5,Elementary,http://www.eleeleschool.k12.hi.us/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+302,Enchanted Lake Elem School,770 Keolu Drive,Kailua,96734,808.266.7800,808.266.7804,Noel Richardson,K,6,Elementary,https://www.enchantedlakeelementary.org/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+254,Ewa Beach Elem School,91-740 Papipi Road,Ewa Beach,96706,808.307.2300,808.689.1275,Jay Lin,K,5,Elementary,http://www.ewabeachelementary.org/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+253,Ewa Elem School,91-1280 Renton Road,Ewa Beach,96706,808.307.8200,808.681.8206,Stanley Tamashiro,K,5,Elementary,https://www.ewa.k12.hi.us/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+296,Ewa Makai Middle School,91-6291 Kapolei Parkway,Ewa Beach,96706,808.687.9500,808.685.2052,Corey Barton,6,8,Middle / Inter,http://www.ewamakai.org/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+106,Farrington High School,1564 North King Street,Honolulu,96817,808.305.5000,808.832.3587,Alfredo Carganilla,9,12,High School,http://farringtonhighschool.org,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+107,Fern Elem School,1121 Middle Street,Honolulu,96819,808.305.5400,808.832.3043,Glen Miyasato,PreK,5,Elementary,http://www.fernschool.k12.hi.us/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+352,Haaheo Elem School,121 Haaheo Road,Hilo,96720,808.974.4111,808.974.4112,Jennifer Sueoka,K,6,Elementary,http://www.haaheo.org/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+108,Hahaione Elem School,595 Pepeekeo Street,Honolulu,96825,808.305.7000,808.397.5827,Shannon Goo,PreK,5,Elementary,https://www.hahaionees.k12.hi.us/,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+401,Haiku Elem School,105 Pauwela Road,Haiku,96708,808.575.3000,808.575.3003,Sarah Romano Saget,PreK,5,Elementary,https://www.haikuschoolriders.org/,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+206,Haleiwa Elem School,66-505 Haleiwa Road,Haleiwa,96712,808.637.8237,808.637.8240,Malaea Wetzel,PreK,6,Elementary,https://www.haleiwaelementary.com/,Waialua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+402,Hana High & Elem School,4111 Hana Highway,Hana,96713,808.248.4815,808.248.4819,Christopher Sanita,PreK,12,K - 12,http://www.hanak12school.org/,Hana,Hana-Lahainaluna-Lanai-Molokai,Maui,Maui,FALSE
+452,Hanalei Elem School,5-5415 Kuhio Highway,Hanalei,96714,808.826.4300,808.826.4302,Deena Tiare Fontana  Moraes,K,6,Elementary,http://www.hanalei.k12.hi.us/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+303,Hauula Elem School,54-046 Kamehameha Highway,Hauula,96717,808.305.2100,808.293.8927,Uilani Kaitoku,K,6,Elementary,https://www.hauulaelementary.com/,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+304,Heeia Elem School,46-202 Haiku Road,Kaneohe,96744,808.307.1500,808.233.5679,Danny Garcia,K,6,Elementary,https://www.heeiahawks.org/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+208,Helemano Elem School,1001 Ihi Ihi Avenue,Wahiawa,96786,808.307.3500,808.622.6340,John Walje,K,5,Elementary,https://www.helemano.k12.hi.us/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+470,HI School for the Deaf & Blind,3440 Leahi Avenue,Honolulu,96815,808.733.4999,808.733.4824,Angel Ramos,K,12,K - 12,http://www.hsdb.k12.hi.us/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+209,Hickam Elem School,Manzelman Circle,Honolulu,96818,808.307.4600,808.421.4157,Patrick Wetzel,K,6,Elementary,http://www.hickam.k12.hi.us/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+255,Highlands Inter School,1460 Hoolaulea Street,Pearl City,96782,808.307.5000,808.453.6484,Lance Tanouye,7,8,Middle / Inter,http://www.highlands.k12.hi.us/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+355,Hilo High School,556 Waianuenue Avenue,Hilo,96720,808.313.5500,808.974.4036,Adrian De Mello,9,12,High School,http://www.hilohs.k12.hi.us,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+356,Hilo Inter School,587 Waianuenue Avenue,Hilo,96720,808.313.5300,808.974.6184,Travis Toriano,7,8,Middle / Inter,https://hilointermediate.k12.hi.us/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+357,Hilo Union Elem School,506 Waianuenue Avenue,Hilo,96720,808.933.0900,808.933.0905,Bryan Arbles,PreK,6,Elementary,https://www.hilounionschool.org/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+109,Hokulani Elem School,2940 Kamakini Street,Honolulu,96816,808.733.4789,808.733.4792,Ervin Pasalo,K,5,Elementary,http://www.hokulani-elementary.com/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+280,Holomua Elem School,91-1561 Keaunui Drive,Ewa Beach,96706,808.685.9100,808.685.2003,Christopher Bonilla,K,6,Elementary,http://holomua.hidoe.us,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+358,Holualoa Elem School,76-5957 Mamalahoa Highway,Holualoa,96725,808.313.3800,808.322.4801,Kristin Muramoto-Brown,K,5,Elementary,https://holualoaelementary.k12.hi.us,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+359,Honaunau Elem School,83-5360 Mamalahoa Highway,Captain Cook,96704,808.328.2727,808.328.2729,Noreen Kunitomo,PreK,5,Elementary,https://honaunauelementary.k12.hi.us/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+361,Honokaa Elem School,45-534 Pakalana Street,Honokaa,96727,808.775.8820,808.775.8828,Nathan Atkins,PreK,6,Elementary,http://www.honokaael.k12.hi.us/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+360,Honokaa High & Inter School,45-527 Pakalana Street,Honokaa,96727,808.775.8800,808.775.8803,Erika Blanco,7,12,Middle - High,https://honokaahighinter.k12.hi.us/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+297,Honouliuli Middle School,91-559 Maunakapu Street,Ewa Beach,96706,808.307.7800,808.692.9000,Todd Fujimori,6,8,Middle / Inter,https://www.honouliuli.k12.hi.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+276,Honowai Elem School,94-600 Honowai Street,Waipahu,96797,808.307.7100,808.675.0167,Stacy Kawamura,PreK,6,Elementary,http://honowai.org/,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+293,Hookele Elem School,511 Kunehi Street,Kapolei,96707,808.305.8500,808.674.8590,Bryan Rankie,K,5,Elementary,http://hookele.hidoe.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+363,Hookena Elem School,86-4355 Mamalahoa Highway,Captain Cook,96704,808.328.2710,808.328.2712,Glenn Gray,PreK,5,Elementary,http://hookenael.k12.hi.us/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+404,Iao Inter School,260 South Market Street,Wailuku,96793,808.727.5200,808.984.5617,Matthew Dillon,6,8,Middle / Inter,https://www.iaoschool.org/,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+210,Iliahi Elem School,2035 California Avenue,Wahiawa,96786,808.622.6411,808.622.6413,Garett Yukumoto,PreK,5,Elementary,https://www.iliahiel.k12.hi.us/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+279,Ilima Inter School,91-884 Fort Weaver Road,Ewa Beach,96706,808.687.9300,808.689.1258,Shayne Greenland,7,8,Middle / Inter,http://ilimaintermediate.k12.hi.us/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+207,Inouye Elem School,1 Ayres Avenue,Wahiawa,96786,808.305.3400,808.622.6382,Shelley Rivers,K,5,Elementary,https://www.dkies.org,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+256,Iroquois Point Elem School,5553 Cormorant Avenue,Ewa Beach,96706,808.499.6500,808.499.6508,Melody Habon,K,6,Elementary,http://iroquois.k12.hi.us/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+110,Jarrett Middle School,1903 Palolo Avenue,Honolulu,96816,808.733.4888,808.733.4894,Reid Kuba,6,8,Middle / Inter,http://www.jmshi.org,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+111,Jefferson Elem School,324 Kapahulu Avenue,Honolulu,96815,808.971.6922,808.971.6915,Garret Zakahi,K,5,Elementary,http://jeffersonsurfers.k12.hi.us/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+305,Kaaawa Elem School,51-296 Kamehameha Highway,Kaaawa,96730,808.305.6650,808.237.7755,Jennifer Luke Payne,K,6,Elementary,https://www.kaaawaschool.k12.hi.us/,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+112,Kaahumanu Elem School,1141 Kinau Street,Honolulu,96814,808.587.4414,808.587.4415,Tanya Hall,K,5,Elementary,http://www.qkes.us/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+211,Kaala Elem School,130 California Avenue,Wahiawa,96786,808.305.3900,808.622.6368,Leighton Nakamoto,PreK,5,Elementary,http://www.kaala.k12.hi.us/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+330,Kaelepulu Elem School,530 Keolu Drive,Kailua,96734,808.807.0800,808.266.7813,Chanda Rowley,K,6,Elementary,https://www.kaelepulu.k12.hi.us,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+113,Kaewai Elem School,1929 Kamehameha IV Road,Honolulu,96819,808.832.3500,808.832.3509,Michiyo Uchida,PreK,5,Elementary,https://www.kaewaielementary.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+371,Kahakai Elem School,76-147 Royal Poinciana Drive,Kailua-Kona,96740,808.313.6200,808.327.4333,Barbra Kaimuloa Bates,PreK,5,Elementary,https://www.kahakaischool.k12.hi.us/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+114,Kahala Elem School,4559 Kilauea Avenue,Honolulu,96816,808.307.8900,808.733.4669,Sarene Oda,PreK,5,Elementary,https://www.kes.k12.hi.us/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+306,Kahaluu Elem School,47-280 Waihee Road,Kaneohe,96744,808.305.6300,808.239.3102,Walter Santiago,K,6,Elementary,http://www.kahaluuelementary.com/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+331,Kahuku Elem School,56-170 Pualalea Street,Kahuku,96731,808.305.9400,808.293.8985,Ikaika Plunkett,K,6,Elementary,http://www.kahukuelementary.com/,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+307,Kahuku High & Inter School,56-490 Kamehameha Highway,Kahuku,96731,808.305.7300,808.293.8960,Patricia Macadangdang,7,12,Middle - High,http://www.kahukuhigh.org/,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+405,Kahului Elem School,410 South Hina Avenue,Kahului,96732,808.727.4700,808.873.3089,Suzanne Forbes,K,5,Elementary,http://kahuluischool.k12.hi.us/,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+308,Kailua Elem School,315 Kuulei Road,Kailua,96734,808.266.7878,808.266.7882,Allyson Doherty,PreK,6,Elementary,https://sites.google.com/k12.hi.us/kailua/home,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+309,Kailua High School,451 Ulumanu Drive,Kailua,96734,808.266.7900,808.266.7915,Jill La Boy,9,12,High School,https://www.kailuahighschool.com/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+310,Kailua Inter School,145 South Kainalu Drive,Kailua,96734,808.307.1400,808.266.7984,Nathan Maeda,7,8,Middle / Inter,https://kailuainter.k12.hi.us/,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+281,Kaimiloa Elem School,91-1028 Kaunolu Street,Ewa Beach,96706,808.689.1280,808.689.1284,Angela Pia,K,6,Elementary,http://www.kaimiloa.k12.hi.us/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+115,Kaimuki High School,2705 Kaimuki Avenue,Honolulu,96816,808.733.4900,808.733.4929,Lorelei Aiwohi,9,12,High School,https://www.kaimukihigh.org/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+116,Kaimuki Middle School,631 18th Avenue,Honolulu,96816,808.733.4800,808.733.4810,Frank Fernandes,6,8,Middle / Inter,http://www.kaimukimiddle.org/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+311,Kainalu Elem School,165 Kaiholu Street,Kailua,96734,808.266.7835,808.266.7837,Resha Ramolete,PreK,6,Elementary,https://www.kainalu.org/,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+154,Kaiser High School,511 Lunalilo Home Road,Honolulu,96825,808.394.1200,808.394.1201,Justin Sung Nam Mew,9,12,High School,http://www.kaiserhighschoolhawaii.org,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+117,Kaiulani Elem School,783 North King Street,Honolulu,96817,808.832.3160,808.832.3164,Bebi Davis,K,5,Elementary,https://sites.google.com/k12.hi.us/kaiulanielementaryschool,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+453,Kalaheo Elem School,4400 Maka Road,Kalaheo,96741,808.332.6801,808.332.6804,William Godsill,K,5,Elementary,http://www.kalaheoschool.com/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+312,Kalaheo High School,730 Iliaina Street,Kailua,96734,808.305.0200,808.254.7907,Kenneth Agcaoili,9,12,High School,http://www.kalaheohigh.org/,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+118,Kalakaua Middle School,821 Kalihi Street,Honolulu,96819,808.305.4500,808.832.3140,William Grindell,6,8,Middle / Inter,http://www.kalakauamiddle.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+420,Kalama Inter School,120 Makani Road,Makawao,96768,808.573.8735,808.573.8748,Tami Marie Haili,6,8,Middle / Inter,https://www.kalama.k12.hi.us/,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+119,Kalani High School,4680 Kalanianaole Highway,Honolulu,96821,808.305.0500,808.377.2483,Mitchell Otani,9,12,High School,http://www.kalanihighschool.org/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+365,Kalanianaole Elem,27-330 Old Mamalahoa Highway,Papaikou,96781,808.964.9700,808.964.9703,David Dinkel,K,6,Elementary,http://kalanianaole-school.weebly.com/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+287,Kaleiopuu Elem School,94-665 Kaaholo Street,Waipahu,96797,808.675.0266,808.675.0269,Alika Ahu,K,6,Elementary,http://www.kaleiopuues.k12.hi.us/,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+120,Kalihi Elem School,2471 Kula Kolea Drive,Honolulu,96819,808.305.2400,808.832.3179,John Hamilton,K,5,Elementary,https://www.kalihielementary.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+121,Kalihi-Kai Elem School,626 McNeil Street,Honolulu,96817,808.832.3322,808.832.3327,Marc Kawahara,K,5,Elementary,https://www.kalihikai.k12.hi.us/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+122,Kalihi-Uka Elem School,2411 Kalihi Street,Honolulu,96819,808.305.6200,808.832.3313,Derek Santos,PreK,5,Elementary,https://www.ukaeagles.k12.hi.us/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+123,Kalihi-Waena Elem School,1240 Gulick Avenue,Honolulu,96819,808.305.2300,808.832.3213,Daniel Larkin,K,5,Elementary,https://www.kwes.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+448,Kamakahelei Middle School,4431 Nuhou St.,Lihue,96766,808.977.1400,808.241.3210,Wendy Schwarze,6,8,Middle / Inter,http://www.ckms.k12.hi.us,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+431,Kamalii Elem School,180 Kealii Alanui,Kihei,96753,808.875.6840,808.875.6843,Cynthia Rothdeutsch,K,5,Elementary,https://kamaliischool.org/,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+406,Kamehameha III Elem School,100 Akahele,Lahaina,96761,808.662.3955,808.662.3958,Michael McCloskey,PreK,5,Elementary,https://www.kkiii.org/,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,Maui,FALSE
+155,Kamiloiki Elem School,7788 Hawaii Kai Drive,Honolulu,96825,808.305.6100,808.397.5806,Jason Yoshimoto,K,5,Elementary,http://www.kamiloikielementary.org/,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+313,Kaneohe Elem School,45-495 Kamehameha Highway,Kaneohe,96744,808.305.0000,808.233.9185,Derek Minakami,K,6,Elementary,http://www.kaneohe-el.com/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+283,Kanoelani Elem School,94-1091 Oli Loop,Waipahu,96797,808.307.3800,808.675.0135,Neil Blomberg,K,6,Elementary,https://www.kanoelani.org/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+454,Kapaa Elem School,4886 Kawaihau Road,Kapaa,96746,808.821.4424,808.821.4431,Salynn Gonsalves,PreK,5,Elementary,http://www.kapaaes.k12.hi.us/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+455,Kapaa High School,4695 Mailihuna Road,Kapaa,96746,808.821.4400,808.821.4420,Thomas Cox,9,12,High School,http://kapaahighschool.net/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+447,Kapaa Middle School,4867 Olohena Road,Kapaa,96746,808.821.4460,808.821.6967,Tara Punzal,6,8,Middle / Inter,http://www.kapaamiddleschool.org/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+124,Kapalama Elem School,1601 North School Street,Honolulu,96817,808.305.5500,808.832.3302,Ronald Oyama,PreK,5,Elementary,https://www.kapalama.k12.hi.us/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+367,Kapiolani Elem School,966 Kilauea Avenue,Hilo,96720,808.313.5100,808.974.4161,Kimberly Castillo,PreK,6,Elementary,http://cks.k12.hi.us/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+282,Kapolei Elem School,91-1119 Kamaaha Loop,Kapolei,96707,808.305.8700,808.693.7011,Cindy Otsu,K,5,Elementary,http://www.kapoleielementary.org/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+292,Kapolei High School,91-5007 Kapolei Parkway,Kapolei,96707,808.305.8000,808.692.8255,Wesley Shinkawa,9,12,High School,http://www.kapoleihigh.org/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+291,Kapolei Middle School,91-5335 Kapolei Parkway,Kapolei,96707,808.693.7025,808.693.7030,Daryl Agena,6,8,Middle / Inter,http://www.kapoleimid.k12.hi.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+315,Kapunahala Elem School,45-828 Anoi Road,Kaneohe,96744,808.233.5650,808.233.5651,Wess Unten,K,6,Elementary,http://www.kapunahala.k12.hi.us/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+368,Kau High & Pahala Elem School,96-3150 Pikake Street,Pahala,96777,808.313.4100,808.928.2092,Sharon Beck,K,12,K - 12,https://www.khpes.org/,Kau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+456,Kauai High School,3577 Lala Road,Lihue,96766,808.977.9700,808.274.3170,Marlene Leary,9,12,High School,http://www.kauaihigh.org/,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+125,Kauluwela Elem School,1486 Aala Street,Honolulu,96817,808.587.4447,808.587.4453,Sonja Samsonas,PreK,5,Elementary,https://www.kauluwela.k12.hi.us/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+369,Kaumana Elem School,1710 Kaumana Drive,Hilo,96720,808.300.1250,808.974.4197,Dawn Palmerston,K,6,Elementary,https://www.kaumanaelementary.org,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+457,Kaumualii Elem School,4380 Hanamaulu Road,Lihue,96766,808.241.3150,808.241.3159,Theresa Malone,K,5,Elementary,http://www.kaumualii.k12.hi.us/home.html,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+407,Kaunakakai Elem School,30 Ailoa,Kaunakakai,96748,808.567.7200,808.553.1737,Daniel Espaniola,PreK,6,Elementary,https://kaunakakaielementary.org/,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,FALSE
+126,Kawananakoa Middle School,49 Funchal Street,Honolulu,96813,808.307.0300,808.587.4443,Dale Arakaki,6,8,Middle / Inter,https://www.kawananakoa.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+378,Ke Kula O Ehunuikaimalino,81-1041 Konawaena School Road,Kealakekua,96750,808.313.3131,808.323.4538,Ramona-Ann Kaehuaea,K,12,K - 12,http://ehunui.org/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+353,Keaau Elem School,16-680 Keaau-Pahoa Road,Keaau,96749,808.313.4600,808.982.4217,Andrew Scott,PreK,5,Elementary,http://keaauelementary.org/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+354,Keaau High School,16-725 Keaau-Pahoa Road,Keaau,96749,808.313.3300,808.982.4224,Dean Cevallos,9,12,High School,https://www.keaauhs.com/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+370,Keaau Middle School,16-565  Keaau-Pahoa Road,Keaau,96749,808.313.4800,808.982.4219,Brandon Tanabe,6,8,Middle / Inter,http://www.keaaumiddle.org/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+388,Kealakehe Elem School,74-5118 Kealakaa Street,Kailua-Kona,96740,808.313.7900,808.327.4347,Wendy Daniel,K,5,Elementary,http://kealakehe.k12.hi.us/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+392,Kealakehe High School,74-5000 Puohulihuli Street,Kailua-Kona,96740,808.313.3600,808.327.4307,Kori Takaki,9,12,High School,http://www.khswaveriders.org/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+390,Kealakehe Inter School,74-5062 Onipaa Street,Kailua-Kona,96740,808.313.3000,808.327.4315,Janice Blaber,6,8,Middle / Inter,http://www.kishawks.org/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+372,Keaukaha Elem School,240 Desha Avenue,Hilo,96720,808.300.1800,808.974.4868,Vincent Venzon,K,6,Elementary,http://www.keaukahaelementary.com/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+104,Keelikolani Middle School,1302 Queen Emma Street,Honolulu,96813,808.587.4400,808.587.4409,Joseph Passantino,6,8,Middle / Inter,https://www.keelikolanimiddle.org/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+458,Kekaha Elem School,8140 Kekaha Road,Kekaha,96752,808.337.7655,808.337.7657,Joseph Hicks,PreK,5,Elementary,https://www.kekahaschool.k12.hi.us/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+435,Kekaulike High School,121 Kula Highway,Pukalani,96768,808.727.3500,808.573.2231,Amy Strand,9,12,High School,https://sites.google.com/kkhs.k12.hi.us/kingkekaulike/home,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+317,Keolu Elem School,1416 Keolu Drive,Kailua,96734,808.266.7818,808.266.7892,Maureen Dunn-Anzai,PreK,6,Elementary,https://keoluelementary.k12.hi.us/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+391,Keonepoko Elem School,15-890 Kahakai Boulevard,Pahoa,96778,808.313.4500,808.965.2138,Kasey Eisenhour,PreK,6,Elementary,http://www.keonepoko.k12.hi.us,Pahoa,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+294,Keoneula Elem School,91-970 Kaileolea Drive,Ewa Beach,96706,808.307.2100,808.689.1395,Paul Taga,K,6,Elementary,http://keoneula.k12.hi.us/,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+409,Kihei Elem School,250 E. Lipoa Street,Kihei,96753,808.727.4400,808.875.6825,Tracy Lui,PreK,5,Elementary,http://www.kiheielementary.org/,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+459,Kilauea Elem School,2440 Kolo Road,Kilauea,96754,808.828.1212,808.828.2034,Fig Mitchell,PreK,6,Elementary,https://www.kilaueaschool.k12.hi.us/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+410,Kilohana Elem School,Kamehameha V Highway,Kaunakakai,96748,808.774.8400,808.558.2203,Shona Mae Pineda,PreK,6,Elementary,https://www.kilohanaelementary.org/,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,FALSE
+318,King Inter School,46-155 Kamehameha Highway,Kaneohe,96744,808.233.5727,808.233.5747,Ryan Micale,7,8,Middle / Inter,http://www.king.k12.hi.us/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+212,Kipapa Elem School,95-076 Kipapa Drive,Mililani,96789,808.305.4200,808.627.7326,Jhameel Duarte,K,5,Elementary,http://www.kipapaelementary.org/,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+395,Kohala Elem School,54-3609 Akoni Pule Highway,Kapaau,96755,808.889.7100,808.889.7103,Hannah Loyola,PreK,5,Elementary,https://kohalaelementary.com/,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+373,Kohala High School,54-3611 Akoni Pule Highway,Kapaau,96755,808.889.7117,808.889.7120,Amy Stafford,9,12,High School,http://www.kohalahs.org/,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+366,Kohala Middle School,53-4155 Akoni Pule Highway,Kapaau,96755,808.889.7119,808.889.7121,Trisha Malia Sanborn,6,8,Middle / Inter,http://www.kohalams.org/,Kohala,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+127,Koko Head Elem School,189 Lunalilo Home Road,Honolulu,96825,808.509.1200,808.397.5816,Kevin Dias,PreK,5,Elementary,http://kokoheadschool.org/,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+460,Koloa Elem School,3223 Poipu Road,Koloa,96756,808.742.8460,808.742.8466,Shannon Sardinha,K,5,Elementary,https://www.koloaes.k12.hi.us/,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+375,Konawaena Elem School,81-901 Onouli Road,Kealakekua,96750,808.323.4555,808.323.4551,Jessica Dahlke,PreK,5,Elementary,http://www.konawaenael.k12.hi.us/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+374,Konawaena High School,81-1043 Konawaena School Road,Kealakekua,96750,808.323.4500,808.323.4515,Ami Akeo,9,12,High School,http://www.konawaenahs.org/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+376,Konawaena Middle School,81-1045 Konawaena School Road,Kealakekua,96750,808.323.4566,808.323.4574,Teddy Burgess,6,8,Middle / Inter,http://konawaenamiddle.k12.hi.us/,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+128,Kuhio Elem School,2759 South King Street,Honolulu,96826,808.973.0085,808.973.0088,Robyn Tom,PreK,5,Elementary,http://kuhioes.k12.hi.us/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+412,Kula Elem School,5000 Kula Highway,Kula,96790,808.876.7610,808.876.7616,Paula Herbaugh,PreK,5,Elementary,https://www.kulael.k12.hi.us/,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+437,Kulanihakoi High School,901 Piilani Highway,Kihei,96753,808.727.6700,808.727.6722,Rosa Su,9,10,High School,https://www.khsmaui.org/,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+413,Lahaina Inter School,871 Lahainaluna Road,Lahaina,96761,808.662.3965,808.662.3968,Stacy Bookland,6,8,Middle / Inter,https://www.lis.k12.hi.us/,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,Maui,FALSE
+414,Lahainaluna High School,980 Lahainaluna Road,Lahaina,96761,808.662.4000,808.662.3997,Richard Carosso,9,12,High School,http://www.lahainalunahs.org/,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,Maui,FALSE
+319,Laie Elem School,55-109 Kulanui Street,Laie,96762,808.305.0400,808.293.8968,Eliza Kaka,K,6,Elementary,http://www.laie.k12.hi.us,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+415,Lanai High & Elem School,555 Fraser Avenue,Lanai City,96763,808.565.7900,808.565.7904,Douglas Boyer,PreK,12,K - 12,https://www.lanaihighandelementaryschool.org/,Lanai,Hana-Lahainaluna-Lanai-Molokai,Maui,Lanai,FALSE
+129,Lanakila Elem School,717 North Kuakini Street,Honolulu,96817,808.587.4466,808.587.4468,Kerry Higa,PreK,5,Elementary,https://sites.google.com/k12.hi.us/lanakila,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+268,Lehua Elem School,791 Lehua Avenue,Pearl City,96782,808.307.3700,808.453.6497,Michael Sugano,K,6,Elementary,https://www.lehua.k12.hi.us/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+271,Leihoku Elem School,86-285 Leihoku Street,Waianae,96792,808.305.7100,808.697.7142,Rebecca Gebreyesus,PreK,6,Elementary,https://sites.google.com/k12.hi.us/leihokuelementary/home,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+214,Leilehua High School,1515 California Avenue,Wahiawa,96786,808.305.3000,808.622.6554,Jason Nakamoto,9,12,High School,http://www.leilehua.k12.hi.us/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+416,Lihikai Elem School,335 South Papa Avenue,Kahului,96732,808.727.4500,808.873.3570,Barbara Oura Tavares,K,5,Elementary,https://www.lihikaielementary.k12.hi.us/,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+130,Liholiho Elem School,3430 Maunaloa Avenue,Honolulu,96816,808.733.4850,808.733.4856,Alan Lee,K,5,Elementary,https://liholiho.k12.hi.us/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+131,Likelike Elem School,1618 Palama Street,Honolulu,96817,808.832.3370,808.832.3374,Kelly Bart,PreK,5,Elementary,http://www.likelike.k12.hi.us,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+133,Linapuni Elem School,1434 Linapuni Street,Honolulu,96819,808.305.2150,808.832.3305,Kimberly Ann Fuller,PreK,1,Elementary,,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+134,Lincoln Elem School,615 Auwaiolimu Street,Honolulu,96813,808.307.2900,808.587.4487,Cameron Kubota,PreK,5,Elementary,http://les.lincoln.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+430,Lokelani Inter School,1401 Liloa Drive,Kihei,96753,808.727.3300,808.875.6835,Francoise Bell,6,8,Middle / Inter,http://www.lokelani.k12.hi.us/,Kulanihakoi,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+135,Lunalilo Elem School,810 Pumehana Street,Honolulu,96826,808.307.2800,808.973.0276,Wendy Kau,K,5,Elementary,http://www.lunalilo.k12.hi.us/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+136,Maemae Elem School,319 Wyllie Street,Honolulu,96817,808.595.5400,808.595.5405,Lenn Uyeda,K,6,Elementary,http://www.maemaeschool.com/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+257,Maili Elem School,87-360 Kulaaupuni Street,Waianae,96792,808.305.4600,808.697.7151,Suzie Lee,K,6,Elementary,http://mailielementary.org,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+258,Makaha Elem School,84-200 Ala Naauao Place,Waianae,96792,808.307.7400,808.695.7905,Leslie Ziu,K,6,Elementary,https://sites.google.com/k12.hi.us/makaha/home,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+259,Makakilo Elem School,92-675 Anipeahi Street,Kapolei,96707,808.672.1122,808.672.1128,Danielle Himalaya,K,5,Elementary,http://www.makakiloelementary.k12.hi.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+215,Makalapa Elem School,4435 Salt Lake Blvd.,Honolulu,96818,808.307.6500,808.421.4112,Stephanie Shigemasa,K,6,Elementary,http://www.makalapael.org/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+417,Makawao Elem School,3542 Baldwin Avenue,Makawao,96768,808.727.5700,808.573.8774,Ginifer Nania,K,5,Elementary,http://www.makawao.k12.hi.us/,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+260,Manana Elem School,1147 Kumano Street,Pearl City,96782,808.307.5300,808.453.6437,Bryan Loo,K,6,Elementary,http://www.manana.k12.hi.us/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+137,Manoa Elem School,3155 Manoa Road,Honolulu,96822,808.988.1868,808.988.1860,Jason Okamoto,K,5,Elementary,http://www.manoaschool.com/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+418,Maui High School,660 South Lono Avenue,Kahului,96732,808.727.4000,808.873.3010,Ty Ogasawara,9,12,High School,http://www.mauihigh.org,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+428,Maui Waena Inter School,795 Onehee Street,Kahului,96732,808.727.4200,808.873.3066,Jacquelyn McCandless,6,8,Middle / Inter,http://www.mauiwaena.com,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+286,Mauka Lani Elem School,92-1300 Panana Street,Kapolei,96707,808.305.8800,808.672.1114,Neil Battad,PreK,5,Elementary,http://www.maukalani.k12.hi.us/,Kapolei,Campbell-Kapolei,Leeward,Oahu,FALSE
+419,Maunaloa Elem School,Maunaloa Highway,Maunaloa,96770,808.774.8300,808.552.2004,Kimberly Kaai,PreK,6,Elementary,https://maunaloa-elementary-school.weebly.com/,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,FALSE
+321,Maunawili Elem School,1465 Ulupii Street,Kailua,96734,808.266.7822,808.266.7834,Kaui Tanaka,K,6,Elementary,https://www.maunawili.k12.hi.us/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+138,McKinley High School,1039 South King Street,Honolulu,96814,808.594.0400,808.594.0407,Ron Okamura,9,12,High School,http://www.mckinley.k12.hi.us/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+216,Mililani High School,95-1200 Meheula Parkway,Mililani,96789,808.307.4200,808.627.7375,Frederick Murphy,9,12,High School,http://www.mililanihs.org/,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+240,Mililani Ike Elem School,95-1330 Lehiwa Drive,Mililani,96789,808.307.6700,808.626.2958,Lynne Ajifu,K,5,Elementary,http://www.milike.k12.hi.us,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+241,Mililani Mauka Elem School,95-1111 Makaikai Street,Mililani,96789,808.305.1700,808.626.3360,Kyle Shimabukuro,K,5,Elementary,http://www.milmauka.k12.hi.us,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+238,Mililani Middle School,95-1140 Lehiwa Drive,Mililani,96789,808.627.9000,808.626.7358,Shannon Tamashiro,6,8,Middle / Inter,https://sites.google.com/mililanimiddle.k12.hi.us/mms/home,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+242,Mililani Uka Elem School,94-380 Kuahelani Avenue,Mililani,96789,808.305.4900,808.627.7387,Jacob Thomas Kardash,K,5,Elementary,http://www.mililaniuka.org/,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+234,Mililani Waena Elem School,95-502 Kipapa Drive,Mililani,96789,808.307.4000,808.627.7455,Troy Tamura,K,5,Elementary,https://www.mililaniwaena.org/,Mililani,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+217,Moanalua Elem School,1337 Mahiole Street,Honolulu,96819,808.305.1200,808.831.7877,Lynda Galera,K,6,Elementary,http://www.moanaluaelementary.org,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+218,Moanalua High School,2825 Ala Ilima Street,Honolulu,96818,808.305.1000,808.831.7919,Robin Martin,9,12,High School,http://www.moanaluahs.org/,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+219,Moanalua Middle School,1289 Mahiole Street,Honolulu,96819,808.305.1289,808.831.7859,Komarey Moss,7,8,Middle / Inter,http://www.moanaluamiddle.org/,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+322,Mokapu Elem School,1193 Mokapu Blvd.   KMCB Bldg.,Kailua,96734,808.254.7964,808.254.7969,Brett Matsukawa,K,6,Elementary,https://mokapu.k12.hi.us,Kalaheo,Kailua-Kalaheo,Windward,Oahu,FALSE
+220,Mokulele Elem School,250 Aupaka Street,Honolulu,96818,808.421.4180,808.421.4182,Fredrick Harris,K,6,Elementary,http://mokulele.k12.hi.us/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+421,Molokai High School,2140 Farrington Avenue,Hoolehua,96729,808.567.7100,808.567.6960,Katina Soares,9,12,High School,http://www.molokaihighschool.org,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,FALSE
+434,Molokai Middle School,2175 Lihipali Avenue,Hoolehua,96729,808.774.8500,808.567.6939,Kainoa Pali,7,8,Middle / Inter,https://www.molokaimiddle.org/,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,FALSE
+285,Momilani Elem School,2130 Hookiekie Street,Pearl City,96782,808.307.5800,808.453.6448,Garrett Arakawa,K,6,Elementary,http://www.momilani.k12.hi.us/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+379,Mountain View Elem School,18-1235 Volcano Highway,Mountain View,96771,808.313.3200,808.968.2305,Adria Medeiros,PreK,5,Elementary,http://www.mveshawks.k12.hi.us/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+380,Naalehu Elem School,95-5545 Mamalahoa Highway,Naalehu,96772,808.313.4000,808.939.2419,Jason Britt,PreK,6,Elementary,,Kau,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+429,Nahienaena Elem School,816 Niheu Street,Lahaina,96761,808.727.6200,808.662.4023,Ian Haskins,PreK,5,Elementary,http://www.nahienaena.k12.hi.us/,Lahainaluna,Hana-Lahainaluna-Lanai-Molokai,Maui,Maui,FALSE
+261,Nanaikapono Elem School,89-153 Mano Avenue,Waianae,96792,808.305.7800,808.668.5890,Jessica Matsik,PreK,6,Elementary,https://npono.org/,Nanakuli,Nanakuli-Waianae,Leeward,Oahu,FALSE
+262,Nanakuli Elem School,89-778 Haleakala Avenue,Waianae,96792,808.307.8600,808.668.5817,Lisa Ann Higa,PreK,6,Elementary,http://nes.nwcomplex.org/,Nanakuli,Nanakuli-Waianae,Leeward,Oahu,FALSE
+263,Nanakuli High & Inter School,89-980 Nanakuli Avenue,Waianae,96792,808.305.7600,808.668.5828,Christine Udarbe-Valdez,7,12,Middle - High,https://www.nanakuligoldenhawks.org/,Nanakuli,Nanakuli-Waianae,Leeward,Oahu,FALSE
+461,Niihau High & Elem School,c/o Department of Education  Kauai Complex Area Office 3060 Eiwa Street  Suite 305,Lihue,96766,808.274.3502,808.274.3508,Gail S  Nakaahiki,K,12,K - 12,,Waimea,Kapaa-Kauai-Waimea,Kauai,Niihau,FALSE
+221,Nimitz Elem School,520 Main Street,Honolulu,96818,808.307.4400,808.421.4170,Corey Allen,K,6,Elementary,http://nimitzelementary.hidoe.us/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+139,Niu Valley Middle School,310 Halemaumau Street,Honolulu,96821,808.307.6800,808.377.2444,Jeffrey Shitaoka,6,8,Middle / Inter,http://www.niuvalleymiddle.org/,Kaiser,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+140,Noelani Elem School,2655 Woodlawn Drive,Honolulu,96822,808.988.1858,808.988.1855,Bryan Gusman,PreK,5,Elementary,http://www.nes.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+141,Nuuanu Elem School,3055 Puiwa Lane,Honolulu,96817,808.307.0100,808.595.5425,Ned Uemae,K,5,Elementary,http://www.nuuanu.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+475,Olomana School,42-522 Kalanianaole Highway,Kailua,96734,808.307.1600,808.266.7873,Stacey Oshio,7,12,Middle - High,http://www.olomanaschoolhi.k12.hi.us/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+382,Paauilo Elem & Inter School,43-1497 Old Main Road,Paauilo,96776,808.776.7710,808.776.7714,Maegan Macgregor,PreK,8,Elem - Middle,http://www.paauiloschool.org/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+381,Pahoa Elem School,15-3030 Pahoa Village Road,Pahoa,96778,808.313.4400,808.965.2180,Karrin Hauanio,PreK,6,Elementary,,Pahoa,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+383,Pahoa High & Inter School,15-3038 Puna Road,Pahoa,96778,808.313.4300,808.965.2153,Kim Williamson,7,12,Middle - High,http://pahoahis.org/,Pahoa,Kau-Keaau-Pahoa,Hawaii,Hawaii,FALSE
+422,Paia Elem School,955 Baldwin Avenue,Paia,96779,808.727.3800,808.579.2103,Merilee Valentino,K,5,Elementary,http://paiaelementary.com,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+264,Palisades Elem School,2306 Auhuhu Street,Pearl City,96782,808.307.4700,808.453.5910,Gavin Tsue,K,6,Elementary,https://www.palisades.k12.hi.us/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+142,Palolo Elem School,2106 10th Avenue,Honolulu,96816,808.733.4700,808.733.4708,Julia West,PreK,5,Elementary,http://www.paloloelementary.com,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+323,Parker Elem School,45-259 Waikalua Road,Kaneohe,96744,808.307.1100,808.233.5689,Elissa Johnson,PreK,6,Elementary,http://benjaminparkerschool.weebly.com/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+143,Pauoa Elem School,2301 Pauoa Road,Honolulu,96813,808.587.4500,808.587.4506,Timothy Hosoda,K,5,Elementary,http://pauoa.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+265,Pearl City Elem School,1090 Waimano Home Road,Pearl City,96782,808.307.5400,808.453.6467,James Suster,PreK,6,Elementary,https://sites.google.com/k12.hi.us/pearlcityelementaryschool,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+266,Pearl City High School,2100 Hookiekie Street,Pearl City,96782,808.307.5500,808.453.6521,Joseph Halfmann,9,12,High School,http://www.pchs.k12.hi.us,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+267,Pearl City Highlands Elem,1419 Waimano Home Road,Pearl City,96782,808.307.4800,808.453.6472,Keith Hui,K,6,Elementary,http://www.pches.org/,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+222,Pearl Harbor Elem School,1 Moanalua Ridge,Honolulu,96818,808.305.6000,808.421.4128,Trisha Toyama-Wakumoto,K,6,Elementary,http://www.pearlharborelementary.org/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+223,Pearl Harbor Kai Elem School,1 C Avenue,Honolulu,96818,808.421.4245,808.421.4248,Sunshine Dandurand,PreK,6,Elementary,https://www.pearlharborkai.org/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+243,Pearl Ridge Elem School,98-940 Moanalua Road,Aiea,96701,808.305.9300,808.483.7255,Lori Nakamoto,K,6,Elementary,http://pearlrid.k12.hi.us,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+269,Pohakea Elem School,91-750 Fort Weaver Road,Ewa Beach,96706,808.307.2000,808.689.1293,Traciann Dolim,K,6,Elementary,http://www.pohakea.k12.hi.us,Campbell,Campbell-Kapolei,Leeward,Oahu,FALSE
+433,Pomaikai Elem School,4650 S. Kamehameha Avenue,Kahului,96732,808.727.4800,808.873.3414,Timothy Shim,K,5,Elementary,http://pomaikai.k12.hi.us/,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+324,Pope Elem School,41-133 Huli Street,Waimanalo,96795,808.509.1000,808.259.0452,Heidi Rezentes,PreK,6,Elementary,https://www.pope.k12.hi.us/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+426,Pukalani Elem School,2945 Iolani Street,Pukalani,96768,808.727.3900,808.573.8766,Gary Kanamori,PreK,5,Elementary,https://www.pukalanies.k12.hi.us,Kekaulike,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+314,Puohala Elem School,45-233 Kulauli Street,Kaneohe,96744,808.305.5900,808.233.5663,Kathy Kahikina,K,8,Elementary,https://www.puohalaelementaryschool.k12.hi.us/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+436,Puu Kukui Elem School,3700 Kehalani Mauka Parkway,Wailuku,96793,808.727.3000,808.727.3120,Chad Okamoto,K,5,Elementary,https://puukukui.k12.hi.us/,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+145,Puuhale Elem School,345 Puuhale Road,Honolulu,96819,808.305.2500,808.832.3195,Sabrina Feliciano,PreK,5,Elementary,https://www.puuhaleschool.com/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+224,Radford High School,4361 Salt Lake Blvd.,Honolulu,96818,808.421.4200,808.421.4210,James Sunday,9,12,High School,http://www.radfordhs.org/,Radford,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+225,Red Hill Elem School,1265 Ala Kula Place,Honolulu,96819,808.305.1530,808.831.7861,Tyler Brown,PreK,6,Elementary,http://www.redhillelementary.org,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+146,Roosevelt High School,1120 Nehoa Street,Honolulu,96822,808.307.0500,808.587.4637,Sean Wong,9,12,High School,http://www.roosevelthigh.org/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+147,Royal Elem School,1519 Queen Emma Street,Honolulu,96813,808.587.4510,808.587.4518,Eleanor Gonsalves,K,5,Elementary,http://www.royalschoolk5.org/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+239,Salt Lake Elem School,1131 Ala Lilikoi Street,Honolulu,96818,808.305.1600,808.831.7873,Randall Galeon,K,6,Elementary,https://www.saltlakeeshawaii.org/,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+227,Scott Elem School,98-1230 Moanalua Road,Aiea,96701,808.483.7220,808.483.7223,William Olk,PreK,6,Elementary,http://www.alvahscott.org/,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+228,Shafter Elem School,2 Fort Shafter,Honolulu,96819,808.305.1500,808.832.3562,Rory Vierra,K,6,Elementary,https://www.shafterelementary.com/,Moanalua,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+226,Solomon Elem School,211 Carpenter Street,Wahiawa,96786,808.305.1800,808.624.9505,Thomas Swan,PreK,5,Elementary,http://www.solomonelementary.org,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+148,Stevenson Middle School,1202 Prospect Street,Honolulu,96822,808.307.3300,808.587.4523,Laurie Luczak,6,8,Middle / Inter,https://www.rlsms.k12.hi.us/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+325,Sunset Beach Elem School,59-360 Kamehameha Highway,Haleiwa,96712,808.307.1000,808.638.8789,Eliza Elkington,PreK,6,Elementary,http://www.sunset.k12.hi.us/,Kahuku,Castle-Kahuku,Windward,Oahu,FALSE
+229,Wahiawa Elem School,1402 Glen Avenue,Wahiawa,96786,808.307.6000,808.622.6394,Sean Takashima,PreK,5,Elementary,https://www.wahiawaelementary.org/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+230,Wahiawa Middle School,275 Rose Street,Wahiawa,96786,808.305.3300,808.622.6506,Samuel Bennett,6,8,Middle / Inter,http://wahiawamiddle.com,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+326,Waiahole Elem School,48-215 Waiahole Valley Road,Kaneohe,96744,808.239.3111,808.239.3113,Alexandra Obra,PreK,6,Elementary,http://www.waiahole.org/,Castle,Castle-Kahuku,Windward,Oahu,FALSE
+384,Waiakea Elem School,180 West Puainako Street,Hilo,96720,808.981.7215,808.981.7218,Ken Watanabe,K,5,Elementary,http://www.waiakeaelementary.org/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+389,Waiakea High School,155 W. Kawili Street,Hilo,96720,808.974.4888,808.974.4880,Kelcy Koga,9,12,High School,http://waiakeahigh.k12.hi.us/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+385,Waiakea Inter School,200 West Puainako Street,Hilo,96720,808.981.7231,808.981.7237,Lisa Souza,6,8,Middle / Inter,http://www.waiakeatitans.org/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+386,Waiakeawaena Elem School,2420 Kilauea Avenue,Hilo,96720,808.300.1400,808.981.7205,Suzanne Ochi,K,5,Elementary,http://www.waiakeawaena-elementary.com/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,FALSE
+231,Waialua Elem School,67-020 Waialua Beach Road,Waialua,96791,808.307.2600,808.637.8225,Varissa Pata,PreK,6,Elementary,http://www.waialuae.k12.hi.us,Waialua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+232,Waialua High & Inter School,67-160 Farrington Highway,Waialua,96791,808.307.2400,808.637.8209,Christine Alexander,7,12,Middle - High,http://www.whis.k12.hi.us/,Waialua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+270,Waianae Elem School,85-220 McArthur Street,Waianae,96792,808.305.2900,808.697.7090,Sheldon Konno,PreK,6,Elementary,https://sites.google.com/waianaeelem.k12.hi.us/wes/home,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+272,Waianae High School,85-251 Farrington Highway,Waianae,96792,808.697.9400,808.697.7018,Ray Jeanine Pikelny-Cook,9,12,High School,https://www.kaleoowaianae.com/,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+273,Waianae Inter School,85-626 Farrington Highway,Waianae,96792,808.305.2700,808.697.7124,John Wataoka,7,8,Middle / Inter,https://jrseariders.org/,Waianae,Nanakuli-Waianae,Leeward,Oahu,FALSE
+288,Waiau Elem School,98-450 Hookanike Street,Pearl City,96782,808.307.5200,808.453.6541,Kim Koga,K,6,Elementary,http://www.waiauelementary.org,Pearl City,Pearl City-Waipahu,Leeward,Oahu,FALSE
+424,Waihee Elem School,2125 Kahekili Highway,Wailuku,96793,808.727.5300,808.984.5648,Paula Inouye,K,5,Elementary,https://www.waihee.k12.hi.us/,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+290,Waikele Elem School,94-1035 Kukula Street,Waipahu,96797,808.307.6100,808.677.6106,Sheldon Oshio,K,6,Elementary,http://www.waikelees.org,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+150,Waikiki Elem School,3710 Leahi Avenue,Honolulu,96815,808.971.6900,808.971.6902,Ryan Kusuda,K,5,Elementary,www.waikikischool.org/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,FALSE
+393,Waikoloa School,68-1730 Hooko Street,Waikoloa,96738,808.883.6808,808.883.6811,Michelle Barber,PreK,8,Elem - Middle,http://www.waikoloaschool.org/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+425,Wailuku Elem School,355 South High Street,Wailuku,96793,808.727.5500,808.984.5627,Nikan Arapoff,PreK,5,Elementary,http://wailuku.k12.hi.us,Baldwin,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,FALSE
+233,Waimalu Elem School,98-825 Moanalua Road,Aiea,96701,808.307.4500,808.483.7213,Ronnell Nipp,K,6,Elementary,http://www.waimaluelementary.org,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+327,Waimanalo Elem & Inter School,41-1330 Kalanianaole Highway,Waimanalo,96795,808.259.0460,808.259.0463,Jamie Dela Cruz,PreK,8,Elem - Middle,http://www.waimanaloschool.org/,Kailua,Kailua-Kalaheo,Windward,Oahu,FALSE
+464,Waimea Canyon School,9555 Huakai Road,Waimea,96796,808.338.6830,808.338.6832,Ray Carvalho,6,8,Middle / Inter,http://www.waimeacanyonms.org/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+387,Waimea Elem School,67-1225 Mamalahoa Highway,Kamuela,96743,808.887.7636,808.887.7640,Tammie Picklesimer,PreK,5,Elementary,https://waimeael.k12.hi.us/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,FALSE
+462,Waimea High School,9707 Tsuchiya Road,Waimea,96796,808.338.6800,808.338.6807,Mahina Anguay,9,12,High School,https://www.waimeahigh.org/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+274,Waipahu Elem School,94-465 Waipahu Street,Waipahu,96797,808.307.6200,808.675.0121,Kai Kuboyama,K,6,Elementary,https://www.waipahuelem.k12.hi.us,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+277,Waipahu High School,94-1211 Farrington Highway,Waipahu,96797,808.307.9555,808.675.0257,Zachary Sheets,9,12,High School,https://www.waipahuhigh.org/,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+278,Waipahu Inter School,94-445 Farrington Highway,Waipahu,96797,808.307.9000,808.675.0181,Alvan Fukuhara,7,8,Middle / Inter,http://www.waipahuintermediate.org,Waipahu,Pearl City-Waipahu,Leeward,Oahu,FALSE
+152,Washington Middle School,1633 South King Street,Honolulu,96826,808.973.0177,808.973.0181,Michael Harano,6,8,Middle / Inter,https://washingtonmiddleschool.org/,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,FALSE
+235,Webling Elem School,99-370 Paihi Street,Aiea,96701,808.307.9700,808.483.7242,Chad Matsuda,K,6,Elementary,http://weblingpueo.org,Aiea,Aiea-Moanalua-Radford,Central,Oahu,FALSE
+236,Wheeler Elem School,1 Wheeler Army Air Field,Wahiawa,96786,808.305.9500,808.622.6403,Kendrick Kakazu,K,5,Elementary,http://www.wheeler.k12.hi.us,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+237,Wheeler Middle School,2 Wheeler Army Air Field,Wahiawa,96786,808.305.9000,808.622.6529,Kristin Walje,6,8,Middle / Inter,https://wheelermiddle.com/,Leilehua,Leilehua-Mililani-Waialua,Central,Oahu,FALSE
+463,Wilcox Elem School,4319 Hardy Street,Lihue,96766,808.274.3150,808.274.3152,Corey Nakamura,K,5,Elementary,http://www.wilcox.k12.hi.us/,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,FALSE
+558,Alakai o Kauai - PCS,2-4035 Kaumualii Hwy,Koloa,96746,808.635.5110,000.000.0000,Paul Zina,K,8,Elementary,http://www.alakaiokauai.org/,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+396,Connections - PCS,174 Kamehameha Avenue,Hilo,96720,808.961.3664,808.961.2665,Damon Murphy,K,12,K - 12,http://www.connectionscharterschool.org/,Hilo,Hilo-Waiakea,Hawaii,Hawaii,TRUE
+568,DreamHouse Ewa Beach - PCS,91-1245 Franklin D. Roosevelt Avenue,Kapolei,96707,808.437.7771,000.000.0000,Ryan Mandado,6,12,Middle - High,https://www.dreamhouseewabeach.org,Campbell,Campbell-Kapolei,Leeward,Oahu,TRUE
+546,Hakipuu Academy - PCS,45-720 Keaahala Road,Kaneohe,96744,808.235.9155,808.235.9160,Kanoe Kahalewai,7,12,Middle - High,https://www.hakipuu.org/,Castle,Castle-Kahuku,Windward,Oahu,TRUE
+540,Halau Ku Mana - PCS,2101 Makiki Heights Drive,Honolulu,96822,808.945.1600,808.945.1604,Lori Pereia,4,12,K - 12,http://www.halaukumana.org/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,TRUE
+551,Hawaii Technology Academy-PCS,94-450 Mokuola Street,Waipahu,96797,808.676.5444,808.676.5470,Matt Zitello,K,12,K - 12,https://hi.myhta.org,Waipahu,Pearl City-Waipahu,Leeward,Oahu,TRUE
+561,HI Academy of Arts & Sci - PCS,15-1397 Homestead Road,Pahoa,96778,808.965.3730,808.965.3733,Steve Hirakami,K,12,K - 12,http://www.haaspcs.org/,Pahoa,Kau-Keaau-Pahoa,Hawaii,Hawaii,TRUE
+548,Innovations - PCS,75-5815 Queen Kaahumanu Highway,Kailua-Kona,96740,808.331.3130,808.327.6209,Jennifer Hiro,K,8,Elem - Middle,http://www.ipcs.info/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,TRUE
+562,Ka Umeke Kaeo - PCS,1500 Kalanianaole Avenue,Hilo,96720,808.933.3482,808.933.3488,Michelle Nohea Nahale-a,PreK,12,K - 12,http://kaumeke.org/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,TRUE
+545,Ka Waihona O Ka Naauao - PCS,89-195 Farrington Highway,Wai'anae,96792,808.620.9030,808.664.2474,Kalehua Krug,K,8,Elem - Middle,http://www.kawaihonapcs.org/,Nanakuli,Nanakuli-Waianae,Leeward,Oahu,TRUE
+275,Kamaile Academy - PCS,85-180 Ala Akau Street,Waianae,96792,808.697.7110,808.697.7115,Paul Kepka,PreK,12,K - 12,http://www.kamaile-academy.org/,Waianae,Nanakuli-Waianae,Leeward,Oahu,TRUE
+547,Kamakau School - PCS,46-500 Kuneki Street,Kaneohe,96744,808.235.9175,808.235.9173,Meahilahila Kelling,PreK,12,K - 12,http://www.kamakau.com,Castle,Castle-Kahuku,Windward,Oahu,TRUE
+397,Kanu O Ka Aina - PCS,64-1043 Hi'iaka St.,Kamuela,96743,808.887.1117,808.887.0030,Keomailani Case,K,12,K - 12,https://kanuokaaina.org/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,TRUE
+564,Kanuikapono - PCS,4333 Kukuihale Road,Anahola,96703,808.822.9032,808.823.9140,Kanoe Ahuna,K,12,K - 12,http://kanuikapono.org/,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+320,Kaohao Public Charter School,140 Alala Road,Kailua,96734,808.266.7844,808.266.7848,Keoki Fraser,K,6,Elementary,http://kaohaoschool.org/ ,Kalaheo,Kailua-Kalaheo,Windward,Oahu,TRUE
+555,Kapolei Charter School PCS,2140 Lauwiliwili Street,Kapolei,96707,808.690.9909,000.000.0000,Wanda Villareal,9,12,High School,http://www.kcshawaii.org,Campbell,Campbell-Kapolei,Leeward,Oahu,TRUE
+565,Kawaikini NCPCS,3-1821 J Kaumualii Hwy,Lihue,96766,808.632.2032,808.246.4835,Chad Schimmelfennig,K,12,K - 12,http://www.kawaikini.com,Kauai,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+549,Ke Ana Laahana-PCS,162 Baker Avenue,Hilo,96720,808.961.6228,808.961.6229,Mapuana Waipa,7,12,Middle - High,http://www.kalpcs.com/,Waiakea,Hilo-Waiakea,Hawaii,Hawaii,TRUE
+556,Ke Kula Niihau O Kekaha-LPCS,8135 Kekaha Road,Kekaha,96752,808.337.0481,808.337.1289,Tia Koerte,PreK,12,K - 12,http://www.hawaiicharterschools.com/school/ke-kula-niihau-kekaha-pcs,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+554,Kihei Charter School,300 Ohukai Road  #209,Kihei,96753,808.875.0700,808.874.6745,Michael  Stubbs,K,12,K - 12,http://www.kiheicharter.org/,Maui,Baldwin-Kekaulike-Kulanihakoi-Maui,Maui,Maui,TRUE
+566,Kona Pacific PCS,79-7595 Mamamlahoa Highway,Kealakekua,96750,808.322.4900,808.322.4906,Amber Herres,PreK,8,Elem - Middle,http://www.kppcs.org,Konawaena,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,TRUE
+557,Kua O Ka La - NCPCS,345 Makalika St,Hilo,96720,808.981.5866,808.933.0803,Vanessa Dilcher,PreK,8,Elem - Middle,http://kuaokala.org/,Pahoa,Kau-Keaau-Pahoa,Hawaii,Hawaii,TRUE
+411,Kualapuu Elem School - PCS,260 Farrington Avenue,Kualapuu,96757,808.567.6900,808.567.6906,Lydia Trinidad,PreK,6,Elementary,http://kualapuucharterschool.org,Molokai,Hana-Lahainaluna-Lanai-Molokai,Maui,Molokai,TRUE
+466,Kula Aupuni Niihau - PCS,8315 Kekaha Road  Suite P,Kekaha,96752,808.337.2022,808.337.2033,Hedy Sullivan,K,12,K - 12,http://www.kanakapcs.org/,Waimea,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+569,Kulia Academy,2340 Omilo Lane,Honolulu,96819,808.551.1413,000.000.0000,Andy Omer Gokce,6,6,Middle - High,https://kuliaacademy.org/,Farrington,Farrington-Kaiser-Kalani,Honolulu,Oahu,TRUE
+377,Laupahoehoe Community - PCS,35-2065 Old Mamalahoa Highway,Laupahoehoe,96764,808.962.2200,808.962.2202,Kurt Rix,PreK,12,K - 12,http://www.lcpcs.org/,Laupahoehoe,Hilo-Waiakea,Hawaii,Hawaii,TRUE
+550,Malama Honua - PCS,41-054 Ehukai Street,Waimanalo,96795,808.259.5522,808.259.5525,Denise Espania,K,8,Elem - Middle,http://www.malamahonuapcs.org/,Kailua,Kailua-Kalaheo,Windward,Oahu,TRUE
+544,Myron B. Thompson Academy,1040 Richards St.  Ste. 220,Honolulu,96813,808.441.8000,808.683.7062,Diana Oshiro,K,12,K - 12,http://www.ethompson.org/,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,TRUE
+398,Na Wai Ola - PCS,18-1355 Volcano Highway  P.O. Box 711539,Mountain View,96771,808.968.2318,808.968.0778,Kapua  Francisco,PreK,6,Elementary,http://nawaiolapcs.org/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,TRUE
+591,Namahana School,4551 Kapuna Road,Kilauea,96754,000.000.0000,000.000.0000,Kapua Chandler,7,12,Middle - High,,Kapaa,Kapaa-Kauai-Waimea,Kauai,Kauai,TRUE
+563,Nawahi - PCS,16-120 Opukahaia Street  Suite 2,Keaau,96749,808.982.4260,808.966.7821,Kauanoe Kamana,PreK,8,Elem - Middle,http://nawahi.org/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,TRUE
+567,SEEQS - PCS,1728 Nuuanu Ave,Honolulu,96817,808.677.3377,000.000.0000,Buffy Cushman-Patz,6,8,Middle / Inter,http://www.seeqs.org/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,TRUE
+543,University Laboratory School,1776 University Avenue  UHS Bldg 3  #121,Honolulu,96822,808.956.7833,808.956.7260,Keoni Jeremiah,K,12,K - 12,http://www.universitylaboratoryschool.org/,Roosevelt,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,TRUE
+560,Volcano School of Arts & Sci,99-128 Old Volcano Road,Volcano,96785,808.985.9800,808.985.9898,Kalima Kinney,PreK,10,K - 12,http://volcanoschool.com/,Keaau,Kau-Keaau-Pahoa,Hawaii,Hawaii,TRUE
+541,Voyager - PCS,2428 Wilder Avenue,Honolulu,96822,808.521.9770,808.521.9772,Elise Price,K,8,Elem - Middle,http://voyagerschool.com,McKinley,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,TRUE
+149,Waialae Elem School - PCS,1045 19th Avenue,Honolulu,96816,808.733.4880,808.733.4886,Mary Wenstrom,PreK,5,Elementary,http://www.waialae.edu/,Kalani,Farrington-Kaiser-Kalani,Honolulu,Oahu,TRUE
+592,Waikiki Community Preschool,310 Paoakalani Avenue,Honolulu,96815,808.923.1802,000.000.0000,Caroline Hayashi,PreK,PreK,Elementary,,Kaimuki,Kaimuki-McKinley-Roosevelt,Honolulu,Oahu,TRUE
+394,Waimea Middle School - PCS,67-1229 Mamalahoa Hwy.,Kamuela,96743,808.887.6090,808.887.6087,Janice English,6,8,Middle / Inter,http://waimeamiddleschool.org/,Honokaa,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,TRUE
+399,West Hawaii Explorations - PCS,73-4460 Queen Kaahumanu Hwy.  PMB 503 Highway  Suite #105,Kailua-Kona,96740,808.327.4751,808.327.4750,Joseph Greenberg,6,12,Middle - High,http://www.whea.net/,Kealakehe,Honokaa-Kealakehe-Kohala-Konawaena,Hawaii,Hawaii,TRUE

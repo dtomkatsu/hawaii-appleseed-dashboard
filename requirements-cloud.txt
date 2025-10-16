@@ -1,0 +1,21 @@
+# Optimized requirements for cloud deployment
+streamlit==1.28.1
+pandas==2.0.3
+numpy==1.24.3
+geopandas==0.14.0
+folium==0.14.0
+streamlit-folium==0.15.0
+
+# Essential dependencies only
+requests==2.31.0
+python-dotenv==1.0.0
+fiona==1.9.0
+pyproj==3.6.0
+shapely==2.0.0
+openpyxl==3.1.2
+
+# Remove heavy optional dependencies for cloud
+# matplotlib - only if needed for specific charts
+# plotly - only if needed for specific charts  
+# cenpy - only if fetching new data
+# us - only if processing new geographic data

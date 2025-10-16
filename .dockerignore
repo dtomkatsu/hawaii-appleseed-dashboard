@@ -41,3 +41,11 @@ test_*
 # Development files
 .env.local
 .env.development
+
+# Optimization files (not needed in container)
+compress_geojson.py
+CLOUD_OPTIMIZATION.md
+requirements-cloud.txt
+
+# Original uncompressed GeoJSON files (use compressed versions)
+data/Processed GeoJsons/*.geojson

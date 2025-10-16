@@ -1,0 +1,29 @@
+[server]
+# Optimize for cloud deployment
+maxUploadSize = 200
+maxMessageSize = 200
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#2a5a0c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+
+[global]
+# Reduce memory usage
+developmentMode = false
+logLevel = "warning"
+
+[runner]
+# Optimize performance
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+postScriptGC = true
+fastReruns = true
+enforceSerializableSessionState = false

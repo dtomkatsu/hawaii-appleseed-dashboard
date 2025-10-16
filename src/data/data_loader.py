@@ -26,6 +26,7 @@ class DataType(Enum):
     ACS = "acs"
     ALICE = "alice"
     SNAP = "snap"
+    CEP = "cep"  # Community Eligibility Provision data
 
 
 @dataclass
@@ -81,7 +82,12 @@ class DataMerger:
             base_county_name = base_row.get('NAME', '')
             
             for merge_idx, merge_row in merge_data.iterrows():
-                merge_county = merge_row.get('name' if data_type == DataType.ALICE else 'NAME', '')
+                if data_type == DataType.ALICE:
+                    merge_county = merge_row.get('name', '')
+                elif data_type == DataType.CEP:
+                    merge_county = merge_row.get('county', '')
+                else:
+                    merge_county = merge_row.get('NAME', '')
                 
                 if self._counties_match(base_county_name, merge_county, county_mapping):
                     self._add_columns_by_type(merged, merge_row, data_type, base_idx)
@@ -93,7 +99,8 @@ class DataMerger:
     def _merge_district_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
                            data_type: DataType) -> pd.DataFrame:
         """Merge district-level data."""
-        if data_type == DataType.SNAP and 'geoid' in merge_data.columns:
+        # Use geoid-based merge for SNAP and CEP data if geoid column exists
+        if data_type in [DataType.SNAP, DataType.CEP] and 'geoid' in merge_data.columns:
             return self._merge_by_geoid(base_data, merge_data, data_type)
         
         return self._merge_by_district(base_data, merge_data, data_type)
@@ -130,6 +137,13 @@ class DataMerger:
                 'Maui County, Hawaii': ['Maui'],
                 'Kauai County, Hawaii': ['Kauai']
             }
+        elif data_type == DataType.CEP:
+            return {
+                'Honolulu County, Hawaii': ['Honolulu'],
+                'Hawaii County, Hawaii': ['Hawaii'],
+                'Maui County, Hawaii': ['Maui'],
+                'Kauai County, Hawaii': ['Kauai']
+            }
         else:
             return {
                 'Honolulu County, Hawaii': ['HONOLULU'],
@@ -152,8 +166,11 @@ class DataMerger:
         if data_type == DataType.ALICE:
             return base_cols + ['alice_rate']
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             return base_cols + [col for col in snap_cols if col in merge_data.columns]
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            return base_cols + [col for col in cep_cols if col in merge_data.columns]
         
         return base_cols
     
@@ -184,8 +201,12 @@ class DataMerger:
         if data_type == DataType.ALICE:
             self._set_value(df, 'alice_rate', source_row.get('alice_rate'), target_idx)
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
+                self._set_value(df, col, source_row.get(col), target_idx)
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            for col in cep_cols:
                 self._set_value(df, col, source_row.get(col), target_idx)
     
     def _initialize_columns_by_type(self, df: pd.DataFrame, data_type: DataType):
@@ -193,8 +214,12 @@ class DataMerger:
         if data_type == DataType.ALICE:
             df['alice_rate'] = None
         elif data_type == DataType.SNAP:
-            snap_cols = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
+            snap_cols = ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total']
             for col in snap_cols:
+                df[col] = None
+        elif data_type == DataType.CEP:
+            cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
+            for col in cep_cols:
                 df[col] = None
     
     def _set_value(self, df: pd.DataFrame, column: str, value: Any, 
@@ -285,9 +310,9 @@ class ACSDataLoader(BaseDataLoader):
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_state_tax_credits_2022.csv'
             elif geo_level == GeoLevel.COUNTY:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_county_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.HOUSE_DISTRICT:
+            elif geo_level == GeoLevel.HOUSE:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_house_district_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.SENATE_DISTRICT:
+            elif geo_level == GeoLevel.SENATE:
                 tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_senate_district_tax_credits_2022.csv'
             else:
                 logger.warning(f"Tax credit data not available for {geo_level.value}")
@@ -311,6 +336,18 @@ class ACSDataLoader(BaseDataLoader):
                         if col in tax_credit_data.columns:
                             tax_credit_geoid_col = col
                             break
+                    
+                    # Fix geoid format for districts - convert 4-digit to 5-digit (e.g., 1501 -> 15001)
+                    if tax_credit_geoid_col and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
+                        def fix_district_geoid(geoid_str):
+                            geoid_str = str(geoid_str).strip()
+                            if len(geoid_str) == 4:
+                                # Insert '0' after first 2 digits: 1501 -> 15001
+                                return geoid_str[:2] + '0' + geoid_str[2:]
+                            return geoid_str
+                        
+                        tax_credit_data[tax_credit_geoid_col] = tax_credit_data[tax_credit_geoid_col].apply(fix_district_geoid)
+                        logger.info(f"Fixed tax credit geoid format for {geo_level.value}: sample geoids {tax_credit_data[tax_credit_geoid_col].head(3).tolist()}")
                     
                     if df_geoid_col and tax_credit_geoid_col:
                         # Merge tax credit data with main DataFrame
@@ -603,7 +640,8 @@ class SNAPDataLoader(BaseDataLoader):
             logger.error(f"Invalid geographic level for SNAP: {geo_level}")
             return None
         
-        file_path = self.data_dir / 'snap_benefits' / self.config.file_patterns[geo_level.value]
+        # data_dir already points to snap_benefits directory, don't add it again
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
         if not file_path.exists():
             logger.error(f"SNAP data file not found: {file_path}")
             return None
@@ -620,6 +658,18 @@ class SNAPDataLoader(BaseDataLoader):
     def _standardize_snap_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
         """Standardize SNAP data format."""
         df = df.copy()
+        
+        # Add geoid for counties if missing
+        if geo_level == GeoLevel.COUNTY and ('geoid' not in df.columns or df['geoid'].isna().all()):
+            county_mapping = {
+                'HAWAII': '15001',
+                'HONOLULU': '15003',
+                'KAUAI': '15007',
+                'MAUI': '15009'
+            }
+            if 'NAME' in df.columns:
+                df['geoid'] = df['NAME'].str.strip().str.upper().map(county_mapping)
+                logger.info(f"Added geoid column to county SNAP data based on NAME column")
         
         # Fix geoid format for districts
         if geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE] and 'geoid' in df.columns:
@@ -672,6 +722,152 @@ class SNAPDataLoader(BaseDataLoader):
             return '15' + geoid_str[3:]
             
         return geoid_str
+
+
+class CEPDataLoader(BaseDataLoader):
+    """Loader for Community Eligibility Provision (CEP) data."""
+    
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load CEP data for a geographic level."""
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Invalid geographic level for CEP: {geo_level}")
+            return None
+        
+        # For state level, aggregate from county data
+        if geo_level == GeoLevel.STATE:
+            return self._aggregate_state_cep_from_counties()
+        
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
+        if not file_path.exists():
+            logger.error(f"CEP data file not found: {file_path}")
+            return None
+        
+        try:
+            # Read the CSV file
+            df = pd.read_csv(file_path)
+            
+            # Standardize the data
+            df = self._standardize_cep_data(df, geo_level)
+            
+            # Add geoid based on district number
+            df = self._add_geoid(df, geo_level)
+            
+            logger.info(f"Loaded CEP {geo_level.value} data: {df.shape}")
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error loading CEP {geo_level.value} data: {e}", exc_info=True)
+            return None
+    
+    def _aggregate_state_cep_from_counties(self) -> Optional[pd.DataFrame]:
+        """Aggregate county-level CEP data to create state-level data."""
+        try:
+            # Load county-level CEP data
+            county_file = self.data_dir / self.config.file_patterns['county']
+            if not county_file.exists():
+                logger.error(f"County CEP data file not found: {county_file}")
+                return None
+            
+            county_df = pd.read_csv(county_file)
+            
+            # Aggregate totals
+            total_schools = county_df['total_schools'].sum()
+            cep_schools = county_df['cep_schools'].sum()
+            cep_percentage = (cep_schools / total_schools * 100) if total_schools > 0 else 0
+            
+            # Create state-level dataframe
+            state_df = pd.DataFrame([{
+                'geoid': '15',
+                'NAME': 'Hawaii',
+                'total_schools': total_schools,
+                'cep_schools': cep_schools,
+                'cep_percentage': cep_percentage,
+                'cep_display': f"{int(cep_schools)}/{int(total_schools)} CEP schools"
+            }])
+            
+            logger.info(f"Aggregated state CEP data: {cep_schools}/{total_schools} schools ({cep_percentage:.1f}%)")
+            return state_df
+            
+        except Exception as e:
+            logger.error(f"Error aggregating state CEP data: {e}", exc_info=True)
+            return None
+    
+    def _add_geoid(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Add geoid column based on district number or county name."""
+        df = df.copy()
+        
+        if 'geoid' in df.columns:
+            return df
+        
+        # Handle county-level data (uses 'county' field instead of 'district')
+        if geo_level == GeoLevel.COUNTY and 'county' in df.columns:
+            county_codes = {
+                'Hawaii': '15001',
+                'Honolulu': '15003',
+                'Kauai': '15007',
+                'Maui': '15009'
+            }
+            df['geoid'] = df['county'].map(county_codes)
+            
+            # Add NAME field for consistency with other data sources
+            if 'NAME' not in df.columns:
+                df['NAME'] = df['county'] + ' County, Hawaii'
+            
+            return df
+            
+        # Extract district number from district code (e.g., 'H01' -> 1, '1' -> 1)
+        if 'district' in df.columns:
+            df['district_num'] = df['district'].str.extract(r'(\d+)').astype(int)
+            
+            # Create geoid based on geographic level
+            if geo_level == GeoLevel.HOUSE:
+                # For house districts: 15 + 3-digit district number (e.g., 15001, 15051)
+                df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
+            elif geo_level == GeoLevel.SENATE:
+                # For senate districts: 15 + 3-digit district number (same as house for now)
+                df['geoid'] = '15' + df['district_num'].astype(str).str.zfill(3)
+            
+            # Add NAME field for consistency with other data sources
+            if 'NAME' not in df.columns:
+                if geo_level == GeoLevel.HOUSE:
+                    df['NAME'] = 'State House District ' + df['district'].str.replace('H', '')
+                elif geo_level == GeoLevel.SENATE:
+                    df['NAME'] = 'State Senate District ' + df['district']
+        
+        return df
+    
+    def _standardize_cep_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Standardize CEP data format."""
+        df = df.copy()
+        
+        # Ensure district code is in the expected format
+        if 'district' in df.columns:
+            df['district'] = df['district'].astype(str).str.strip()
+            
+            # Convert to standard format (e.g., '1' -> 'H01' for house districts)
+            if geo_level == GeoLevel.HOUSE and df['district'].str.match(r'^\d+$').all():
+                df['district'] = 'H' + df['district'].str.zfill(2)
+        
+        # Ensure numeric columns are properly typed
+        numeric_cols = ['total_schools', 'cep_schools', 'cep_percentage']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Calculate any derived fields if needed
+        if 'cep_percentage' not in df.columns and 'cep_schools' in df.columns and 'total_schools' in df.columns:
+            df['cep_percentage'] = (df['cep_schools'] / df['total_schools']) * 100
+        
+        if 'cep_display' not in df.columns and 'cep_schools' in df.columns and 'total_schools' in df.columns:
+            df['cep_display'] = df.apply(
+                lambda x: f"{int(x['cep_schools'])}/{int(x['total_schools'])} CEP schools",
+                axis=1
+            )
+        
+        # Add state FIPS code for consistency
+        df['state'] = '15'
+        
+        return df
 
 
 class GeoJSONProcessor:
@@ -934,15 +1130,13 @@ class DataLoader:
         # Initialize data loaders
         self._init_data_loaders()
         
-        # Initialize processors
+        # Skip preloading for cloud performance - load on demand instead
+        # self._preload_data()
         self.merger = DataMerger(self._get_geo_name_mapping())
         self.geojson_processor = GeoJSONProcessor(self.base_dir)
         
         # Available variables for the dashboard
         self.available_variables = self._get_available_variables()
-        
-        # Don't preload all data - load on demand for better performance
-        # self._preload_data()
     
     def _init_data_loaders(self):
         """Initialize data loaders for different data types."""
@@ -951,7 +1145,7 @@ class DataLoader:
             'state': 'hawaii_state_acs_2023.csv',
             'county': 'hawaii_counties_acs_2023.csv',
             'house': 'hawaii_house_districts_acs_2023.csv',
-            'senate': 'hawaii_senate_districts_acs_2023.csv'
+            'senate': 'hawaii_senate_districts_acs_2023.csv',
         })
         
         # ALICE data configuration
@@ -970,13 +1164,29 @@ class DataLoader:
             'state': 'hawaii_state_snap_2023.csv',
             'county': 'hawaii_county_snap_2023.csv',
             'house': 'hawaii_house_district_snap_2023.csv',
-            'senate': 'hawaii_senate_district_snap_2023.csv'
+            'senate': 'hawaii_senate_district_snap_2023.csv',
         })
         
+        # CEP data configuration - using existing file names
+        cep_config = DataConfig({
+            'state': 'hawaii_state_cep_2023.csv',  # Note: This file doesn't exist yet
+            'county': 'hawaii_counties_cep.csv',
+            'house': 'hawaii_house_districts_cep.csv',
+            'senate': 'hawaii_senate_districts_cep.csv',
+        })
+        
+        # Initialize loaders - ACS files are in root processed directory
+        self.acs_loader = ACSDataLoader(self.data_dir, acs_config)
+        self.alice_loader = ALICEDataLoader(self.data_dir / 'alice', alice_config)
+        self.snap_loader = SNAPDataLoader(self.data_dir / 'snap_benefits', snap_config)
+        self.cep_loader = CEPDataLoader(self.data_dir / 'cep_schools', cep_config)
+        
+        # Map data types to their loaders
         self.loaders = {
-            DataType.ACS: ACSDataLoader(self.data_dir, acs_config),
-            DataType.ALICE: ALICEDataLoader(self.data_dir, alice_config),
-            DataType.SNAP: SNAPDataLoader(self.data_dir, snap_config)
+            DataType.ACS: self.acs_loader,
+            DataType.ALICE: self.alice_loader,
+            DataType.SNAP: self.snap_loader,
+            DataType.CEP: self.cep_loader,
         }
     
     def _get_geo_name_mapping(self) -> Dict[str, Dict[str, str]]:
@@ -993,6 +1203,7 @@ class DataLoader:
     def _get_available_variables(self) -> Dict[str, str]:
         """Get available variables and their display names."""
         return {
+            # ACS Variables
             'poverty_rate': 'Poverty Rate (%)',
             'median_income': 'Median Household Income ($)',
             'population': 'Total Population',
@@ -1004,16 +1215,32 @@ class DataLoader:
             'renter_occupied': 'Renter-Occupied Housing (%)',
             'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
             'no_health_insurance': 'No Health Insurance (%)',
+            
+            # ALICE Variables
             'alice_rate': 'ALICE Households (%)',
+            
+            # SNAP Variables
             'snap_household_rate': 'SNAP Households (%)',
             'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
             'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+            
+            # Transportation Variables
             'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
+            
+            # Tax Credit Variables
             'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
             'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
             'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
             'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
             'state_eitc_avg_amount': 'State EITC - Average Amount ($)',
+            
+            # CEP Variables
+            'cep_percentage': 'Schools with CEP (%)',
+            'cep_schools': 'Number of CEP Schools',
+            'total_schools': 'Total Number of Schools',
+            'cep_display': 'CEP Schools (Count)',
+            
+            # Placeholder for new variables
             'new_variable': 'New Variable (%)'
         }
     
@@ -1051,6 +1278,7 @@ class DataLoader:
         acs_data = self.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
+        cep_data = self.data_cache.get(f"{DataType.CEP.value}_{geo_level}")
         
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
@@ -1060,7 +1288,19 @@ class DataLoader:
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
         
         if merged_data is not None and snap_data is not None:
+            logger.info(f"Merging SNAP data for {geo_level}, SNAP data shape: {snap_data.shape}")
+            logger.info(f"SNAP columns: {snap_data.columns.tolist()}")
+            logger.info(f"Sample SNAP data:\n{snap_data.head(2)}")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
+            logger.info(f"After SNAP merge, merged data shape: {merged_data.shape}")
+            # Check if SNAP columns are in merged data
+            snap_cols_in_merged = [col for col in ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household'] if col in merged_data.columns]
+            logger.info(f"SNAP columns in merged data: {snap_cols_in_merged}")
+        
+        if merged_data is not None and cep_data is not None:
+            logger.info(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
+            merged_data = self.merger.merge_datasets(merged_data, cep_data, geo_enum, DataType.CEP)
+            logger.info(f"After CEP merge, data shape: {merged_data.shape}")
         
         return merged_data
     
@@ -1105,7 +1345,7 @@ class DataLoader:
             # Try exact match with numeric geoid
             geo_row = data[data['geoid'].astype(str) == str(numeric_geoid)]
             
-            # If no exact match, try more flexible matching for districts
+            # If no exact match, try more flexible matching ONLY for districts (not state)
             if geo_row.empty and geo_level in [GeoLevel.HOUSE, GeoLevel.SENATE]:
                 print(f"DEBUG: No exact match for {numeric_geoid}, trying flexible matching...")
                 # Try matching just the district number part
@@ -1121,6 +1361,11 @@ class DataLoader:
                     print("DEBUG: Trying to extract numeric part from geoid")
                     data['district_num'] = data['geoid_str'].str.extract(r'(\d{1,3})$')
                     geo_row = data[data['district_num'] == district_num]
+            elif geo_row.empty and geo_level == GeoLevel.STATE:
+                # For state level, we should only have one row
+                print(f"DEBUG: State level - using first row of data")
+                if len(data) > 0:
+                    geo_row = data.iloc[[0]]  # Get first row as DataFrame
             
             if geo_row.empty:
                 logger.warning(f"No data found for geography ID: {geo_id}")
@@ -1221,15 +1466,15 @@ class DataLoader:
                     print(f"DEBUG: Found {geo_id_str} in county data")
                     return GeoLevel.COUNTY
         
+        # Check for state-level ID FIRST (before 2-digit check)
+        elif geo_id_str in ['15', '15000']:
+            print(f"DEBUG: State-level ID detected: {geo_id_str}")
+            return GeoLevel.STATE
+        
         # Check for 2-digit senate districts
         elif len(geo_id_str) == 2 and geo_id_str.isdigit():
             print(f"DEBUG: 2-digit ID detected, assuming senate district: {geo_id_str}")
             return GeoLevel.SENATE
-        
-        # Check for state-level ID
-        elif geo_id_str in ['15', '15000']:
-            print(f"DEBUG: State-level ID detected: {geo_id_str}")
-            return GeoLevel.STATE
         
         print(f"DEBUG: Could not determine geo level for ID: {geo_id_str}")
         return None
@@ -1303,9 +1548,25 @@ class DataLoader:
         
         # SNAP data
         result['snap'] = {
+            'snap_household_count': self._safe_get(geo_row, 'snap_households'),  # Use snap_households from data
             'snap_household_rate': self._safe_get(geo_row, 'snap_household_rate'),
             'snap_benefit_annual_per_household': self._safe_get(geo_row, 'snap_benefit_annual_per_household'),
             'snap_benefits_annual_total': self._safe_get(geo_row, 'snap_benefits_annual_total')
+        }
+        
+        # Tax credit data
+        result['tax_credits'] = {
+            'ctc_avg_amount': self._safe_get(geo_row, 'ctc_avg_amount'),
+            'ctc_participation_rate': self._safe_get(geo_row, 'ctc_participation_rate'),
+            'federal_eitc_avg_amount': self._safe_get(geo_row, 'federal_eitc_avg_amount'),
+            'eitc_participation_rate': self._safe_get(geo_row, 'eitc_participation_rate'),
+            'state_eitc_avg_amount': self._safe_get(geo_row, 'state_eitc_avg_amount')
+        }
+        
+        # Transportation data
+        result['transportation'] = {
+            'travel_time_to_work_minutes': self._safe_get(geo_row, 'travel_time_to_work_minutes'),
+            'public_transportation_pct': self._safe_get(geo_row, 'public_transportation_pct')
         }
         
         # Log the final result structure

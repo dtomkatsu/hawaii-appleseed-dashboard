@@ -1,0 +1,280 @@
+school_id,school_name,is_cep,enrollment
+100,Aina Haina Elementary,,
+101,Ala Wai Elementary,X,  386 
+102,Aliiolani Elementary,,  228 
+103,Kula Kaiapuni O Anuenue,X,  419 
+104,Princess Ruth Ke'elikolani Middle,X,  370 
+105,Sanford B. Dole Middle,X,  549 
+106,Wallace Rider Farrington High,,"  2,053 "
+107,Joseph J. Fern Elementary,X,  429 
+108,Hahaione Elementary,,
+109,Hokulani Elementary,,
+110,William P. Jarrett Middle,X,  285 
+111,Thomas Jefferson Elementary,,  353 
+112,Queen Kaahumanu Elementary,X,  477 
+113,Kaewai Elementary,X,  269 
+114,Kahala Elementary,,
+115,Kaimuki High,X,  527 
+116,Kaimuki Middle,,
+117,Princess Victoria Kaiulani Elementary,X,  240 
+118,King David Kalakaua Middle,X,  926 
+119,Kalani High,,
+120,Kalihi Elementary,X,  212 
+121,Kalihi-Kai Elementary,,  549 
+122,Kalihi-Uka Elementary,,  274 
+123,Kalihi-Waena Elementary,X,  439 
+124,Kapalama Elementary,,  500 
+125,Kauluwela Elementary,X,  408 
+126,Prince David Kawananakoa Middle,,  605 
+127,Koko Head Elementary,,
+128,Prince Jonah Kuhio Elementary,X,  202 
+129,Lanakila Elementary,,  311 
+130,King Liholiho Elementary,,
+131,Princess Miriam K. Likelike Elementary,X,  247 
+133,Linapuni Elementary,X,  160 
+134,Abraham Lincoln Elementary,X,  377 
+135,King William Lunalilo Elementary,X,  249 
+136,Maemae Elementary,,
+137,Manoa Elementary,,
+138,William McKinley High,,"  1,228 "
+139,Niu Valley Middle,,
+140,Noelani Elementary,,
+141,Nuuanu Elementary,,
+142,Palolo Elementary,X,  254 
+143,Pauoa Elementary,,  358 
+145,Puuhale Elementary,X,  273 
+146,Theodore Roosevelt High,,"  1,320 "
+147,Royal Elementary,,  298 
+148,Robert Louis Stevenson Middle,,  571 
+150,Waikiki Elementary,,
+152,George Washington Middle,X,  579 
+153,John H. Wilson Elementary,,
+154,Henry J. Kaiser High,,
+155,Kamiloiki Elementary,,
+200,Aiea Elementary,X,  303 
+201,Aiea Intermediate,,  468 
+202,Aiea High,,  849 
+203,Aliamanu Elementary,,
+204,Aliamanu Middle,,
+206,Haleiwa Elementary,,  214 
+207,Daniel K. Inouye Elementary,,
+208,Helemano Elementary,,  533 
+209,Horace Meek Hickam Elementary,,
+210,Iliahi Elementary,,  344 
+211,Kaala Elementary,X,  388 
+212,Kipapa Elementary,,  485 
+214,Leilehua High,,"  1,515 "
+215,Makalapa Elementary,,
+216,Mililani High,,
+217,Moanalua Elementary,,
+218,Moanalua High,,
+219,Moanalua Middle,,
+220,Mokulele Elementary,,
+221,Chester W. Nimitz Elementary,,
+222,Pearl Harbor Elementary,,  408 
+223,Pearl Harbor Kai Elementary,,
+224,Admiral Arthur W. Radford High,,
+225,Red Hill Elementary,,
+226,Samuel K. Solomon Elementary,,
+227,Alvah A. Scott Elementary,,  453 
+228,William R. Shafter Elementary,,
+229,Wahiawa Elementary,X,  461 
+230,Wahiawa Middle,X,  692 
+231,Waialua Elementary,,  459 
+232,Waialua High & Intermediate,,  559 
+233,Waimalu Elementary,,  316 
+234,Mililani Waena Elementary,,  667 
+235,Gustave H. Webling Elementary,,
+236,Major Sheldon Wheeler Elementary,,
+237,Major Sheldon Wheeler Middle,,
+238,Mililani Middle,,
+239,Salt Lake Elementary,,  653 
+240,Mililani Ike Elementary,,
+241,Mililani Mauka Elementary,,
+242,Mililani Uka Elementary,,  691 
+243,Pearl Ridge Elementary,,
+250,August Ahrens Elementary,,"  1,163 "
+251,Barbers Point Elementary,X,  510 
+252,James Campbell High,,"  2,917 "
+253,Ewa Elementary,,"  1,255 "
+254,Ewa Beach Elementary,,  708 
+255,Highlands Intermediate,,  834 
+256,Iroquois Point Elementary,,  578 
+257,Maili Elementary,X,  624 
+258,Makaha Elementary,X,  417 
+259,Makakilo Elementary,,  437 
+260,Manana Elementary,,  270 
+261,Nanaikapono Elementary,X,  736 
+262,Nanakuli Elementary,X,  418 
+263,Nanakuli High & Intermediate,X,  914 
+264,Palisades Elementary,,  355 
+265,Pearl City Elementary,,  408 
+266,Pearl City High,,"  1,471 "
+267,Pearl City Highlands Elementary,,  529 
+268,Lehua Elementary,X,  267 
+269,Pohakea Elementary,,  518 
+270,Waianae Elementary,X,  436 
+271,Leihoku Elementary,X,  796 
+272,Waianae High,X,"  1,509 "
+273,Waianae Intermediate,X,  752 
+274,Waipahu Elementary,X,  823 
+276,Honowai Elementary,X,  608 
+277,Waipahu High,,"  2,508 "
+278,Waipahu Intermediate,,"  1,109 "
+279,Ilima Intermediate,,  728 
+280,Holomua Elementary,,"  1,118 "
+281,Kaimiloa Elementary,,  686 
+282,Kapolei Elementary,,  663 
+283,Kanoelani Elementary,,  730 
+285,Momilani Elementary,,
+286,Mauka Lani Elementary,,  543 
+287,Kaleiopuu Elementary,,  730 
+288,Waiau Elementary,,  489 
+290,Waikele Elementary,,  534 
+291,Kapolei Middle,,  737 
+292,Kapolei High,,"  1,781 "
+293,Hookele Elementary,,  709 
+294,Keoneula Elementary,,
+296,Ewa Makai Middle School,,"  1,196 "
+297,Honouliuli Middle School,,  787 
+300,Aikahi Elementary,,
+301,James B. Castle High,,  986 
+302,Enchanted Lake Elementary,,  267 
+303,Hauula Elementary,X,  399 
+304,Heeia Elementary,,  375 
+305,Kaaawa Elementary,X,  124 
+306,Kahaluu Elementary,X,  247 
+307,Kahuku High & Intermediate,,"  1,427 "
+308,Kailua Elementary,,  286 
+309,Kailua High,,  769 
+310,Kailua Intermediate,,
+311,Kainalu Elementary,,
+312,Kalaheo High,,
+313,Kaneohe Elementary,,  540 
+314,Puohala Elementary,X,  274 
+315,Kapunahala Elementary,,  453 
+317,Keolu Elementary,,  136 
+318,Samuel Wilder King Intermediate,,  526 
+319,Laie Elementary,,  659 
+321,Maunawili Elementary,,
+322,Mokapu Elementary,,
+323,Benjamin Parker Elementary,X,  265 
+324,Blanche Pope Elementary,X,  245 
+325,Sunset Beach Elementary,,
+326,Waiahole Elementary,X,  117 
+327,Waimanalo Elementary & Intermediate,X,  380 
+330,Kaelepulu Elementary,,
+331,Kahuku Elementary,,  329 
+335,Ahuimanu Elementary,,  280 
+351,Ernest Bowen de Silva Elementary,,  426 
+352,Haaheo Elementary,,  118 
+353,Keaau Elementary,X,  886 
+354,Keaau High,X,"  1,050 "
+355,Hilo High,X,"  1,167 "
+356,Hilo Intermediate,X,  551 
+357,Hilo Union Elementary,X,  460 
+358,Holualoa Elementary,,  448 
+359,Honaunau Elementary,X,  173 
+360,Honokaa High & Intermediate,X,  686 
+361,Honokaa Elementary,X,  407 
+363,Hookena Elementary,X,  113 
+365,Kalanianaole Elementary & Intermediate,X,  180 
+366,Kohala Middle,X,  171 
+367,Chiefess Kapiolani Elementary,X,  373 
+368,Kau High & Pahala Elementary,X,  483 
+369,Kaumana Elementary,,  233 
+370,Keaau Middle,X,  699 
+371,Kahakai Elementary,X,  552 
+372,Keaukaha Elementary,X,  355 
+373,Kohala High,,  253 
+374,Konawaena High,,  924 
+375,Konawaena Elementary,X,  497 
+376,Konawaena Middle,X,  623 
+378,Ke Kula O Ehunuikaimalino,X,  266 
+379,Mountain View Elementary,X,  523 
+380,Naalehu Elementary,X,  464 
+381,Pahoa Elementary,X,  426 
+382,Paauilo Elementary & Intermediate,X,  191 
+383,Pahoa High & Intermediate,X,  724 
+384,Waiakea Elementary,X,  721 
+385,Waiakea Intermediate,,  869 
+386,Waiakeawaena Elementary,X,  673 
+387,Waimea Elementary,X,  480 
+388,Kealakehe Elementary,X,  934 
+389,Waiakea High,,"  1,156 "
+390,Kealakehe Intermediate,X,  680 
+391,Keonepoko Elementary,X,  591 
+392,Kealakehe High,,"  1,417 "
+393,Waikoloa School,X,  742 
+395,Kohala Elementary,X,  399 
+400,Henry Perrine Baldwin High,,"  1,263 "
+401,Haiku Elementary,,  346 
+402,Hana High & Elementary,X,  401 
+404,Iao Intermediate,,  890 
+405,Kahului Elementary,,  796 
+406,King Kamehameha III Elementary,,  377 
+407,Kaunakakai Elementary,X,  297 
+409,Kihei Elementary,,  730 
+410,Kilohana Elementary,X,  93 
+412,Kula Elementary,,  356 
+413,Lahaina Intermediate,,  479 
+414,Lahainaluna High,,  790 
+415,Lanai High & Elementary,,  624 
+416,Lihikai Elementary,,  640 
+417,Makawao Elementary,,  478 
+418,Maui High,,"  1,670 "
+419,Maunaloa Elementary,X,  59 
+420,Samuel Enoka Kalama Intermediate,,  931 
+421,Molokai High,X,  332 
+422,Paia Elementary,,  411 
+424,Waihee Elementary,X,  574 
+425,Wailuku Elementary,X,  554 
+426,Pukalani Elementary,,  486 
+428,Maui Waena Intermediate,,"  1,010 "
+429,Princess Nahienaena Elementary,,  478 
+430,Lokelani Intermediate,,  471 
+431,Kamalii Elementary,,  336 
+433,Pomaikai Elementary School,,
+434,Molokai Middle,X,  167 
+435,King Kekaulike High,,"  1,229 "
+436,Pu'u Kukui Elementary,,  770 
+437,Kulanihakoi High,,  360 
+447,Kapaa Middle,,  501 
+448,Chiefess Kamakahelei Middle,,  822 
+451,Eleele Elementary,,  383 
+452,Hanalei Elementary,,  194 
+453,Kalaheo Elementary,,  367 
+454,Kapaa Elementary,X,  854 
+455,Kapaa High,,  986 
+456,Kauai High,,"  1,002 "
+457,King Kaumualii Elementary,,  528 
+458,Kekaha Elementary,X,  353 
+459,Kilauea Elementary,,  305 
+460,Koloa Elementary,X,  360 
+462,Waimea High,,  713 
+463,Elsie H. Wilcox Elementary,,  754 
+464,Waimea Canyon Middle,,  477 
+470,Hawaii School for the Deaf and the Blind,X,  47 
+475,Olomana,X,  93 
+396-PCS,Kress PCS,X,  354 
+561-PCS,Campus (HAAS Main Site(K-12),X,  725 
+275-PCS,Kamaile Academy PCS,X,  951 
+411-PCS,Kualapuu Elementary PCS,X,  310 
+394-PCS,Waimea Middle Public Conversion Charter School,X,  208 
+568-PCS,Ka 'Umeke Ka'eo PCS- Lamalama,X,  142 
+562-PCS,Ka 'Umeke Ka'eo PCS- Pa Hoaka,X,  143 
+567-PCS,Ka Umeke Ka'eo PCS- Kai Kohola,X,  31 
+545-PCS,Ka Waihona o ka Na'auao PCS,X,  685 
+549-PCS,Ke Ana Laahana PCS,X,  34 
+701-PCS,Alo Kehau O ka 'Aina Mauna PCS,X,  44 
+563-PCS,Ke Kula 'o Nawahiokalani'opu'u Iki PCS,X,  408 
+702-PCS,Ma'ilikukahi,X,  31 
+556-PCS,Ke Kula Ni'ihau O Kekaha Learning Center PCS,X,  47 
+716-PCS,Nani Mau,X,  144 
+717-PCS,Puula Church,X,  19 
+377-PCS,Laupahoehoe Community PCS,X,  302 
+550-PCS,Malama Honua Public Charter School,,  165 
+398-PCS,Na Wai Ola PCS,X,  132 
+705-PCS,Keakelani Middle School PCS,X,  124 
+559-PCS,Kula Mauna Hu'ihu'i Early Learning Center,X,  35 
+560-PCS,Old Volcano Road,X,  183 

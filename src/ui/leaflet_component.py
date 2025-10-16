@@ -31,6 +31,8 @@ class LeafletMapComponent:
         {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
         {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
         {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
+        {'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'},
+        {'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'},
         {'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time to Work', 'type': 'minutes'},
         {'key': 'ctc_avg_amount', 'label': 'Child Tax Credit - Average Amount', 'type': 'currency'},
         {'key': 'ctc_participation_rate', 'label': 'Child Tax Credit - Participation Rate', 'type': 'percentage'},
@@ -54,10 +56,12 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
-        # For SNAP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
+        # For SNAP, CEP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
         special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
+                           'cep_percentage', 'cep_display', 'cep_schools', 'total_schools',
                            'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
-                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 'median_income']
+                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 
+                           'median_income', 'median_rent']
         if selected_variable in special_variables:
             self.logger.info(f"Special variable '{selected_variable}' expected to be merged - proceeding")
             return True
@@ -82,11 +86,20 @@ class LeafletMapComponent:
                 position: absolute;
                 bottom: 20px;
                 left: 10px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 8px 12px;
+                border-radius: 4px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                max-width: 180px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .info-panel {
                 width: 0;
-                height: 100%;
-                overflow: hidden;
+                height: 100vh;  /* Full viewport height */
+                overflow-y: auto;  /* Enable vertical scrolling */
+                overflow-x: hidden;  /* Prevent horizontal scrolling */
                 background: rgba(255, 255, 255, 0.98);
                 border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
@@ -95,12 +108,82 @@ class LeafletMapComponent:
                 line-height: 1.4;
                 color: #333;
                 transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
-                flex-shrink: 0;
+                position: fixed;
+                right: 0;
+                top: 0;
+                z-index: 1000;
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+                /* Hide default scrollbar for WebKit */
+                scrollbar-width: none;  /* Firefox */
+                -ms-overflow-style: none;  /* IE and Edge */
+            }
+            
+            /* Hide scrollbar for WebKit browsers */
+            .info-panel::-webkit-scrollbar {
+                display: none;
             }
             .info-panel.visible {
-                width: 320px;
+                width: 350px;
                 padding: 20px;
                 overflow-y: auto;
+                height: 100vh;
+                box-sizing: border-box;
+                position: fixed;
+                right: 0;
+                top: 0;
+                z-index: 1000;
+                background: white;
+                border-left: 3px solid #1a73e8;
+                box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            }
+            
+            /* Scroll indicator arrow */
+            .scroll-indicator {
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                width: 36px;
+                height: 36px;
+                background: #1a73e8;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                cursor: pointer;
+                z-index: 2000;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+                transition: all 0.3s ease;
+                user-select: none;
+                opacity: 0.9;
+                border: 2px solid white;
+            }
+            
+            .scroll-indicator:hover {
+                background: #1557b0;
+                transform: scale(1.1);
+                box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+            }
+            
+            .scroll-indicator.up {
+                animation: pulse-up 1s ease-in-out infinite alternate;
+            }
+            
+            .scroll-indicator.down {
+                animation: pulse-down 1s ease-in-out infinite alternate;
+            }
+            
+            @keyframes pulse-up {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(-3px); }
+            }
+            
+            @keyframes pulse-down {
+                0% { transform: translateY(0); }
+                100% { transform: translateY(3px); }
             }
             .legend-title {
                 font-weight: 600;
@@ -229,6 +312,11 @@ class LeafletMapComponent:
                 formatValue(value, variableType) {{
                     if (value === undefined || value === null) return 'N/A';
                     
+                    // Special handling for text types - return as-is
+                    if (variableType === 'text' || variableType === 'cep_display') {{
+                        return value;  // Already formatted (e.g., "35/55 CEP schools")
+                    }}
+                    
                     const numValue = parseFloat(value);
                     if (isNaN(numValue)) return 'N/A';
                     
@@ -272,10 +360,20 @@ class LeafletMapComponent:
                     }} else if (SELECTED_VARIABLE === 'ctc_participation_rate' || SELECTED_VARIABLE === 'eitc_participation_rate') {{
                         // Custom thresholds for tax credit participation rates (5-25% range)
                         thresholds = [5, 8, 10, 12, 15, 18, 20, 22, 25];
+                    }} else if (SELECTED_VARIABLE === 'cep_percentage' || SELECTED_VARIABLE === 'cep_display') {{
+                        // Custom thresholds for CEP percentage (0-100% range with more granularity)
+                        thresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+                    }} else if (SELECTED_VARIABLE === 'cep_schools' || SELECTED_VARIABLE === 'total_schools') {{
+                        // Custom thresholds for number of schools (0-60 range)
+                        thresholds = [5, 10, 15, 20, 25, 30, 40, 50, 60];
                     }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
                         thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
                     }} else if (SELECTED_VARIABLE.includes('income')) {{
                         thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
+                    }} else if (SELECTED_VARIABLE === 'median_rent') {{
+                        // Custom thresholds for median rent to make differences more apparent
+                        // Typical rent range in Hawaii is ~$1000-$4000
+                        thresholds = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
                     }} else if (SELECTED_VARIABLE === 'snap_benefits_annual_total') {{
                         // Custom scale for total SNAP benefits to show more variation
                         // Using logarithmic-like scale for better distribution
@@ -303,7 +401,9 @@ class LeafletMapComponent:
                         'Food Security': [
                             {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
                             {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'}},
-                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}}
+                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}},
+                            {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
+                            {{'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'}}
                         ],
                         'Housing': [
                             {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
@@ -340,7 +440,9 @@ class LeafletMapComponent:
                         for (let i = 0; i < metrics.length; i++) {{
                             const metric = metrics[i];
                             const value = properties[metric.key];
-                            if (value === undefined || value === null || isNaN(value)) continue;
+                            // Skip if undefined/null, or if it's a number type and NaN
+                            if (value === undefined || value === null) continue;
+                            if (metric.type !== 'text' && isNaN(value)) continue;
                             
                             hasCategoryData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
@@ -416,11 +518,11 @@ class LeafletMapComponent:
                         "house_12": {{"name": "Kyle Yamashita", "party": "D", "areas": "Upcountry Maui"}},
                         "house_13": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Molokaʻi, Lānaʻi, Kahoʻolawe"}},
                         "house_14": {{"name": "Nadine Nakamura", "party": "D", "areas": "Hanalei, Princeville, Kilauea"}},
-                        "house_15": {{"name": "James Tokioka", "party": "D", "areas": "Wailua Homesteads, Hanamāʻulu, Līhuʻe, Puhi"}},
+                        "house_15": {{"name": "Elle Cochran", "party": "D", "areas": "Wai‘ehu, Waihe‘e, Kahakuloa, Honokahua, Kahana, Māhinahina Camp, Kā‘anapali, Lahaina, Lahainaluna, Olowalu, Mā‘alaea "}},
                         "house_16": {{"name": "Luke Evslin", "party": "D", "areas": "Wailua, Kapaʻa, Anahola"}},
                         "house_17": {{"name": "Dee Morikawa", "party": "D", "areas": "Niʻihau, Lehua, Kōloa, Waimea"}},
-                        "house_18": {{"name": "Mark Hashem", "party": "D", "areas": "Hahaʻione, Kuliʻouʻou, Niu Valley, ʻĀina Haina"}},
-                        "house_19": {{"name": "Bertrand Kobayashi", "party": "D", "areas": "Kāhala, Kaimukī, Diamond Head"}},
+                        "house_18": {{"name": "Joe Gedeon", "party": "R", "areas": "Portlock, Hawaiʻi Kai, Kalama Valley"}},
+                        "house_19": {{"name": "Tina Nakada Grandinetti", "party": "D", "areas": "Wai'alae-Kāhala, 'Āina Haina, Niu Valley, Kuli'ou'ou"}},
                         "house_20": {{"name": "Jackson Sayama", "party": "D", "areas": "St. Louis Heights, Pālolo, Mānoa"}},
                         "house_21": {{"name": "Scot Matayoshi", "party": "D", "areas": "Kāneʻohe, Maunawili, Olomana"}},
                         "house_22": {{"name": "Diamond Garcia", "party": "D", "areas": "Waipahu, Village Park, Waikele"}},
@@ -428,30 +530,30 @@ class LeafletMapComponent:
                         "house_24": {{"name": "Adrian Tam", "party": "D", "areas": "Waikīkī, Ala Moana"}},
                         "house_25": {{"name": "Sylvia Luke", "party": "D", "areas": "Makiki, Punchbowl, Nuʻuanu, Pauoa"}},
                         "house_26": {{"name": "Della Au Belatti", "party": "D", "areas": "Makiki, Tantalus, Papakōlea, McCully"}},
-                        "house_27": {{"name": "Takashi Ohno", "party": "D", "areas": "Nuʻuanu, Liliha, ʻĀlewa Heights, Puʻunui"}},
+                        "house_27": {{"name": "Jenna Takenouchi", "party": "D", "areas": "Pacific Heights, Nu'uanu, Liliha"}},
                         "house_28": {{"name": "John Mizuno", "party": "D", "areas": "Kamehameha Heights, Kalihi Valley, Fort Shafter"}},
                         "house_29": {{"name": "Daniel Holt", "party": "D", "areas": "Kalihi, Pālama, Iwilei, Chinatown"}},
-                        "house_30": {{"name": "Sonny Ganaden", "party": "D", "areas": "Kalihi, Hālawa, ʻAiea, Pearlridge"}},
-                        "house_31": {{"name": "Aaron Ling Johanson", "party": "D", "areas": "Moanalua, Āliamanu, Foster Village, Hickam"}},
-                        "house_32": {{"name": "Linda Ichiyama", "party": "D", "areas": "Moanalua Valley, Moanalua, Āliamanu, Foster Village"}},
+                        "house_30": {{"name": "Shirley Ann Templo", "party": "D", "areas": "Kalihi, Kalihi Kai, Ke'ehi Lagoon, Hickam Village"}},
+                        "house_31": {{"name": "Linda Ichiyama", "party": "D", "areas": "Fort Shafter Flats, Salt Lake, Pearl Harbor"}},
+                        "house_32": {{"name": "Garner Musashi Shimizu", "party": "R", "areas": "Moanalua Valley, Moanalua, Āliamanu, Foster Village"}},
                         "house_33": {{"name": "Sam Kong", "party": "D", "areas": "ʻAiea, Pearl City"}},
                         "house_34": {{"name": "Gregg Takayama", "party": "D", "areas": "Pearl City, Waimalu, Pacific Palisades"}},
                         "house_35": {{"name": "Cory Chun", "party": "D", "areas": "Pearl City, Waipahu, Crestview"}},
                         "house_36": {{"name": "Rachele Lamosao", "party": "D", "areas": "Pearl City, Waipahu, Crestview, Manana"}},
-                        "house_37": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Haleiwa, Waimea, Sunset Beach"}},
+                        "house_37": {{"name": "Trish La Chica", "party": "D", "areas": "Portions of Mililani Town, Mililani Mauka, Koa Ridge, and Waipiʻo Gentry"}},
                         "house_38": {{"name": "Elijah Pierick", "party": "R", "areas": "Wahiawā, Mililani, Waipiʻo Acres"}},
                         "house_39": {{"name": "Stacelynn Eli", "party": "D", "areas": "Mililani, Waipiʻo, Waikele"}},
                         "house_40": {{"name": "Rose Martinez", "party": "D", "areas": "Makakilo, Kapolei, Ewa Villages"}},
-                        "house_41": {{"name": "Matthew LoPresti", "party": "D", "areas": "Ewa Beach, Ewa by Gentry, Ocean Pointe"}},
-                        "house_42": {{"name": "Sharon Har", "party": "D", "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale"}},
-                        "house_43": {{"name": "Darius Kila", "party": "D", "areas": "Honolulu, Waikīkī, Ala Moana, Kakaʻako"}},
-                        "house_44": {{"name": "Cedric Asuega Gates", "party": "D", "areas": "Waianae, Nanakuli, Maili"}},
-                        "house_45": {{"name": "Kanani Souza", "party": "D", "areas": "Waianae, Makaha, Makua"}},
-                        "house_46": {{"name": "Elijah Pierick", "party": "R", "areas": "North Shore, Wahiawā, Whitmore Village"}},
-                        "house_47": {{"name": "Della Au Belatti", "party": "D", "areas": "Kaimuki, Kāhala, Diamond Head"}},
+                        "house_41": {{"name": "David Alcos", "party": "R", "areas": "Portion of ʻEwa Beach, Ocean Pointe, Barbers Point"}},
+                        "house_42": {{"name": "Diamond Garcia", "party": "R", "areas": "Portions of Varona Village, Ewa, Kapolei, Fernandez Village"}},
+                        "house_43": {{"name": "Kanani Souza", "party": "R", "areas": "Kapolei, Makakilo"}},
+                        "house_44": {{"name": "Darius Kila", "party": "D", "areas": "Honokai Hale, Nānākuli, Māʻili"}},
+                        "house_45": {{"name": "Christopher Muraoka", "party": "R", "areas": "Waianae, Makaha, Makua"}},
+                        "house_46": {{"name": "Amy Perruso", "party": "D", "areas": "Portion of Waipio Acres, Wahiawa, Whitmore Village, Mokuleia"}},
+                        "house_47": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Hale'iwa, Kawailoa Beach, Waimea, Sunset Beach, Waiale'e, Kawela Bay, Kahuku, Lā'ie, Hau'ula, Punalu'u, Kahana"}},
                         "house_48": {{"name": "Patrick Branco", "party": "R", "areas": "Kailua, Waimānalo, Hawaiʻi Kai"}},
                         "house_49": {{"name": "Lisa Marten", "party": "D", "areas": "Hawaiʻi Kai, Portlock, Koko Head"}},
-                        "house_50": {{"name": "Gene Ward", "party": "R", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
+                        "house_50": {{"name": "Mike Lee", "party": "D", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
                         "house_51": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Heʻeia, Ahuimanu"}},
                         
                         // Senate Representatives (senate_1 - senate_25)
@@ -542,7 +644,9 @@ class LeafletMapComponent:
                     const snapMetrics = [
                         {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
                         {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual Benefit', 'type': 'currency'}},
-                        {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}}
+                        {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual Benefits', 'type': 'currency'}},
+                        {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
+                        {{'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'}}
                     ];
                     
                     let html = '';
@@ -550,12 +654,16 @@ class LeafletMapComponent:
                     
                     snapMetrics.forEach(metric => {{
                         const value = properties[metric.key];
-                        if (value !== undefined && value !== null && !isNaN(value)) {{
+                        // Allow text fields or numeric fields
+                        const isValid = value !== undefined && value !== null && (metric.type === 'text' || !isNaN(value));
+                        if (isValid) {{
                             hasData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
                             const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
                             const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
                             const fontWeight = isSelected ? 'bold' : 'normal';
+                            
+                            const formattedValue = utils.formatValue(value, metric.type);
                             
                             html += 
                                 '<div style="background: ' + bgColor + '; ' +
@@ -565,7 +673,7 @@ class LeafletMapComponent:
                                 '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
                                 metric.label + '</div>' +
                                 '<div style="font-size: 12px; color: #333;">' + 
-                                utils.formatValue(value, metric.type) + '</div>' +
+                                formattedValue + '</div>' +
                                 '</div>';
                         }}
                     }});
@@ -574,6 +682,7 @@ class LeafletMapComponent:
                         html = '<div style="color: #999; text-align: center; font-style: italic;">No SNAP data available</div>';
                     }}
                     
+                    console.log('SNAP HTML length:', html.length, 'hasData:', hasData);
                     return html;
                 }}
             }};
@@ -606,8 +715,10 @@ class LeafletMapComponent:
             
             const mapHandlers = {{
                 style(feature) {{
+                    // Use cep_percentage for coloring when cep_display is selected
+                    const colorVariable = SELECTED_VARIABLE === 'cep_display' ? 'cep_percentage' : SELECTED_VARIABLE;
                     return {{
-                        fillColor: utils.getColorForValue(feature.properties[SELECTED_VARIABLE]),
+                        fillColor: utils.getColorForValue(feature.properties[colorVariable]),
                         weight: 1,
                         opacity: 1,
                         color: '#666',
@@ -696,8 +807,11 @@ class LeafletMapComponent:
                                 prefix = 'house';
                             }} else if (window.location.search.includes('senate') || props.senate_id) {{
                                 prefix = 'senate';
+                            }} else if (window.location.search.includes('state') || rawId === '15' || rawId === 15) {{
+                                // State level - don't add prefix
+                                prefix = null;
                             }}
-                            featureId = prefix + '_' + rawId;
+                            featureId = prefix ? (prefix + '_' + rawId) : rawId;
                         }}
                     }}
                     
@@ -757,7 +871,8 @@ class LeafletMapComponent:
                         // Update the info panel with categorized content
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
-                            '<div style="margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
+                            '<div style="position: relative; margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
+                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: -4px; background: none; border: none; font-size: 24px; color: #666; cursor: pointer; padding: 0; width: 30px; height: 30px; line-height: 30px; border-radius: 4px; transition: all 0.2s;">&times;</button>',
                             '  ', name,
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
@@ -775,6 +890,41 @@ class LeafletMapComponent:
                             infoPanel.style.display = 'block';
                             infoPanel.classList.add('visible');
                             
+                            // Add close button handler
+                            const closeBtn = document.getElementById(MAP_ID + '-close-panel');
+                            if (closeBtn) {{
+                                closeBtn.onclick = function(e) {{
+                                    e.stopPropagation();
+                                    
+                                    // Remove scroll indicator immediately when closing panel
+                                    const scrollIndicator = document.querySelector('.scroll-indicator');
+                                    if (scrollIndicator) {{
+                                        scrollIndicator.style.display = 'none';
+                                        scrollIndicator.remove();
+                                    }}
+                                    
+                                    infoPanel.classList.remove('visible');
+                                    
+                                    setTimeout(() => {{
+                                        infoPanel.style.display = 'none';
+                                        const mapInstance = window[MAP_ID];
+                                        if (mapInstance) {{
+                                            mapInstance.invalidateSize();
+                                        }}
+                                    }}, 300);
+                                }};
+                                
+                                // Add hover effects
+                                closeBtn.onmouseover = function() {{
+                                    this.style.background = '#f0f0f0';
+                                    this.style.color = '#333';
+                                }};
+                                closeBtn.onmouseout = function() {{
+                                    this.style.background = 'none';
+                                    this.style.color = '#666';
+                                }};
+                            }}
+                            
                             // Trigger map resize after panel animation
                             setTimeout(() => {{
                                 const mapInstance = window[MAP_ID];
@@ -785,11 +935,26 @@ class LeafletMapComponent:
                         }}
                     }});
                     
-                    layer.bindTooltip(
-                        '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
-                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>',
-                        {{ className: 'custom-tooltip', offset: [0, -10] }}
-                    );
+                    // Build tooltip content with representative info if available
+                    let tooltipContent = '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
+                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>';
+                    
+                    // Add representative info to tooltip if available
+                    if (repInfo && repInfo.hasData) {{
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = repInfo.html;
+                        const repNameElement = tempDiv.querySelector('div:nth-child(2)');
+                        const areasElement = tempDiv.querySelector('div:nth-child(3)');
+                        
+                        if (repNameElement && areasElement) {{
+                            const repName = repNameElement.textContent.trim();
+                            const areas = areasElement.textContent.replace('Areas: ', '').trim();
+                            tooltipContent += '<br><br><strong>Representative:</strong> ' + repName;
+                            tooltipContent += '<br><strong>Areas:</strong> ' + areas;
+                        }}
+                    }}
+                    
+                    layer.bindTooltip(tooltipContent, {{ className: 'custom-tooltip', offset: [0, -10] }});
                 }}
             }};
             
@@ -809,11 +974,123 @@ class LeafletMapComponent:
             legendManager.update();
             legendManager.setupColorSchemeHandler();
             
+            // Scroll indicator functionality - embedded directly
+            (function() {{
+                'use strict';
+
+                // Scroll indicator functionality
+                function initScrollIndicator() {{
+                    var panel = document.querySelector('.info-panel.visible');
+                    if (!panel) {{
+                        console.log('No visible panel found, retrying...');
+                        setTimeout(initScrollIndicator, 500);
+                        return;
+                    }}
+
+                    // Remove any existing scroll indicators
+                    var existingIndicator = document.querySelector('.scroll-indicator');
+                    if (existingIndicator) {{
+                        existingIndicator.remove();
+                    }}
+
+                    // Create scroll indicator arrow
+                    var scrollArrow = document.createElement('div');
+                    scrollArrow.className = 'scroll-indicator down';
+                    scrollArrow.innerHTML = '▼';
+                    document.body.appendChild(scrollArrow);
+                    
+                    console.log('Scroll indicator created:', scrollArrow);
+
+                    function updateScrollIndicator() {{
+                        var scrollTop = panel.scrollTop;
+                        var scrollHeight = panel.scrollHeight;
+                        var clientHeight = panel.clientHeight;
+                        
+                        // Check if content is scrollable
+                        if (scrollHeight <= clientHeight) {{
+                            scrollArrow.style.display = 'none';
+                            return;
+                        }}
+                        
+                        scrollArrow.style.display = 'flex';
+                        
+                        // Check if at bottom
+                        var isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+                        
+                        if (isAtBottom) {{
+                            scrollArrow.innerHTML = '▲';
+                            scrollArrow.className = 'scroll-indicator up';
+                        }} else {{
+                            scrollArrow.innerHTML = '▼';
+                            scrollArrow.className = 'scroll-indicator down';
+                        }}
+                    }}
+
+                    // Click handler for scroll arrow
+                    scrollArrow.addEventListener('click', function() {{
+                        var scrollTop = panel.scrollTop;
+                        var scrollHeight = panel.scrollHeight;
+                        var clientHeight = panel.clientHeight;
+                        var isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+                        
+                        if (isAtBottom) {{
+                            // Scroll to top
+                            panel.scrollTo({{
+                                top: 0,
+                                behavior: 'smooth'
+                            }});
+                        }} else {{
+                            // Scroll to bottom
+                            panel.scrollTo({{
+                                top: scrollHeight,
+                                behavior: 'smooth'
+                            }});
+                        }}
+                    }});
+
+                    // Initial update
+                    updateScrollIndicator();
+                    
+                    // Update on scroll
+                    panel.addEventListener('scroll', updateScrollIndicator);
+                    
+                    // Update on resize (with debounce)
+                    var resizeTimer;
+                    window.addEventListener('resize', function() {{
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(updateScrollIndicator, 100);
+                    }});
+                    
+                    // Cleanup function
+                    var cleanup = function() {{
+                        console.log('Cleaning up scroll indicator');
+                        panel.removeEventListener('scroll', updateScrollIndicator);
+                        window.removeEventListener('resize', updateScrollIndicator);
+                        if (scrollArrow && scrollArrow.parentNode) {{
+                            scrollArrow.parentNode.removeChild(scrollArrow);
+                        }}
+                    }};
+                    
+                    // Clean up when panel is closed
+                    var observer = new MutationObserver(function(mutations) {{
+                        if (!document.body.contains(panel)) {{
+                            cleanup();
+                            observer.disconnect();
+                        }}
+                    }});
+                    observer.observe(document.body, {{ childList: true, subtree: true }});
+                    
+                    return cleanup;
+                }}
+
+                // Initialize with a delay to ensure DOM is ready
+                setTimeout(initScrollIndicator, 1000);
+            }})();
+            
             // Store map reference for debugging
             window[MAP_ID] = map;
         }})();
         """
-    
     def create_map(
         self,
         geojson_data: Union[Dict[str, Any], str],
