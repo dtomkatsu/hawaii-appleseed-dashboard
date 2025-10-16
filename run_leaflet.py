@@ -935,7 +935,21 @@ def main():
         }
         
         # Main content area
-        st.markdown("<h1 style='color: #3a7710; margin: 0; padding: 0; line-height: 1;'>Data Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("""
+        <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap' rel='stylesheet'>
+        <style>
+            .dashboard-title {
+                font-family: 'Poppins', sans-serif;
+                color: #3a7710;
+                margin: 0;
+                padding: 0;
+                line-height: 1;
+                font-weight: 600;
+                letter-spacing: -0.5px;
+            }
+        </style>
+        <h1 class="dashboard-title">Hawaiʻi Appleseed Data Dashboard</h1>
+        """, unsafe_allow_html=True)
         
         # Apply JavaScript to ensure form labels are green
         st.markdown("""

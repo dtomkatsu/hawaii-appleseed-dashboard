@@ -588,13 +588,27 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     </script>
     """, unsafe_allow_html=True)
     
+    # Add custom CSS for dropdown spacing
+    st.markdown("""
+    <style>
+        /* Add margin to the container of the selectbox */
+        div[data-testid="stSelectbox"] {
+            margin-top: 4px;
+        }
+        /* Ensure the selectbox itself has proper spacing */
+        .stSelectbox > div[data-baseweb="select"] {
+            margin-top: 4px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Create dropdown controls in main content area
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
     with col1:
         # Geography dropdown
         st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 3.5px;">1. Select Geography</div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600; margin-bottom: 10px;">Geography</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)

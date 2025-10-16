@@ -806,14 +806,6 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         <h4 style="font-style: italic; margin: 20px 0 10px 0; color: #333;">School Meals</h4>
                         <ul class="bullet-points">
                             <li>As of SY2024-25, <strong>14.3% of schools</strong> in {geo_name.upper()} provided free meals to all students through CEP. That amounts to <strong>1/7 CEP schools</strong>.</li>
-                            <li>List of schools:<br>
-                                <div style="margin-left: 20px; margin-top: 5px;">
-                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 2px 0;">
-                                        <span><strong>School name</strong></span>
-                                        <span><strong>Enrollment number</strong></span>
-                                    </div>
-                                </div>
-                            </li>
                         </ul>
                     </div>
                 </div>
