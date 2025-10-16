@@ -653,16 +653,24 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         
+        # Add None option for mutual exclusion
+        var_options = [None] + list(variable_options.keys())
+        
+        def var_format_func(x):
+            if x is None:
+                return "Select Data Variable..."
+            return variable_options[x]
+        
         # Get current variable index
         try:
-            var_index = list(variable_options.keys()).index(selected_variable)
-        except (ValueError, KeyError):
+            var_index = var_options.index(selected_variable)
+        except (ValueError, TypeError):
             var_index = 0
             
         selected_var = st.selectbox(
             "",
-            options=list(variable_options.keys()),
-            format_func=lambda x: variable_options[x],
+            options=var_options,
+            format_func=var_format_func,
             index=var_index,
             key="variable_selector",
             label_visibility="collapsed"
@@ -672,10 +680,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
             # Clear food security and housing/transportation selections when data variable is selected
-            if 'selected_food_security_variable' in st.session_state:
-                st.session_state['selected_food_security_variable'] = None
-            if 'selected_housing_transportation_variable' in st.session_state:
-                st.session_state['selected_housing_transportation_variable'] = None
+            if selected_var is not None:
+                if 'selected_food_security_variable' in st.session_state:
+                    st.session_state['selected_food_security_variable'] = None
+                if 'selected_housing_transportation_variable' in st.session_state:
+                    st.session_state['selected_housing_transportation_variable'] = None
             st.rerun()
     
     with col3:
@@ -724,9 +733,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 st.session_state['selected_variable'] = None
                 if 'selected_housing_transportation_variable' in st.session_state:
                     st.session_state['selected_housing_transportation_variable'] = None
-            else:
-                # Set default data variable when food security is cleared
-                st.session_state['selected_variable'] = 'alice_rate'
             st.rerun()
     
     with col4:
@@ -774,9 +780,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 st.session_state['selected_variable'] = None
                 if 'selected_food_security_variable' in st.session_state:
                     st.session_state['selected_food_security_variable'] = None
-            else:
-                # Set default data variable when housing/transportation is cleared
-                st.session_state['selected_variable'] = 'alice_rate'
             st.rerun()
     
     # Create a mapping of variable names to display names
