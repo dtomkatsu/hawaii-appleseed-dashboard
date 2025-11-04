@@ -241,6 +241,11 @@ class LeafletMapComponent:
                 margin: 10px 12px;
                 line-height: 1.4;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 400px !important;
+                width: 400px !important;
+                box-sizing: border-box !important;
+                overflow-wrap: break-word !important;
+                word-wrap: break-word !important;
             }
             .custom-tooltip {
                 background-color: rgba(255, 255, 255, 0.95);
@@ -517,7 +522,7 @@ class LeafletMapComponent:
                         "house_11": {{"name": "Terez Amato", "party": "D", "areas": "South Maui"}},
                         "house_12": {{"name": "Kyle Yamashita", "party": "D", "areas": "Upcountry Maui"}},
                         "house_13": {{"name": "Mahina Poepoe", "party": "D", "areas": "East Maui, Molokaʻi, Lānaʻi, Kahoʻolawe"}},
-                        "house_14": {{"name": "Elle Cochran", "party": "D", "areas": "North-West Maui: Wai‘ehu, Waihe‘e, Kahana, Kā‘anapali, Lahaina, Mā‘alaea "}},
+                        "house_14": {{"name": "Elle Cochran", "party": "D", "areas": "Wai‘ehu, Kā‘anapali, Lahaina, Mā‘alaea "}},
                         "house_15": {{"name": "Nadine Nakamura", "party": "D", "areas": "Hanalei, Princeville, Kilauea"}},
                         "house_16": {{"name": "Luke Evslin", "party": "D", "areas": "Wailua, Kapaʻa, Anahola"}},
                         "house_17": {{"name": "Dee Morikawa", "party": "D", "areas": "Niʻihau, Lehua, Kōloa, Waimea"}},
@@ -540,7 +545,7 @@ class LeafletMapComponent:
                         "house_34": {{"name": "Gregg Takayama", "party": "D", "areas": "Pearl City, Waimalu, Pacific Palisades"}},
                         "house_35": {{"name": "Cory Chun", "party": "D", "areas": "Pearl City, Waipahu, Crestview"}},
                         "house_36": {{"name": "Rachele Lamosao", "party": "D", "areas": "Pearl City, Waipahu, Crestview, Manana"}},
-                        "house_37": {{"name": "Trish La Chica", "party": "D", "areas": "Portions of Mililani Town, Mililani Mauka, Koa Ridge, and Waipiʻo Gentry"}},
+                        "house_37": {{"name": "Trish La Chica", "party": "D", "areas": "Portions of Mililani Town, Mililani Mauka, Waipiʻo Gentry"}},
                         "house_38": {{"name": "Elijah Pierick", "party": "R", "areas": "Wahiawā, Mililani, Waipiʻo Acres"}},
                         "house_39": {{"name": "Stacelynn Eli", "party": "D", "areas": "Mililani, Waipiʻo, Waikele"}},
                         "house_40": {{"name": "Rose Martinez", "party": "D", "areas": "Makakilo, Kapolei, Ewa Villages"}},
@@ -550,7 +555,7 @@ class LeafletMapComponent:
                         "house_44": {{"name": "Darius Kila", "party": "D", "areas": "Honokai Hale, Nānākuli, Māʻili"}},
                         "house_45": {{"name": "Christopher Muraoka", "party": "R", "areas": "Waianae, Makaha, Makua"}},
                         "house_46": {{"name": "Amy Perruso", "party": "D", "areas": "Portion of Waipio Acres, Wahiawa, Whitmore Village, Mokuleia"}},
-                        "house_47": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Hale'iwa, Kawailoa Beach, Waimea, Sunset Beach, Waiale'e, Kawela Bay, Kahuku, Lā'ie, Hau'ula, Punalu'u, Kahana"}},
+                        "house_47": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Hale'iwa, Kahuku, Lā'ie, Punalu'u"}},
                         "house_48": {{"name": "Patrick Branco", "party": "R", "areas": "Kailua, Waimānalo, Hawaiʻi Kai"}},
                         "house_49": {{"name": "Lisa Marten", "party": "D", "areas": "Hawaiʻi Kai, Portlock, Koko Head"}},
                         "house_50": {{"name": "Mike Lee", "party": "D", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
@@ -582,6 +587,24 @@ class LeafletMapComponent:
                         "senate_23": {{"name": "Brenton Awa", "party": "R", "areas": "Ko'olauloa, Ko'olaupoko, Kahuku, La'ie, Hau'ula, Punalu'u"}},
                         "senate_24": {{"name": "Jarrett Keohokalole", "party": "D", "areas": "Kāne'ohe, Kailua, He'eia, Ahuimanu"}},
                         "senate_25": {{"name": "Chris Lee", "party": "D", "areas": "Kailua, Lanikai, Waimānalo, Hawai'i Kai"}}
+                    }};
+
+                    const formatAreas = (areasText) => {{
+                        if (!areasText) {{
+                            return '';
+                        }}
+
+                        const segments = String(areasText)
+                            .split(/,\s*/)
+                            .map(segment => segment.trim())
+                            .filter(Boolean);
+
+                        if (segments.length <= 3) {{
+                            return 'Areas: ' + segments.join(', ');
+                        }}
+
+                        const bulletItems = segments.map(segment => '&bull; ' + segment);
+                        return ['Areas:', ...bulletItems].join('<br>');
                     }};
                     
                     // Determine district type and number
@@ -630,7 +653,7 @@ class LeafletMapComponent:
                                 '<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-left: 3px solid #1a73e8; border-radius: 4px;">',
                                 '  <div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 4px;">Representative</div>',
                                 '  <div style="font-size: 12px; color: #333; margin-bottom: 2px;">' + rep.name + ' (' + rep.party + ')</div>',
-                                '  <div style="font-size: 11px; color: #666; font-style: italic;">Areas: ' + rep.areas + '</div>',
+                                '  <div style="font-size: 11px; color: #666; font-style: italic; line-height: 1.35; text-align: left; white-space: normal;">' + formatAreas(rep.areas) + '</div>',
                                 '</div>'
                             ].join(''),
                             hasData: true
@@ -839,7 +862,7 @@ class LeafletMapComponent:
                     
                     // Create popup content with string concatenation
                     const popupContent = [
-                        '<div style="max-width: 500px; padding: 12px;">',
+                        '<div style="max-width: 400px; width: 400px; padding: 12px; box-sizing: border-box;">',
                         '  <div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
                         '    ', name,
                         '  </div>',
@@ -955,6 +978,7 @@ class LeafletMapComponent:
                     }}
                     
                     layer.bindTooltip(tooltipContent, {{ className: 'custom-tooltip', offset: [0, -10] }});
+                    layer.bindPopup(popupContent, {{ className: 'custom-popup', maxWidth: 400, minWidth: 400 }});
                 }}
             }};
             
