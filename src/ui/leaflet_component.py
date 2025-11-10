@@ -860,32 +860,6 @@ class LeafletMapComponent:
                         ].join('');
                     }}
                     
-                    // Create popup content with string concatenation
-                    const popupContent = [
-                        '<div style="max-width: 400px; width: 400px; padding: 12px; box-sizing: border-box;">',
-                        '  <div style="margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 15px; color: #222;">',
-                        '    ', name,
-                        '  </div>',
-                        (repInfo && repInfo.html ? repInfo.html : ''),
-                        '  <div style="background: #1a73e8; color: white; padding: 6px 8px; border-radius: 4px; text-align: center; margin-bottom: 12px;">',
-                        '    <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
-                        '  </div>',
-                        '  <div style="display: flex; gap: 10px; margin-top: 8px; justify-content: space-between;">',
-                        '    <!-- Key Metrics Column -->',
-                        '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
-                        '      ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
-                        '    </div>',
-                        '    <!-- SNAP Column -->',
-                        '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
-                        '      ', (snapHtml || ''),
-                        '    </div>',
-                        '  </div>',
-                        detailLinkHtml,
-                        '</div>'
-                    ].join('');
-                    
                     // Handle click to update info panel (JavaScript-only approach)
                     layer.on('click', function(e) {{
                         console.log('Layer clicked');
@@ -978,7 +952,6 @@ class LeafletMapComponent:
                     }}
                     
                     layer.bindTooltip(tooltipContent, {{ className: 'custom-tooltip', offset: [0, -10] }});
-                    layer.bindPopup(popupContent, {{ className: 'custom-popup', maxWidth: 400, minWidth: 400 }});
                 }}
             }};
             
