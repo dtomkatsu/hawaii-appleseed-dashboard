@@ -53,7 +53,10 @@ def create_map_view(debug_info: bool = False) -> None:
         # Create a container for the map with enhanced styling
         with st.container():
             # Display selected layer and variable info with improved formatting
-            variable_display_name = available_variables.get(selected_variable, selected_variable.replace('_', ' ').title())
+            if selected_variable:
+                variable_display_name = available_variables.get(selected_variable, selected_variable.replace('_', ' ').title())
+            else:
+                variable_display_name = 'No Variable Selected'
             
             st.markdown(f"### {active_layer}: {variable_display_name}")
             st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
@@ -224,7 +227,7 @@ def create_map_view(debug_info: bool = False) -> None:
                                         
                                         if not var_display_name:
                                             # Fallback to a formatted version of the variable name
-                                            var_display_name = selected_variable.replace('_', ' ').title()
+                                            var_display_name = selected_variable.replace('_', ' ').title() if selected_variable else 'Unknown'
                                             
                                         logger.debug(f"Selected variable: {selected_variable}, display name: {var_display_name}, value: {value}")
                                         

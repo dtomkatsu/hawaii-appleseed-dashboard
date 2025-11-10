@@ -1404,6 +1404,8 @@ class DataLoader:
     
     def _convert_to_numeric_geoid(self, geo_id: str, geo_level: GeoLevel) -> str:
         """Convert prefixed geo ID to numeric geoid for data matching."""
+        if geo_id is None:
+            return ''
         geo_id_str = str(geo_id).strip()
         
         # If it's already numeric, return as-is

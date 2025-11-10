@@ -77,7 +77,9 @@ class LeafletMapComponent:
         """Format variable name for display."""
         if variable_display_name:
             return variable_display_name
-        return variable.replace('_', ' ').title()
+        if variable:
+            return variable.replace('_', ' ').title()
+        return 'Unknown Variable'
     
     def _get_css_styles(self) -> str:
         """Return CSS styles for the map component."""

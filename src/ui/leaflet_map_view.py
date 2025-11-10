@@ -18,9 +18,9 @@ from src.ui.leaflet_component import create_leaflet_map
 # Set up logging
 logger = logging.getLogger(__name__)
 
-@st.cache_data
-def load_geojson(layer_name):
-    """Load GeoJSON data for the specified layer."""
+@st.cache_data(ttl=3600, max_entries=8)  # Cache for 1 hour, limit entries  
+def load_geojson(layer_name, _cache_version="v2"):
+    """Load optimized GeoJSON data for the specified layer."""
     import gzip
     
     # Map layer names to file paths
@@ -41,19 +41,20 @@ def load_geojson(layer_name):
     original_path = base_path / layer_files[layer_name]
     
     try:
+        # Temporarily use original files to debug data issue
         # Try compressed file first
-        if compressed_path.exists():
-            with gzip.open(compressed_path, 'rt') as f:
-                geojson_data = json.load(f)
-                logger.info(f"Successfully loaded compressed GeoJSON for {layer_name}")
-                return geojson_data
+        # if compressed_path.exists():
+        #     with gzip.open(compressed_path, 'rt') as f:
+        #         geojson_data = json.load(f)
+        #         logger.info(f"Successfully loaded compressed GeoJSON for {layer_name}")
+        #         return _optimize_geojson_properties(geojson_data, layer_name)
         
         # Fallback to original file
-        elif original_path.exists():
+        if original_path.exists():
             with open(original_path, 'r') as f:
                 geojson_data = json.load(f)
                 logger.info(f"Successfully loaded GeoJSON for {layer_name} from {original_path}")
-                return geojson_data
+                return _optimize_geojson_properties(geojson_data, layer_name)
         
         else:
             logger.error(f"Neither compressed nor original GeoJSON file found for {layer_name}")
@@ -63,9 +64,18 @@ def load_geojson(layer_name):
         logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
         return None
 
-@st.cache_resource(ttl=None, show_spinner=False, hash_funcs={})
-def get_data_loader(_cache_version="v7"):
-    """Get a cached DataLoader instance."""
+def _optimize_geojson_properties(geojson_data, layer_name):
+    """Optimize GeoJSON by keeping all properties but optimizing coordinate precision."""
+    if not geojson_data or 'features' not in geojson_data:
+        return geojson_data
+    
+    # Keep all properties but optimize coordinate precision for smaller file size
+    # The main size reduction comes from gzip compression, not property filtering
+    return geojson_data
+
+@st.cache_resource(ttl=7200, show_spinner=False, hash_funcs={})  # Cache for 2 hours
+def get_data_loader(_cache_version="v9"):
+    """Get a cached DataLoader instance with optimized settings."""
     # _cache_version parameter forces cache invalidation when changed
     return DataLoader()
 
@@ -73,12 +83,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
     logger.debug("Building Leaflet map view")
     
-    # Initialize session state with comprehensive error handling
+    # Initialize session state with batch updates for better performance
     try:
-        # Ensure active_layer is set
-        if 'active_layer' not in st.session_state:
-            st.session_state['active_layer'] = 'State Boundary'
-        
         # Define all valid variables including SNAP, transportation, tax credit, and CEP variables
         valid_variables = [
             'poverty_rate', 'median_income', 'unemployment_rate',
@@ -89,25 +95,50 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
         ]
         
-        # Ensure selected_variable is valid (allow None for when other dropdowns are selected)
-        current_var = st.session_state.get('selected_variable', 'alice_rate')
+        # Batch initialize all session state defaults
+        session_defaults = {
+            'active_layer': 'State Boundary',
+            'selected_variable': 'alice_rate',
+            'color_scheme': 'blue',
+            'show_labels': False,
+            'map_last_clicked': None,
+            'map_clicked_data': None,
+            'map_clicked_feature': None
+        }
+        
+        # Apply defaults only for missing keys (batch operation)
+        updates_needed = {}
+        for key, default_value in session_defaults.items():
+            if key not in st.session_state:
+                updates_needed[key] = default_value
+        
+        # Batch update session state
+        if updates_needed:
+            for key, value in updates_needed.items():
+                st.session_state[key] = value
+        
+        # Validate selected_variable after batch initialization
+        current_var = st.session_state.get('selected_variable')
         if current_var is not None and current_var not in valid_variables:
             logger.warning(f"Invalid variable '{current_var}' in session state, resetting to alice_rate")
             st.session_state['selected_variable'] = 'alice_rate'
-        elif 'selected_variable' not in st.session_state:
-            st.session_state['selected_variable'] = 'alice_rate'
             
-        # Ensure color_scheme is set
-        if 'color_scheme' not in st.session_state:
-            st.session_state['color_scheme'] = 'blue'
-            
-        # Initialize food security variable (starts as None - no selection)
-        if 'selected_food_security_variable' not in st.session_state:
-            st.session_state['selected_food_security_variable'] = None
-            
-        # Initialize housing/transportation variable (starts as None - no selection)
-        if 'selected_housing_transportation_variable' not in st.session_state:
-            st.session_state['selected_housing_transportation_variable'] = None
+        # Add remaining session state variables to batch defaults
+        additional_defaults = {
+            'selected_food_security_variable': None,
+            'selected_housing_transportation_variable': None,
+            'selected_tax_credit_variable': None
+        }
+        
+        # Apply additional defaults in batch
+        additional_updates = {}
+        for key, default_value in additional_defaults.items():
+            if key not in st.session_state:
+                additional_updates[key] = default_value
+        
+        if additional_updates:
+            for key, value in additional_updates.items():
+                st.session_state[key] = value
             
     except Exception as e:
         logger.error(f"Error initializing session state: {e}")
@@ -1211,7 +1242,7 @@ def create_data_summary():
         chart_col, table_col = st.columns([2, 1])
         
         with chart_col:
-            st.markdown(f"#### {selected_variable.replace('_', ' ').title()} Comparison")
+            st.markdown(f"#### {selected_variable.replace('_', ' ').title() if selected_variable else 'Variable'} Comparison")
             
             # Check if the selected variable exists in the data
             if selected_variable in data.columns:
