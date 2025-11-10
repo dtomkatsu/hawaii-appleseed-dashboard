@@ -19,7 +19,7 @@ from src.ui.leaflet_component import create_leaflet_map
 logger = logging.getLogger(__name__)
 
 @st.cache_data(ttl=3600, max_entries=8)  # Cache for 1 hour, limit entries  
-def load_geojson(layer_name, _cache_version="v2"):
+def load_geojson(layer_name, _cache_version="v3"):
     """Load optimized GeoJSON data for the specified layer."""
     import gzip
     
@@ -35,34 +35,122 @@ def load_geojson(layer_name, _cache_version="v2"):
         logger.error(f"Unknown layer: {layer_name}")
         return None
     
-    # Construct the file paths (try compressed first)
-    base_path = Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons'
-    compressed_path = base_path / f"{layer_files[layer_name]}.gz"
-    original_path = base_path / layer_files[layer_name]
+    # Try multiple possible paths for different deployment environments
+    possible_base_paths = [
+        Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons',  # Local development
+        Path(__file__).parent.parent.parent / 'data' / 'processed_geojsons',  # Alternative naming
+        Path(__file__).parent.parent.parent / 'data',  # Root data directory
+        Path.cwd() / 'data' / 'Processed GeoJsons',  # Current working directory
+        Path.cwd() / 'data' / 'processed_geojsons',  # Alternative in cwd
+        Path.cwd() / 'data',  # Root data in cwd
+    ]
     
-    try:
-        # Temporarily use original files to debug data issue
-        # Try compressed file first
-        # if compressed_path.exists():
-        #     with gzip.open(compressed_path, 'rt') as f:
-        #         geojson_data = json.load(f)
-        #         logger.info(f"Successfully loaded compressed GeoJSON for {layer_name}")
-        #         return _optimize_geojson_properties(geojson_data, layer_name)
+    logger.info(f"Looking for {layer_name} GeoJSON file...")
+    
+    for base_path in possible_base_paths:
+        logger.debug(f"Checking base path: {base_path}")
         
-        # Fallback to original file
-        if original_path.exists():
-            with open(original_path, 'r') as f:
-                geojson_data = json.load(f)
-                logger.info(f"Successfully loaded GeoJSON for {layer_name} from {original_path}")
-                return _optimize_geojson_properties(geojson_data, layer_name)
-        
-        else:
-            logger.error(f"Neither compressed nor original GeoJSON file found for {layer_name}")
-            return None
+        if not base_path.exists():
+            logger.debug(f"Base path does not exist: {base_path}")
+            continue
             
-    except Exception as e:
-        logger.error(f"Error loading GeoJSON for {layer_name}: {str(e)}")
-        return None
+        # Try different file path variations
+        possible_files = [
+            base_path / layer_files[layer_name],  # Original filename
+            base_path / f"{layer_files[layer_name]}.gz",  # Compressed version
+            base_path / layer_files[layer_name].lower(),  # Lowercase version
+            base_path / layer_files[layer_name].replace(' ', '_'),  # Underscore version
+        ]
+        
+        for file_path in possible_files:
+            logger.debug(f"Trying file: {file_path}")
+            if file_path.exists():
+                try:
+                    if file_path.suffix == '.gz':
+                        with gzip.open(file_path, 'rt') as f:
+                            geojson_data = json.load(f)
+                            logger.info(f"Successfully loaded compressed GeoJSON for {layer_name} from {file_path}")
+                            return _optimize_geojson_properties(geojson_data, layer_name)
+                    else:
+                        with open(file_path, 'r') as f:
+                            geojson_data = json.load(f)
+                            logger.info(f"Successfully loaded GeoJSON for {layer_name} from {file_path}")
+                            return _optimize_geojson_properties(geojson_data, layer_name)
+                except Exception as e:
+                    logger.warning(f"Failed to load {file_path}: {e}")
+                    continue
+    
+    # If we get here, no files were found
+    logger.error(f"Could not find GeoJSON file for {layer_name} in any of the expected locations")
+    logger.error(f"Searched paths: {[str(p) for p in possible_base_paths]}")
+    
+    # List what files are actually available for debugging
+    for base_path in possible_base_paths:
+        if base_path.exists():
+            try:
+                files = list(base_path.glob('*.geojson*'))
+                logger.info(f"Available files in {base_path}: {[f.name for f in files]}")
+            except Exception as e:
+                logger.warning(f"Could not list files in {base_path}: {e}")
+    
+    # Return a minimal fallback GeoJSON for Hawaii state bounds if no files found
+    logger.warning(f"Returning fallback minimal GeoJSON for {layer_name}")
+    return get_fallback_geojson(layer_name)
+
+def get_fallback_geojson(layer_name):
+    """Return a minimal fallback GeoJSON when files are not found."""
+    logger.info(f"Creating fallback GeoJSON for {layer_name}")
+    
+    # Minimal Hawaii state boundary as fallback
+    fallback_geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "NAME": "Hawaii (Fallback)",
+                    "GEOID": "15",
+                    "id": "fallback_hawaii",
+                    "note": "Fallback geometry - original files not found"
+                },
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[
+                        [-178.0, 18.0], [-154.0, 18.0], 
+                        [-154.0, 23.0], [-178.0, 23.0], 
+                        [-178.0, 18.0]
+                    ]]
+                }
+            }
+        ]
+    }
+    
+    if layer_name == "Counties":
+        # Add basic county features
+        fallback_geojson["features"] = [
+            {
+                "type": "Feature", 
+                "properties": {"NAME": "Hawaii County", "GEOID": "15001", "county_fips": "001"},
+                "geometry": {"type": "Polygon", "coordinates": [[[-156.0, 18.9], [-154.8, 18.9], [-154.8, 20.3], [-156.0, 20.3], [-156.0, 18.9]]]}
+            },
+            {
+                "type": "Feature",
+                "properties": {"NAME": "Honolulu County", "GEOID": "15003", "county_fips": "003"}, 
+                "geometry": {"type": "Polygon", "coordinates": [[[-158.3, 21.2], [-157.6, 21.2], [-157.6, 21.8], [-158.3, 21.8], [-158.3, 21.2]]]}
+            },
+            {
+                "type": "Feature",
+                "properties": {"NAME": "Kauai County", "GEOID": "15007", "county_fips": "007"},
+                "geometry": {"type": "Polygon", "coordinates": [[[-159.8, 21.8], [-159.2, 21.8], [-159.2, 22.3], [-159.8, 22.3], [-159.8, 21.8]]]}
+            },
+            {
+                "type": "Feature", 
+                "properties": {"NAME": "Maui County", "GEOID": "15009", "county_fips": "009"},
+                "geometry": {"type": "Polygon", "coordinates": [[[-157.4, 20.5], [-155.9, 20.5], [-155.9, 21.4], [-157.4, 21.4], [-157.4, 20.5]]]}
+            }
+        ]
+    
+    return fallback_geojson
 
 def _optimize_geojson_properties(geojson_data, layer_name):
     """Optimize GeoJSON by keeping all properties but optimizing coordinate precision."""
