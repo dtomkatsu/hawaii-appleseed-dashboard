@@ -795,19 +795,23 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 return "Select Variable"
             return variable_options[x]
         
-        # Get current variable index
-        # If selected_variable is None or not in options, show placeholder (index 0)
+        # Get current variable index - always recalculate from session state
+        # This ensures cloud environments properly sync dropdown display with session state
+        selected_variable = st.session_state.get('selected_variable', None)
         if selected_variable is None or selected_variable not in variable_options:
             var_index = 0
         else:
-            var_index = var_options.index(selected_variable)
+            try:
+                var_index = var_options.index(selected_variable)
+            except ValueError:
+                var_index = 0
             
         selected_var = st.selectbox(
             "",
             options=var_options,
             format_func=var_format_func,
             index=var_index,
-            key="variable_selector",
+            key=f"variable_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
             label_visibility="collapsed"
         )
         
@@ -816,10 +820,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.session_state['selected_variable'] = selected_var
             # Clear food security and housing/transportation selections when data variable is selected
             if selected_var is not None:
-                if 'selected_food_security_variable' in st.session_state:
-                    st.session_state['selected_food_security_variable'] = None
-                if 'selected_housing_transportation_variable' in st.session_state:
-                    st.session_state['selected_housing_transportation_variable'] = None
+                st.session_state['selected_food_security_variable'] = None
+                st.session_state['selected_housing_transportation_variable'] = None
+                # Force widget refresh by incrementing a counter
+                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     with col3:
@@ -843,7 +847,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 return "Select Food Security Variable..."
             return food_security_options[x]
         
-        # Get current food security variable
+        # Get current food security variable - always recalculate from session state
+        # This ensures cloud environments properly sync dropdown display with session state
         selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
         
         try:
@@ -856,7 +861,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=fs_options,
             format_func=fs_format_func,
             index=fs_index,
-            key="food_security_selector",
+            key=f"food_security_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
             label_visibility="collapsed"
         )
         
@@ -866,8 +871,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             # Clear data variable and housing/transportation selections when food security variable is selected
             if selected_fs_var is not None:
                 st.session_state['selected_variable'] = None
-                if 'selected_housing_transportation_variable' in st.session_state:
-                    st.session_state['selected_housing_transportation_variable'] = None
+                st.session_state['selected_housing_transportation_variable'] = None
+                # Force widget refresh by incrementing a counter
+                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     with col4:
@@ -890,7 +896,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 return "Select Housing/Transportation Variable..."
             return housing_transportation_options[x]
         
-        # Get current housing/transportation variable
+        # Get current housing/transportation variable - always recalculate from session state
+        # This ensures cloud environments properly sync dropdown display with session state
         selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
         
         try:
@@ -903,7 +910,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=ht_options,
             format_func=ht_format_func,
             index=ht_index,
-            key="housing_transportation_selector",
+            key=f"housing_transportation_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
             label_visibility="collapsed"
         )
         
@@ -913,8 +920,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             # Clear data variable and food security selections when housing/transportation variable is selected
             if selected_ht_var is not None:
                 st.session_state['selected_variable'] = None
-                if 'selected_food_security_variable' in st.session_state:
-                    st.session_state['selected_food_security_variable'] = None
+                st.session_state['selected_food_security_variable'] = None
+                # Force widget refresh by incrementing a counter
+                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     # Create a mapping of variable names to display names
