@@ -392,6 +392,13 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     avg_monthly_benefit = format_number(snap_data.get('monthly_benefit', 0), is_currency=True, decimals=2)
     daily_per_person = format_number(snap_data.get('daily_benefit_per_person', 0), is_currency=True, decimals=2)
     
+    # Calculate SNAP participation fraction text
+    snap_rate_raw = snap_data.get('snap_household_rate', 0)
+    if snap_rate_raw and snap_rate_raw > 0:
+        snap_participation_fraction = get_fraction_text(snap_rate_raw, "households")
+    else:
+        snap_participation_fraction = "N/A"
+    
     # Get comparison text
     comparison_text = geo_data.get('comparison_text', '')
     
@@ -798,9 +805,9 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         
                         <h4 style="font-style: italic; margin-bottom: 10px; color: #333;">SNAP</h4>
                         <ul class="bullet-points">
-                            <li>About <strong>1 in 6 households ({snap_participation_rate})</strong> participate in SNAP.</li>
+                            <li>About <strong>{snap_participation_fraction} ({snap_participation_rate})</strong> participate in SNAP.</li>
                             <li>In FY 2023, SNAP participants in {geo_name.upper()} received an average of <span class="stat-highlight">{avg_monthly_benefit}</span> per month in SNAP benefits. This averages about <span class="stat-highlight">{daily_per_person}</span> per person per day.</li>
-                            <li>SNAP brought <span class="stat-highlight">$519,968,308</span> in benefits to the area in that year.</li>
+                            <li>SNAP brought <span class="stat-highlight">{snap_benefits_total}</span> in benefits to the area in that year.</li>
                         </ul>
                         
                         <h4 style="font-style: italic; margin: 20px 0 10px 0; color: #333;">School Meals</h4>
@@ -828,8 +835,8 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                         <h3>Housing</h3>
                         <ul class="bullet-points">
                             <li><strong>{geo_data.get('renter_rate', 'N/A')}% of households</strong> are renters, with a median rent of <span class="stat-highlight">{geo_data.get('formatted_median_rent', 'N/A')}</span> per month.</li>
-                            <li>Over <strong>3 in 5 renters (61.6%)</strong> are cost-burdened, spending more than 30% of their income on housing.</li>
-                            <li>Just under <strong>2 in 7 renters (27.9%)</strong> are <em>severely</em> cost-burdened, spending more than 50% of their income on housing.</li>
+                            <li><strong>{geo_data.get('housing_cost_burden_fraction', 'N/A')} ({geo_data.get('housing_cost_burden', 'N/A')})</strong> are cost-burdened, spending more than 30% of their income on housing.</li>
+                            <li><strong>{geo_data.get('severe_housing_cost_burden_fraction', 'N/A')} ({geo_data.get('severe_housing_cost_burden', 'N/A')})</strong> are <em>severely</em> cost-burdened, spending more than 50% of their income on housing.</li>
                             <li>The median home value in the area is approximately <strong>N/A</strong>.</li>
                         </ul>
                     </div>

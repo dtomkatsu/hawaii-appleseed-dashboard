@@ -707,7 +707,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     </script>
     """, unsafe_allow_html=True)
     
-    # Add custom CSS for dropdown spacing
+    # Add custom CSS for dropdown spacing and accent color styling
     st.markdown("""
     <style>
         /* Add margin to the container of the selectbox */
@@ -717,6 +717,34 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         /* Ensure the selectbox itself has proper spacing */
         .stSelectbox > div[data-baseweb="select"] {
             margin-top: 4px;
+        }
+        /* Accent color styling for analytical dropdowns */
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) .dropdown-label,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) .dropdown-label,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) .dropdown-label {
+            color: #83BEF7 !important;
+        }
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] div[data-baseweb="select"],
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] div[data-baseweb="select"],
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+            background-color: rgba(131, 190, 247, 0.1) !important;
+            border: 1.5px solid #83BEF7 !important;
+            box-shadow: 0 0 0 1px rgba(131, 190, 247, 0.35) !important;
+        }
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+            color: #83BEF7 !important;
+        }
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] svg,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] svg,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] svg {
+            fill: #83BEF7 !important;
+        }
+        /* Keep Geography dropdown with green styling */
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+            background-color: rgba(42, 90, 12, 0.05) !important;
+            border: 1.5px solid #2a5a0c !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -750,7 +778,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
         st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">2. Choose one variable</div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security & Tax Credits</div>', unsafe_allow_html=True)
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security & Tax Credits</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
@@ -829,7 +857,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col3:
         # Food Security dropdown - Empty div for consistent spacing
         st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
         
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
@@ -879,7 +907,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col4:
         # Housing and Transportation dropdown - Empty div for consistent spacing
         st.markdown('<div style="height: 19px; margin-bottom: 1px;"></div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
             'median_rent': 'Median Rent ($)',
