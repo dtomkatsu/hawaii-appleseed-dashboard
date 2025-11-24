@@ -211,7 +211,42 @@ class LeafletMapComponent:
             .color-scheme-selector {
                 margin-top: 8px;
                 padding-top: 8px;
-                border-top: 1px solid rgba(0,0,0,0.1);
+            }
+            .print-map-btn {
+                margin-top: 10px;
+                padding: 6px 12px;
+                background: #1a73e8;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 500;
+                width: 100%;
+                transition: background 0.2s ease;
+            }
+            .print-map-btn:hover {
+                background: #1557b0;
+            }
+            .print-map-btn:active {
+                background: #0d47a1;
+            }
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                .map-print-container, .map-print-container * {
+                    visibility: visible;
+                }
+                .map-print-container {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
+                .info-panel, .color-scheme-selector, .print-map-btn, .scroll-indicator {
+                    display: none !important;
+                }
             }
             .color-scheme-selector select {
                 width: 100%;
@@ -297,6 +332,161 @@ class LeafletMapComponent:
                            variable_display_name: str, color_scheme: str, show_side_panel: bool = True) -> str:
         """Generate JavaScript code for the map."""
         return f"""
+        // Print Map function - defined globally so onclick can access it
+        window.printMap = function(mapId) {{
+            // Get the map container and legend
+            const mapContainer = document.getElementById(mapId);
+            const legend = document.getElementById(mapId + '-legend');
+            
+            if (!mapContainer) {{
+                console.error('Map container not found');
+                return;
+            }}
+            
+            // Show loading indicator
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Capturing...';
+            btn.disabled = true;
+            
+            // Load html2canvas dynamically if not already loaded
+            if (typeof html2canvas === 'undefined') {{
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = function() {{
+                    captureAndPrint(mapId, mapContainer, legend, btn, originalText);
+                }};
+                script.onerror = function() {{
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    alert('Failed to load print library. Please try again.');
+                }};
+                document.head.appendChild(script);
+            }} else {{
+                captureAndPrint(mapId, mapContainer, legend, btn, originalText);
+            }}
+        }};
+        
+        window.captureAndPrint = function(mapId, mapContainer, legend, btn, originalText) {{
+            // Capture the map as an image using html2canvas
+            html2canvas(mapContainer, {{
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                scale: 2,  // Higher quality
+                logging: false
+            }}).then(function(canvas) {{
+                // Clone the legend content (without color scheme selector and print button)
+                let legendHtml = '';
+                if (legend) {{
+                    const legendTitle = legend.querySelector('.legend-title');
+                    const legendItems = legend.querySelector('.legend-items');
+                    legendHtml = `
+                        <div style="background: white; padding: 10px 15px; border: 1px solid #ccc; border-radius: 4px; margin-top: 15px; display: inline-block;">
+                            <div style="font-weight: 600; margin-bottom: 8px; text-align: center; font-size: 14px; color: #1a73e8;">
+                                ${{legendTitle ? legendTitle.innerHTML : '{variable_display_name}'}}
+                            </div>
+                            <div style="font-size: 13px;">
+                                ${{legendItems ? legendItems.innerHTML : ''}}
+                            </div>
+                        </div>
+                    `;
+                }}
+                
+                // Create a print-friendly version
+                const printWindow = window.open('', '_blank', 'width=1000,height=800');
+                
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Hawaii Appleseed Data Dashboard - Map</title>
+                        <style>
+                            body {{
+                                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                margin: 20px;
+                                background: white;
+                            }}
+                            .print-header {{
+                                text-align: center;
+                                margin-bottom: 15px;
+                                padding-bottom: 10px;
+                                border-bottom: 2px solid #1a73e8;
+                            }}
+                            .print-header h1 {{
+                                color: #1a73e8;
+                                margin: 0 0 5px 0;
+                                font-size: 20px;
+                            }}
+                            .print-header p {{
+                                color: #666;
+                                margin: 0;
+                                font-size: 12px;
+                            }}
+                            .map-container {{
+                                border: 1px solid #ddd;
+                                border-radius: 4px;
+                                overflow: hidden;
+                                text-align: center;
+                            }}
+                            .map-container img {{
+                                max-width: 100%;
+                                height: auto;
+                            }}
+                            .legend-container {{
+                                margin-top: 15px;
+                            }}
+                            .print-footer {{
+                                margin-top: 20px;
+                                text-align: center;
+                                font-size: 11px;
+                                color: #888;
+                            }}
+                            @media print {{
+                                body {{ margin: 10px; }}
+                                .no-print {{ display: none; }}
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="print-header">
+                            <h1>Hawaiʻi Appleseed Data Dashboard</h1>
+                            <p>Generated on ${{new Date().toLocaleDateString()}}</p>
+                        </div>
+                        <div class="map-container">
+                            <img src="${{canvas.toDataURL('image/png')}}" alt="Map" />
+                        </div>
+                        <div class="legend-container">
+                            ${{legendHtml}}
+                        </div>
+                        <div class="print-footer">
+                            <p>Source: Hawaii Appleseed Center for Law & Economic Justice | www.hiappleseed.org</p>
+                        </div>
+                        <div class="no-print" style="margin-top: 20px; text-align: center;">
+                            <button onclick="window.print()" style="padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                Print This Page
+                            </button>
+                            <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+                                Close
+                            </button>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                
+                printWindow.document.close();
+                
+                // Reset button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }}).catch(function(error) {{
+                console.error('Error capturing map:', error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Failed to capture map. Please try again.');
+            }});
+        }};
+        
         (function() {{
             // Configuration constants
             const MAP_CONFIG = {{
@@ -1153,6 +1343,7 @@ class LeafletMapComponent:
                         <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple</option>
                     </select>
                 </div>
+                <button class="print-map-btn" onclick="printMap('{map_id}')">🖨️ Print Map</button>
             </div>
             {f'<div id="{map_id}-info-panel" class="info-panel" style="display:none;"><div style="text-align: center; color: #666; font-style: italic;">Click on a geography to see details</div></div>' if show_side_panel else ''}
             
