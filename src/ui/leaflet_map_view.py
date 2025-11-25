@@ -1351,7 +1351,18 @@ def create_data_summary():
     
     # Get the active layer and selected variable
     active_layer = st.session_state.get('active_layer', 'State Boundary')
-    selected_variable = st.session_state.get('selected_variable', 'alice_rate')
+    
+    # Check all three dropdown categories for the selected variable
+    # Priority: Economic Security > Food Security > Housing & Transportation
+    selected_variable = st.session_state.get('selected_variable', None)
+    selected_food_security = st.session_state.get('selected_food_security_variable', None)
+    selected_housing = st.session_state.get('selected_housing_transportation_variable', None)
+    
+    # Use whichever variable is actually selected (not None)
+    if selected_variable is None and selected_food_security is not None:
+        selected_variable = selected_food_security
+    elif selected_variable is None and selected_housing is not None:
+        selected_variable = selected_housing
     
     # Load data
     data_loader = get_data_loader()
@@ -1406,8 +1417,11 @@ def create_data_summary():
         with chart_col:
             st.markdown(f"#### {selected_variable.replace('_', ' ').title() if selected_variable else 'Variable'} Comparison")
             
+            # Check if a variable is selected
+            if selected_variable is None:
+                st.info("Please select a variable from one of the dropdown menus above to view the chart.")
             # Check if the selected variable exists in the data
-            if selected_variable in data.columns:
+            elif selected_variable in data.columns:
                 # Sort data by the selected variable for better visualization
                 sorted_data = data.sort_values(by=selected_variable, ascending=False)
                 
@@ -1510,11 +1524,19 @@ def create_data_summary():
         with table_col:
             st.markdown("#### Data Table")
             # Display a scrollable table
-            st.dataframe(
-                data[[col for col in ['name', selected_variable] if col in data.columns]],
-                height=400,
-                use_container_width=True
-            )
+            if selected_variable is None:
+                # Show just the name column when no variable is selected
+                display_cols = ['name'] if 'name' in data.columns else []
+                if display_cols:
+                    st.dataframe(data[display_cols], height=400, use_container_width=True)
+                else:
+                    st.info("Select a variable to view data.")
+            else:
+                st.dataframe(
+                    data[[col for col in ['name', selected_variable] if col in data.columns]],
+                    height=400,
+                    use_container_width=True
+                )
         
         # Add a full-width data table below
         st.markdown("#### Full Data Table")
