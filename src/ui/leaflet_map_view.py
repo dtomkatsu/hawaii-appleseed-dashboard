@@ -724,27 +724,65 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) .dropdown-label {
             color: #83BEF7 !important;
         }
+        
+        /* Shared styles to fix split box issue - Nuclear Option */
+        div[data-baseweb="select"] > div {
+            background-color: transparent !important;
+            border: none !important;
+            margin: 0 !important;
+        }
+        
+        /* Target the arrow container specifically to remove any left border */
+        div[data-baseweb="select"] > div:last-child {
+            border-left: none !important;
+        }
+        
+        /* Hide any potential separator elements */
+        div[data-baseweb="select"] div[role="presentation"] {
+            background-color: transparent !important;
+        }
+
+        /* Blue styled dropdowns */
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] div[data-baseweb="select"],
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] div[data-baseweb="select"],
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] div[data-baseweb="select"] {
-            background-color: rgba(131, 190, 247, 0.1) !important;
+            background-color: rgba(131, 190, 247, 0.15) !important;
             border: 1.5px solid #83BEF7 !important;
+            border-radius: 4px !important;
             box-shadow: 0 0 0 1px rgba(131, 190, 247, 0.35) !important;
+            overflow: hidden !important;
+            display: flex !important; /* Ensure flex layout to merge children */
+            align-items: center !important;
         }
-        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        
+        /* Text color for blue dropdowns */
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] div[data-baseweb="select"] * ,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] div[data-baseweb="select"] * ,
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] div[data-baseweb="select"] * {
             color: #83BEF7 !important;
         }
+        
+        /* SVG icon fill for blue dropdowns */
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) div[data-testid="stSelectbox"] svg,
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) div[data-testid="stSelectbox"] svg,
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(4) div[data-testid="stSelectbox"] svg {
             fill: #83BEF7 !important;
         }
-        /* Keep Geography dropdown with green styling */
+        
+        /* Geography dropdown (Green) */
         div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(1) div[data-testid="stSelectbox"] div[data-baseweb="select"] {
-            background-color: rgba(42, 90, 12, 0.05) !important;
+            background-color: rgba(42, 90, 12, 0.1) !important;
             border: 1.5px solid #2a5a0c !important;
+            border-radius: 4px !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        /* Force specific removal of the split border on all selects */
+        div[data-baseweb="select"] div {
+            border-left: none !important;
+            border-right: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -754,7 +792,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col1:
         # Geography dropdown
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 3.5px;">1. Select Geography</div>'
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 3.5px;">Step 1</div>'
                    '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600; margin-bottom: 10px;">Geography</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
@@ -777,7 +815,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">2. Choose one variable</div>'
+        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">Step 2</div>'
                    '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security & Tax Credits</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography

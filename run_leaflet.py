@@ -21,13 +21,13 @@ from ui.leaflet_map_view import create_leaflet_map_view, create_data_summary
 
 # Set page config with wide layout and viewport settings
 st.set_page_config(
-    page_title="Hawaii Appleseed Dashboard",
+    page_title="Data Dashboard",
     page_icon="🌴",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://www.hawaiiappleseed.org/',
-        'About': "### Hawaii Appleseed Dashboard\nInteractive data visualization tool for Hawaii"
+        'About': "Interactive data visualization tool for Hawaii"
     }
 )
 
@@ -841,8 +841,8 @@ def main():
             st.session_state.active_layer = 'Counties'
             logger.info("Initializing session state with Counties layer")
         
-        # Create custom sidebar with green labels
-        st.sidebar.title("🌴 Hawaii Appleseed Dashboard")
+        # Create custom sidebar with green labels (title removed per design request)
+        # st.sidebar.title("🌴 Hawaii Appleseed Dashboard")
         
         # Define layer options
         layer_options = [
@@ -948,7 +948,7 @@ def main():
                 letter-spacing: -0.5px;
             }
         </style>
-        <h1 class="dashboard-title">Hawaiʻi Appleseed Data Dashboard</h1>
+        <h1 class="dashboard-title"></h1>
         """, unsafe_allow_html=True)
         
         # Apply JavaScript to ensure form labels are green
