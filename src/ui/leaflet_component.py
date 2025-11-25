@@ -609,7 +609,7 @@ class LeafletMapComponent:
                             {{'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}}
                         ],
                         'Transportation': [
-                            {{'key': 'travel_time_to_work_minutes', 'label': 'Avg Commute Time', 'type': 'minutes'}},
+                            {{'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time (minutes)', 'type': 'minutes'}},
                             {{'key': 'public_transportation_pct', 'label': 'Public Transportation %', 'type': 'percentage'}}
                         ],
                         'Education': [
