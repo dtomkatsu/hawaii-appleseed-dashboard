@@ -18,8 +18,8 @@ from src.ui.leaflet_component import create_leaflet_map
 # Set up logging
 logger = logging.getLogger(__name__)
 
-@st.cache_data(ttl=3600, max_entries=8)  # Cache for 1 hour, limit entries  
-def load_geojson(layer_name, _cache_version="v3"):
+@st.cache_data(ttl=86400, max_entries=8, show_spinner=False)  # Cache for 24 hours, limit entries  
+def load_geojson(layer_name, _cache_version="v4"):
     """Load optimized GeoJSON data for the specified layer."""
     import gzip
     
@@ -161,8 +161,8 @@ def _optimize_geojson_properties(geojson_data, layer_name):
     # The main size reduction comes from gzip compression, not property filtering
     return geojson_data
 
-@st.cache_resource(ttl=7200, show_spinner=False, hash_funcs={})  # Cache for 2 hours
-def get_data_loader(_cache_version="v9"):
+@st.cache_resource(ttl=86400, show_spinner=False)  # Cache for 24 hours
+def get_data_loader(_cache_version="v10"):
     """Get a cached DataLoader instance with optimized settings."""
     # _cache_version parameter forces cache invalidation when changed
     return DataLoader()
@@ -243,30 +243,48 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     logger.info(f"Active layer: {active_layer}")
     logger.info(f"Color scheme: {color_scheme}")
     
-    # Load GeoJSON data for the selected layer with progress indicator
-    with st.spinner(f"Loading {active_layer} geographic data..."):
-        geojson_data = load_geojson(active_layer)
+    # Lazy load GeoJSON data - only load when layer changes or not in session state
+    geojson_cache_key = f'geojson_cache_{active_layer}'
+    if geojson_cache_key not in st.session_state:
+        # Load GeoJSON data for the selected layer with progress indicator
+        with st.spinner(f"Loading {active_layer} geographic data..."):
+            geojson_data = load_geojson(active_layer)
+            # Store in session state for faster subsequent access
+            st.session_state[geojson_cache_key] = geojson_data
+    else:
+        # Use cached GeoJSON from session state
+        geojson_data = st.session_state[geojson_cache_key]
     
     if geojson_data is None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
     
-    # Load data with progress indicator
-    with st.spinner(f"Loading {active_layer} statistical data..."):
-        data_loader = get_data_loader()
-        
-        # Map geo levels to their data loader equivalents
-        geo_level_map = {
-            'State Boundary': 'state',
-            'Counties': 'county',
-            'House Districts': 'house',
-            'Senate Districts': 'senate'
-        }
-        
-        geo_level = geo_level_map.get(active_layer, 'state')
-        
-        # Get combined data for the selected geographic level
-        combined_data = data_loader.get_data(geo_level)
+    # Map geo levels to their data loader equivalents
+    geo_level_map = {
+        'State Boundary': 'state',
+        'Counties': 'county',
+        'House Districts': 'house',
+        'Senate Districts': 'senate'
+    }
+    
+    geo_level = geo_level_map.get(active_layer, 'state')
+    
+    # Lazy load statistical data - only load when layer changes or not in session state
+    data_cache_key = f'data_cache_{geo_level}'
+    if data_cache_key not in st.session_state:
+        # Load data with progress indicator
+        with st.spinner(f"Loading {active_layer} statistical data..."):
+            data_loader = get_data_loader()
+            # Get combined data for the selected geographic level
+            combined_data = data_loader.get_data(geo_level)
+            # Store in session state for faster subsequent access
+            st.session_state[data_cache_key] = combined_data
+    else:
+        # Use cached data from session state
+        combined_data = st.session_state[data_cache_key]
+    
+    # Get data loader for merging (always needed)
+    data_loader = get_data_loader()
     
     if combined_data is not None:
         # Debug: Print combined data columns and first row

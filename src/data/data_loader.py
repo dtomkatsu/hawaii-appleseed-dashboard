@@ -1126,6 +1126,7 @@ class DataLoader:
         self.base_dir = Path(__file__).parent.parent.parent
         self.data_dir = self.base_dir / data_dir
         self.data_cache = {}
+        self.merged_data_cache = {}  # Cache for merged data to avoid re-merging
         
         # Initialize data loaders
         self._init_data_loaders()
@@ -1266,6 +1267,12 @@ class DataLoader:
     
     def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """Get combined data for a geographic level."""
+        # Check merged data cache first to avoid re-merging
+        merged_cache_key = f"merged_{geo_level}"
+        if merged_cache_key in self.merged_data_cache:
+            logger.debug(f"Using cached merged data for {geo_level}")
+            return self.merged_data_cache[merged_cache_key]
+        
         geo_enum = GeoLevel(geo_level)
         
         # Load data on-demand if not cached
@@ -1288,19 +1295,16 @@ class DataLoader:
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
         
         if merged_data is not None and snap_data is not None:
-            logger.info(f"Merging SNAP data for {geo_level}, SNAP data shape: {snap_data.shape}")
-            logger.info(f"SNAP columns: {snap_data.columns.tolist()}")
-            logger.info(f"Sample SNAP data:\n{snap_data.head(2)}")
+            logger.debug(f"Merging SNAP data for {geo_level}, SNAP data shape: {snap_data.shape}")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
-            logger.info(f"After SNAP merge, merged data shape: {merged_data.shape}")
-            # Check if SNAP columns are in merged data
-            snap_cols_in_merged = [col for col in ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household'] if col in merged_data.columns]
-            logger.info(f"SNAP columns in merged data: {snap_cols_in_merged}")
         
         if merged_data is not None and cep_data is not None:
-            logger.info(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
+            logger.debug(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
             merged_data = self.merger.merge_datasets(merged_data, cep_data, geo_enum, DataType.CEP)
-            logger.info(f"After CEP merge, data shape: {merged_data.shape}")
+        
+        # Cache the merged result
+        self.merged_data_cache[merged_cache_key] = merged_data
+        logger.info(f"Cached merged data for {geo_level}")
         
         return merged_data
     
