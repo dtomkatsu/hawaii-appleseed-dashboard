@@ -791,12 +791,16 @@ class LeafletMapComponent:
                             .map(segment => segment.trim())
                             .filter(Boolean);
 
+                        if (segments.length === 0) {{
+                            return '';
+                        }}
+
                         if (segments.length <= 3) {{
-                            return 'Areas: ' + segments.join(', ');
+                            return segments.join(', ');
                         }}
 
                         const bulletItems = segments.map(segment => '&bull; ' + segment);
-                        return ['Areas:', ...bulletItems].join('<br>');
+                        return bulletItems.join('<br>');
                     }};
                     
                     // Determine district type and number
