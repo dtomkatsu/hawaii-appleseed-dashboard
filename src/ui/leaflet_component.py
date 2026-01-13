@@ -94,7 +94,7 @@ class LeafletMapComponent:
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
                 border: 1px solid rgba(0, 0, 0, 0.1);
                 z-index: 1000;
-                max-width: 180px;
+                max-width: 144px;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .info-panel {
@@ -795,12 +795,7 @@ class LeafletMapComponent:
                             return '';
                         }}
 
-                        if (segments.length <= 3) {{
-                            return segments.join(', ');
-                        }}
-
-                        const bulletItems = segments.map(segment => '&bull; ' + segment);
-                        return bulletItems.join('<br>');
+                        return segments.join(', ');
                     }};
                     
                     // Determine district type and number
