@@ -762,7 +762,7 @@ class LeafletMapComponent:
                         "senate_6": {{"name": "Angus L.K. McKelvey", "party": "D", "areas": "West Maui, South Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
                         "senate_7": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
                         "senate_8": {{"name": "Ronald D. Kouchi", "party": "D", "areas": "Kaua'i, Ni'ihau"}},
-                        "senate_9": {{"name": "Stanley Chang", "party": "D", "areas": "Hawai'i Kai, Waikīkī, Ala Moana, Kaka'ako"}},
+                        "senate_9": {{"name": "Stanley Chang", "party": "D", "areas": "Hawai'i Kai, Kuli'ou'ou, Niu, 'Āina Haina, Wai'alae-Kāhala, Diamond Head, Kaimukī, Kapahulu"}},
                         "senate_10": {{"name": "Les Ihara", "party": "D", "areas": "Pālolo, St. Louis Heights, Kaimukī, Kāhala"}},
                         "senate_11": {{"name": "Carol Fukunaga", "party": "D", "areas": "Makiki, Mānoa, Pūowaina, Ala Wai"}},
                         "senate_12": {{"name": "Sharon Y. Moriwaki", "party": "D", "areas": "Waikīkī, McCully, Mōʻiliʻili, Ala Wai"}},
