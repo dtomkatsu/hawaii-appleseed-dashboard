@@ -8,11 +8,11 @@ spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/cpu-throttling: "false"
-        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu-throttling: "true"
+        run.googleapis.com/memory: "1Gi"
         run.googleapis.com/cpu: "1"
         run.googleapis.com/timeout: "3600s"
-        run.googleapis.com/max-instances: "10"
+        run.googleapis.com/max-instances: "5"
         autoscaling.knative.dev/minScale: "0"
     spec:
       containerConcurrency: 80
@@ -32,4 +32,4 @@ spec:
         resources:
           limits:
             cpu: "1"
-            memory: "2Gi"
+            memory: "1Gi"
