@@ -728,6 +728,19 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     # Add custom CSS for dropdown spacing and accent color styling
     st.markdown("""
     <style>
+        /* Ensure all dropdown columns align at the top */
+        div[data-testid="stHorizontalBlock"] {
+            align-items: flex-start !important;
+        }
+        
+        /* Fixed height for dropdown label containers to ensure alignment */
+        div[data-testid="stHorizontalBlock"] div[data-testid="column"] > div:first-child {
+            min-height: 52px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+        }
+        
         /* Add margin to the container of the selectbox */
         div[data-testid="stSelectbox"] {
             margin-top: 4px;
@@ -810,8 +823,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col1:
         # Geography dropdown
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 3.5px;">Step 1</div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600; margin-bottom: 10px;">Geography</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
+                   '<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">Step 1</div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Poppins, sans-serif; font-weight: 600;">Geography</div>'
+                   '</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)
@@ -833,8 +848,10 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">Step 2</div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security & Tax Credits</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
+                   '<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">Step 2</div>'
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>'
+                   '</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
@@ -911,9 +928,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col3:
-        # Food Security dropdown - Empty div for consistent spacing
-        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        # Food Security dropdown
+        st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
+                   '<div style="height: 18px;"></div>'
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>'
+                   '</div>', unsafe_allow_html=True)
         
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
@@ -961,9 +980,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col4:
-        # Housing and Transportation dropdown - Empty div for consistent spacing
-        st.markdown('<div style="height: 19px; margin-bottom: 1px;"></div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+        # Housing and Transportation dropdown
+        st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
+                   '<div style="height: 18px;"></div>'
+                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Housing</div>'
+                   '</div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
             'median_rent': 'Median Rent ($)',
