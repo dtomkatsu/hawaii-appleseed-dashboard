@@ -529,7 +529,7 @@ class LeafletMapComponent:
                              variableType.includes('income') || 
                              variableType.includes('value') ||
                              variableType.includes('benefit')) {{
-                        return '$' + numValue.toLocaleString();
+                        return '$' + Math.round(numValue).toLocaleString();
                     }}
                     // Check for count types (population, etc.)
                     else if (variableType === 'count') {{

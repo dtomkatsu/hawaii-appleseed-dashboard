@@ -90,7 +90,7 @@ def layout():
             snap_benefits = snap_info['snap_benefits'].iloc[0]
             snap_metrics.append(html.Div([
                 html.Strong("SNAP Benefits: "),
-                html.Span(f"${snap_benefits:,.2f}")
+                html.Span(f"${int(snap_benefits):,}")
             ]))
             
         if snap_metrics:
@@ -106,7 +106,7 @@ def layout():
         demo_metrics = []
         
         demographic_columns = [
-            ('median_income', 'Median Income', '${:,.2f}'),
+            ('median_income', 'Median Income', '${:,.0f}'),
             ('poverty_rate', 'Poverty Rate', '{:.1f}%'),
             ('child_poverty_rate', 'Child Poverty Rate', '{:.1f}%'),
             ('unemployment_rate', 'Unemployment Rate', '{:.1f}%')
