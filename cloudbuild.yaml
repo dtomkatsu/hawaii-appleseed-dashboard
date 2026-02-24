@@ -36,6 +36,8 @@ steps:
       - '--session-affinity'
       - '--no-cpu-throttling'
       - '--use-http2'
+      - '--ingress=all'
+      - '--set-env-vars=STREAMLIT_SERVER_MAX_MESSAGE_SIZE=200'
 
 images:
   - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'

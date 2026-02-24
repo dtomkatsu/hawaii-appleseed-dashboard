@@ -5,6 +5,7 @@ metadata:
   annotations:
     run.googleapis.com/ingress: all
     run.googleapis.com/session-affinity: "true"
+    run.googleapis.com/ingress-timeout: "3600s"
 spec:
   template:
     metadata:
