@@ -778,7 +778,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Economic Security dropdown with 'Choose your variable' text
         st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
                    '<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.9em; margin-bottom: 2px;">Step 2</div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>'
+                   '<div class="dropdown-label" style="color: #1E5BA8; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>'
                    '</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
@@ -857,7 +857,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Food Security dropdown
         st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
                    '<div style="height: 18px;"></div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>'
+                   '<div class="dropdown-label" style="color: #1E5BA8; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>'
                    '</div>', unsafe_allow_html=True)
         
         food_security_options = {
@@ -907,7 +907,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Housing and Transportation dropdown
         st.markdown('<div class="dropdown-header" style="min-height: 48px; display: flex; flex-direction: column; justify-content: flex-end;">'
                    '<div style="height: 18px;"></div>'
-                   '<div class="dropdown-label" style="color: #83BEF7; font-family: Roboto, sans-serif; font-weight: 600;">Housing</div>'
+                   '<div class="dropdown-label" style="color: #1E5BA8; font-family: Roboto, sans-serif; font-weight: 600;">Housing</div>'
                    '</div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
