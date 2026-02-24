@@ -1,0 +1,43 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA', '.']
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA']
+  
+  # Tag as latest
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['tag', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest']
+  
+  # Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest']
+  
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'hawaii-appleseed-dashboard'
+      - '--image=gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--port=8080'
+      - '--max-instances=5'
+      - '--timeout=3600s'
+
+images:
+  - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '1800s'
