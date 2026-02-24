@@ -979,21 +979,26 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     data_var = st.session_state.get('selected_variable')
     
     logger.info(f"Dropdown states - Food Security: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}")
+    st.write(f"🔍 DEBUG: Dropdown states - Food: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}")
     
     # Use food security variable if selected, otherwise housing/transportation, otherwise data variable
     if food_security_var is not None:
         map_variable = food_security_var
         logger.info(f"Using Food Security variable: {map_variable}")
+        st.write(f"🔍 DEBUG: Using Food Security variable: {map_variable}")
     elif housing_transportation_var is not None:
         map_variable = housing_transportation_var
         logger.info(f"Using Housing/Transportation variable: {map_variable}")
+        st.write(f"🔍 DEBUG: Using Housing variable: {map_variable}")
     elif data_var is not None:
         map_variable = data_var
         logger.info(f"Using Economic Security variable: {map_variable}")
+        st.write(f"🔍 DEBUG: Using Economic variable: {map_variable}")
     else:
         # Default to alice_rate if nothing is selected, but don't update session state to avoid loops
         map_variable = 'alice_rate'
         logger.info(f"Using default variable: {map_variable}")
+        st.write(f"🔍 DEBUG: Using default variable: {map_variable}")
     
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
