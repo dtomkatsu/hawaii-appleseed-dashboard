@@ -15,7 +15,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest']
   
-  # Deploy to Cloud Run
+  # Deploy to Cloud Run with session affinity and WebSocket-friendly config
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -26,11 +26,16 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--memory=1Gi'
+      - '--memory=2Gi'
       - '--cpu=1'
       - '--port=8080'
       - '--max-instances=5'
+      - '--min-instances=1'
       - '--timeout=3600s'
+      - '--concurrency=10'
+      - '--session-affinity'
+      - '--no-cpu-throttling'
+      - '--use-http2'
 
 images:
   - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'

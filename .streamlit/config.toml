@@ -1,12 +1,19 @@
 [server]
-# Optimize for cloud deployment
+# Cloud Run deployment: behind Google's reverse proxy
 maxUploadSize = 200
 maxMessageSize = 200
 enableCORS = true
 enableXsrfProtection = false
+enableWebsocketCompression = false
+headless = true
+runOnSave = false
+port = 8080
+address = "0.0.0.0"
 
 [browser]
 gatherUsageStats = false
+serverAddress = "0.0.0.0"
+serverPort = 8080
 
 [theme]
 primaryColor = "#2a5a0c"
@@ -15,13 +22,13 @@ secondaryBackgroundColor = "#f0f2f6"
 textColor = "#262730"
 
 [global]
-# Reduce memory usage
 developmentMode = false
-logLevel = "warning"
+
+[logger]
+level = "warning"
 
 [runner]
-# Optimize performance
-magicEnabled = true
+magicEnabled = false
 installTracer = false
 fixMatplotlib = true
 postScriptGC = true

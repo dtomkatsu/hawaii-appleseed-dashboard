@@ -4,22 +4,39 @@ metadata:
   name: hawaii-appleseed-dashboard
   annotations:
     run.googleapis.com/ingress: all
+    run.googleapis.com/session-affinity: "true"
 spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/cpu-throttling: "true"
-        run.googleapis.com/memory: "1Gi"
-        run.googleapis.com/cpu: "1"
-        run.googleapis.com/timeout: "3600s"
-        run.googleapis.com/max-instances: "5"
-        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/session-affinity: "true"
+        run.googleapis.com/startup-cpu-boost: "true"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "5"
     spec:
-      containerConcurrency: 80
+      containerConcurrency: 10
+      timeoutSeconds: 3600
       containers:
       - image: gcr.io/YOUR_PROJECT_ID/hawaii-appleseed-dashboard
         ports:
         - containerPort: 8080
+          name: h2c
+        startupProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 12
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8080
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
         env:
         - name: STREAMLIT_SERVER_PORT
           value: "8080"
@@ -29,7 +46,17 @@ spec:
           value: "true"
         - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
           value: "false"
+        - name: STREAMLIT_SERVER_ENABLE_CORS
+          value: "true"
+        - name: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+          value: "false"
+        - name: STREAMLIT_SERVER_ENABLE_WEBSOCKET_COMPRESSION
+          value: "false"
+        - name: STREAMLIT_SERVER_RUN_ON_SAVE
+          value: "false"
+        - name: STREAMLIT_RUNNER_MAGIC_ENABLED
+          value: "false"
         resources:
           limits:
             cpu: "1"
-            memory: "1Gi"
+            memory: "2Gi"
