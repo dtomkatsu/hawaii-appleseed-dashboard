@@ -737,7 +737,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_layer != active_layer:
             st.session_state['active_layer'] = selected_layer
-            st.rerun()
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
@@ -816,7 +815,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_var is not None:
                 st.session_state['selected_food_security_variable'] = None
                 st.session_state['selected_housing_transportation_variable'] = None
-            st.rerun()
     
     with col3:
         # Food Security dropdown
@@ -866,7 +864,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_fs_var is not None:
                 st.session_state['selected_variable'] = None
                 st.session_state['selected_housing_transportation_variable'] = None
-            st.rerun()
     
     with col4:
         # Housing and Transportation dropdown
@@ -915,7 +912,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_ht_var is not None:
                 st.session_state['selected_variable'] = None
                 st.session_state['selected_food_security_variable'] = None
-            st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
