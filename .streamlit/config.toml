@@ -2,8 +2,8 @@
 # Optimize for cloud deployment
 maxUploadSize = 200
 maxMessageSize = 200
-enableCORS = false
-enableXsrfProtection = true
+enableCORS = true
+enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false

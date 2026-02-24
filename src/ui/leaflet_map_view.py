@@ -615,114 +615,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             border-left: 3px solid #1E88E5 !important;
         }
     </style>
-    <script>
-    // Enhanced fix for dropdown scrolling issues
-    function fixDropdownScrolling() {
-        // Find all dropdown containers
-        const dropdowns = document.querySelectorAll('[data-baseweb="popover"] [role="listbox"]');
-        
-        dropdowns.forEach(dropdown => {
-            // Force proper scrolling behavior
-            dropdown.style.maxHeight = '350px';
-            dropdown.style.overflowY = 'auto';
-            dropdown.style.overflowX = 'hidden';
-            dropdown.style.scrollBehavior = 'smooth';
-            
-            // Ensure proper container setup
-            const container = dropdown.parentElement;
-            if (container) {
-                container.style.maxHeight = '350px';
-                container.style.overflow = 'hidden';
-            }
-            
-            // Fix individual options
-            const options = dropdown.querySelectorAll('[role="option"]');
-            options.forEach((option, index) => {
-                option.style.minHeight = '42px';
-                option.style.maxHeight = '42px';
-                option.style.display = 'flex';
-                option.style.alignItems = 'center';
-                option.style.padding = '8px 12px';
-                option.style.boxSizing = 'border-box';
-                option.style.whiteSpace = 'nowrap';
-                option.style.overflow = 'hidden';
-                option.style.textOverflow = 'ellipsis';
-                
-                // Add hover scroll behavior
-                option.addEventListener('mouseenter', function() {
-                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                });
-            });
-            
-            // Add keyboard scroll support
-            dropdown.addEventListener('keydown', function(e) {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    setTimeout(() => {
-                        const selected = dropdown.querySelector('[aria-selected="true"]');
-                        if (selected) {
-                            selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
-                    }, 10);
-                }
-            });
-        });
-    }
-    
-    // Enhanced observer for better detection
-    let observer;
-    
-    function startObserver() {
-        if (observer) observer.disconnect();
-        
-        observer = new MutationObserver(function(mutations) {
-            let shouldFix = false;
-            
-            mutations.forEach(function(mutation) {
-                if (mutation.addedNodes.length > 0) {
-                    mutation.addedNodes.forEach(function(node) {
-                        if (node.nodeType === 1) { // Element node
-                            if (node.matches && node.matches('[data-baseweb="popover"]')) {
-                                shouldFix = true;
-                            } else if (node.querySelector && node.querySelector('[data-baseweb="popover"]')) {
-                                shouldFix = true;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            if (shouldFix) {
-                setTimeout(fixDropdownScrolling, 50);
-                setTimeout(fixDropdownScrolling, 200);
-            }
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: false
-        });
-    }
-    
-    // Initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            startObserver();
-            setTimeout(fixDropdownScrolling, 100);
-        });
-    } else {
-        startObserver();
-        setTimeout(fixDropdownScrolling, 100);
-    }
-    
-    // Also fix on window events
-    window.addEventListener('resize', function() {
-        setTimeout(fixDropdownScrolling, 100);
-    });
-    
-    // Periodic check for stubborn cases
-    setInterval(fixDropdownScrolling, 2000);
-    </script>
+    <!-- Dropdown scrolling handled by CSS only - no JavaScript MutationObserver or setInterval -->
     """, unsafe_allow_html=True)
     
     # Add custom CSS for dropdown spacing and accent color styling
@@ -912,7 +805,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=var_options,
             format_func=var_format_func,
             index=var_index,
-            key=f"variable_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
+            key="variable_selector",
             label_visibility="collapsed"
         )
         
@@ -923,8 +816,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_var is not None:
                 st.session_state['selected_food_security_variable'] = None
                 st.session_state['selected_housing_transportation_variable'] = None
-                # Force widget refresh by incrementing a counter
-                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     with col3:
@@ -964,7 +855,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=fs_options,
             format_func=fs_format_func,
             index=fs_index,
-            key=f"food_security_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
+            key="food_security_selector",
             label_visibility="collapsed"
         )
         
@@ -975,8 +866,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_fs_var is not None:
                 st.session_state['selected_variable'] = None
                 st.session_state['selected_housing_transportation_variable'] = None
-                # Force widget refresh by incrementing a counter
-                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     with col4:
@@ -1015,7 +904,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=ht_options,
             format_func=ht_format_func,
             index=ht_index,
-            key=f"housing_transportation_selector_{st.session_state.get('_dropdown_refresh_counter', 0)}",
+            key="housing_transportation_selector",
             label_visibility="collapsed"
         )
         
@@ -1026,8 +915,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if selected_ht_var is not None:
                 st.session_state['selected_variable'] = None
                 st.session_state['selected_food_security_variable'] = None
-                # Force widget refresh by incrementing a counter
-                st.session_state['_dropdown_refresh_counter'] = st.session_state.get('_dropdown_refresh_counter', 0) + 1
             st.rerun()
     
     # Create a mapping of variable names to display names

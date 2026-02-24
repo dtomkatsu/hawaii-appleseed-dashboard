@@ -470,27 +470,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # Add basic message handling for color scheme changes
-    st.components.v1.html("""
-        <script>
-            // Handle color scheme changes from map
-            window.addEventListener('message', function(event) {
-                if (event.data.type === 'color_scheme_change') {
-                    window.parent.postMessage({
-                        type: 'streamlit:setComponentValue',
-                        data: event.data
-                    }, '*');
-                }
-            }, false);
-        </script>
-    """, height=0)
-    
-    # Handle messages from the iframe
-    if 'color_scheme_change' in st.session_state:
-        new_color_scheme = st.session_state.pop('color_scheme_change')
-        if new_color_scheme in ['blue', 'green', 'red', 'purple']:
-            st.session_state['color_scheme'] = new_color_scheme
-    
     # Enhanced dropdown styling with borders and hover effects
     st.markdown("""
     <style>
@@ -787,50 +766,6 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    # Add diagnostic script to inspect dropdown styles
-    st.markdown("""
-    <script>
-    // Run after the page loads
-    window.addEventListener('load', function() {
-        // Create a style element for our diagnostic border
-        const style = document.createElement('style');
-        style.textContent = `
-            /* Highlight all potential border elements */
-            [data-baseweb="popover"],
-            [data-baseweb="popover"] * {
-                outline: 2px solid red !important;
-                outline-offset: -1px;
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Log the computed styles of the dropdown
-        const logStyles = () => {
-            const dropdown = document.querySelector('[data-baseweb="popover"]');
-            if (dropdown) {
-                const styles = window.getComputedStyle(dropdown);
-                console.log('Dropdown styles:', {
-                    border: styles.border,
-                    outline: styles.outline,
-                    boxShadow: styles.boxShadow,
-                    borderImage: styles.borderImage,
-                    borderWidth: styles.borderWidth,
-                    borderStyle: styles.borderStyle,
-                    borderColor: styles.borderColor
-                });
-            }
-        };
-        
-        // Log styles when dropdown opens
-        document.body.addEventListener('click', function(e) {
-            if (e.target.closest('[data-baseweb="select"]')) {
-                setTimeout(logStyles, 300);
-            }
-        });
-    });
-    </script>
-    """, unsafe_allow_html=True)
-    
     # Load additional custom CSS if needed
     with open(Path(__file__).parent / "src" / "ui" / "enhanced_style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -916,7 +851,8 @@ def main():
             index=color_index,
             key="sidebar_color_selector"
         )
-        st.session_state.color_scheme = selected_color
+        if selected_color != st.session_state.get('color_scheme'):
+            st.session_state.color_scheme = selected_color
         
         # Display options
         st.sidebar.markdown("### 🔧 Display Options")
@@ -951,41 +887,7 @@ def main():
         <h1 class="dashboard-title"></h1>
         """, unsafe_allow_html=True)
         
-        # Apply JavaScript to ensure form labels are green
-        st.markdown("""
-        <script>
-            // Function to change label colors
-            function setLabelColors() {
-                // Target all label elements
-                const labels = document.querySelectorAll('.stSelectbox label, .stRadio label');
-                labels.forEach(label => {
-                    label.style.color = '#2a5a0c';
-                    label.style.fontWeight = '600';
-                    // Also target child elements
-                    const children = label.querySelectorAll('*');
-                    children.forEach(child => {
-                        child.style.color = '#2a5a0c';
-                        child.style.fontWeight = '600';
-                    });
-                });
-            }
-            
-            // Run immediately and also after a short delay to catch dynamically loaded elements
-            setLabelColors();
-            setTimeout(setLabelColors, 500);
-            setTimeout(setLabelColors, 1000);
-            
-            // Create a MutationObserver to watch for DOM changes
-            const observer = new MutationObserver(function(mutations) {
-                setLabelColors();
-            });
-            
-            // Start observing once the DOM is fully loaded
-            document.addEventListener('DOMContentLoaded', function() {
-                observer.observe(document.body, { childList: true, subtree: true });
-            });
-        </script>
-        """, unsafe_allow_html=True)
+        # Label colors handled by CSS above (no JavaScript MutationObserver needed)
         
         # Clean and simple dashboard without complex URL handling
         
