@@ -19,11 +19,23 @@ from src.ui.leaflet_component import create_leaflet_map
 logger = logging.getLogger(__name__)
 
 @st.cache_data(ttl=86400, max_entries=8, show_spinner=False)  # Cache for 24 hours, limit entries  
-def load_geojson(layer_name, _cache_version="v4"):
-    """Load optimized GeoJSON data for the specified layer."""
+def load_geojson(layer_name, _cache_version="v5"):
+    """Load pre-merged GeoJSON data for the specified layer.
+    
+    Tries pre-merged static files first (fastest), then falls back to raw GeoJSON files.
+    Pre-merged files already contain all statistical data merged into feature properties.
+    """
     import gzip
     
-    # Map layer names to file paths
+    # Map layer names to pre-merged filenames
+    premerged_files = {
+        'State Boundary': 'state_boundary',
+        'Counties': 'counties',
+        'House Districts': 'house_districts',
+        'Senate Districts': 'senate_districts'
+    }
+    
+    # Map layer names to raw GeoJSON filenames (fallback)
     layer_files = {
         'State Boundary': 'hawaii_state_boundary.geojson',
         'Counties': 'hawaii_county_boundaries.geojson',
@@ -35,65 +47,74 @@ def load_geojson(layer_name, _cache_version="v4"):
         logger.error(f"Unknown layer: {layer_name}")
         return None
     
-    # Try multiple possible paths for different deployment environments
-    possible_base_paths = [
-        Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons',  # Local development
-        Path(__file__).parent.parent.parent / 'data' / 'processed_geojsons',  # Alternative naming
-        Path(__file__).parent.parent.parent / 'data',  # Root data directory
-        Path.cwd() / 'data' / 'Processed GeoJsons',  # Current working directory
-        Path.cwd() / 'data' / 'processed_geojsons',  # Alternative in cwd
-        Path.cwd() / 'data',  # Root data in cwd
+    # --- Try pre-merged static files first (fastest path) ---
+    premerged_key = premerged_files[layer_name]
+    premerged_paths = [
+        Path(__file__).parent.parent.parent / 'static' / 'data' / 'premerged',
+        Path.cwd() / 'static' / 'data' / 'premerged',
     ]
     
-    logger.info(f"Looking for {layer_name} GeoJSON file...")
+    for base_path in premerged_paths:
+        if not base_path.exists():
+            continue
+        
+        # Try gzipped first (smaller), then plain JSON
+        for suffix in ['.json.gz', '.json']:
+            file_path = base_path / f"{premerged_key}{suffix}"
+            if file_path.exists():
+                try:
+                    if suffix == '.json.gz':
+                        with gzip.open(file_path, 'rt') as f:
+                            data = json.load(f)
+                    else:
+                        with open(file_path, 'r') as f:
+                            data = json.load(f)
+                    logger.info(f"Loaded pre-merged data for {layer_name} from {file_path}")
+                    return data
+                except Exception as e:
+                    logger.warning(f"Failed to load pre-merged {file_path}: {e}")
+    
+    logger.info(f"No pre-merged files found for {layer_name}, falling back to raw GeoJSON...")
+    
+    # --- Fallback: load raw GeoJSON files ---
+    possible_base_paths = [
+        Path(__file__).parent.parent.parent / 'data' / 'Processed GeoJsons',
+        Path(__file__).parent.parent.parent / 'data' / 'processed_geojsons',
+        Path(__file__).parent.parent.parent / 'data',
+        Path.cwd() / 'data' / 'Processed GeoJsons',
+        Path.cwd() / 'data' / 'processed_geojsons',
+        Path.cwd() / 'data',
+    ]
     
     for base_path in possible_base_paths:
-        logger.debug(f"Checking base path: {base_path}")
-        
         if not base_path.exists():
-            logger.debug(f"Base path does not exist: {base_path}")
             continue
             
-        # Try different file path variations
         possible_files = [
-            base_path / layer_files[layer_name],  # Original filename
-            base_path / f"{layer_files[layer_name]}.gz",  # Compressed version
-            base_path / layer_files[layer_name].lower(),  # Lowercase version
-            base_path / layer_files[layer_name].replace(' ', '_'),  # Underscore version
+            base_path / layer_files[layer_name],
+            base_path / f"{layer_files[layer_name]}.gz",
+            base_path / layer_files[layer_name].lower(),
+            base_path / layer_files[layer_name].replace(' ', '_'),
         ]
         
         for file_path in possible_files:
-            logger.debug(f"Trying file: {file_path}")
             if file_path.exists():
                 try:
                     if file_path.suffix == '.gz':
                         with gzip.open(file_path, 'rt') as f:
                             geojson_data = json.load(f)
-                            logger.info(f"Successfully loaded compressed GeoJSON for {layer_name} from {file_path}")
+                            logger.info(f"Loaded compressed GeoJSON for {layer_name} from {file_path}")
                             return _optimize_geojson_properties(geojson_data, layer_name)
                     else:
                         with open(file_path, 'r') as f:
                             geojson_data = json.load(f)
-                            logger.info(f"Successfully loaded GeoJSON for {layer_name} from {file_path}")
+                            logger.info(f"Loaded GeoJSON for {layer_name} from {file_path}")
                             return _optimize_geojson_properties(geojson_data, layer_name)
                 except Exception as e:
                     logger.warning(f"Failed to load {file_path}: {e}")
                     continue
     
-    # If we get here, no files were found
-    logger.error(f"Could not find GeoJSON file for {layer_name} in any of the expected locations")
-    logger.error(f"Searched paths: {[str(p) for p in possible_base_paths]}")
-    
-    # List what files are actually available for debugging
-    for base_path in possible_base_paths:
-        if base_path.exists():
-            try:
-                files = list(base_path.glob('*.geojson*'))
-                logger.info(f"Available files in {base_path}: {[f.name for f in files]}")
-            except Exception as e:
-                logger.warning(f"Could not list files in {base_path}: {e}")
-    
-    # Return a minimal fallback GeoJSON for Hawaii state bounds if no files found
+    logger.error(f"Could not find GeoJSON file for {layer_name} in any location")
     logger.warning(f"Returning fallback minimal GeoJSON for {layer_name}")
     return get_fallback_geojson(layer_name)
 
@@ -259,34 +280,48 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
     
-    # Map geo levels to their data loader equivalents
-    geo_level_map = {
-        'State Boundary': 'state',
-        'Counties': 'county',
-        'House Districts': 'house',
-        'Senate Districts': 'senate'
-    }
+    # Check if GeoJSON has pre-merged data (data already in properties)
+    has_premerged_data = False
+    if geojson_data and 'features' in geojson_data and len(geojson_data['features']) > 0:
+        first_feature = geojson_data['features'][0]
+        if 'properties' in first_feature:
+            # Check for statistical data keys that indicate pre-merged data
+            props = first_feature['properties']
+            has_premerged_data = any(key in props for key in ['alice_rate', 'median_income', 'poverty_rate', 'total_population'])
     
-    geo_level = geo_level_map.get(active_layer, 'state')
-    
-    # Lazy load statistical data - only load when layer changes or not in session state
-    data_cache_key = f'data_cache_{geo_level}'
-    if data_cache_key not in st.session_state:
-        # Load data with progress indicator
-        with st.spinner(f"Loading {active_layer} statistical data..."):
-            data_loader = get_data_loader()
-            # Get combined data for the selected geographic level
-            combined_data = data_loader.get_data(geo_level)
-            # Store in session state for faster subsequent access
-            st.session_state[data_cache_key] = combined_data
+    if has_premerged_data:
+        logger.info(f"Using pre-merged data from GeoJSON (no separate data loading needed)")
+        combined_data = None  # Not needed for pre-merged data
     else:
-        # Use cached data from session state
-        combined_data = st.session_state[data_cache_key]
+        # Map geo levels to their data loader equivalents
+        geo_level_map = {
+            'State Boundary': 'state',
+            'Counties': 'county',
+            'House Districts': 'house',
+            'Senate Districts': 'senate'
+        }
+        
+        geo_level = geo_level_map.get(active_layer, 'state')
+        
+        # Lazy load statistical data - only load when layer changes or not in session state
+        data_cache_key = f'data_cache_{geo_level}'
+        if data_cache_key not in st.session_state:
+            # Load data with progress indicator
+            with st.spinner(f"Loading {active_layer} statistical data..."):
+                data_loader = get_data_loader()
+                # Get combined data for the selected geographic level
+                combined_data = data_loader.get_data(geo_level)
+                # Store in session state for faster subsequent access
+                st.session_state[data_cache_key] = combined_data
+        else:
+            # Use cached data from session state
+            combined_data = st.session_state[data_cache_key]
     
-    # Get data loader for merging (always needed)
-    data_loader = get_data_loader()
-    
+    # Only merge data if we're using raw GeoJSON (not pre-merged)
     if combined_data is not None:
+        # Get data loader for merging
+        data_loader = get_data_loader()
+        
         # Debug: Print combined data columns and first row
         logger.info(f"Combined data columns: {combined_data.columns.tolist()}")
         if not combined_data.empty:
@@ -304,7 +339,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             if 'poverty_rate' in combined_data.columns:
                 logger.info(f"COUNTY DATA DEBUG: Poverty rate values:\n{combined_data['poverty_rate']}")
     else:
-        logger.warning(f"No combined data available for {geo_level}")
+        logger.info(f"Using pre-merged GeoJSON data (skipping merge step)")
         
     # Note: The enhanced data loader now handles all the merging automatically
     # The following legacy code is no longer needed but kept for reference
