@@ -6,10 +6,6 @@ import json
 from pathlib import Path
 from functools import lru_cache
 import streamlit as st
-from streamlit.web.server.websocket_headers import _get_websocket_headers
-
-# Add the src directory to the Python path
-sys.path.append(str(Path(__file__).parent / "src"))
 
 # Add the src directory to the Python path
 sys.path.append(str(Path(__file__).parent / "src"))
