@@ -747,8 +747,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     """, unsafe_allow_html=True)
     
     # Debug: Show current session state at the very top
-    st.write(f"🔍 DEBUG START - Food: {st.session_state.get('selected_food_security_variable')}, Housing: {st.session_state.get('selected_housing_transportation_variable')}, Economic: {st.session_state.get('selected_variable')}")
-    
+        
     # Create dropdown controls in main content area
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
@@ -847,8 +846,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
-        st.write(f"🔍 Economic dropdown returned: {selected_var}")
-        
+                
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
@@ -895,8 +893,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
-        st.write(f"🔍 Food Security dropdown returned: {selected_fs_var}")
-        
+                
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
@@ -942,8 +939,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
-        st.write(f"🔍 Housing dropdown returned: {selected_ht_var}")
-        
+                
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_ht_var != selected_housing_transportation_var:
             st.session_state['selected_housing_transportation_variable'] = selected_ht_var
@@ -978,21 +974,17 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     active_category = st.session_state.get('active_category', 'economic')
     
     logger.info(f"Dropdown states - Food Security: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}, Active: {active_category}")
-    st.write(f"🔍 DEBUG: Dropdown states - Food: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}, Active: {active_category}")
     
     # Use the variable from the active category
     if active_category == 'food_security':
         map_variable = food_security_var
         logger.info(f"Using Food Security variable: {map_variable}")
-        st.write(f"🔍 DEBUG: Using Food Security variable: {map_variable}")
     elif active_category == 'housing':
         map_variable = housing_transportation_var
         logger.info(f"Using Housing/Transportation variable: {map_variable}")
-        st.write(f"🔍 DEBUG: Using Housing variable: {map_variable}")
     else:  # economic or default
         map_variable = data_var if data_var else 'alice_rate'
         logger.info(f"Using Economic Security variable: {map_variable}")
-        st.write(f"🔍 DEBUG: Using Economic variable: {map_variable}")
     
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
