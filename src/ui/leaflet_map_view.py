@@ -852,10 +852,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
-            # Clear food security and housing/transportation selections when data variable is selected
-            if selected_var is not None:
-                st.session_state['selected_food_security_variable'] = None
-                st.session_state['selected_housing_transportation_variable'] = None
+            st.session_state['active_category'] = 'economic'
             st.rerun()
     
     with col3:
@@ -903,9 +900,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
-            # Clear other category selections when food security variable is selected
-            st.session_state['selected_variable'] = None
-            st.session_state['selected_housing_transportation_variable'] = None
+            st.session_state['active_category'] = 'food_security'
             st.rerun()
     
     with col4:
@@ -952,9 +947,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_ht_var != selected_housing_transportation_var:
             st.session_state['selected_housing_transportation_variable'] = selected_ht_var
-            # Clear other category selections when housing/transportation variable is selected
-            st.session_state['selected_variable'] = None
-            st.session_state['selected_food_security_variable'] = None
+            st.session_state['active_category'] = 'housing'
             st.rerun()
     
     # Create a mapping of variable names to display names
@@ -978,32 +971,28 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         'total_schools': 'Total Number of Schools'
     }
     
-    # Determine which variable to use for the map
+    # Determine which variable to use for the map based on active category
     food_security_var = st.session_state.get('selected_food_security_variable')
     housing_transportation_var = st.session_state.get('selected_housing_transportation_variable')
     data_var = st.session_state.get('selected_variable')
+    active_category = st.session_state.get('active_category', 'economic')
     
-    logger.info(f"Dropdown states - Food Security: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}")
-    st.write(f"🔍 DEBUG: Dropdown states - Food: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}")
+    logger.info(f"Dropdown states - Food Security: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}, Active: {active_category}")
+    st.write(f"🔍 DEBUG: Dropdown states - Food: {food_security_var}, Housing: {housing_transportation_var}, Economic: {data_var}, Active: {active_category}")
     
-    # Use food security variable if selected, otherwise housing/transportation, otherwise data variable
-    if food_security_var is not None:
+    # Use the variable from the active category
+    if active_category == 'food_security':
         map_variable = food_security_var
         logger.info(f"Using Food Security variable: {map_variable}")
         st.write(f"🔍 DEBUG: Using Food Security variable: {map_variable}")
-    elif housing_transportation_var is not None:
+    elif active_category == 'housing':
         map_variable = housing_transportation_var
         logger.info(f"Using Housing/Transportation variable: {map_variable}")
         st.write(f"🔍 DEBUG: Using Housing variable: {map_variable}")
-    elif data_var is not None:
-        map_variable = data_var
+    else:  # economic or default
+        map_variable = data_var if data_var else 'alice_rate'
         logger.info(f"Using Economic Security variable: {map_variable}")
         st.write(f"🔍 DEBUG: Using Economic variable: {map_variable}")
-    else:
-        # Default to alice_rate if nothing is selected, but don't update session state to avoid loops
-        map_variable = 'alice_rate'
-        logger.info(f"Using default variable: {map_variable}")
-        st.write(f"🔍 DEBUG: Using default variable: {map_variable}")
     
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
