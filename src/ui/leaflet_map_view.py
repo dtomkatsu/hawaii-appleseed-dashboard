@@ -826,16 +826,27 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 return "Select Variable"
             return variable_options[x]
         
-        # Get current variable index - always recalculate from session state
-        # This ensures cloud environments properly sync dropdown display with session state
+        # Get current variable and active category
         selected_variable = st.session_state.get('selected_variable', None)
-        if selected_variable is None or selected_variable not in variable_options:
-            var_index = 0
+        active_category = st.session_state.get('active_category', 'economic')
+        
+        # Initialize with ALICE as default on first load
+        if 'active_category' not in st.session_state:
+            st.session_state['active_category'] = 'economic'
+            st.session_state['selected_variable'] = 'alice_rate'
+            selected_variable = 'alice_rate'
+            active_category = 'economic'
+        
+        # Show placeholder (None) if this category is not active
+        if active_category != 'economic':
+            var_index = 0  # Show placeholder
+        elif selected_variable is None or selected_variable not in variable_options:
+            var_index = var_options.index('alice_rate')  # Default to ALICE
         else:
             try:
                 var_index = var_options.index(selected_variable)
             except ValueError:
-                var_index = 0
+                var_index = var_options.index('alice_rate')
             
         selected_var = st.selectbox(
             "",
@@ -847,8 +858,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         )
         
                 
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_var != selected_variable:
+        # Update session state only if user selects an actual variable (not None)
+        if selected_var is not None and selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
             st.session_state['active_category'] = 'economic'
             st.rerun()
@@ -868,19 +879,23 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_display': 'Number of CEP Schools'
         }
         
-        # Use list of food security variables
-        fs_options = list(food_security_options.keys())
+        # Add None option for mutual exclusion
+        fs_options = [None] + list(food_security_options.keys())
         
         def fs_format_func(x):
+            if x is None:
+                return "Select Food Security Variable..."
             return food_security_options[x]
         
-        # Get current food security variable - always recalculate from session state
-        # This ensures cloud environments properly sync dropdown display with session state
+        # Get current food security variable and active category
         selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
+        active_category = st.session_state.get('active_category', 'economic')
         
-        # If no food security variable is selected, default to first option
-        if selected_food_security_var is None or selected_food_security_var not in fs_options:
-            fs_index = 0
+        # Show placeholder (None) if this category is not active
+        if active_category != 'food_security':
+            fs_index = 0  # Show placeholder
+        elif selected_food_security_var is None or selected_food_security_var not in food_security_options:
+            fs_index = 1  # Default to first actual variable
         else:
             fs_index = fs_options.index(selected_food_security_var)
             
@@ -894,8 +909,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         )
         
                 
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_fs_var != selected_food_security_var:
+        # Update session state only if user selects an actual variable (not None)
+        if selected_fs_var is not None and selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
             st.session_state['active_category'] = 'food_security'
             st.rerun()
@@ -914,19 +929,23 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'public_transportation_pct': 'Public Transportation Commuters (%)'
         }
         
-        # Use list of housing/transportation variables
-        ht_options = list(housing_transportation_options.keys())
+        # Add None option for mutual exclusion
+        ht_options = [None] + list(housing_transportation_options.keys())
         
         def ht_format_func(x):
+            if x is None:
+                return "Select Housing/Transportation Variable..."
             return housing_transportation_options[x]
         
-        # Get current housing/transportation variable - always recalculate from session state
-        # This ensures cloud environments properly sync dropdown display with session state
+        # Get current housing/transportation variable and active category
         selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
+        active_category = st.session_state.get('active_category', 'economic')
         
-        # If no housing/transportation variable is selected, default to first option
-        if selected_housing_transportation_var is None or selected_housing_transportation_var not in ht_options:
-            ht_index = 0
+        # Show placeholder (None) if this category is not active
+        if active_category != 'housing':
+            ht_index = 0  # Show placeholder
+        elif selected_housing_transportation_var is None or selected_housing_transportation_var not in housing_transportation_options:
+            ht_index = 1  # Default to first actual variable
         else:
             ht_index = ht_options.index(selected_housing_transportation_var)
             
@@ -940,8 +959,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         )
         
                 
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_ht_var != selected_housing_transportation_var:
+        # Update session state only if user selects an actual variable (not None)
+        if selected_ht_var is not None and selected_ht_var != selected_housing_transportation_var:
             st.session_state['selected_housing_transportation_variable'] = selected_ht_var
             st.session_state['active_category'] = 'housing'
             st.rerun()
