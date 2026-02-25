@@ -22,7 +22,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'hi-data-dashboard'
-      - '--image=us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA'
+      - '--image=us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest'
       - '--region=us-west1'
       - '--platform=managed'
       - '--allow-unauthenticated'
