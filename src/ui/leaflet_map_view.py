@@ -746,6 +746,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     </style>
     """, unsafe_allow_html=True)
     
+    # Debug: Show current session state at the very top
+    st.write(f"🔍 DEBUG START - Food: {st.session_state.get('selected_food_security_variable')}, Housing: {st.session_state.get('selected_housing_transportation_variable')}, Economic: {st.session_state.get('selected_variable')}")
+    
     # Create dropdown controls in main content area
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
@@ -844,6 +847,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
+        st.write(f"🔍 Economic dropdown returned: {selected_var}")
+        
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
@@ -894,6 +899,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             label_visibility="collapsed"
         )
         
+        st.write(f"🔍 Food Security dropdown returned: {selected_fs_var}")
+        
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
@@ -942,6 +949,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             key="housing_transportation_selector",
             label_visibility="collapsed"
         )
+        
+        st.write(f"🔍 Housing dropdown returned: {selected_ht_var}")
         
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_ht_var != selected_housing_transportation_var:
