@@ -853,7 +853,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=var_options,
             format_func=var_format_func,
             index=var_index,
-            key="variable_selector",
+            key=f"variable_selector_{active_category}",
             label_visibility="collapsed"
         )
         
@@ -904,7 +904,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=fs_options,
             format_func=fs_format_func,
             index=fs_index,
-            key="food_security_selector",
+            key=f"food_security_selector_{active_category}",
             label_visibility="collapsed"
         )
         
@@ -954,7 +954,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             options=ht_options,
             format_func=ht_format_func,
             index=ht_index,
-            key="housing_transportation_selector",
+            key=f"housing_transportation_selector_{active_category}",
             label_visibility="collapsed"
         )
         
