@@ -406,7 +406,7 @@ def main():
                 margin-bottom: 0.5rem !important;
                 display: block;
                 font-weight: 500;
-                color: #2a5a0c;
+                color: #1E5BA8;
                 font-family: 'Roboto', sans-serif;
             }
 
