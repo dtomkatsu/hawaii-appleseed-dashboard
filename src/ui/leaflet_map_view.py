@@ -873,22 +873,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_display': 'Number of CEP Schools'
         }
         
-        # Add None option for mutual exclusion
-        fs_options = [None] + list(food_security_options.keys())
+        # Use list of food security variables
+        fs_options = list(food_security_options.keys())
         
         def fs_format_func(x):
-            if x is None:
-                return "Select Food Security Variable..."
             return food_security_options[x]
         
         # Get current food security variable - always recalculate from session state
         # This ensures cloud environments properly sync dropdown display with session state
         selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
         
-        try:
-            fs_index = fs_options.index(selected_food_security_var)
-        except (ValueError, TypeError):
+        # If no food security variable is selected, default to first option
+        if selected_food_security_var is None or selected_food_security_var not in fs_options:
             fs_index = 0
+        else:
+            fs_index = fs_options.index(selected_food_security_var)
             
         selected_fs_var = st.selectbox(
             "",
@@ -904,10 +903,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
-            # Clear data variable and housing/transportation selections when food security variable is selected
-            if selected_fs_var is not None:
-                st.session_state['selected_variable'] = None
-                st.session_state['selected_housing_transportation_variable'] = None
+            # Clear other category selections when food security variable is selected
+            st.session_state['selected_variable'] = None
+            st.session_state['selected_housing_transportation_variable'] = None
             st.rerun()
     
     with col4:
@@ -924,22 +922,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'public_transportation_pct': 'Public Transportation Commuters (%)'
         }
         
-        # Add None option for mutual exclusion
-        ht_options = [None] + list(housing_transportation_options.keys())
+        # Use list of housing/transportation variables
+        ht_options = list(housing_transportation_options.keys())
         
         def ht_format_func(x):
-            if x is None:
-                return "Select Housing/Transportation Variable..."
             return housing_transportation_options[x]
         
         # Get current housing/transportation variable - always recalculate from session state
         # This ensures cloud environments properly sync dropdown display with session state
         selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
         
-        try:
-            ht_index = ht_options.index(selected_housing_transportation_var)
-        except (ValueError, TypeError):
+        # If no housing/transportation variable is selected, default to first option
+        if selected_housing_transportation_var is None or selected_housing_transportation_var not in ht_options:
             ht_index = 0
+        else:
+            ht_index = ht_options.index(selected_housing_transportation_var)
             
         selected_ht_var = st.selectbox(
             "",
@@ -955,10 +952,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_ht_var != selected_housing_transportation_var:
             st.session_state['selected_housing_transportation_variable'] = selected_ht_var
-            # Clear data variable and food security selections when housing/transportation variable is selected
-            if selected_ht_var is not None:
-                st.session_state['selected_variable'] = None
-                st.session_state['selected_food_security_variable'] = None
+            # Clear other category selections when housing/transportation variable is selected
+            st.session_state['selected_variable'] = None
+            st.session_state['selected_food_security_variable'] = None
             st.rerun()
     
     # Create a mapping of variable names to display names
