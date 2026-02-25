@@ -1,19 +1,19 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA', '.']
+    args: ['build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA', '.']
   
-  # Push the container image to Container Registry
+  # Push the container image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA']
+    args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA']
   
   # Tag as latest
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['tag', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest']
+    args: ['tag', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest']
   
   # Push latest tag
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest']
+    args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest']
   
   # Deploy to Cloud Run with session affinity and WebSocket-friendly config
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -21,9 +21,9 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'hawaii-appleseed-dashboard'
-      - '--image=gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'
-      - '--region=us-central1'
+      - 'hi-data-dashboard'
+      - '--image=us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA'
+      - '--region=us-west1'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--memory=4Gi'
@@ -40,8 +40,8 @@ steps:
       - '--set-env-vars=STREAMLIT_SERVER_MAX_MESSAGE_SIZE=200'
 
 images:
-  - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/hawaii-appleseed-dashboard:latest'
+  - 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$COMMIT_SHA'
+  - 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest'
 
 options:
   machineType: 'E2_HIGHCPU_8'
