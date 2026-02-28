@@ -3,10 +3,10 @@
 # Hawaii Appleseed Dashboard - Google Cloud Run Deployment Script
 
 # Configuration variables
-PROJECT_ID="your-gcp-project-id"  # Replace with your GCP project ID
-SERVICE_NAME="hawaii-appleseed-dashboard"
-REGION="us-central1"  # Change to your preferred region
-IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
+PROJECT_ID="composed-sensor-468822-i0"
+SERVICE_NAME="hi-data-dashboard"
+REGION="us-west1"
+IMAGE_NAME="us-west1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard"
 
 echo "🌴 Deploying Hawaii Appleseed Dashboard to Google Cloud Run"
 echo "Project ID: ${PROJECT_ID}"
@@ -38,10 +38,13 @@ gcloud run deploy ${SERVICE_NAME} \
     --platform managed \
     --region ${REGION} \
     --allow-unauthenticated \
-    --memory 2Gi \
-    --cpu 1 \
+    --memory 4Gi \
+    --cpu 2 \
     --timeout 3600 \
-    --max-instances 10 \
+    --max-instances 5 \
+    --min-instances 1 \
+    --concurrency 1 \
+    --no-cpu-throttling \
     --port 8080
 
 if [ $? -eq 0 ]; then
