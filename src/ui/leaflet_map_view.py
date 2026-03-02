@@ -848,21 +848,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             except ValueError:
                 var_index = var_options.index('alice_rate')
             
+        def on_economic_change():
+            selected = st.session_state.get('variable_selector')
+            if selected is not None:
+                st.session_state['selected_variable'] = selected
+                st.session_state['active_category'] = 'economic'
+        
         selected_var = st.selectbox(
             "",
             options=var_options,
             format_func=var_format_func,
             index=var_index,
-            key=f"variable_selector_{active_category}",
+            key="variable_selector",
+            on_change=on_economic_change,
             label_visibility="collapsed"
         )
-        
-                
-        # Update session state only if user selects an actual variable (not None)
-        if selected_var is not None and selected_var != selected_variable:
-            st.session_state['selected_variable'] = selected_var
-            st.session_state['active_category'] = 'economic'
-            st.rerun()
     
     with col3:
         # Food Security dropdown
@@ -899,21 +899,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         else:
             fs_index = fs_options.index(selected_food_security_var)
             
+        def on_food_security_change():
+            selected = st.session_state.get('food_security_selector')
+            if selected is not None:
+                st.session_state['selected_food_security_variable'] = selected
+                st.session_state['active_category'] = 'food_security'
+        
         selected_fs_var = st.selectbox(
             "",
             options=fs_options,
             format_func=fs_format_func,
             index=fs_index,
-            key=f"food_security_selector_{active_category}",
+            key="food_security_selector",
+            on_change=on_food_security_change,
             label_visibility="collapsed"
         )
-        
-                
-        # Update session state only if user selects an actual variable (not None)
-        if selected_fs_var is not None and selected_fs_var != selected_food_security_var:
-            st.session_state['selected_food_security_variable'] = selected_fs_var
-            st.session_state['active_category'] = 'food_security'
-            st.rerun()
     
     with col4:
         # Housing and Transportation dropdown
@@ -949,21 +949,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         else:
             ht_index = ht_options.index(selected_housing_transportation_var)
             
+        def on_housing_change():
+            selected = st.session_state.get('housing_transportation_selector')
+            if selected is not None:
+                st.session_state['selected_housing_transportation_variable'] = selected
+                st.session_state['active_category'] = 'housing'
+        
         selected_ht_var = st.selectbox(
             "",
             options=ht_options,
             format_func=ht_format_func,
             index=ht_index,
-            key=f"housing_transportation_selector_{active_category}",
+            key="housing_transportation_selector",
+            on_change=on_housing_change,
             label_visibility="collapsed"
         )
-        
-                
-        # Update session state only if user selects an actual variable (not None)
-        if selected_ht_var is not None and selected_ht_var != selected_housing_transportation_var:
-            st.session_state['selected_housing_transportation_variable'] = selected_ht_var
-            st.session_state['active_category'] = 'housing'
-            st.rerun()
     
     # Create a mapping of variable names to display names
     variable_display_names = {
