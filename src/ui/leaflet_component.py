@@ -243,18 +243,45 @@ class LeafletMapComponent:
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             .custom-tooltip {
-                background-color: rgba(255, 255, 255, 0.95);
-                border: 1px solid #1a73e8;
-                border-radius: 4px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-                padding: 6px 10px;
+                background-color: rgba(255, 255, 255, 0.97);
+                border: 1px solid rgba(26, 115, 232, 0.35);
+                border-radius: 6px;
+                box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+                padding: 8px 12px;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 12px;
-                line-height: 1.4;
+                line-height: 1.3;
                 white-space: nowrap;
                 pointer-events: none;
+                min-width: 140px;
             }
-            
+            .tt-name {
+                font-weight: 700;
+                font-size: 13px;
+                color: #1a3a6b;
+                margin-bottom: 3px;
+            }
+            .tt-stat {
+                font-size: 12px;
+                color: #444;
+                font-weight: 500;
+            }
+            .tt-divider {
+                height: 1px;
+                background: rgba(0, 0, 0, 0.1);
+                margin: 6px 0;
+            }
+            .tt-rep {
+                font-size: 11px;
+                color: #555;
+                font-weight: 600;
+            }
+            .tt-areas {
+                font-size: 11px;
+                color: #888;
+                margin-top: 2px;
+            }
+
             /* Remove focus outline from map features */
             .leaflet-container:focus,
             .leaflet-container:focus-within,
@@ -273,16 +300,6 @@ class LeafletMapComponent:
             .leaflet-interactive:focus-visible {
                 outline: none !important;
                 box-shadow: none !important;
-            }
-            .custom-tooltip strong {
-                color: #1a73e8;
-            }
-            .custom-tooltip strong:first-child {
-                font-size: 13px;
-            }
-            .tooltip-data {
-                color: #333;
-                font-weight: 500;
             }
         """
     
@@ -936,16 +953,16 @@ class LeafletMapComponent:
                     }});
                     
                     // Build tooltip content with representative info if available
-                    let tooltipContent = '<strong>' + name + '</strong><br>' +
-                        '<span class="tooltip-data">' + VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>';
-                    
+                    let tooltipContent = '<div class="tt-name">' + name + '</div>' +
+                        '<div class="tt-stat">' + VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</div>';
+
                     // Add representative info to tooltip if available
                     if (repInfo && repInfo.hasData) {{
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = repInfo.html;
                         const repNameElement = tempDiv.querySelector('div:nth-child(2)');
                         const areasElement = tempDiv.querySelector('div:nth-child(3)');
-                        
+
                         if (repNameElement && areasElement) {{
                             const repName = repNameElement.textContent.trim();
                             let areas = areasElement.textContent.replace('Areas: ', '').trim();
@@ -959,8 +976,9 @@ class LeafletMapComponent:
                                 }}
                             }}
 
-                            tooltipContent += '<br><br><strong>Representative:</strong> ' + repName;
-                            tooltipContent += '<br><span class="tooltip-data"><strong>Areas:</strong> ' + areas + '</span>';
+                            tooltipContent += '<div class="tt-divider"></div>';
+                            tooltipContent += '<div class="tt-rep">' + repName + '</div>';
+                            tooltipContent += '<div class="tt-areas">' + areas + '</div>';
                         }}
                     }}
                     
