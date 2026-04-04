@@ -272,14 +272,16 @@ class LeafletMapComponent:
                 margin: 6px 0;
             }
             .tt-rep {
-                font-size: 11px;
+                font-size: 12px;
                 color: #555;
                 font-weight: 600;
+                margin-bottom: 4px;
             }
             .tt-areas {
-                font-size: 11px;
-                color: #888;
+                font-size: 12px;
+                color: #777;
                 margin-top: 2px;
+                line-height: 1.4;
             }
 
             /* Remove focus outline from map features */
