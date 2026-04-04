@@ -276,8 +276,8 @@ class LeafletMapComponent:
             }
             .custom-tooltip strong {
                 color: #1a73e8;
-                display: block;
-                margin-bottom: 2px;
+            }
+            .custom-tooltip strong:first-child {
                 font-size: 13px;
             }
             .tooltip-data {
