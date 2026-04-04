@@ -479,10 +479,10 @@ class LeafletMapComponent:
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
                                 '<div style="background:', bgColor, '; border: 1px solid ', borderColor, ';',
                                 'border-radius: 4px; padding: 6px 8px; height: 100%; font-weight:', fontWeight, ';">',
-                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;',
+                                '<div style="font-size: 12px; color: #666; margin-bottom: 2px;',
                                 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">',
                                 metric.label, '</div>',
-                                '<div style="font-size: 12px; color: #333;">',
+                                '<div style="font-size: 13px; color: #333;">',
                                 utils.formatValue(value, metric.type), '</div>',
                                 '</div></div>'
                             ].join('');
@@ -648,8 +648,8 @@ class LeafletMapComponent:
                             html: [
                                 '<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-left: 3px solid #1a73e8; border-radius: 4px;">',
                                 '  <div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 4px;">Representative</div>',
-                                '  <div style="font-size: 12px; color: #333; margin-bottom: 2px;">' + rep.name + ' (' + rep.party + ')</div>',
-                                '  <div style="font-size: 11px; color: #666; font-style: italic;">Areas: ' + rep.areas + '</div>',
+                                '  <div style="font-size: 13px; color: #333; margin-bottom: 2px;">' + rep.name + ' (' + rep.party + ')</div>',
+                                '  <div style="font-size: 12px; color: #666; font-style: italic;">Areas: ' + rep.areas + '</div>',
                                 '</div>'
                             ].join(''),
                             hasData: true
@@ -689,9 +689,9 @@ class LeafletMapComponent:
                                 'border: 1px solid ' + borderColor + '; ' +
                                 'border-radius: 4px; padding: 6px 8px; margin: 3px 0; ' +
                                 'font-weight: ' + fontWeight + ';">' +
-                                '<div style="font-size: 10px; color: #666; margin-bottom: 2px;">' + 
+                                '<div style="font-size: 12px; color: #666; margin-bottom: 2px;">' +
                                 metric.label + '</div>' +
-                                '<div style="font-size: 12px; color: #333;">' + 
+                                '<div style="font-size: 13px; color: #333;">' +
                                 formattedValue + '</div>' +
                                 '</div>';
                         }}
@@ -871,12 +871,12 @@ class LeafletMapComponent:
                         '  <div style="display: flex; gap: 10px; margin-top: 8px; justify-content: space-between;">',
                         '    <!-- Key Metrics Column -->',
                         '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
+                        '      <div style="font-size: 13px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">Key Metrics</div>',
                         '      ', (metricsHtml || '<div style="color: #999; text-align: center; font-style: italic;">No metrics available</div>'),
                         '    </div>',
                         '    <!-- SNAP Column -->',
                         '    <div style="width: 48%; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px;">',
-                        '      <div style="font-size: 12px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
+                        '      <div style="font-size: 13px; color: #666; margin-bottom: 6px; font-weight: bold; text-align: center;">SNAP</div>',
                         '      ', (snapHtml || ''),
                         '    </div>',
                         '  </div>',
