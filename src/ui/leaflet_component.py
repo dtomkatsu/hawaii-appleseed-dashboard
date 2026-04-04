@@ -948,7 +948,17 @@ class LeafletMapComponent:
                         
                         if (repNameElement && areasElement) {{
                             const repName = repNameElement.textContent.trim();
-                            const areas = areasElement.textContent.replace('Areas: ', '').trim();
+                            let areas = areasElement.textContent.replace('Areas: ', '').trim();
+
+                            // Truncate areas list if it's too long for the tooltip
+                            if (areas.length > 80) {{
+                                const areasList = areas.split(', ');
+                                areas = areasList.slice(0, 2).join(', ');
+                                if (areasList.length > 2) {{
+                                    areas += ', +' + (areasList.length - 2) + ' more';
+                                }}
+                            }}
+
                             tooltipContent += '<br><br><strong>Representative:</strong> ' + repName;
                             tooltipContent += '<br><strong>Areas:</strong> ' + areas;
                         }}
