@@ -282,7 +282,7 @@
 
   /* ControlContainer — target all direct div children to catch structural variations */
   .stSelectbox > div > div[data-baseweb="select"] > div {
-      background-color: #f0f2f6 !important;
+      background-color: #f0f7e9 !important;
       border-radius: var(--border-radius-md) !important;
       border: 1px solid rgba(94, 82, 64, 0.2) !important;
       padding: 0.5rem 0.75rem !important;
@@ -306,7 +306,7 @@
   /* Dropdown hover state */
   .stSelectbox > div > div[data-baseweb="select"] > div:hover {
       border-color: var(--color-primary) !important;
-      background-color: #e8eaef !important;
+      background-color: #e8f3df !important;
   }
 
   /* Focus state */
