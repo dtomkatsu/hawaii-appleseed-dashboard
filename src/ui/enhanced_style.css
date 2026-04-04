@@ -268,20 +268,14 @@
       overflow: hidden !important;
   }
 
-  .stSelectbox > div {
-      width: 100% !important;
-      max-width: 100% !important;
-      overflow: hidden !important;
-  }
-
-  /* Main dropdown container - fill available width */
-  .stSelectbox > div > div[data-baseweb="select"] {
+  /* Select wrapper — direct child of .stSelectbox (no intermediate div) */
+  .stSelectbox > div[data-baseweb="select"] {
       width: 100% !important;
       max-width: 100% !important;
   }
 
-  /* ControlContainer — target all direct div children to catch structural variations */
-  .stSelectbox > div > div[data-baseweb="select"] > div {
+  /* ControlContainer — direct child of the select wrapper */
+  .stSelectbox > div[data-baseweb="select"] > div {
       background-color: #f0f7e9 !important;
       border-radius: var(--border-radius-md) !important;
       border: 1px solid rgba(94, 82, 64, 0.2) !important;
@@ -296,7 +290,7 @@
   }
 
   /* Remove internal borders that create the "segmented" look */
-  .stSelectbox > div > div[data-baseweb="select"] > div > div {
+  .stSelectbox > div[data-baseweb="select"] > div > div {
       border: none !important;
       border-right: none !important;
       border-left: none !important;
@@ -304,13 +298,13 @@
   }
 
   /* Dropdown hover state */
-  .stSelectbox > div > div[data-baseweb="select"] > div:hover {
+  .stSelectbox > div[data-baseweb="select"] > div:hover {
       border-color: var(--color-primary) !important;
       background-color: #e8f3df !important;
   }
 
   /* Focus state */
-  .stSelectbox > div > div[data-baseweb="select"] > div:focus-within {
+  .stSelectbox > div[data-baseweb="select"] > div:focus-within {
       box-shadow: 0 0 0 3px rgba(33, 128, 141, 0.3) !important;
       border-color: var(--color-primary) !important;
   }

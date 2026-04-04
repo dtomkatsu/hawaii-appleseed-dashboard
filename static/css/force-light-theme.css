@@ -8,10 +8,9 @@
   color: #1a1a1a !important;
 }
 
-/* Force light theme for selectbox/multiselect (no border-color) */
-.stSelectbox > div > div,
+/* Force light theme for selectbox/multiselect — only target the select wrapper, not the ControlContainer */
+.stSelectbox > div[data-baseweb="select"],
 .stMultiSelect > div > div > div {
-  background-color: #ffffff !important;
   color: #1a1a1a !important;
 }
 
