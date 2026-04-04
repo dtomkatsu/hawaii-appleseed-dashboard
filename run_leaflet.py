@@ -92,31 +92,6 @@ st.markdown("""
             z-index: -1000 !important;
         }
         
-        /* Make Data Variable dropdown adjust to content width */
-        .stSelectbox > div[data-baseweb="select"] > div {
-            width: auto !important;
-            min-width: 200px;  /* Minimum width to prevent it from being too narrow */
-        }
-        
-        /* Ensure the dropdown options can be as wide as needed */
-        .stSelectbox > div[data-baseweb="select"] > div > div {
-            width: auto !important;
-            max-width: 100vw;  /* Don't exceed viewport width */
-        }
-        
-        /* Make the dropdown options container adjust to content */
-        .stSelectbox > div[data-baseweb="select"] > div > div > div {
-            width: auto !important;
-            min-width: 100%;
-        }
-        
-        /* Ensure the selected value is fully visible */
-        .stSelectbox > div[data-baseweb="select"] > div > div > div > div {
-            white-space: nowrap;
-            overflow: visible;
-            text-overflow: unset;
-        }
-        
         /* Adjust main content layout */
         .stApp > div:first-child {
             padding-top: 1rem;
