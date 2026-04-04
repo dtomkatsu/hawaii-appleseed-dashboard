@@ -89,9 +89,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
         ]
         
-        # Ensure selected_variable is valid
+        # Ensure selected_variable is valid (None is allowed for mutual exclusivity)
         current_var = st.session_state.get('selected_variable', 'alice_rate')
-        if current_var not in valid_variables:
+        if current_var is not None and current_var not in valid_variables:
             logger.warning(f"Invalid variable '{current_var}' in session state, resetting to alice_rate")
             st.session_state['selected_variable'] = 'alice_rate'
         elif 'selected_variable' not in st.session_state:
@@ -116,6 +116,25 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.session_state['selected_variable'] = 'alice_rate'
         st.session_state['color_scheme'] = 'blue'
         
+    # Apply pending dropdown resets BEFORE widgets are created
+    # Setting widget keys here (before instantiation) forces dropdowns to show the correct value
+    reset_flag = st.session_state.pop('_reset_other_dropdowns', None)
+    if reset_flag == 'econ':
+        # Economic Security was selected — reset Food Security and Housing dropdowns
+        st.session_state['food_security_selector'] = None
+        st.session_state['housing_transportation_selector'] = None
+    elif reset_flag == 'food':
+        # Food Security was selected — reset Economic Security and Housing dropdowns
+        st.session_state['variable_selector'] = None
+        st.session_state['housing_transportation_selector'] = None
+    elif reset_flag == 'housing':
+        # Housing was selected — reset Economic Security and Food Security dropdowns
+        st.session_state['variable_selector'] = None
+        st.session_state['food_security_selector'] = None
+    elif reset_flag == 'restore_econ':
+        # Cleared a category with nothing else active — restore Economic Security default
+        st.session_state['variable_selector'] = 'alice_rate'
+
     active_layer = st.session_state['active_layer']
     selected_variable = st.session_state['selected_variable']
     color_scheme = st.session_state['color_scheme']
@@ -653,29 +672,32 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                 'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
             }
         
-        # Get current variable index
+        econ_keys = list(variable_options.keys())
+
+        # Determine index: None means show placeholder, otherwise find position
         try:
-            var_index = list(variable_options.keys()).index(selected_variable)
+            var_index = econ_keys.index(selected_variable) if selected_variable is not None else None
         except (ValueError, KeyError):
-            var_index = 0
-            
+            var_index = None
+
         selected_var = st.selectbox(
             "",
-            options=list(variable_options.keys()),
+            options=econ_keys,
             format_func=lambda x: variable_options[x],
             index=var_index,
+            placeholder="Select Variable",
             key="variable_selector",
             label_visibility="collapsed"
         )
-        
+
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_var != selected_variable:
             st.session_state['selected_variable'] = selected_var
-            # Clear food security and housing/transportation selections when data variable is selected
-            if 'selected_food_security_variable' in st.session_state:
+            # Clear food security and housing/transportation selections when an economic variable is selected
+            if selected_var is not None:
                 st.session_state['selected_food_security_variable'] = None
-            if 'selected_housing_transportation_variable' in st.session_state:
                 st.session_state['selected_housing_transportation_variable'] = None
+                st.session_state['_reset_other_dropdowns'] = 'econ'
             st.rerun()
     
     with col3:
@@ -691,27 +713,22 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'cep_display': 'Number of CEP Schools'
         }
         
-        # Add None option for mutual exclusion
-        fs_options = [None] + list(food_security_options.keys())
-        
-        def fs_format_func(x):
-            if x is None:
-                return "Select Food Security Variable..."
-            return food_security_options[x]
-        
+        fs_keys = list(food_security_options.keys())
+
         # Get current food security variable
         selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
-        
+
         try:
-            fs_index = fs_options.index(selected_food_security_var)
+            fs_index = fs_keys.index(selected_food_security_var) if selected_food_security_var is not None else None
         except (ValueError, TypeError):
-            fs_index = 0
-            
+            fs_index = None
+
         selected_fs_var = st.selectbox(
             "",
-            options=fs_options,
-            format_func=fs_format_func,
+            options=fs_keys,
+            format_func=lambda x: food_security_options[x],
             index=fs_index,
+            placeholder="Select Variable",
             key="food_security_selector",
             label_visibility="collapsed"
         )
@@ -719,14 +736,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_fs_var != selected_food_security_var:
             st.session_state['selected_food_security_variable'] = selected_fs_var
-            # Clear data variable and housing/transportation selections when food security variable is selected
+            # Clear other selections when food security variable is selected
             if selected_fs_var is not None:
                 st.session_state['selected_variable'] = None
-                if 'selected_housing_transportation_variable' in st.session_state:
-                    st.session_state['selected_housing_transportation_variable'] = None
+                st.session_state['selected_housing_transportation_variable'] = None
+                st.session_state['_reset_other_dropdowns'] = 'food'
             else:
-                # Set default data variable when food security is cleared
-                st.session_state['selected_variable'] = 'alice_rate'
+                # Restore default when food security is cleared and nothing else is active
+                if st.session_state.get('selected_housing_transportation_variable') is None:
+                    st.session_state['selected_variable'] = 'alice_rate'
+                    st.session_state['_reset_other_dropdowns'] = 'restore_econ'
             st.rerun()
     
     with col4:
@@ -741,27 +760,22 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             'public_transportation_pct': 'Public Transportation Commuters (%)'
         }
         
-        # Add None option for mutual exclusion
-        ht_options = [None] + list(housing_transportation_options.keys())
-        
-        def ht_format_func(x):
-            if x is None:
-                return "Select Housing/Transportation Variable..."
-            return housing_transportation_options[x]
-        
+        ht_keys = list(housing_transportation_options.keys())
+
         # Get current housing/transportation variable
         selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
-        
+
         try:
-            ht_index = ht_options.index(selected_housing_transportation_var)
+            ht_index = ht_keys.index(selected_housing_transportation_var) if selected_housing_transportation_var is not None else None
         except (ValueError, TypeError):
-            ht_index = 0
-            
+            ht_index = None
+
         selected_ht_var = st.selectbox(
             "",
-            options=ht_options,
-            format_func=ht_format_func,
+            options=ht_keys,
+            format_func=lambda x: housing_transportation_options[x],
             index=ht_index,
+            placeholder="Select Variable",
             key="housing_transportation_selector",
             label_visibility="collapsed"
         )
@@ -769,14 +783,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Update session state only if selection actually changes (prevents infinite loops)
         if selected_ht_var != selected_housing_transportation_var:
             st.session_state['selected_housing_transportation_variable'] = selected_ht_var
-            # Clear data variable and food security selections when housing/transportation variable is selected
+            # Clear other selections when housing/transportation variable is selected
             if selected_ht_var is not None:
                 st.session_state['selected_variable'] = None
-                if 'selected_food_security_variable' in st.session_state:
-                    st.session_state['selected_food_security_variable'] = None
+                st.session_state['selected_food_security_variable'] = None
+                st.session_state['_reset_other_dropdowns'] = 'housing'
             else:
-                # Set default data variable when housing/transportation is cleared
-                st.session_state['selected_variable'] = 'alice_rate'
+                # Restore default when housing/transportation is cleared and nothing else is active
+                if st.session_state.get('selected_food_security_variable') is None:
+                    st.session_state['selected_variable'] = 'alice_rate'
+                    st.session_state['_reset_other_dropdowns'] = 'restore_econ'
             st.rerun()
     
     # Create a mapping of variable names to display names
@@ -1137,9 +1153,19 @@ def create_data_summary():
     """Create a summary of the data with a bar chart comparison."""
     st.subheader("Data Summary")
     
-    # Get the active layer and selected variable
+    # Get the active layer and selected variable (respecting mutual exclusivity)
     active_layer = st.session_state.get('active_layer', 'State Boundary')
-    selected_variable = st.session_state.get('selected_variable', 'alice_rate')
+    food_security_var = st.session_state.get('selected_food_security_variable')
+    housing_transportation_var = st.session_state.get('selected_housing_transportation_variable')
+    data_var = st.session_state.get('selected_variable')
+    if food_security_var is not None:
+        selected_variable = food_security_var
+    elif housing_transportation_var is not None:
+        selected_variable = housing_transportation_var
+    elif data_var is not None:
+        selected_variable = data_var
+    else:
+        selected_variable = 'alice_rate'
     
     # Load data
     data_loader = get_data_loader()
