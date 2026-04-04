@@ -936,8 +936,8 @@ class LeafletMapComponent:
                     }});
                     
                     // Build tooltip content with representative info if available
-                    let tooltipContent = '<strong>' + name + '</strong><br><span class="tooltip-data">' + 
-                        VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>';
+                    let tooltipContent = '<strong>' + name + '</strong><br>' +
+                        '<span class="tooltip-data">' + VARIABLE_DISPLAY_NAME + ': ' + formattedValue + '</span>';
                     
                     // Add representative info to tooltip if available
                     if (repInfo && repInfo.hasData) {{
@@ -960,7 +960,7 @@ class LeafletMapComponent:
                             }}
 
                             tooltipContent += '<br><br><strong>Representative:</strong> ' + repName;
-                            tooltipContent += '<br><strong>Areas:</strong> ' + areas;
+                            tooltipContent += '<br><span class="tooltip-data"><strong>Areas:</strong> ' + areas + '</span>';
                         }}
                     }}
                     
