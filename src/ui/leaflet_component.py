@@ -104,7 +104,7 @@ class LeafletMapComponent:
                 border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 12px;
+                font-size: 13px;
                 line-height: 1.4;
                 color: #333;
                 transition: width 0.4s ease-in-out, padding 0.4s ease-in-out;
@@ -189,14 +189,14 @@ class LeafletMapComponent:
                 font-weight: 600;
                 margin-bottom: 6px;
                 text-align: center;
-                font-size: 12px;
+                font-size: 13px;
                 color: #1a73e8;
             }
             .legend-item {
                 display: flex;
                 align-items: center;
                 margin: 3px 0;
-                font-size: 10px;
+                font-size: 12px;
             }
             .legend-item i {
                 display: inline-block;
@@ -213,7 +213,7 @@ class LeafletMapComponent:
             }
             .color-scheme-selector select {
                 width: 100%;
-                font-size: 10px;
+                font-size: 12px;
                 padding: 4px 6px;
                 border: 1px solid #ddd;
                 border-radius: 4px;
@@ -228,7 +228,7 @@ class LeafletMapComponent:
                 box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
             }
             .color-scheme-selector label {
-                font-size: 10px;
+                font-size: 12px;
                 font-weight: 600;
                 color: #555;
                 display: block;
