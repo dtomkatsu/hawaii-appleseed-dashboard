@@ -794,6 +794,8 @@ class LeafletMapComponent:
                     let name = props.display_name || props.NAME || 'Unknown';
                     // Remove ', Hawaii' or '; Hawaii' from anywhere in the name
                     name = name.replace(/[,;]\\s*Hawaii/g, '').trim();
+                    // Remove '(2022)' or similar year annotations
+                    name = name.replace(/\\s*\\(\\d{4}\\)\\s*/g, '').trim();
                     const value = props[SELECTED_VARIABLE];
                     const formattedValue = utils.formatValue(value, SELECTED_VARIABLE);
                     const metricsHtml = utils.createMetricHtml(null, props);
