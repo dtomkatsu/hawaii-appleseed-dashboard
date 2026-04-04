@@ -465,9 +465,9 @@ class LeafletMapComponent:
                             
                             hasCategoryData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
-                            const bgColor = isSelected ? '#e8f0fe' : '#f8f9fa';
-                            const borderColor = isSelected ? '#1a73e8' : '#e0e0e0';
-                            const fontWeight = isSelected ? 'bold' : 'normal';
+                            const bgColor = isSelected ? '#e8f3df' : '#f8faf5';
+                            const borderColor = isSelected ? '#3a7710' : '#ddebd1';
+                            const fontWeight = isSelected ? '700' : 'normal';
                             
                             // Start new row if needed
                             if (metricCount % 2 === 0) {{
@@ -478,11 +478,12 @@ class LeafletMapComponent:
                             rowHtml += [
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
                                 '<div style="background:', bgColor, '; border: 1px solid ', borderColor, ';',
-                                'border-radius: 4px; padding: 6px 8px; height: 100%; font-weight:', fontWeight, ';">',
-                                '<div style="font-size: 12px; color: #666; margin-bottom: 2px;',
+                                'border-radius: 6px; padding: 7px 10px; height: 100%;">',
+                                '<div style="font-size: 11px; font-weight: 600; color: #6a8a5a;',
+                                'text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;',
                                 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">',
                                 metric.label, '</div>',
-                                '<div style="font-size: 13px; color: #333;">',
+                                '<div style="font-size: 13px; font-weight:', fontWeight, '; color: #1a2e10;">',
                                 utils.formatValue(value, metric.type), '</div>',
                                 '</div></div>'
                             ].join('');
@@ -500,9 +501,10 @@ class LeafletMapComponent:
                         // Add category to HTML if it has data
                         if (hasCategoryData) {{
                             html += [
-                                '<div style="margin-bottom: 16px;">',
-                                '<div style="font-size: 13px; font-weight: 600; color: #1a73e8;',
-                                'margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0;">',
+                                '<div style="margin-bottom: 18px;">',
+                                '<div style="font-size: 12px; font-weight: 700; color: #2a5a0c;',
+                                'text-transform: uppercase; letter-spacing: 0.05em;',
+                                'margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #c8e6b0;">',
                                 categoryName, '</div>',
                                 '<div style="margin: 0 -3px;">', categoryHtml, '</div>',
                                 '</div>'
@@ -646,10 +648,10 @@ class LeafletMapComponent:
                         const rep = repData[districtInfo.key];
                         return {{
                             html: [
-                                '<div style="margin-bottom: 8px; padding: 8px; background-color: #f8f9fa; border-left: 3px solid #1a73e8; border-radius: 4px;">',
-                                '  <div style="font-size: 13px; font-weight: 600; color: #1a73e8; margin-bottom: 4px;">Representative</div>',
-                                '  <div style="font-size: 13px; color: #333; margin-bottom: 2px;">' + rep.name + ' (' + rep.party + ')</div>',
-                                '  <div style="font-size: 12px; color: #666; font-style: italic;">Areas: ' + rep.areas + '</div>',
+                                '<div style="margin-bottom: 14px; padding: 10px 12px; background-color: #f0f7e9; border-left: 3px solid #3a7710; border-radius: 6px;">',
+                                '  <div style="font-size: 11px; font-weight: 700; color: #2a5a0c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Representative</div>',
+                                '  <div style="font-size: 13px; font-weight: 600; color: #1a2e10; margin-bottom: 3px;">' + rep.name + ' <span style="font-weight: 400; color: #6a8a5a;">(' + rep.party + ')</span></div>',
+                                '  <div style="font-size: 12px; color: #5a7a4a;">' + rep.areas + '</div>',
                                 '</div>'
                             ].join(''),
                             hasData: true
@@ -842,8 +844,12 @@ class LeafletMapComponent:
                     let detailLinkHtml = '';
                     if (featureId && featureId !== 'undefined' && featureId !== 'null') {{
                         detailLinkHtml = [
-                            '  <div style="margin: 12px 0 20px 0; text-align: center;">',
-                            '    <a href="/geo_detail?geo_id=' + encodeURIComponent(String(featureId)) + '" target="_blank" style="display: inline-block; background-color: #3a7710; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold;">',
+                            '  <div style="margin: 0 0 20px 0; text-align: center;">',
+                            '    <a href="/geo_detail?geo_id=' + encodeURIComponent(String(featureId)) + '" target="_blank"',
+                            '      style="display: inline-block; background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%);',
+                            '      color: white; padding: 9px 20px; border-radius: 6px; text-decoration: none;',
+                            '      font-weight: 600; font-size: 13px; letter-spacing: 0.01em;',
+                            '      box-shadow: 0 2px 8px rgba(42, 90, 12, 0.3);">',
                             '      View/Print Fact Sheet',
                             '    </a>',
                             '  </div>'
@@ -892,14 +898,15 @@ class LeafletMapComponent:
                         // Update the info panel with categorized content
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
-                            '<div style="position: relative; margin-bottom: 15px; text-align: center; font-weight: 600; font-size: 16px; color: #222; padding-bottom: 8px; border-bottom: 2px solid #1a73e8;">',
-                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: -4px; background: none; border: none; font-size: 24px; color: #666; cursor: pointer; padding: 0; width: 30px; height: 30px; line-height: 30px; border-radius: 4px; transition: all 0.2s;">&times;</button>',
-                            '  ', name,
+                            '<div style="position: relative; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #c8e6b0;">',
+                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; right: 0; top: 0; background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background=\'#e8f3df\';this.style.color=\'#2a5a0c\'" onmouseout="this.style.background=\'none\';this.style.color=\'#6a8a5a\'">&times;</button>',
+                            '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; padding-right: 32px; line-height: 1.2;">', name, '</div>',
+                            '</div>',
+                            '<div style="background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">',
+                            '  <span style="font-size: 12px; opacity: 0.85; font-weight: 500;">', VARIABLE_DISPLAY_NAME, '</span>',
+                            '  <span style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em;">', formattedValue, '</span>',
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
-                            '<div style="background: #1a73e8; color: white; padding: 8px 12px; border-radius: 6px; text-align: center; margin: 0 0 15px 0;">',
-                            '  <strong>', VARIABLE_DISPLAY_NAME, ': ', formattedValue, '</strong>',
-                            '</div>',
                             detailLinkHtml,
                             categorizedMetrics
                         ].join('');
