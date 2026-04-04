@@ -612,7 +612,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col1:
         # Geography dropdown
-        st.markdown('<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
+                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)
