@@ -249,7 +249,7 @@ class LeafletMapComponent:
                 box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
                 padding: 8px 12px;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 12px;
+                font-size: 13px;
                 line-height: 1.3;
                 white-space: nowrap;
                 pointer-events: none;
@@ -257,12 +257,12 @@ class LeafletMapComponent:
             }
             .tt-name {
                 font-weight: 700;
-                font-size: 13px;
+                font-size: 14px;
                 color: #1a3a6b;
                 margin-bottom: 3px;
             }
             .tt-stat {
-                font-size: 12px;
+                font-size: 13px;
                 color: #444;
                 font-weight: 500;
             }
@@ -272,13 +272,13 @@ class LeafletMapComponent:
                 margin: 6px 0;
             }
             .tt-rep {
-                font-size: 12px;
+                font-size: 13px;
                 color: #555;
                 font-weight: 600;
                 margin-bottom: 4px;
             }
             .tt-areas {
-                font-size: 12px;
+                font-size: 13px;
                 color: #777;
                 margin-top: 2px;
                 line-height: 1.4;
