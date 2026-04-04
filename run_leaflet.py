@@ -494,154 +494,15 @@ def main():
     # Enhanced dropdown styling with borders and hover effects
     st.markdown("""
     <style>
-        /* Remove borders from Streamlit's generated classes */
-        .st-au,
-        .st-ax,
-        .st-av,
-        .st-aw,
-        .st-bb,
-        .st-bd,
-        .st-b8,
-        .st-b3,
-        .st-b4,
-        .st-be,
-        .st-bf,
-        .st-bg,
-        .st-bh,
-        .st-bi,
-        .st-bj,
-        .st-bk,
-        .st-bl,
-        .st-bm,
-        .st-bn,
-        .st-b1,
-        .st-bo,
-        .st-bp,
-        .st-e7,
-        .st-e8,
-        .st-e9,
-        .st-ea,
-        .st-eb,
-        .st-bv,
-        .st-bc,
-        .st-bw,
-        .st-bx,
-        .st-by,
-        .st-bz,
-        .st-c0,
-        .st-c1,
-        .st-c2,
-        .st-c3,
-        .st-c4,
-        .st-c6,
-        .st-b6,
-        .st-c7,
-        .st-c8,
-        .st-c9,
-        .st-ca,
-        .st-cb {
+        /* Remove internal borders within select controls (stable selectors) */
+        .stSelectbox [data-baseweb="select"] > div > div {
             border: none !important;
+            border-right: none !important;
+            border-left: none !important;
             box-shadow: none !important;
             outline: none !important;
         }
-        
-        /* Target the dropdown menu container */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 {
-            position: relative;
-            z-index: 1000;
-        }
-        
-        /* Target menu items and text content */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div,
-        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
-            transition: all 0.2s ease !important;
-            opacity: 0;
-            transform: translateY(-5px);
-            animation: itemFadeIn 0.2s forwards;
-            transform-origin: left center !important;
-            cursor: pointer;
-            padding: 12px 16px !important;
-            line-height: 1.5 !important;
-            min-height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
-            overflow: visible !important;
-            white-space: normal !important;
-            text-overflow: clip !important;
-            height: auto !important;
-        }
-        
-        /* Ensure text container doesn't clip content */
-        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
-            padding: 8px 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            height: 100% !important;
-        }
-        
-        /* Hover effect for menu items */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div:hover {
-            background-color: var(--hover-color, #f5f8ff) !important;
-            transform: translateY(0) translateX(8px) !important;
-            padding-left: 24px !important;
-        }
-        /* Base dropdown styles */
-        .stSelectbox {
-            color: var(--text-color) !important;
-            margin-bottom: 1rem;
-        }
-        
-        /* Dropdown container */
-        .stSelectbox > div[data-baseweb="select"] > div {
-            background-color: #f0f7e9;  /* Very light green background */
-            border: none !important;  /* Remove borders */
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        /* Style the dropdown arrow */
-        .stSelectbox svg {
-            color: #2a5a0c !important;  /* Dark green arrow */
-            opacity: 0.8;
-        }
-        
-        /* Hover and focus states for dropdowns */
-        .stSelectbox > div[data-baseweb="select"]:hover > div,
-        .stSelectbox > div[data-baseweb="select"].st-bb > div,
-        .stSelectbox > div[data-baseweb="select"]:focus-within > div {
-            background-color: #e8f3df;
-            border: none !important;  /* Remove borders even on hover */
-            box-shadow: none !important;  /* Remove box shadow */
-        }
-        
-        /* Style the dropdown menu */
-        .stSelectbox > div > div > div {
-            background-color: #f0f7e9;  /* Light green background */
-            border: none !important;  /* Remove borders */
-            border-radius: 4px;
-            padding: 0.5rem 0.75rem;
-        }
-        
-        /* Dropdown menu items */
-        [role="option"] {
-            background-color: #f0f7e9 !important;  /* Match the light green */
-            color: #2a5a0c !important;  /* Dark green text */
-            padding: 8px 16px !important;
-            transition: background-color 0.2s ease !important;
-        }
-        
-        /* Hover state for dropdown items */
-        [role="option"]:hover {
-            background-color: #e0edd0 !important;  /* Slightly darker green on hover */
-        }
-        
-        /* Selected item in dropdown */
-        [aria-selected="true"] {
-            background-color: #d0e3c4 !important;  /* Even darker for selected */
-            font-weight: 500 !important;
-        }
-        
+
         /* Dropdown menu container */
         [data-baseweb="popover"] {
             z-index: 1000 !important;
@@ -785,50 +646,6 @@ def main():
             padding-left: 20px;
         }
     </style>
-    """, unsafe_allow_html=True)
-    
-    # Add diagnostic script to inspect dropdown styles
-    st.markdown("""
-    <script>
-    // Run after the page loads
-    window.addEventListener('load', function() {
-        // Create a style element for our diagnostic border
-        const style = document.createElement('style');
-        style.textContent = `
-            /* Highlight all potential border elements */
-            [data-baseweb="popover"],
-            [data-baseweb="popover"] * {
-                outline: 2px solid red !important;
-                outline-offset: -1px;
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Log the computed styles of the dropdown
-        const logStyles = () => {
-            const dropdown = document.querySelector('[data-baseweb="popover"]');
-            if (dropdown) {
-                const styles = window.getComputedStyle(dropdown);
-                console.log('Dropdown styles:', {
-                    border: styles.border,
-                    outline: styles.outline,
-                    boxShadow: styles.boxShadow,
-                    borderImage: styles.borderImage,
-                    borderWidth: styles.borderWidth,
-                    borderStyle: styles.borderStyle,
-                    borderColor: styles.borderColor
-                });
-            }
-        };
-        
-        // Log styles when dropdown opens
-        document.body.addEventListener('click', function(e) {
-            if (e.target.closest('[data-baseweb="select"]')) {
-                setTimeout(logStyles, 300);
-            }
-        });
-    });
-    </script>
     """, unsafe_allow_html=True)
     
     # Load additional custom CSS if needed

@@ -293,7 +293,15 @@
       max-width: fit-content !important;
       white-space: nowrap !important;
   }
-  
+
+  /* Remove internal borders that create the "segmented" look */
+  .stSelectbox > div > div[data-baseweb="select"] > div:first-child > div {
+      border: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      box-shadow: none !important;
+  }
+
   /* Dropdown hover state */
   .stSelectbox > div > div[data-baseweb="select"] > div:first-child:hover {
       border-color: var(--color-primary) !important;

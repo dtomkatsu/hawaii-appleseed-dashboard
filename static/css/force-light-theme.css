@@ -8,9 +8,14 @@
   color: #1a1a1a !important;
 }
 
-/* Force light theme for form controls */
+/* Force light theme for selectbox/multiselect (no border-color) */
 .stSelectbox > div > div,
-.stMultiSelect > div > div > div,
+.stMultiSelect > div > div > div {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* Force light theme for other form controls (with border-color) */
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
 .stSlider > div > div > div,
