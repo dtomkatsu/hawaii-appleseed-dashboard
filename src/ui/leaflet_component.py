@@ -483,7 +483,7 @@ class LeafletMapComponent:
                             rowHtml += [
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
                                 '<div style="background:', bg, '; border: 1px solid ', borderColor, ';',
-                                'border-radius: 8px; padding: 7px 10px 6px; height: 100%; overflow: hidden;">',
+                                'border-radius: 8px; padding: 7px 10px 6px;">',
                                 '<div style="', accentBar, '"></div>',
                                 '<div style="font-size:', valueFontSize, '; font-weight: 800; color:', valueColor, ';',
                                 'letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 2px;">',
@@ -1189,7 +1189,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v9"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v10"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
