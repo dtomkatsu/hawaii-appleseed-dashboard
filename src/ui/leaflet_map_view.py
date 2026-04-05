@@ -600,11 +600,11 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     # Create dropdown controls in main content area
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    
+
     with col1:
-        # Geography dropdown
-        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Geography</div>', unsafe_allow_html=True)
+        # Geography dropdown — styled distinctly via .st-key-layer_selector in enhanced_style.css
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #2a5a0c; color: white; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)
@@ -627,7 +627,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
         st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>', unsafe_allow_html=True)
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Economic Security</span></div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
         if active_layer == 'State Boundary':
@@ -693,9 +693,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col3:
-        # Food Security dropdown - Empty div for consistent spacing
-        st.markdown('<div style="height: 20px; margin-bottom: 2px;"></div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Food Security</div>', unsafe_allow_html=True)
+        # Food Security dropdown — spacer matches "Choose your variable" height
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Food Security</span></div>', unsafe_allow_html=True)
         
         food_security_options = {
             'snap_household_rate': 'SNAP Households (%)',
@@ -741,9 +741,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
             st.rerun()
     
     with col4:
-        # Housing and Transportation dropdown - Empty div for consistent spacing
-        st.markdown('<div style="height: 19px; margin-bottom: 1px;"></div>'
-                   '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Housing & Transportation</div>', unsafe_allow_html=True)
+        # Housing and Transportation dropdown — spacer matches "Choose your variable" height
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Housing &amp; Transportation</span></div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
             'median_rent': 'Median Rent ($)',
@@ -1143,8 +1143,6 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
 
 def create_data_summary():
     """Create a summary of the data with a bar chart comparison."""
-    st.subheader("Data Summary")
-    
     # Get the active layer and selected variable (respecting mutual exclusivity)
     active_layer = st.session_state.get('active_layer', 'State Boundary')
     food_security_var = st.session_state.get('selected_food_security_variable')
@@ -1185,27 +1183,6 @@ def create_data_summary():
             data['name'] = 'District ' + data['district'].astype(str)
     
     if data is not None and not data.empty:
-        # Create columns for summary statistics
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if 'poverty_rate' in data.columns:
-                avg_poverty = data['poverty_rate'].mean()
-                st.metric("Average Poverty Rate", f"{avg_poverty:.1f}%")
-        
-        with col2:
-            if 'median_income' in data.columns:
-                avg_income = data['median_income'].mean()
-                st.metric("Average Median Income", f"${avg_income:,.0f}")
-        
-        with col3:
-            if 'population' in data.columns:
-                total_pop = data['population'].sum()
-                st.metric("Total Population", f"{total_pop:,}")
-        
-        # Add some space
-        st.markdown("---")
-        
         # Create two columns for chart and table
         chart_col, table_col = st.columns([2, 1])
         
