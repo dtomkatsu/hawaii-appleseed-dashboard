@@ -899,7 +899,7 @@ class LeafletMapComponent:
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
                             '<div style="position: relative; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #c8e6b0;">',
-                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; right: 0; top: 0; background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background=\'#e8f3df\';this.style.color=\'#2a5a0c\'" onmouseout="this.style.background=\'none\';this.style.color=\'#6a8a5a\'">&times;</button>',
+                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; right: 0; top: 0; background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;">&times;</button>',
                             '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; padding-right: 32px; line-height: 1.2;">', name, '</div>',
                             '</div>',
                             '<div style="background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">',
@@ -944,12 +944,12 @@ class LeafletMapComponent:
                                 
                                 // Add hover effects
                                 closeBtn.onmouseover = function() {{
-                                    this.style.background = '#f0f0f0';
-                                    this.style.color = '#333';
+                                    this.style.background = '#e8f3df';
+                                    this.style.color = '#2a5a0c';
                                 }};
                                 closeBtn.onmouseout = function() {{
                                     this.style.background = 'none';
-                                    this.style.color = '#666';
+                                    this.style.color = '#6a8a5a';
                                 }};
                             }}
                             
