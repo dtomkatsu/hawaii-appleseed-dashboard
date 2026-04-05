@@ -505,8 +505,9 @@ class LeafletMapComponent:
                         }}
 
                         // Flush any open row (odd number of metrics, or last metric was skipped)
+                        // Add an invisible spacer so the solo card keeps its half-width slot
                         if (rowHtml) {{
-                            rowHtml += '</div>';
+                            rowHtml += '<div style="flex: 1; min-width: 0; margin: 3px; visibility: hidden;"></div></div>';
                             categoryHtml += rowHtml;
                             rowHtml = '';
                         }}
@@ -1185,7 +1186,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v6"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v7"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
