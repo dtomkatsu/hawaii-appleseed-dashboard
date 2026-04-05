@@ -27,9 +27,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire application
 COPY . .
 
-# Simplify GeoJSON files at build time to reduce payload size
-RUN python scripts/simplify_geojson.py
-
 # Expose the port that Streamlit runs on
 EXPOSE 8080
 
