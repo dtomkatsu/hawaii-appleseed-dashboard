@@ -3,6 +3,7 @@
 Test S0802 table for Means of Transportation to Work by Selected Characteristics.
 """
 
+import os
 import sys
 import requests
 from pathlib import Path
@@ -28,11 +29,15 @@ def get_acs_subject_data(variables, level='county', state='15', year=2023):
         raise ValueError(f"Unsupported geographic level: {level}")
     
     # Special handling for state level
+    api_key = os.environ.get('CENSUS_API_KEY')
+    if not api_key:
+        raise RuntimeError("CENSUS_API_KEY environment variable is not set")
+
     if level == 'state':
         params = {
             'get': 'NAME,' + ','.join(variables),
             'for': 'state:15',
-            'key': '2104852dd7bfd83fbc9e320d650eb57decc11817'
+            'key': api_key
         }
     else:
         geo_type, geo_value = geo_mapping[level]
@@ -40,7 +45,7 @@ def get_acs_subject_data(variables, level='county', state='15', year=2023):
             'get': 'NAME,' + ','.join(variables),
             'for': f'{geo_type}:{geo_value}',
             'in': f'state:{state}',
-            'key': '2104852dd7bfd83fbc9e320d650eb57decc11817'
+            'key': api_key
         }
     
     try:

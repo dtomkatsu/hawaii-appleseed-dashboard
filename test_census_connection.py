@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 def test_census_api():
     """Test the Census API connection and fetch some data."""
     # API key and base URL
-    api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"
+    api_key = os.environ.get('CENSUS_API_KEY')
+    if not api_key:
+        logger.error("CENSUS_API_KEY not set"); return
     year = 2023
     base_url = f"https://api.census.gov/data/{year}/acs/acs5"
     

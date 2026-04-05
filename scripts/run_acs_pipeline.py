@@ -88,8 +88,11 @@ def main():
     try:
         logger.info("Starting ACS data pipeline...")
         
-        # Use the provided Census API key directly
-        api_key = '2104852dd7bfd83fbc9e320d650eb57decc11817'
+        # Load Census API key from environment
+        api_key = os.environ.get('CENSUS_API_KEY')
+        if not api_key:
+            raise RuntimeError("CENSUS_API_KEY environment variable is not set. "
+                               "Get a free key at https://api.census.gov/data/key_signup.html")
         
         # Initialize the ACS data fetcher with the API key
         acs = ACSDataFetcher(api_key=api_key, year=2023)  # Updated to 2023 for more recent data

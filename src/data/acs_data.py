@@ -57,7 +57,9 @@ class ACSDataFetcher:
             f.write(f"Base URL: {self.base_url}\n")
         
         # Set and validate the API key
-        self.api_key = api_key or "2104852dd7bfd83fbc9e320d650eb57decc11817"  # Using provided key or default
+        self.api_key = api_key or os.environ.get('CENSUS_API_KEY')
+        if not self.api_key:
+            raise RuntimeError("Census API key required: pass api_key or set CENSUS_API_KEY env var")
         self.api_key = self._validate_api_key(self.api_key)
         
         # Test the connection

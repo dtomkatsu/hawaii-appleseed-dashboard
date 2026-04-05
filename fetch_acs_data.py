@@ -277,8 +277,11 @@ class ACSScraper:
 
 def main():
     """Main function to fetch and save ACS data."""
-    # Initialize the scraper with your API key
-    api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"
+    # Initialize the scraper with Census API key from environment
+    api_key = os.environ.get('CENSUS_API_KEY')
+    if not api_key:
+        raise RuntimeError("CENSUS_API_KEY environment variable is not set. "
+                           "Get a free key at https://api.census.gov/data/key_signup.html")
     scraper = ACSScraper(api_key=api_key, year=2023)
     
     try:

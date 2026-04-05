@@ -1,7 +1,10 @@
+import os
 import requests
 
 def test_connection():
-    api_key = "2104852dd7bfd83fbc9e320d650eb57decc11817"
+    api_key = os.environ.get('CENSUS_API_KEY')
+    if not api_key:
+        print("Error: CENSUS_API_KEY environment variable is not set"); return
     base_url = "https://api.census.gov/data/2023/acs/acs5"
     
     # Test query for Hawaii counties
