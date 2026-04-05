@@ -1005,6 +1005,25 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         map_variable = data_var if data_var else 'alice_rate'
         logger.info(f"Using Economic Security variable: {map_variable}")
     
+    # Area search — extract names from loaded GeoJSON for quick lookup
+    if geojson_data and 'features' in geojson_data and len(geojson_data['features']) > 1:
+        area_names = sorted(
+            f.get('properties', {}).get('NAME', f.get('properties', {}).get('name', ''))
+            for f in geojson_data['features']
+        )
+        area_names = [n for n in area_names if n]
+        if area_names:
+            search_col1, search_col2 = st.columns([3, 1])
+            with search_col1:
+                st.selectbox(
+                    "Search areas",
+                    options=[""] + area_names,
+                    index=0,
+                    key="area_search",
+                    label_visibility="collapsed",
+                    placeholder="Search for a geographic area...",
+                )
+
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
         geojson_data=geojson_data,
@@ -1519,11 +1538,33 @@ def create_data_summary():
         st.markdown("#### Full Data Table")
         st.dataframe(data, use_container_width=True)
         
-        # Add download button
-        csv = data.to_csv(index=False)
+        # Build CSV with metadata header and human-readable column names
+        column_labels = {
+            'name': 'Area Name', 'NAME': 'Area Name', 'GEOID': 'GeoID',
+            'poverty_rate': 'Poverty Rate (%)', 'median_income': 'Median Income ($)',
+            'alice_rate': 'ALICE Households (%)', 'rent_burden_rate': 'Housing Cost Burden (%)',
+            'college_educated_pct': "Bachelor's Degree+ (%)",
+            'snap_household_rate': 'SNAP Households (%)',
+            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
+            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
+            'travel_time_to_work_minutes': 'Avg Commute Time (min)',
+            'public_transportation_pct': 'Public Transit Commuters (%)',
+            'ctc_avg_amount': 'Child Tax Credit Avg ($)',
+            'ctc_participation_rate': 'CTC Participation Rate (%)',
+            'federal_eitc_avg_amount': 'Federal EITC Avg ($)',
+            'eitc_participation_rate': 'EITC Participation Rate (%)',
+            'state_eitc_avg_amount': 'State EITC Avg ($)',
+        }
+        export_df = data.rename(columns={c: column_labels.get(c, c) for c in data.columns})
+        from datetime import date
+        meta_lines = (
+            f"# Hawaii Appleseed Data Dashboard — {active_layer}\n"
+            f"# Source: ACS 5-Year Estimates | Exported: {date.today().isoformat()}\n"
+        )
+        csv_content = meta_lines + export_df.to_csv(index=False)
         st.download_button(
             label="Download Data as CSV",
-            data=csv,
+            data=csv_content,
             file_name=f"hawaii_{geo_level}_data.csv",
             mime="text/csv",
             key="data_summary_download_button"

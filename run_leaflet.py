@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import json
+from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
 import streamlit as st
@@ -317,6 +318,53 @@ def load_css():
     """Inject all app CSS in a single cached st.markdown call."""
     st.markdown(_get_all_css(), unsafe_allow_html=True)
 
+
+@lru_cache(maxsize=1)
+def _load_manifest() -> dict:
+    """Load the data manifest with source freshness info."""
+    manifest_path = Path(__file__).parent / "data" / "manifest.json"
+    if manifest_path.exists():
+        return json.loads(manifest_path.read_text())
+    return {}
+
+
+def _show_data_freshness():
+    """Show a compact data freshness caption below the map."""
+    manifest = _load_manifest()
+    acs = manifest.get("acs_5year", {})
+    if not acs:
+        return
+    year = acs.get("year", "?")
+    fetched = acs.get("fetched_at", "unknown")
+    sources = [f"ACS {year} 5-Year"]
+    alice = manifest.get("alice", {})
+    if alice:
+        sources.append(f"ALICE {alice.get('year', '?')}")
+    st.caption(f"Data: {' | '.join(sources)} | Last refreshed: {fetched}")
+
+
+def _init_from_query_params():
+    """Initialize session state from URL query parameters for bookmarkable views."""
+    params = st.query_params
+
+    valid_layers = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
+    if "layer" in params and params["layer"] in valid_layers:
+        st.session_state.active_layer = params["layer"]
+
+    if "var" in params:
+        st.session_state.selected_variable = params["var"]
+
+    if "color" in params and params["color"] in ('blue', 'green', 'red', 'purple'):
+        st.session_state.color_scheme = params["color"]
+
+
+def _sync_query_params():
+    """Write current session state to URL query params for sharing."""
+    st.query_params["layer"] = st.session_state.get("active_layer", "Counties")
+    st.query_params["var"] = st.session_state.get("selected_variable", "alice_rate")
+    st.query_params["color"] = st.session_state.get("color_scheme", "blue")
+
+
 def main():
     """Main application function for the Leaflet version."""
     # Set up logging and load CSS
@@ -347,10 +395,11 @@ def main():
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version")
     
     try:
-        # Initialize session state for county layer if not already set
+        # Initialize session state defaults, then apply URL params
         if 'active_layer' not in st.session_state:
             st.session_state.active_layer = 'Counties'
             logger.info("Initializing session state with Counties layer")
+        _init_from_query_params()
         
         # Create custom sidebar with green labels (title removed per design request)
         # st.sidebar.title("🌴 Hawaii Appleseed Dashboard")
@@ -465,7 +514,11 @@ def main():
         with tab2:
             st.header("Data Analysis")
             create_data_summary()
-        
+
+        # Data freshness caption and URL sync
+        _show_data_freshness()
+        _sync_query_params()
+
     except Exception as e:
         error_msg = f"An unexpected error occurred: {str(e)}"
         logger.error(error_msg, exc_info=True)

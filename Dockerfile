@@ -1,37 +1,39 @@
-# Use Python 3.11 slim image
-FROM python:3.11-slim
+# ── Stage 1: Build ──
+FROM python:3.11-slim AS builder
 
-# Set working directory
-WORKDIR /app
+WORKDIR /build
 
-# Install system dependencies required for geospatial libraries
-RUN apt-get update && apt-get install -y \
-    gdal-bin \
-    libgdal-dev \
-    libspatialindex-dev \
-    gcc \
-    g++ \
-    curl \
+# Install build-time system dependencies (compilers + geospatial dev headers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin libgdal-dev libspatialindex-dev gcc g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables for GDAL
-ENV GDAL_CONFIG /usr/bin/gdal-config
-ENV CPLUS_INCLUDE_PATH /usr/include/gdal
-ENV C_INCLUDE_PATH /usr/include/gdal
+ENV GDAL_CONFIG=/usr/bin/gdal-config
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
 
-# Copy requirements first for better caching
 COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# ── Stage 2: Runtime ──
+FROM python:3.11-slim
 
-# Copy the entire application
+WORKDIR /app
+
+# Runtime-only system libraries (no compilers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin libspatialindex6 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed Python packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application code
 COPY . .
 
-# Expose the port that Streamlit runs on
 EXPOSE 8080
 
-# Set environment variables for Streamlit
+# Streamlit environment
 ENV STREAMLIT_SERVER_PORT=8080
 ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
 ENV STREAMLIT_SERVER_HEADLESS=true
@@ -46,5 +48,4 @@ ENV STREAMLIT_RUNNER_MAGIC_ENABLED=false
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8080/_stcore/health || exit 1
 
-# Command to run the application
 CMD ["streamlit", "run", "run_leaflet.py", "--server.port=8080", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableWebsocketCompression=false", "--server.enableCORS=true", "--server.enableXsrfProtection=false", "--runner.magicEnabled=false"]
