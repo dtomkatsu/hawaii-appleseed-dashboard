@@ -495,19 +495,26 @@ class LeafletMapComponent:
                             ].join('');
                             
                             metricCount++;
-                            
-                            // Close row if we have two metrics or it's the last one
-                            if (metricCount % 2 === 0 || i === metrics.length - 1) {{
+
+                            // Close row after every pair
+                            if (metricCount % 2 === 0) {{
                                 rowHtml += '</div>';
                                 categoryHtml += rowHtml;
                                 rowHtml = '';
                             }}
                         }}
+
+                        // Flush any open row (odd number of metrics, or last metric was skipped)
+                        if (rowHtml) {{
+                            rowHtml += '</div>';
+                            categoryHtml += rowHtml;
+                            rowHtml = '';
+                        }}
                         
                         // Add category to HTML if it has data
                         if (hasCategoryData) {{
                             html += [
-                                '<div style="margin-bottom: 18px;">',
+                                '<div style="margin-bottom: 18px; margin-top: 20px;">',
                                 '<div style="font-size: 12px; font-weight: 700; color: #2a5a0c;',
                                 'text-transform: uppercase; letter-spacing: 0.05em;',
                                 'margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #c8e6b0;">',
@@ -1178,7 +1185,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v5"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v6"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
