@@ -101,7 +101,6 @@ class LeafletMapComponent:
                 overflow-y: auto;  /* Enable vertical scrolling */
                 overflow-x: hidden;  /* Prevent horizontal scrolling */
                 background: rgba(255, 255, 255, 0.98);
-                border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 13px;
@@ -135,7 +134,6 @@ class LeafletMapComponent:
                 top: 0;
                 z-index: 1000;
                 background: white;
-                border-left: 3px solid #1a73e8;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
             }
             
@@ -146,7 +144,7 @@ class LeafletMapComponent:
                 right: 25px;
                 width: 36px;
                 height: 36px;
-                background: #1a73e8;
+                background: #3a7710;
                 color: white;
                 border-radius: 50%;
                 display: flex;
@@ -163,9 +161,9 @@ class LeafletMapComponent:
             }
             
             .scroll-indicator:hover {
-                background: #1557b0;
+                background: #2a5a0c;
                 transform: scale(1.1);
-                box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+                box-shadow: 0 4px 12px rgba(42, 90, 12, 0.4);
             }
             
             .scroll-indicator.up {
@@ -899,8 +897,8 @@ class LeafletMapComponent:
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
                             '<div style="position: relative; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #c8e6b0;">',
-                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; right: 0; top: 0; background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;">&times;</button>',
-                            '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; padding-right: 32px; line-height: 1.2;">', name, '</div>',
+                            '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;">&times;</button>',
+                            '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; text-align: center; line-height: 1.2;">', name, '</div>',
                             '</div>',
                             '<div style="background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">',
                             '  <span style="font-size: 12px; opacity: 0.85; font-weight: 500;">', VARIABLE_DISPLAY_NAME, '</span>',
@@ -1172,6 +1170,8 @@ class LeafletMapComponent:
         )
 
 
+_CODE_VERSION = "2026-04-05-v3"  # Bump to bust @st.cache_data after code changes
+
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
     geojson_str: str,
@@ -1180,7 +1180,8 @@ def _build_cached_map_html(
     color_scheme: str,
     map_height: int,
     map_id: str,
-    show_side_panel: bool
+    show_side_panel: bool,
+    _code_version: str = _CODE_VERSION
 ) -> str:
     """Build and cache the complete HTML string for the map component.
 
