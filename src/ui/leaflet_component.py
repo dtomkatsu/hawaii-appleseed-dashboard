@@ -351,11 +351,15 @@ class LeafletMapComponent:
                              variableType.includes('benefit')) {{
                         return '$' + Math.round(numValue).toLocaleString();
                     }}
+                    // Check for minutes types
+                    else if (variableType === 'minutes') {{
+                        return numValue.toFixed(1) + ' min';
+                    }}
                     // Check for count types (population, etc.)
                     else if (variableType === 'count') {{
                         return numValue.toLocaleString();
                     }}
-                    
+
                     return numValue.toLocaleString();
                 }},
                 
@@ -479,15 +483,21 @@ class LeafletMapComponent:
                                 rowHtml = '<div style="display: flex; margin: 0 -3px;">';
                             }}
 
+                            // For cep_display, strip redundant "CEP schools" text since label covers it
+                            let displayValue = utils.formatValue(value, metric.type);
+                            if (metric.key === 'cep_display') {{
+                                displayValue = String(value).replace(/\\s*CEP\\s*schools?/i, '').trim();
+                            }}
+
                             // Add metric card — stat-first layout: big number, label beneath
                             rowHtml += [
-                                '<div style="flex: 1; min-width: 0; margin: 3px;">',
-                                '<div style="background:', bg, '; border: 1px solid ', borderColor, ';',
-                                'border-radius: 8px; padding: 7px 10px 6px;">',
+                                '<div style="flex: 1; min-width: 0; margin: 3px; display: flex; flex-direction: column;">',
+                                '<div style="flex: 1; background:', bg, '; border: 1px solid ', borderColor, ';',
+                                'border-radius: 8px; padding: 7px 10px 6px; display: flex; flex-direction: column; justify-content: center;">',
                                 '<div style="', accentBar, '"></div>',
                                 '<div style="font-size:', valueFontSize, '; font-weight: 800; color:', valueColor, ';',
                                 'letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 2px;">',
-                                utils.formatValue(value, metric.type), '</div>',
+                                displayValue, '</div>',
                                 '<div style="font-size: 10px; font-weight: 600; color: #6a8a5a;',
                                 'text-transform: uppercase; letter-spacing: 0.06em;',
                                 'white-space: normal; line-height: 1.3;">',
@@ -505,8 +515,7 @@ class LeafletMapComponent:
                             }}
                         }}
 
-                        // Flush any open row (odd number of metrics, or last metric was skipped)
-                        // Add an invisible spacer so the solo card keeps its half-width slot
+                        // Flush any open row (odd number of metrics) — invisible spacer keeps solo card half-width
                         if (rowHtml) {{
                             rowHtml += '<div style="flex: 1; min-width: 0; margin: 3px; visibility: hidden;"></div></div>';
                             categoryHtml += rowHtml;
@@ -919,9 +928,11 @@ class LeafletMapComponent:
                             '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;">&times;</button>',
                             '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; text-align: center; line-height: 1.2;">', name, '</div>',
                             '</div>',
-                            '<div style="background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">',
-                            '  <span style="font-size: 12px; opacity: 0.85; font-weight: 500;">', VARIABLE_DISPLAY_NAME, '</span>',
-                            '  <span style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em;">', formattedValue, '</span>',
+                            '<div style="text-align: center; margin-bottom: 16px;">',
+                            '  <div style="display: inline-block; background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 8px 24px; border-radius: 20px; box-shadow: 0 1px 4px rgba(42, 90, 12, 0.2);">',
+                            '    <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">', formattedValue, '</span>',
+                            '  </div>',
+                            '  <div style="font-size: 10px; font-weight: 600; color: #6a8a5a; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;">', VARIABLE_DISPLAY_NAME, '</div>',
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
                             detailLinkHtml,
@@ -1189,7 +1200,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v10"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v15"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(

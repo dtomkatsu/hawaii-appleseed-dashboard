@@ -626,7 +626,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #666666; font-family: Roboto, sans-serif; font-style: italic; font-size: 0.7em; margin-bottom: 4px;">Choose your variable</div>'
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
                    '<div class="dropdown-label" style="color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600;">Economic Security</div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
