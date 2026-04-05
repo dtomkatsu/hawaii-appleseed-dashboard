@@ -445,7 +445,8 @@ class LeafletMapComponent:
                     }};
                     
                     let html = '';
-                    
+                    let categoryCount = 0;
+
                     Object.keys(categories).forEach(function(categoryName) {{
                         const metrics = categories[categoryName];
                         let categoryHtml = '';
@@ -514,8 +515,10 @@ class LeafletMapComponent:
                         
                         // Add category to HTML if it has data
                         if (hasCategoryData) {{
+                            const topGap = categoryCount > 0 ? 'margin-top: 28px;' : '';
+                            categoryCount++;
                             html += [
-                                '<div style="margin-bottom: 18px; margin-top: 20px;">',
+                                '<div style="margin-bottom: 18px;' + topGap + '">',
                                 '<div style="font-size: 12px; font-weight: 700; color: #2a5a0c;',
                                 'text-transform: uppercase; letter-spacing: 0.05em;',
                                 'margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #c8e6b0;">',
@@ -1186,7 +1189,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v8"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v9"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
