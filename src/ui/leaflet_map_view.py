@@ -603,7 +603,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
 
     with col1:
         # Geography dropdown — styled distinctly via .st-key-layer_selector in enhanced_style.css
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #2a5a0c; color: white; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
@@ -626,7 +626,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col2:
         # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Economic Security</span></div>', unsafe_allow_html=True)
         
         # Define available variables based on geography
@@ -694,7 +694,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col3:
         # Food Security dropdown — spacer matches "Choose your variable" height
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Food Security</span></div>', unsafe_allow_html=True)
         
         food_security_options = {
@@ -742,7 +742,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     
     with col4:
         # Housing and Transportation dropdown — spacer matches "Choose your variable" height
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Housing &amp; Transportation</span></div>', unsafe_allow_html=True)
         
         housing_transportation_options = {
