@@ -1,6 +1,7 @@
 """Leaflet Map View for Hawaii Appleseed Dashboard."""
 import streamlit as st
 import pandas as pd
+import copy
 import json
 import logging
 from pathlib import Path
@@ -18,9 +19,14 @@ from src.ui.leaflet_component import create_leaflet_map
 # Set up logging
 logger = logging.getLogger(__name__)
 
-@st.cache_data
+@st.cache_resource
 def load_geojson(layer_name):
-    """Load GeoJSON data for the specified layer."""
+    """Load GeoJSON data for the specified layer.
+
+    Uses @st.cache_resource to avoid pickle/unpickle overhead on every call.
+    The returned dict is shared across sessions (read-only). Callers that
+    need to mutate the data must deep-copy it first.
+    """
     import gzip
     
     # Map layer names to file paths
@@ -68,6 +74,20 @@ def get_data_loader(_cache_version="v7"):
     """Get a cached DataLoader instance."""
     # _cache_version parameter forces cache invalidation when changed
     return DataLoader()
+
+@st.cache_data(show_spinner=False)
+def _get_merged_geojson(layer_name, geo_level):
+    """Load GeoJSON and merge with statistical data, cached.
+
+    Combines load_geojson + merge into one cached call so repeated
+    renders skip both the deep-copy and the merge computation.
+    """
+    geojson_data = copy.deepcopy(load_geojson(layer_name))
+    if geojson_data is None:
+        return None
+    data_loader = get_data_loader()
+    return data_loader.merge_geojson_with_data(geojson_data, geo_level)
+
 
 def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
@@ -143,50 +163,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     logger.info(f"Active layer: {active_layer}")
     logger.info(f"Color scheme: {color_scheme}")
     
-    # Load GeoJSON data for the selected layer with progress indicator
-    with st.spinner(f"Loading {active_layer} geographic data..."):
-        geojson_data = load_geojson(active_layer)
-    
+    # Map geo levels to their data loader equivalents
+    geo_level_map = {
+        'State Boundary': 'state',
+        'Counties': 'county',
+        'House Districts': 'house',
+        'Senate Districts': 'senate'
+    }
+    geo_level = geo_level_map.get(active_layer, 'state')
+
+    # Load GeoJSON and merge with statistical data (cached)
+    geojson_data = _get_merged_geojson(active_layer, geo_level)
+
     if geojson_data is None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
-    
-    # Load data with progress indicator
-    with st.spinner(f"Loading {active_layer} statistical data..."):
-        data_loader = get_data_loader()
-        
-        # Map geo levels to their data loader equivalents
-        geo_level_map = {
-            'State Boundary': 'state',
-            'Counties': 'county',
-            'House Districts': 'house',
-            'Senate Districts': 'senate'
-        }
-        
-        geo_level = geo_level_map.get(active_layer, 'state')
-        
-        # Get combined data for the selected geographic level
-        combined_data = data_loader.get_data(geo_level)
-    
-    if combined_data is not None:
-        # Debug: Print combined data columns and first row
-        logger.info(f"Combined data columns: {combined_data.columns.tolist()}")
-        if not combined_data.empty:
-            logger.info(f"First row of combined data: {combined_data.iloc[0].to_dict()}")
-        
-        # Use the enhanced merging method from data_loader
-        geojson_data = data_loader.merge_geojson_with_data(geojson_data, geo_level)
-        
-        # Legacy debug info for counties
-        if geo_level == 'county':
-            logger.info(f"COUNTY DATA DEBUG: Full dataframe:\n{combined_data}")
-            logger.info(f"COUNTY DATA DEBUG: Column types:\n{combined_data.dtypes}")
-            if 'alice_rate' in combined_data.columns:
-                logger.info(f"COUNTY DATA DEBUG: ALICE rate values:\n{combined_data['alice_rate']}")
-            if 'poverty_rate' in combined_data.columns:
-                logger.info(f"COUNTY DATA DEBUG: Poverty rate values:\n{combined_data['poverty_rate']}")
-    else:
-        logger.warning(f"No combined data available for {geo_level}")
         
     # Note: The enhanced data loader now handles all the merging automatically
     # The following legacy code is no longer needed but kept for reference

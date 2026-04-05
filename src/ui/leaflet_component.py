@@ -1158,74 +1158,97 @@ class LeafletMapComponent:
             None
         """
         self.logger.info(f"Creating Leaflet map with variable: {selected_variable}")
-        
-        # Convert GeoJSON to dict if it's a string
-        if isinstance(geojson_data, str):
-            geojson_data = json.loads(geojson_data)
-        
-        # Validate data
-        self._validate_geojson_data(geojson_data, selected_variable)
-        
-        # Prepare data
-        geojson_str = json.dumps(geojson_data)
-        map_id = f"leaflet-map-{key}" if key else "leaflet-map"
-        variable_display_name = self._format_variable_name(selected_variable, variable_display_name)
-        current_color_scheme = st.session_state.get('color_scheme', color_scheme)
-        
-        # Build HTML component
-        component_html = f"""
-        <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative; display:flex;">
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            
-            <style>{self._get_css_styles()}</style>
-            
-            <div id="{map_id}" style="height:100%; flex:1; transition: flex 0.3s ease-in-out;"></div>
-            <div id="{map_id}-legend" class="map-legend">
-                <div class="legend-title">{variable_display_name}</div>
-                <div class="legend-items" id="{map_id}-legend-items"></div>
-                <div class="color-scheme-selector">
-                    <label for="color-scheme-select">Color Scheme:</label>
-                    <select id="color-scheme-select">
-                        <option value="blue" {'selected' if current_color_scheme == 'blue' else ''}>Blue</option>
-                        <option value="red" {'selected' if current_color_scheme == 'red' else ''}>Red</option>
-                        <option value="green" {'selected' if current_color_scheme == 'green' else ''}>Green</option>
-                        <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple</option>
-                    </select>
-                </div>
-            </div>
-            {f'<div id="{map_id}-info-panel" class="info-panel" style="display:none;"><div style="text-align: center; color: #666; font-style: italic;">Click on a geography to see details</div></div>' if show_side_panel else ''}
-            
-            <script>
-                {self._get_javascript_code(map_id, geojson_str, selected_variable, variable_display_name, current_color_scheme, show_side_panel)}
-            </script>
-        </div>
-        """
-        
-        # Render component without key parameter (not supported by st.components.v1.html)
-        components.html(
-            component_html,
-            height=map_height,
-            scrolling=False
+
+        # Delegate to the module-level convenience function which uses caching
+        create_leaflet_map(
+            geojson_data=geojson_data,
+            selected_variable=selected_variable,
+            variable_display_name=variable_display_name,
+            color_scheme=color_scheme,
+            active_layer=active_layer,
+            map_height=map_height,
+            key=key,
+            show_side_panel=show_side_panel
         )
 
 
+@st.cache_data(show_spinner=False, max_entries=20)
+def _build_cached_map_html(
+    geojson_str: str,
+    selected_variable: str,
+    variable_display_name: str,
+    color_scheme: str,
+    map_height: int,
+    map_id: str,
+    show_side_panel: bool
+) -> str:
+    """Build and cache the complete HTML string for the map component.
+
+    This is a module-level cached function so that repeated renders with
+    the same parameters return the cached HTML instantly instead of
+    regenerating ~40 KB of JavaScript and re-serializing CSS.
+    """
+    component = LeafletMapComponent()
+    css_styles = component._get_css_styles()
+    js_code = component._get_javascript_code(
+        map_id, geojson_str, selected_variable,
+        variable_display_name, color_scheme, show_side_panel
+    )
+
+    current_color_scheme = color_scheme
+    info_panel_html = (
+        f'<div id="{map_id}-info-panel" class="info-panel" style="display:none;">'
+        f'<div style="text-align: center; color: #666; font-style: italic;">'
+        f'Click on a geography to see details</div></div>'
+    ) if show_side_panel else ''
+
+    component_html = f"""
+    <div style="height:{map_height}px; width:100%; margin-bottom:20px; position:relative; display:flex;">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <style>{css_styles}</style>
+
+        <div id="{map_id}" style="height:100%; flex:1; transition: flex 0.3s ease-in-out;"></div>
+        <div id="{map_id}-legend" class="map-legend">
+            <div class="legend-title">{variable_display_name}</div>
+            <div class="legend-items" id="{map_id}-legend-items"></div>
+            <div class="color-scheme-selector">
+                <label for="color-scheme-select">Color Scheme:</label>
+                <select id="color-scheme-select">
+                    <option value="blue" {'selected' if current_color_scheme == 'blue' else ''}>Blue</option>
+                    <option value="red" {'selected' if current_color_scheme == 'red' else ''}>Red</option>
+                    <option value="green" {'selected' if current_color_scheme == 'green' else ''}>Green</option>
+                    <option value="purple" {'selected' if current_color_scheme == 'purple' else ''}>Purple</option>
+                </select>
+            </div>
+        </div>
+        {info_panel_html}
+
+        <script>
+            {js_code}
+        </script>
+    </div>
+    """
+    return component_html
+
+
 def create_leaflet_map(
-    geojson_data: Union[Dict[str, Any], str], 
-    selected_variable: str, 
-    variable_display_name: Optional[str] = None, 
-    color_scheme: str = "blue", 
+    geojson_data: Union[Dict[str, Any], str],
+    selected_variable: str,
+    variable_display_name: Optional[str] = None,
+    color_scheme: str = "blue",
     active_layer: str = "Counties",
-    map_height: int = 500, 
+    map_height: int = 500,
     key: Optional[str] = None,
     show_side_panel: bool = True
 ) -> None:
     """
     Create a Leaflet map component in Streamlit.
-    
-    This is a convenience function that creates a LeafletMapComponent instance
-    and calls its create_map method.
-    
+
+    This is a convenience function that builds (or retrieves cached) HTML
+    and renders it via components.html.
+
     Args:
         geojson_data: GeoJSON data to display on the map
         selected_variable: Variable to display (e.g., 'poverty_rate')
@@ -1235,18 +1258,38 @@ def create_leaflet_map(
         map_height: Height of the map in pixels
         key: Unique key for the component
         show_side_panel: Whether to show the JavaScript info panel (default True)
-    
+
     Returns:
         None
     """
-    component = LeafletMapComponent()
-    component.create_map(
-        geojson_data=geojson_data,
+    # Convert GeoJSON to dict if it's a string
+    if isinstance(geojson_data, str):
+        geojson_data = json.loads(geojson_data)
+
+    # Serialize GeoJSON to string (used as both cache key and inline data)
+    geojson_str = json.dumps(geojson_data)
+    map_id = f"leaflet-map-{key}" if key else "leaflet-map"
+
+    # Format display name
+    if variable_display_name is None:
+        variable_display_name = selected_variable.replace('_', ' ').title()
+
+    current_color_scheme = st.session_state.get('color_scheme', color_scheme)
+
+    # Build or retrieve cached HTML
+    component_html = _build_cached_map_html(
+        geojson_str=geojson_str,
         selected_variable=selected_variable,
         variable_display_name=variable_display_name,
-        color_scheme=color_scheme,
-        active_layer=active_layer,
+        color_scheme=current_color_scheme,
         map_height=map_height,
-        key=key,
+        map_id=map_id,
         show_side_panel=show_side_panel
+    )
+
+    # Render component
+    components.html(
+        component_html,
+        height=map_height,
+        scrolling=False
     )
