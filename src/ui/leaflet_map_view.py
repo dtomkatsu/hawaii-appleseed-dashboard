@@ -1005,25 +1005,6 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         map_variable = data_var if data_var else 'alice_rate'
         logger.info(f"Using Economic Security variable: {map_variable}")
     
-    # Area search — extract names from loaded GeoJSON for quick lookup
-    if geojson_data and 'features' in geojson_data and len(geojson_data['features']) > 1:
-        area_names = sorted(
-            f.get('properties', {}).get('NAME', f.get('properties', {}).get('name', ''))
-            for f in geojson_data['features']
-        )
-        area_names = [n for n in area_names if n]
-        if area_names:
-            search_col1, search_col2 = st.columns([3, 1])
-            with search_col1:
-                st.selectbox(
-                    "Search areas",
-                    options=[""] + area_names,
-                    index=0,
-                    key="area_search",
-                    label_visibility="collapsed",
-                    placeholder="Search for a geographic area...",
-                )
-
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
         geojson_data=geojson_data,

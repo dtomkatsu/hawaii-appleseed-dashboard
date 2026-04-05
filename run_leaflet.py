@@ -251,9 +251,29 @@ def _get_all_css() -> str:
             margin: 0; padding: 0; line-height: 1; font-weight: 600; letter-spacing: -0.5px;
         }
 
-        /* ── Dropdowns ── */
+        /* ── Dropdowns — green theme ── */
+        .stSelectbox { margin-bottom: 1rem; }
         .stSelectbox > div > div { min-height: 40px; display: flex !important; align-items: center !important; }
+        .stSelectbox > div[data-baseweb="select"] > div {
+            background-color: #f0f7e9; border: none !important; border-radius: 4px;
+            padding: 0.25rem 0.5rem; transition: all 0.2s ease;
+        }
+        .stSelectbox svg { color: #2a5a0c !important; opacity: 0.8; }
+        .stSelectbox > div[data-baseweb="select"]:hover > div,
+        .stSelectbox > div[data-baseweb="select"]:focus-within > div {
+            background-color: #e8f3df; border: none !important; box-shadow: none !important;
+        }
         [data-baseweb="select"] { color: #000 !important; }
+
+        /* Dropdown menu items — green themed */
+        [role="option"] {
+            background-color: #f0f7e9 !important; color: #2a5a0c !important;
+            padding: 8px 16px !important; transition: background-color 0.2s ease !important;
+        }
+        [role="option"]:hover { background-color: #e0edd0 !important; }
+        [aria-selected="true"] { background-color: #d0e3c4 !important; font-weight: 500 !important; }
+
+        /* Dropdown menu animation */
         [data-baseweb="menu"] {
             background: white !important; color: #000 !important;
             padding: 4px 0; opacity: 0; transform: translateY(-10px);
@@ -261,18 +281,27 @@ def _get_all_css() -> str:
         }
         [data-baseweb="menu"] [role="option"] {
             min-height: 40px !important; padding: 8px 16px !important;
-            white-space: normal !important; line-height: 1.4 !important; color: #000 !important;
-            transition: all 0.2s ease; opacity: 0; transform: translateY(-5px);
-            animation: itemFadeIn 0.2s forwards;
+            white-space: normal !important; line-height: 1.4 !important;
+            opacity: 0; transform: translateY(-5px); animation: itemFadeIn 0.2s forwards;
         }
         [data-baseweb="menu"] [role="option"]:hover {
-            background-color: #f5f8ff; transform: translateY(0) translateX(8px); padding-left: 20px;
+            background-color: #e0edd0 !important; transform: translateY(0) translateX(8px); padding-left: 20px;
         }
         [data-baseweb="menu"] [role="option"]:nth-child(1) { animation-delay: 0.05s; }
         [data-baseweb="menu"] [role="option"]:nth-child(2) { animation-delay: 0.1s; }
         [data-baseweb="menu"] [role="option"]:nth-child(3) { animation-delay: 0.15s; }
         [data-baseweb="menu"] [role="option"]:nth-child(4) { animation-delay: 0.2s; }
         [data-baseweb="menu"] [role="option"]:nth-child(5) { animation-delay: 0.25s; }
+
+        /* Popover — border removal + shadow */
+        [data-baseweb="popover"],
+        [data-baseweb="popover"] *,
+        [data-baseweb="popover"] > div,
+        [data-baseweb="popover"] [role="listbox"],
+        [data-baseweb="popover"] [role="listbox"] * {
+            border: none !important; outline: none !important; border-width: 0 !important;
+            border-style: none !important;
+        }
         [data-baseweb="popover"] {
             z-index: 1000 !important; border-radius: 4px !important;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
@@ -280,21 +309,22 @@ def _get_all_css() -> str:
         }
         [data-baseweb="popover"] > div {
             max-height: 400px !important; border-radius: 4px !important;
-            padding: 0 !important; margin: 0 !important; border: none !important;
+            padding: 0 !important; margin: 0 !important;
         }
         [data-baseweb="popover"] ul[role="listbox"] { padding: 0 !important; margin: 0 !important; list-style: none !important; }
         [data-baseweb="popover"] li[role="option"] {
             all: unset !important; display: block !important; padding: 8px 16px !important;
-            background: white !important; border-left: 3px solid transparent !important;
+            background: #f0f7e9 !important; border-left: 3px solid transparent !important;
             transition: all 0.2s ease !important; cursor: pointer !important;
             line-height: 1.5 !important; min-height: 36px !important;
             box-sizing: border-box !important; white-space: nowrap !important; overflow: hidden !important;
+            color: #2a5a0c !important;
         }
         [data-baseweb="popover"] li[role="option"]:hover {
-            background-color: #f5f8ff !important; border-left-color: #1E88E5 !important;
+            background-color: #e0edd0 !important; border-left-color: #3a7710 !important;
             transform: translateX(8px) !important; padding-left: 20px !important;
         }
-        [data-baseweb="popover"] li[aria-selected="true"] { background-color: #e3f2fd !important; font-weight: 500 !important; }
+        [data-baseweb="popover"] li[aria-selected="true"] { background-color: #d0e3c4 !important; font-weight: 500 !important; }
         @keyframes menuFadeIn { to { opacity: 1; transform: translateY(0); } }
         @keyframes itemFadeIn { to { opacity: 1; transform: translateY(0); } }
     """
@@ -342,9 +372,12 @@ def _show_data_freshness():
 
 
 def _init_from_query_params():
-    """Initialize session state from URL query parameters for bookmarkable views."""
-    params = st.query_params
+    """Initialize session state from URL query parameters (first load only)."""
+    if st.session_state.get("_params_applied"):
+        return
+    st.session_state._params_applied = True
 
+    params = st.query_params
     valid_layers = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
     if "layer" in params and params["layer"] in valid_layers:
         st.session_state.active_layer = params["layer"]
@@ -354,13 +387,6 @@ def _init_from_query_params():
 
     if "color" in params and params["color"] in ('blue', 'green', 'red', 'purple'):
         st.session_state.color_scheme = params["color"]
-
-
-def _sync_query_params():
-    """Write current session state to URL query params for sharing."""
-    st.query_params["layer"] = st.session_state.get("active_layer", "Counties")
-    st.query_params["var"] = st.session_state.get("selected_variable", "alice_rate")
-    st.query_params["color"] = st.session_state.get("color_scheme", "blue")
 
 
 def main():
@@ -513,9 +539,8 @@ def main():
             st.header("Data Analysis")
             create_data_summary()
 
-        # Data freshness caption and URL sync
+        # Data freshness caption
         _show_data_freshness()
-        _sync_query_params()
 
     except Exception as e:
         error_msg = f"An unexpected error occurred: {str(e)}"
