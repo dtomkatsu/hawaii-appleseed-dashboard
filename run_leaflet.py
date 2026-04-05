@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="Data Dashboard",
     page_icon="🌴",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
     menu_items={
         'Get Help': 'https://www.hawaiiappleseed.org/',
         'About': "Interactive data visualization tool for Hawaii"
@@ -35,157 +35,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 from src.ui.full_width_utils import set_full_width_layout
 set_full_width_layout()
 
-# Additional custom styles specific to this app
-st.markdown("""
-    <style>
-        /* Map container styles */
-        .stMap, .map-container, .leaflet-container {
-            width: 100% !important;
-            height: 70vh !important;
-            min-height: 500px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        /* Adjust sidebar */
-        section[data-testid="stSidebar"] {
-            width: 300px !important;
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1rem 0 1rem 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-    </style>
-""", unsafe_allow_html=True)
 
-# Hide the sidebar and its toggle button
-st.markdown("""
-    <style>
-        /* Hide sidebar and all related elements */
-        section[data-testid="stSidebar"],
-        div[data-testid="stSidebarNav"],
-        div[data-testid="stSidebarUserContent"],
-        div[data-testid="collapsedControl"],
-        div[data-testid="stToolbar"],
-        .stApp > header,
-        .stApp > div:first-child > div:first-child > div:first-child > div:first-child {
-            display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-            height: 0 !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 0 !important;
-            max-height: 0 !important;
-            min-width: 0 !important;
-            min-height: 0 !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            position: absolute !important;
-            z-index: -1000 !important;
-        }
-        
-        /* Make Data Variable dropdown adjust to content width */
-        .stSelectbox > div[data-baseweb="select"] > div {
-            width: auto !important;
-            min-width: 200px;  /* Minimum width to prevent it from being too narrow */
-        }
-        
-        /* Ensure the dropdown options can be as wide as needed */
-        .stSelectbox > div[data-baseweb="select"] > div > div {
-            width: auto !important;
-            max-width: 100vw;  /* Don't exceed viewport width */
-        }
-        
-        /* Make the dropdown options container adjust to content */
-        .stSelectbox > div[data-baseweb="select"] > div > div > div {
-            width: auto !important;
-            min-width: 100%;
-        }
-        
-        /* Ensure the selected value is fully visible */
-        .stSelectbox > div[data-baseweb="select"] > div > div > div > div {
-            white-space: nowrap;
-            overflow: visible;
-            text-overflow: unset;
-        }
-        
-        /* Adjust main content layout */
-        .stApp > div:first-child {
-            padding-top: 1rem;
-        }
-        
-        /* Remove extra padding from main content */
-        .main .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            max-width: 100% !important;
-        }
-        
-        /* Remove any remaining space where sidebar was */
-        .stApp > div:first-child > div:first-child > div:first-child {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        /* Hide the specific sidebar toggle SVG */
-        svg.e10vaf9m1.st-emotion-cache-1f3w014.ex0cdmw0,
-        svg[viewBox="0 0 24 24"][fill="currentColor"] {
-            display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-            height: 0 !important;
-            opacity: 0 !important;
-            position: absolute !important;
-            z-index: -1000 !important;
-        }
-        
-        /* Hide the parent button if needed */
-        button[title="View app navigation"] {
-            display: none !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Add clean CSS for dropdowns
-st.markdown("""
-<style>
-    /* Base dropdown styles */
-    .stSelectbox > div > div {
-        min-height: 40px;
-        display: flex !important;
-        align-items: center !important;
-    }
-    
-    /* Dropdown menu items */
-    [data-baseweb="menu"] [role="option"] {
-        min-height: 40px !important;
-        padding: 8px 16px !important;
-        white-space: normal !important;
-        line-height: 1.4 !important;
-        color: #000 !important;
-    }
-    
-    /* Ensure text is visible in dropdown */
-    [data-baseweb="menu"] {
-        background: white !important;
-        color: #000 !important;
-    }
-    
-    /* Selected value */
-    [data-baseweb="select"] {
-        color: #000 !important;
-    }
-    
-    /* Make sure dropdown is above other elements */
-    [data-baseweb="popover"] {
-        z-index: 1000 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 def handle_message(message):
     """Handle messages from the iframe."""
@@ -311,11 +161,161 @@ def handle_geo_api(geo_id):
     except Exception as e:
         return json.dumps({'error': str(e)}), 'application/json', 500
 
+@lru_cache(maxsize=1)
+def _get_all_css() -> str:
+    """Return the complete consolidated CSS for the app, cached.
+
+    Combines all styles into one string so that a single st.markdown()
+    call injects everything — no repeated parsing of scattered blocks.
+    Also includes Google Fonts as a single preconnect + combined request.
+
+    NOTE: CSS file contents are concatenated (not interpolated) to avoid
+    f-string interpreting { } characters in the CSS as format expressions.
+    """
+    base_dir = Path(__file__).parent
+
+    # Read external CSS files once (cached after first call)
+    force_light = (base_dir / "static" / "css" / "force-light-theme.css").read_text()
+    enhanced = (base_dir / "src" / "ui" / "enhanced_style.css").read_text()
+
+    # Static CSS — uses plain string (no f-string) so { } aren't interpreted
+    static_css = """
+        /* ── Layout & spacing ── */
+        html, body, #root, #root > div, #root > div > div,
+        .stApp, .appview-container, .main, .block-container,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stSidebar"],
+        [data-testid="stSidebarContent"],
+        [data-testid="stVerticalBlock"],
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            min-height: 0 !important;
+        }
+        .stApp > div:first-child,
+        .appview-container > div:first-child,
+        [data-testid="stAppViewContainer"] > div:first-child,
+        .main > div:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+        [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            gap: 0 !important;
+        }
+        [data-testid="stVerticalBlock"] { gap: 0.25rem !important; row-gap: 0.25rem !important; }
+        h1 { margin-bottom: 0.5rem !important; padding-bottom: 0 !important; }
+        [role="tablist"] { margin-top: 0.5rem !important; }
+        .main .block-container { padding-left: 1rem; padding-right: 1rem; max-width: 100% !important; }
+        .stApp > div:first-child { margin-top: -1rem; }
+
+        /* ── Sidebar: hidden (collapsed via set_page_config) ── */
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarNav"],
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="stLogoSpacer"],
+        div[data-testid="collapsedControl"],
+        button[title="View app navigation"],
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+
+        /* ── Map container ── */
+        .stMap, .map-container, .leaflet-container {
+            width: 100% !important; height: 70vh !important; min-height: 500px;
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px;
+        }
+
+        /* ── Typography ── */
+        h1, h2, h3, h4, h5, h6,
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+            font-family: 'Roboto', sans-serif !important;
+        }
+        .stSelectbox > label, .stRadio > label, .stButton > button,
+        .stTextInput > label, .stNumberInput > label, .stSlider > label,
+        .stMultiSelect > label, div[data-testid='stForm'] label,
+        div[data-baseweb='form-control'] > div:first-child {
+            font-family: 'Roboto', sans-serif !important;
+            color: #2a5a0c !important;
+            font-weight: 600 !important;
+        }
+        .stSelectbox > label > div:first-child,
+        div[data-testid='stForm'] label > div:first-child { color: #2a5a0c !important; }
+        .dashboard-title {
+            font-family: 'Poppins', sans-serif; color: #3a7710;
+            margin: 0; padding: 0; line-height: 1; font-weight: 600; letter-spacing: -0.5px;
+        }
+
+        /* ── Dropdowns ── */
+        .stSelectbox > div > div { min-height: 40px; display: flex !important; align-items: center !important; }
+        [data-baseweb="select"] { color: #000 !important; }
+        [data-baseweb="menu"] {
+            background: white !important; color: #000 !important;
+            padding: 4px 0; opacity: 0; transform: translateY(-10px);
+            animation: menuFadeIn 0.2s forwards;
+        }
+        [data-baseweb="menu"] [role="option"] {
+            min-height: 40px !important; padding: 8px 16px !important;
+            white-space: normal !important; line-height: 1.4 !important; color: #000 !important;
+            transition: all 0.2s ease; opacity: 0; transform: translateY(-5px);
+            animation: itemFadeIn 0.2s forwards;
+        }
+        [data-baseweb="menu"] [role="option"]:hover {
+            background-color: #f5f8ff; transform: translateY(0) translateX(8px); padding-left: 20px;
+        }
+        [data-baseweb="menu"] [role="option"]:nth-child(1) { animation-delay: 0.05s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(2) { animation-delay: 0.1s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(3) { animation-delay: 0.15s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(4) { animation-delay: 0.2s; }
+        [data-baseweb="menu"] [role="option"]:nth-child(5) { animation-delay: 0.25s; }
+        [data-baseweb="popover"] {
+            z-index: 1000 !important; border-radius: 4px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+            padding: 4px 0 !important; margin: 0 !important;
+        }
+        [data-baseweb="popover"] > div {
+            max-height: 400px !important; border-radius: 4px !important;
+            padding: 0 !important; margin: 0 !important; border: none !important;
+        }
+        [data-baseweb="popover"] ul[role="listbox"] { padding: 0 !important; margin: 0 !important; list-style: none !important; }
+        [data-baseweb="popover"] li[role="option"] {
+            all: unset !important; display: block !important; padding: 8px 16px !important;
+            background: white !important; border-left: 3px solid transparent !important;
+            transition: all 0.2s ease !important; cursor: pointer !important;
+            line-height: 1.5 !important; min-height: 36px !important;
+            box-sizing: border-box !important; white-space: nowrap !important; overflow: hidden !important;
+        }
+        [data-baseweb="popover"] li[role="option"]:hover {
+            background-color: #f5f8ff !important; border-left-color: #1E88E5 !important;
+            transform: translateX(8px) !important; padding-left: 20px !important;
+        }
+        [data-baseweb="popover"] li[aria-selected="true"] { background-color: #e3f2fd !important; font-weight: 500 !important; }
+        @keyframes menuFadeIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes itemFadeIn { to { opacity: 1; transform: translateY(0); } }
+    """
+
+    return (
+        '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+        '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600'
+        '&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">\n'
+        "<style>\n"
+        "/* ── Force light theme ── */\n"
+        + force_light + "\n"
+        "/* ── Enhanced component styles ── */\n"
+        + enhanced + "\n"
+        + static_css
+        + "\n</style>"
+    )
+
+
 def load_css():
-    """Load custom CSS to force light theme."""
-    css_file = Path(__file__).parent / "static" / "css" / "force-light-theme.css"
-    with open(css_file) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    """Inject all app CSS in a single cached st.markdown call."""
+    st.markdown(_get_all_css(), unsafe_allow_html=True)
 
 def main():
     """Main application function for the Leaflet version."""
@@ -345,426 +345,6 @@ def main():
     
     # Regular page load - render the main app
     logger.info("Starting Hawaii Appleseed Dashboard - Leaflet Version")
-    
-    # Custom CSS for layout and typography
-    st.markdown("""
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-        <style>
-            /* Reset all vertical spacing */
-            html, body, #root, #root > div, #root > div > div,
-            .stApp, .appview-container, .main, .block-container,
-            [data-testid="stAppViewContainer"],
-            [data-testid="stSidebar"],
-            [data-testid="stSidebarContent"],
-            [data-testid="stVerticalBlock"],
-            [data-testid="stVerticalBlockBorderWrapper"] {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-                min-height: 0 !important;
-            }
-
-            /* Target specific Streamlit containers */
-            .stApp > div:first-child,
-            .appview-container > div:first-child,
-            [data-testid="stAppViewContainer"] > div:first-child,
-            .main > div:first-child {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-
-            /* Remove any remaining spacing from vertical wrappers */
-            [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
-            [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-                gap: 0 !important;
-            }
-
-            /* Add controlled spacing between elements */
-            [data-testid="stVerticalBlock"] {
-                gap: 0.25rem !important;
-                row-gap: 0.25rem !important;
-            }
-            
-            /* Add space below the title */
-            h1 {
-                margin-bottom: 0.5rem !important;
-                padding-bottom: 0 !important;
-            }
-            
-            /* Add space above tabs */
-            [role="tablist"] {
-                margin-top: 0.5rem !important;
-            }
-            
-            /* Ensure dropdown labels have proper spacing */
-            .dropdown-label {
-                margin-bottom: 0.5rem !important;
-                display: block;
-                font-weight: 500;
-                color: #1E5BA8;
-                font-family: 'Roboto', sans-serif;
-            }
-
-            /* Hide the sidebar collapse control and its spacer */
-            [data-testid="stSidebarCollapsedControl"],
-            [data-testid="stLogoSpacer"] {
-                display: none !important;
-                height: 0 !important;
-                width: 0 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            header[data-testid="stHeader"] {
-                display: none;
-            }
-            section[data-testid="stSidebar"],
-            div[data-testid="stSidebarNav"] {
-                padding-top: 0;
-                margin-top: 0;
-            }
-            .stApp > div:first-child {
-                margin-top: -1rem;
-            }
-            
-            /* Apply Roboto to specific elements */
-            h1, h2, h3, h4, h5, h6,
-            .stMarkdown h1, 
-            .stMarkdown h2, 
-            .stMarkdown h3,
-            .stMarkdown h4,
-            .stMarkdown h5,
-            .stMarkdown h6 {
-                font-family: 'Roboto', sans-serif !important;
-            }
-            
-            /* Style form labels with higher specificity */
-            .stSelectbox > label,
-            .stRadio > label,
-            .stButton > button,
-            .stTextInput > label,
-            .stNumberInput > label,
-            .stSlider > label,
-            .stMultiSelect > label,
-            .stDateInput > label,
-            .stTimeInput > label,
-            .stFileUploader > label,
-            div[data-testid='stForm'] label,
-            div[data-baseweb='form-control'] > div:first-child {
-                font-family: 'Roboto', sans-serif !important;
-                color: #2a5a0c !important;  /* Darker green */
-                font-weight: 600 !important;
-            }
-            
-            /* Target the actual text nodes */
-            .stSelectbox > label > div:first-child,
-            .stRadio > label > div:first-child,
-            div[data-testid='stForm'] label > div:first-child,
-            div[data-baseweb='form-control'] > div:first-child > div:first-child {
-                color: #2a5a0c !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Enhanced dropdown styling with borders and hover effects
-    st.markdown("""
-    <style>
-        /* Remove borders from Streamlit's generated classes */
-        .st-au,
-        .st-ax,
-        .st-av,
-        .st-aw,
-        .st-bb,
-        .st-bd,
-        .st-b8,
-        .st-b3,
-        .st-b4,
-        .st-be,
-        .st-bf,
-        .st-bg,
-        .st-bh,
-        .st-bi,
-        .st-bj,
-        .st-bk,
-        .st-bl,
-        .st-bm,
-        .st-bn,
-        .st-b1,
-        .st-bo,
-        .st-bp,
-        .st-e7,
-        .st-e8,
-        .st-e9,
-        .st-ea,
-        .st-eb,
-        .st-bv,
-        .st-bc,
-        .st-bw,
-        .st-bx,
-        .st-by,
-        .st-bz,
-        .st-c0,
-        .st-c1,
-        .st-c2,
-        .st-c3,
-        .st-c4,
-        .st-c6,
-        .st-b6,
-        .st-c7,
-        .st-c8,
-        .st-c9,
-        .st-ca,
-        .st-cb {
-            border: none !important;
-            box-shadow: none !important;
-            outline: none !important;
-        }
-        
-        /* Target the dropdown menu container */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 {
-            position: relative;
-            z-index: 1000;
-        }
-        
-        /* Target menu items and text content */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div,
-        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
-            transition: all 0.2s ease !important;
-            opacity: 0;
-            transform: translateY(-5px);
-            animation: itemFadeIn 0.2s forwards;
-            transform-origin: left center !important;
-            cursor: pointer;
-            padding: 12px 16px !important;
-            line-height: 1.5 !important;
-            min-height: 44px !important;
-            display: flex !important;
-            align-items: center !important;
-            overflow: visible !important;
-            white-space: normal !important;
-            text-overflow: clip !important;
-            height: auto !important;
-        }
-        
-        /* Ensure text container doesn't clip content */
-        .st-c5.st-bb.st-b6.st-c6.st-c7.st-bd.st-c8.st-c9.st-ca {
-            padding: 8px 16px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            height: 100% !important;
-        }
-        
-        /* Hover effect for menu items */
-        .st-bc.st-bd.st-bx.st-by.st-bz.st-b3.st-c0.st-c1.st-be.st-c2.st-c3.st-c4.st-c5 > div:hover {
-            background-color: var(--hover-color, #f5f8ff) !important;
-            transform: translateY(0) translateX(8px) !important;
-            padding-left: 24px !important;
-        }
-        /* Base dropdown styles */
-        .stSelectbox {
-            color: var(--text-color) !important;
-            margin-bottom: 1rem;
-        }
-        
-        /* Dropdown container */
-        .stSelectbox > div[data-baseweb="select"] > div {
-            background-color: #f0f7e9;  /* Very light green background */
-            border: none !important;  /* Remove borders */
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        /* Style the dropdown arrow */
-        .stSelectbox svg {
-            color: #2a5a0c !important;  /* Dark green arrow */
-            opacity: 0.8;
-        }
-        
-        /* Hover and focus states for dropdowns */
-        .stSelectbox > div[data-baseweb="select"]:hover > div,
-        .stSelectbox > div[data-baseweb="select"].st-bb > div,
-        .stSelectbox > div[data-baseweb="select"]:focus-within > div {
-            background-color: #e8f3df;
-            border: none !important;  /* Remove borders even on hover */
-            box-shadow: none !important;  /* Remove box shadow */
-        }
-        
-        /* Style the dropdown menu */
-        .stSelectbox > div > div > div {
-            background-color: #f0f7e9;  /* Light green background */
-            border: none !important;  /* Remove borders */
-            border-radius: 4px;
-            padding: 0.5rem 0.75rem;
-        }
-        
-        /* Dropdown menu items */
-        [role="option"] {
-            background-color: #f0f7e9 !important;  /* Match the light green */
-            color: #2a5a0c !important;  /* Dark green text */
-            padding: 8px 16px !important;
-            transition: background-color 0.2s ease !important;
-        }
-        
-        /* Hover state for dropdown items */
-        [role="option"]:hover {
-            background-color: #e0edd0 !important;  /* Slightly darker green on hover */
-        }
-        
-        /* Selected item in dropdown */
-        [aria-selected="true"] {
-            background-color: #d0e3c4 !important;  /* Even darker for selected */
-            font-weight: 500 !important;
-        }
-        
-        /* Dropdown menu container */
-        [data-baseweb="popover"] {
-            z-index: 1000 !important;
-            border-radius: 4px !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-            padding: 4px 0 !important;
-            margin: 0 !important;
-        }
-        
-        /* Inner popover container */
-        [data-baseweb="popover"] > div {
-            max-height: 400px !important;
-            border-radius: 4px !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-        }
-        
-        /* List container */
-        [data-baseweb="popover"] ul[role="listbox"] {
-            padding: 0 !important;
-            margin: 0 !important;
-            list-style: none !important;
-        }
-        
-        /* List items */
-        [data-baseweb="popover"] li[role="option"] {
-            all: unset !important;
-            display: block !important;
-            padding: 8px 16px !important;
-            margin: 0 !important;
-            background: white !important;
-            border-left: 3px solid transparent !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            line-height: 1.5 !important;
-            min-height: 36px !important;
-            box-sizing: border-box !important;
-            white-space: nowrap !important;
-            text-overflow: ellipsis !important;
-            overflow: hidden !important;
-        }
-        
-        /* Hover state */
-        [data-baseweb="popover"] li[role="option"]:hover {
-            background-color: #f5f8ff !important;
-            border-left-color: #1E88E5 !important;
-            transform: translateX(8px) !important;
-            box-shadow: -4px 0 6px -2px rgba(30, 136, 229, 0.2) !important;
-            padding-left: 20px !important;
-        }
-        
-        /* Remove gaps between items */
-        [data-baseweb="popover"] li[role="option"] + li[role="option"] {
-            margin-top: 0 !important;
-        }
-        
-        /* Selected item */
-        [data-baseweb="popover"] li[aria-selected="true"] {
-            background-color: #e3f2fd !important;
-            font-weight: 500 !important;
-        }
-        
-        /* Focus state */
-        [data-baseweb="popover"] li[role="option"]:focus {
-            outline: none !important;
-            box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.3) !important;
-        }
-        
-        /* Active state */
-        [data-baseweb="popover"] li[role="option"]:active {
-            background-color: #bbdefb !important;
-            transform: translateX(8px) scale(0.99) !important;
-        }
-        
-        /* Dropdown menu - remove all borders */
-        [data-baseweb="popover"],
-        [data-baseweb="popover"] *,
-        [data-baseweb="popover"]::before,
-        [data-baseweb="popover"]::after,
-        [data-baseweb="popover"] > div,
-        [data-baseweb="popover"] > div > *,
-        [data-baseweb="popover"] [role="listbox"],
-        [data-baseweb="popover"] [role="listbox"] * {
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-            --border-width: 0 !important;
-            border-width: 0 !important;
-            border-style: none !important;
-            border-image: none !important;
-        }
-        
-        /* Add back box-shadow to popover only */
-        [data-baseweb="popover"] {
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-        }
-        
-        /* Menu items */
-        [data-baseweb="menu"] {
-            padding: 4px 0;
-            opacity: 0;
-            transform: translateY(-10px);
-            animation: menuFadeIn 0.2s forwards;
-        }
-        
-        @keyframes menuFadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        [data-baseweb="menu"] [role="option"] {
-            padding: 8px 16px;
-            transition: all 0.2s ease;
-            opacity: 0;
-            transform: translateY(-5px);
-            animation: itemFadeIn 0.2s forwards;
-            transform-origin: left center;
-        }
-        
-        /* Stagger the animation for each menu item */
-        [data-baseweb="menu"] [role="option"]:nth-child(1) { animation-delay: 0.05s; }
-        [data-baseweb="menu"] [role="option"]:nth-child(2) { animation-delay: 0.1s; }
-        [data-baseweb="menu"] [role="option"]:nth-child(3) { animation-delay: 0.15s; }
-        [data-baseweb="menu"] [role="option"]:nth-child(4) { animation-delay: 0.2s; }
-        [data-baseweb="menu"] [role="option"]:nth-child(5) { animation-delay: 0.25s; }
-        
-        @keyframes itemFadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        [data-baseweb="menu"] [role="option"]:hover {
-            background-color: var(--hover-color, #f5f8ff);
-            transform: translateY(0) translateX(8px);
-            padding-left: 20px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Load additional custom CSS if needed
-    with open(Path(__file__).parent / "src" / "ui" / "enhanced_style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
     try:
         # Initialize session state for county layer if not already set
@@ -867,26 +447,8 @@ def main():
         }
         
         # Main content area
-        st.markdown("""
-        <link href='https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap' rel='stylesheet'>
-        <style>
-            .dashboard-title {
-                font-family: 'Poppins', sans-serif;
-                color: #3a7710;
-                margin: 0;
-                padding: 0;
-                line-height: 1;
-                font-weight: 600;
-                letter-spacing: -0.5px;
-            }
-        </style>
-        <h1 class="dashboard-title"></h1>
-        """, unsafe_allow_html=True)
-        
-        # Label colors handled by CSS above (no JavaScript MutationObserver needed)
-        
-        # Clean and simple dashboard without complex URL handling
-        
+        st.markdown('<h1 class="dashboard-title">Data Dashboard</h1>', unsafe_allow_html=True)
+
         # Add minimal space before tabs
         st.markdown("<div style='margin-top: 0.1rem;'></div>", unsafe_allow_html=True)
         

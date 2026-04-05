@@ -47,5 +47,5 @@ compress_geojson.py
 CLOUD_OPTIMIZATION.md
 requirements-cloud.txt
 
-# Original uncompressed GeoJSON files (use compressed versions)
-data/Processed GeoJsons/*.geojson
+# GeoJSON files are included in the image (simplified to <300 KB each)
+# data/Processed GeoJsons/*.geojson  ← do NOT exclude; files are needed at runtime
