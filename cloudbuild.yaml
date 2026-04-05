@@ -1,0 +1,46 @@
+steps:
+  # Build the container image with timestamp tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$BUILD_ID', '.']
+  
+  # Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$BUILD_ID']
+  
+  # Tag as latest
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['tag', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$BUILD_ID', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest']
+  
+  # Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest']
+  
+  # Deploy to Cloud Run with session affinity and WebSocket-friendly config
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'hi-data-dashboard'
+      - '--image=us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$BUILD_ID'
+      - '--region=us-west1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=2Gi'
+      - '--cpu=1'
+      - '--port=8080'
+      - '--max-instances=3'
+      - '--min-instances=0'
+      - '--timeout=3600s'
+      - '--concurrency=80'
+      - '--no-cpu-throttling'
+
+images:
+  - 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:$BUILD_ID'
+  - 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/hawaii-appleseed-dashboard/hi-data-dashboard:latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '1800s'
