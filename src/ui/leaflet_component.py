@@ -467,8 +467,8 @@ class LeafletMapComponent:
                                 ? 'linear-gradient(135deg, #e8f3df 0%, #d4ebc4 100%)'
                                 : 'linear-gradient(135deg, #f8faf5 0%, #f0f4eb 100%)';
                             const accentBar = isSelected
-                                ? 'background:#3a7710; height:3px; border-radius:3px 3px 0 0; margin:-1px -1px 8px -1px;'
-                                : 'height:3px; margin:-1px -1px 8px -1px;';
+                                ? 'background:#3a7710; height:3px; border-radius:3px 3px 0 0; margin:-1px -1px 4px -1px;'
+                                : 'height:0px; margin:0;';
                             const borderColor = isSelected ? '#3a7710' : '#ddebd1';
                             const valueColor = isSelected ? '#1a4a08' : '#2a3a1a';
                             const valueFontSize = isSelected ? '22px' : '18px';
@@ -482,10 +482,10 @@ class LeafletMapComponent:
                             rowHtml += [
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
                                 '<div style="background:', bg, '; border: 1px solid ', borderColor, ';',
-                                'border-radius: 8px; padding: 10px 10px 8px; height: 100%; overflow: hidden;">',
+                                'border-radius: 8px; padding: 7px 10px 6px; height: 100%; overflow: hidden;">',
                                 '<div style="', accentBar, '"></div>',
                                 '<div style="font-size:', valueFontSize, '; font-weight: 800; color:', valueColor, ';',
-                                'letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 5px;">',
+                                'letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 2px;">',
                                 utils.formatValue(value, metric.type), '</div>',
                                 '<div style="font-size: 10px; font-weight: 600; color: #6a8a5a;',
                                 'text-transform: uppercase; letter-spacing: 0.06em;',
@@ -1186,7 +1186,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v7"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v8"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
