@@ -300,11 +300,9 @@ def _get_all_css() -> str:
     """
 
     return (
-        '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
-        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-        '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600'
-        '&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">\n'
         "<style>\n"
+        "@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600"
+        "&family=Roboto:wght@400;500;700&display=swap');\n"
         "/* ── Force light theme ── */\n"
         + force_light + "\n"
         "/* ── Enhanced component styles ── */\n"
