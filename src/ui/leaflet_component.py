@@ -463,26 +463,34 @@ class LeafletMapComponent:
                             
                             hasCategoryData = true;
                             const isSelected = metric.key === SELECTED_VARIABLE;
-                            const bgColor = isSelected ? '#e8f3df' : '#f8faf5';
+                            const bg = isSelected
+                                ? 'linear-gradient(135deg, #e8f3df 0%, #d4ebc4 100%)'
+                                : 'linear-gradient(135deg, #f8faf5 0%, #f0f4eb 100%)';
+                            const accentBar = isSelected
+                                ? 'background:#3a7710; height:3px; border-radius:3px 3px 0 0; margin:-1px -1px 8px -1px;'
+                                : 'height:3px; margin:-1px -1px 8px -1px;';
                             const borderColor = isSelected ? '#3a7710' : '#ddebd1';
-                            const fontWeight = isSelected ? '700' : 'normal';
-                            
+                            const valueColor = isSelected ? '#1a4a08' : '#2a3a1a';
+                            const valueFontSize = isSelected ? '22px' : '18px';
+
                             // Start new row if needed
                             if (metricCount % 2 === 0) {{
                                 rowHtml = '<div style="display: flex; margin: 0 -3px;">';
                             }}
-                            
-                            // Add metric card
+
+                            // Add metric card — stat-first layout: big number, label beneath
                             rowHtml += [
                                 '<div style="flex: 1; min-width: 0; margin: 3px;">',
-                                '<div style="background:', bgColor, '; border: 1px solid ', borderColor, ';',
-                                'border-radius: 6px; padding: 7px 10px; height: 100%;">',
-                                '<div style="font-size: 11px; font-weight: 600; color: #6a8a5a;',
-                                'text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;',
+                                '<div style="background:', bg, '; border: 1px solid ', borderColor, ';',
+                                'border-radius: 8px; padding: 10px 10px 8px; height: 100%; overflow: hidden;">',
+                                '<div style="', accentBar, '"></div>',
+                                '<div style="font-size:', valueFontSize, '; font-weight: 800; color:', valueColor, ';',
+                                'letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 5px;">',
+                                utils.formatValue(value, metric.type), '</div>',
+                                '<div style="font-size: 10px; font-weight: 600; color: #6a8a5a;',
+                                'text-transform: uppercase; letter-spacing: 0.06em;',
                                 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">',
                                 metric.label, '</div>',
-                                '<div style="font-size: 13px; font-weight:', fontWeight, '; color: #1a2e10;">',
-                                utils.formatValue(value, metric.type), '</div>',
                                 '</div></div>'
                             ].join('');
                             
@@ -1170,7 +1178,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v3"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-05-v4"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
