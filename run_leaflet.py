@@ -727,7 +727,6 @@ def main():
         }
         
         # Main content area
-        st.markdown("<h1 style='color: #3a7710; margin: 0; padding: 0; line-height: 1;'>Data Dashboard</h1>", unsafe_allow_html=True)
         
         # Apply JavaScript to ensure form labels are green
         st.markdown("""

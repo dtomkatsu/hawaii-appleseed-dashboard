@@ -928,11 +928,13 @@ class LeafletMapComponent:
                             '  <button id="' + MAP_ID + '-close-panel" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; color: #6a8a5a; cursor: pointer; padding: 0; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; transition: all 0.2s;">&times;</button>',
                             '  <div style="font-weight: 700; font-size: 17px; color: #1a2e10; text-align: center; line-height: 1.2;">', name, '</div>',
                             '</div>',
-                            '<div style="text-align: center; margin-bottom: 16px;">',
-                            '  <div style="display: inline-block; background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%); color: white; padding: 8px 24px; border-radius: 20px; box-shadow: 0 1px 4px rgba(42, 90, 12, 0.2);">',
-                            '    <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">', formattedValue, '</span>',
+                            '<div style="margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 1px solid #c8e6b0;">',
+                            '  <div style="background: #3a7710; padding: 3px 0; text-align: center;">',
+                            '    <span style="font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.12em;">', VARIABLE_DISPLAY_NAME, '</span>',
                             '  </div>',
-                            '  <div style="font-size: 10px; font-weight: 600; color: #6a8a5a; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;">', VARIABLE_DISPLAY_NAME, '</div>',
+                            '  <div style="background: linear-gradient(180deg, #f0f7e8 0%, #e4f0d8 100%); padding: 12px 16px; text-align: center;">',
+                            '    <span style="font-size: 32px; font-weight: 900; color: #1a4008; letter-spacing: -0.03em; line-height: 1;">', formattedValue, '</span>',
+                            '  </div>',
                             '</div>',
                             (repInfo && repInfo.html ? repInfo.html : ''),
                             detailLinkHtml,
@@ -1200,7 +1202,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-05-v15"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-06-v16"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
