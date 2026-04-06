@@ -604,7 +604,7 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     with col1:
         # Geography dropdown — styled distinctly via .st-key-layer_selector in enhanced_style.css
         st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
-                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #2a5a0c; color: white; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #6a9a50; color: white; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
         layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
         try:
             layer_index = layer_options.index(active_layer)
