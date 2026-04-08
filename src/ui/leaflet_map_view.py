@@ -19,6 +19,7 @@ from src.config.variable_registry import (
     get_valid_variable_keys,
     get_variables_for_dropdown,
     get_display_names,
+    get_display_name,
 )
 
 # Set up logging
@@ -1067,7 +1068,58 @@ def display_feature_details(feature_id, geojson_data, selected_variable):
 
 def create_data_summary():
     """Create a summary of the data with a bar chart comparison."""
-    # Get the active layer and selected variable (respecting mutual exclusivity)
+
+    # ── Styles scoped to the data analysis section ──────────────────────────
+    st.markdown("""
+    <style>
+        /* Hide Streamlit's fullscreen expand button on plotly charts only */
+        [data-testid="stPlotlyChart"] [data-testid="StyledFullScreenButton"] {
+            display: none !important;
+        }
+        /* Section label above chart / table panels */
+        .da-section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #6b8f71;
+            margin: 0 0 0.6rem 0;
+            padding: 0;
+        }
+        /* Thin divider between chart row and full table */
+        .da-divider {
+            border: none;
+            border-top: 1px solid #e2e8e3;
+            margin: 1.5rem 0 1.25rem 0;
+        }
+        /* Geo context pill shown above the chart */
+        .da-geo-pill {
+            display: inline-block;
+            background: #eef4ef;
+            color: #3d6b45;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.65rem;
+            border-radius: 99px;
+            margin-bottom: 0.5rem;
+        }
+        /* Download button row */
+        .da-download-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .da-row-count {
+            font-size: 0.75rem;
+            color: #8fa899;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── Resolve selected variable ────────────────────────────────────────────
     active_layer = st.session_state.get('active_layer', 'State Boundary')
     food_security_var = st.session_state.get('selected_food_security_variable')
     housing_transportation_var = st.session_state.get('selected_housing_transportation_variable')
@@ -1080,24 +1132,19 @@ def create_data_summary():
         selected_variable = data_var
     else:
         selected_variable = 'alice_rate'
-    
-    # Load data
+
+    # ── Load data ────────────────────────────────────────────────────────────
     data_loader = get_data_loader()
-    
-    # Map geo levels to their data loader equivalents
     geo_level_map = {
         'State Boundary': 'state',
         'Counties': 'county',
         'House Districts': 'house',
-        'Senate Districts': 'senate'
+        'Senate Districts': 'senate',
     }
-    
     geo_level = geo_level_map.get(active_layer, 'state')
-    
-    # Get data for the current geographic level
     data = data_loader.get_data(geo_level)
-    
-    # Ensure we have a name column for display
+
+    # Ensure name column
     if data is not None and 'name' not in data.columns:
         if 'NAME' in data.columns:
             data['name'] = data['NAME']
@@ -1105,136 +1152,148 @@ def create_data_summary():
             data['name'] = 'Area ' + data['geoid'].astype(str)
         elif 'district' in data.columns:
             data['name'] = 'District ' + data['district'].astype(str)
-    
-    if data is not None and not data.empty:
-        # Create two columns for chart and table
-        chart_col, table_col = st.columns([2, 1])
-        
-        with chart_col:
-            st.markdown(f"#### {selected_variable.replace('_', ' ').title()} Comparison")
-            
-            # Check if the selected variable exists in the data
-            if selected_variable in data.columns:
-                # Sort data by the selected variable for better visualization
-                sorted_data = data.sort_values(by=selected_variable, ascending=False)
-                
-                # Calculate appropriate width based on number of data points
-                num_items = len(sorted_data)
-                
-                # For many items (districts), hide x-axis labels to avoid crowding
-                if num_items > 10:
-                    # Create the chart with custom hover template
-                    fig = px.bar(
-                        sorted_data,
-                        x='name',
-                        y=selected_variable,
-                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
-                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
-                    )
-                    
-                    # Format the variable name for display
-                    variable_display_name = selected_variable.replace('_', ' ').title()
-                    
-                    # Create custom hover template similar to map hover
-                    hover_template = f"""
-                    <b>%{{x}}</b><br>
-                    {variable_display_name}: %{{y}}<br>
-                    <extra></extra>
-                    """
-                    
-                    # Update traces with custom hover template
-                    fig.update_traces(
-                        hovertemplate=hover_template,
-                        hoverlabel=dict(
-                            bgcolor="white",
-                            bordercolor="black",
-                            font_size=12,
-                            font_family="Arial"
-                        )
-                    )
-                    
-                    # Update layout - hide x-axis labels for districts
-                    fig.update_layout(
-                        height=400,
-                        margin=dict(l=50, r=50, t=50, b=50),
-                        showlegend=False,
-                        title_x=0.5
-                    )
-                    
-                    # Hide x-axis labels and ticks for cleaner look
-                    fig.update_xaxes(
-                        showticklabels=False,
-                        title_text=""
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                else:
-                    # For fewer items, use regular chart with custom hover
-                    fig = px.bar(
-                        sorted_data,
-                        x='name',
-                        y=selected_variable,
-                        title=f"{selected_variable.replace('_', ' ').title()} by {active_layer}",
-                        labels={'name': active_layer, selected_variable: selected_variable.replace('_', ' ').title()}
-                    )
-                    
-                    # Format the variable name for display
-                    variable_display_name = selected_variable.replace('_', ' ').title()
-                    
-                    # Create custom hover template similar to map hover
-                    hover_template = f"""
-                    <b>%{{x}}</b><br>
-                    {variable_display_name}: %{{y}}<br>
-                    <extra></extra>
-                    """
-                    
-                    # Update traces with custom hover template
-                    fig.update_traces(
-                        hovertemplate=hover_template,
-                        hoverlabel=dict(
-                            bgcolor="white",
-                            bordercolor="black",
-                            font_size=12,
-                            font_family="Arial"
-                        )
-                    )
-                    
-                    fig.update_layout(
-                        height=400,
-                        xaxis_tickangle=-45,
-                        margin=dict(l=50, r=50, t=50, b=100),
-                        showlegend=False
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Add some context about the chart
-                st.caption(f"Comparison of {selected_variable.replace('_', ' ')} across {active_layer.lower()}. Chart is horizontally scrollable for better readability.")
-            else:
-                st.warning(f"Selected variable '{selected_variable}' not found in the data.")
-        
-        with table_col:
-            st.markdown("#### Data Table")
-            # Display a scrollable table
-            st.dataframe(
-                data[[col for col in ['name', selected_variable] if col in data.columns]],
-                height=400,
-                use_container_width=True
+
+    if data is None or data.empty:
+        st.warning(f"No data available for {active_layer}")
+        return
+
+    # Get both short and long display names (long includes units)
+    import re
+    var_label_short = get_display_name(selected_variable, long=False)
+    var_label_long = get_display_name(selected_variable, long=True)
+
+    # Parse unit from long name (format: "Name (Unit)")
+    unit_match = re.search(r'\(([^)]+)\)', var_label_long)
+    unit = unit_match.group(1) if unit_match else ''
+
+    # Format axis title: "(Unit) Name"
+    x_axis_label = f"({unit}) {var_label_short}" if unit else var_label_short
+
+    # ── Plotly chart config — remove autoscale, reset axes, and Plotly logo ─
+    _chart_config = {
+        'modeBarButtonsToRemove': ['autoScale2d', 'resetScale2d'],
+        'displaylogo': False,
+        'toImageButtonOptions': {'filename': f'hawaii_{geo_level}_{selected_variable}'},
+    }
+
+    # ── Chart + side table row ───────────────────────────────────────────────
+    chart_col, table_col = st.columns([11, 5])
+
+    with chart_col:
+        st.markdown(f'<p class="da-geo-pill">{active_layer}</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="da-section-label">{var_label_short} — ranked comparison</p>', unsafe_allow_html=True)
+
+        if selected_variable in data.columns:
+            sorted_data = data.sort_values(by=selected_variable, ascending=False)
+            num_items = len(sorted_data)
+
+            bar_color = '#4a8c64'
+            hover_template = (
+                f"<b>%{{x}}</b><br>"
+                f"{var_label_short}: %{{y}}<br>"
+                f"<extra></extra>"
             )
-        
-        # Add a full-width data table below
-        st.markdown("#### Full Data Table")
-        st.dataframe(data, use_container_width=True)
-        
-        # Add download button
-        csv = data.to_csv(index=False)
+
+            fig = px.bar(
+                sorted_data,
+                x='name',
+                y=selected_variable,
+                color_discrete_sequence=[bar_color],
+                labels={'name': '', selected_variable: var_label_short},
+            )
+            fig.update_traces(
+                hovertemplate=hover_template,
+                hoverlabel=dict(bgcolor='white', bordercolor='#ccc', font_size=12, font_family='Roboto, Arial'),
+            )
+            # Chart title with units in uppercase
+            chart_title = var_label_long.upper()
+
+            common_layout = dict(
+                title=dict(
+                    text=chart_title,
+                    x=0.5,
+                    xanchor='center',
+                    font=dict(size=13, color='#333', family='Roboto, Arial'),
+                ),
+                height=380,
+                showlegend=False,
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                font=dict(family='Roboto, Arial', size=12, color='#333'),
+                yaxis=dict(
+                    gridcolor='#eef0ec',
+                    gridwidth=1,
+                    zeroline=False,
+                    title_text=var_label_long,
+                    title_font=dict(size=11, color='#666'),
+                    tickfont=dict(size=10),
+                ),
+                xaxis=dict(
+                    title_text=x_axis_label,
+                    title_font=dict(size=11, color='#666'),
+                    tickfont=dict(size=10),
+                ),
+                margin=dict(l=55, r=20, t=50, b=60 if num_items <= 10 else 32),
+                hoverlabel=dict(bgcolor='white'),
+            )
+            if num_items > 10:
+                fig.update_xaxes(showticklabels=False, title_text=x_axis_label, showgrid=False)
+                common_layout['margin']['b'] = 32
+            else:
+                fig.update_xaxes(
+                    tickangle=-40,
+                    tickfont=dict(size=10),
+                    showgrid=False,
+                    title_text=x_axis_label,
+                )
+            fig.update_layout(**common_layout)
+            st.plotly_chart(fig, use_container_width=True, config=_chart_config)
+            if num_items > 10:
+                st.caption(f"Showing all {num_items} {active_layer.lower()} ranked by {var_label_short}. Hover for details.")
+        else:
+            st.warning(f"Variable '{selected_variable}' is not available for this geography level.")
+
+    with table_col:
+        st.markdown('<p class="da-section-label" style="margin-top:2.3rem">Selected variable</p>', unsafe_allow_html=True)
+        display_cols = [c for c in ['name', selected_variable] if c in data.columns]
+        st.dataframe(
+            data[display_cols],
+            height=400,
+            use_container_width=True,
+            column_config={
+                'name': st.column_config.TextColumn('Area'),
+                selected_variable: st.column_config.NumberColumn(var_label_long, format='%.1f'),
+            },
+        )
+
+    # ── Full data table ──────────────────────────────────────────────────────
+    st.markdown('<hr class="da-divider">', unsafe_allow_html=True)
+    st.markdown('<p class="da-section-label">Full data table</p>', unsafe_allow_html=True)
+
+    # Set medium column widths so the table overflows horizontally and shows a scrollbar
+    full_col_config = {col: st.column_config.Column(width='medium') for col in data.columns}
+    st.dataframe(
+        data,
+        height=420,
+        use_container_width=True,
+        column_config=full_col_config,
+    )
+
+    # ── Download ─────────────────────────────────────────────────────────────
+    csv = data.to_csv(index=False)
+    col_dl, col_info = st.columns([2, 8])
+    with col_dl:
         st.download_button(
-            label="Download Data as CSV",
+            label="⬇ Download CSV",
             data=csv,
             file_name=f"hawaii_{geo_level}_data.csv",
             mime="text/csv",
-            key="data_summary_download_button"
+            key="data_summary_download_button",
+            use_container_width=True,
         )
-    else:
-        st.warning(f"No data available for {active_layer}")
+    with col_info:
+        st.markdown(
+            f'<p class="da-row-count" style="padding-top:0.6rem">'
+            f'{len(data):,} rows · {len(data.columns):,} columns · {active_layer}</p>',
+            unsafe_allow_html=True,
+        )

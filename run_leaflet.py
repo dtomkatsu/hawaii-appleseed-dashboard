@@ -374,6 +374,66 @@ def main():
             /* Add space above tabs */
             [role="tablist"] {
                 margin-top: 0.5rem !important;
+                gap: 0.75rem !important;
+            }
+
+            /* Tab icon styling — replace emoji with SVG lineart icons */
+            [role="tab"] {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+            }
+
+            /* Hide emoji characters in tab labels */
+            [role="tab"] p {
+                font-size: 0 !important;
+            }
+
+            /* Show text at normal size but strip leading icon character */
+            [role="tab"] p::after {
+                font-size: 0.875rem !important;
+            }
+
+            /* Map View tab — lineart map pin icon */
+            [role="tab"]:nth-child(1) p::before {
+                content: "";
+                display: inline-block;
+                width: 1.1rem;
+                height: 1.1rem;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21'/%3E%3Cline x1='9' y1='3' x2='9' y2='18'/%3E%3Cline x1='15' y1='6' x2='15' y2='21'/%3E%3C/svg%3E");
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                flex-shrink: 0;
+                font-size: 1rem;
+                vertical-align: middle;
+                margin-right: 0.25rem;
+            }
+
+            /* Map View tab — show label text */
+            [role="tab"]:nth-child(1) p::after {
+                content: "Map View";
+            }
+
+            /* Data Analysis tab — lineart bar chart icon */
+            [role="tab"]:nth-child(2) p::before {
+                content: "";
+                display: inline-block;
+                width: 1.1rem;
+                height: 1.1rem;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='18' y='3' width='4' height='18'/%3E%3Crect x='10' y='8' width='4' height='13'/%3E%3Crect x='2' y='13' width='4' height='8'/%3E%3C/svg%3E");
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                flex-shrink: 0;
+                font-size: 1rem;
+                vertical-align: middle;
+                margin-right: 0.25rem;
+            }
+
+            /* Data Analysis tab — show label text */
+            [role="tab"]:nth-child(2) p::after {
+                content: "Data Analysis";
             }
             
             /* Ensure dropdown labels have proper spacing */
@@ -780,7 +840,6 @@ def main():
         
         # Data Analysis Tab
         with tab2:
-            st.header("Data Analysis")
             create_data_summary()
         
     except Exception as e:

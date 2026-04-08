@@ -1122,7 +1122,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-07-v17"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-08-v19"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
