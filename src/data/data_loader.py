@@ -10,6 +10,9 @@ from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
 
+from src.config.variable_registry import get_available_variables
+from src.data.data_source_registry import get_file_path, get_alice_excel_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -305,18 +308,19 @@ class ACSDataLoader(BaseDataLoader):
     def _add_tax_credit_variables(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
         """Add tax credit variables to existing ACS data."""
         try:
-            # Try to load pre-generated tax credit data from CSV
-            if geo_level == GeoLevel.STATE:
-                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_state_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.COUNTY:
-                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_county_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.HOUSE:
-                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_house_district_tax_credits_2022.csv'
-            elif geo_level == GeoLevel.SENATE:
-                tax_credit_file = self.data_dir / 'tax_credits' / 'hawaii_senate_district_tax_credits_2022.csv'
-            else:
+            # Resolve path from data_sources.json so the year is not hardcoded here
+            from src.data.data_source_registry import get_file_path as _fp
+            level_map = {
+                GeoLevel.STATE: 'state',
+                GeoLevel.COUNTY: 'county',
+                GeoLevel.HOUSE: 'house',
+                GeoLevel.SENATE: 'senate',
+            }
+            level_key = level_map.get(geo_level)
+            if level_key is None:
                 logger.warning(f"Tax credit data not available for {geo_level.value}")
                 return df
+            tax_credit_file = _fp('tax_credits', level_key)
             
             if tax_credit_file.exists():
                 logger.info(f"Loading tax credit data for {geo_level.value}")
@@ -1139,16 +1143,20 @@ class DataLoader:
         self.available_variables = self._get_available_variables()
     
     def _init_data_loaders(self):
-        """Initialize data loaders for different data types."""
-        # ACS data configuration
-        acs_config = DataConfig({
-            'state': 'hawaii_state_acs_2023.csv',
-            'county': 'hawaii_counties_acs_2023.csv',
-            'house': 'hawaii_house_districts_acs_2023.csv',
-            'senate': 'hawaii_senate_districts_acs_2023.csv',
-        })
-        
-        # ALICE data configuration
+        """Initialize data loaders — file patterns come from data_sources.json."""
+        from src.data.data_source_registry import get_file_path as _fp, get_alice_excel_path as _alice_path
+
+        def _patterns(source: str) -> dict:
+            """Return {level: filename_only} for a given source."""
+            return {
+                lvl: _fp(source, lvl).name
+                for lvl in ('state', 'county', 'house', 'senate')
+            }
+
+        # ACS data — year-stamped filenames resolved from data_sources.json
+        acs_config = DataConfig(_patterns('acs'))
+
+        # ALICE data — Excel workbook; sheet names are fixed
         alice_config = DataConfig(
             file_patterns={},
             sheet_patterns={
@@ -1158,24 +1166,14 @@ class DataLoader:
                 'senate': 'Senate'
             }
         )
-        
-        # SNAP data configuration
-        snap_config = DataConfig({
-            'state': 'hawaii_state_snap_2023.csv',
-            'county': 'hawaii_county_snap_2023.csv',
-            'house': 'hawaii_house_district_snap_2023.csv',
-            'senate': 'hawaii_senate_district_snap_2023.csv',
-        })
-        
-        # CEP data configuration - using existing file names
-        cep_config = DataConfig({
-            'state': 'hawaii_state_cep_2023.csv',  # Note: This file doesn't exist yet
-            'county': 'hawaii_counties_cep.csv',
-            'house': 'hawaii_house_districts_cep.csv',
-            'senate': 'hawaii_senate_districts_cep.csv',
-        })
-        
-        # Initialize loaders - ACS files are in root processed directory
+
+        # SNAP data — year-stamped filenames resolved from data_sources.json
+        snap_config = DataConfig(_patterns('snap'))
+
+        # CEP data — filenames resolved from data_sources.json
+        cep_config = DataConfig(_patterns('cep'))
+
+        # Initialize loaders
         self.acs_loader = ACSDataLoader(self.data_dir, acs_config)
         self.alice_loader = ALICEDataLoader(self.data_dir / 'alice', alice_config)
         self.snap_loader = SNAPDataLoader(self.data_dir / 'snap_benefits', snap_config)
@@ -1201,48 +1199,8 @@ class DataLoader:
         }
     
     def _get_available_variables(self) -> Dict[str, str]:
-        """Get available variables and their display names."""
-        return {
-            # ACS Variables
-            'poverty_rate': 'Poverty Rate (%)',
-            'median_income': 'Median Household Income ($)',
-            'population': 'Total Population',
-            'median_age': 'Median Age',
-            'bachelors_degree': 'Bachelor\'s Degree or Higher (%)',
-            'unemployment_rate': 'Unemployment Rate (%)',
-            'median_rent': 'Median Rent ($)',
-            'median_home_value': 'Median Home Value ($)',
-            'renter_occupied': 'Renter-Occupied Housing (%)',
-            'rent_burden_rate': 'Rent Burden (% paying 30%+ of income on rent)',
-            'no_health_insurance': 'No Health Insurance (%)',
-            
-            # ALICE Variables
-            'alice_rate': 'ALICE Households (%)',
-            
-            # SNAP Variables
-            'snap_household_rate': 'SNAP Households (%)',
-            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-            
-            # Transportation Variables
-            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-            
-            # Tax Credit Variables
-            'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
-            'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
-            'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
-            'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
-            'state_eitc_avg_amount': 'State EITC - Average Amount ($)',
-            
-            # CEP Variables
-            'cep_percentage': 'Schools with CEP (%)',
-            'cep_schools': 'Number of CEP Schools',
-            'total_schools': 'Total Number of Schools',
-            'cep_display': 'CEP Schools (Count)',
-            
-            # Placeholder for new variables
-            'new_variable': 'New Variable (%)'
-        }
+        """Get available variables and their display names from the centralized registry."""
+        return get_available_variables()
     
     def _preload_data(self):
         """Preload all data at initialization."""

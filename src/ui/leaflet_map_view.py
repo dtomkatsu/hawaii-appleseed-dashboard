@@ -15,6 +15,11 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.data.data_loader import DataLoader
 # Remove MapBuilder import as we're not using it in this implementation
 from src.ui.leaflet_component import create_leaflet_map
+from src.config.variable_registry import (
+    get_valid_variable_keys,
+    get_variables_for_dropdown,
+    get_display_names,
+)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -99,15 +104,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         if 'active_layer' not in st.session_state:
             st.session_state['active_layer'] = 'State Boundary'
         
-        # Define all valid variables including SNAP, transportation, tax credit, and CEP variables
-        valid_variables = [
-            'poverty_rate', 'median_income', 'unemployment_rate',
-            'median_home_value', 'college_educated_pct', 'rent_burden_rate', 'alice_rate',
-            'snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total',
-            'travel_time_to_work_minutes', 'public_transportation_pct', 'ctc_avg_amount', 'ctc_participation_rate', 
-            'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount',
-            'cep_percentage', 'cep_schools', 'total_schools', 'cep_display'
-        ]
+        # Valid variables loaded from centralized registry
+        valid_variables = get_valid_variable_keys()
         
         # Ensure selected_variable is valid (None is allowed for mutual exclusivity)
         current_var = st.session_state.get('selected_variable', 'alice_rate')
@@ -629,40 +627,9 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Economic Security</span></div>', unsafe_allow_html=True)
         
-        # Define available variables based on geography
-        if active_layer == 'State Boundary':
-            variable_options = {
-                'alice_rate': 'ALICE Households',
-                'poverty_rate': 'Poverty Rate',
-                'median_income': 'Median Income',
-                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
-                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
-                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
-                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
-                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
-            }
-        elif active_layer == 'Counties':
-            variable_options = {
-                'alice_rate': 'ALICE Households',
-                'poverty_rate': 'Poverty Rate',
-                'median_income': 'Median Income',
-                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
-                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
-                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
-                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
-                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
-            }
-        else:  # House and Senate Districts
-            variable_options = {
-                'alice_rate': 'ALICE Households',
-                'poverty_rate': 'Poverty Rate',
-                'median_income': 'Median Income',
-                'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
-                'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
-                'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
-                'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
-                'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
-            }
+        # Economic security dropdown options from centralized registry
+        _econ_items = get_variables_for_dropdown('economic_security')
+        variable_options = {item['key']: item['label'] for item in _econ_items}
         
         econ_keys = list(variable_options.keys())
 
@@ -697,13 +664,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Food Security</span></div>', unsafe_allow_html=True)
         
-        food_security_options = {
-            'snap_household_rate': 'SNAP Households (%)',
-            'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit',
-            'snap_benefits_annual_total': 'Total Annual SNAP Benefits',
-            'cep_percentage': 'Schools with CEP (%)',
-            'cep_display': 'Number of CEP Schools'
-        }
+        _food_items = get_variables_for_dropdown('food_security')
+        food_security_options = {item['key']: item['label'] for item in _food_items}
         
         fs_keys = list(food_security_options.keys())
 
@@ -745,12 +707,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
                    '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Housing &amp; Transportation</span></div>', unsafe_allow_html=True)
         
-        housing_transportation_options = {
-            'median_rent': 'Median Rent ($)',
-            'rent_burden_rate': 'Housing Cost Burden (%)',
-            'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-            'public_transportation_pct': 'Public Transportation Commuters (%)'
-        }
+        _ht_items = get_variables_for_dropdown('housing_transportation')
+        housing_transportation_options = {item['key']: item['label'] for item in _ht_items}
         
         ht_keys = list(housing_transportation_options.keys())
 
@@ -787,26 +745,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
                     st.session_state['_reset_other_dropdowns'] = 'restore_econ'
             st.rerun()
     
-    # Create a mapping of variable names to display names
-    variable_display_names = {
-        'poverty_rate': 'Poverty Rate',
-        'median_income': 'Median Income',
-        'unemployment_rate': 'Unemployment Rate',
-        'population': 'Population',
-        'median_home_value': 'Median Home Value',
-        'college_educated_pct': 'College Educated (%)',
-        'bachelors_rate': 'Bachelors Degree Rate',
-        'renter_rate': 'Renter Rate',
-        'rent_burden_rate': 'Housing Cost Burden (%)',
-        'alice_rate': 'ALICE Households (%)',
-        'snap_household_rate': 'SNAP Households (%)',
-        'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-        'cep_percentage': 'Schools with CEP (%)',
-        'cep_schools': 'Number of CEP Schools',
-        'total_schools': 'Total Number of Schools'
-    }
+    # Display names from centralized registry
+    variable_display_names = get_display_names(long=True)
     
     # Determine which variable to use for the map
     food_security_var = st.session_state.get('selected_food_security_variable')
@@ -846,24 +786,8 @@ def create_info_panel(selected_variable, geojson_data):
     
     # No need for additional JavaScript communication since we're using proper component return values
     
-    # Variable display names mapping
-    variable_display_names = {
-        'poverty_rate': 'Poverty Rate (%)',
-        'median_income': 'Median Income ($)',
-        'college_educated_pct': 'College Educated (%)',
-        'rent_burden_rate': 'Housing Cost Burden (%)',
-        'alice_rate': 'ALICE Households (%)',
-        'snap_household_rate': 'SNAP Households (%)',
-        'snap_benefit_annual_per_household': 'Avg Annual SNAP Benefit ($)',
-        'snap_benefits_annual_total': 'Total Annual SNAP Benefits ($)',
-        'travel_time_to_work_minutes': 'Average Travel Time to Work (minutes)',
-        'public_transportation_pct': 'Public Transportation Commuters (%)',
-        'ctc_avg_amount': 'Child Tax Credit - Average Amount ($)',
-        'ctc_participation_rate': 'Child Tax Credit - Participation Rate (%)',
-        'federal_eitc_avg_amount': 'Federal EITC - Average Amount ($)',
-        'eitc_participation_rate': 'Federal EITC - Participation Rate (%)',
-        'state_eitc_avg_amount': 'State EITC - Average Amount ($)'
-    }
+    # Display names from centralized registry
+    variable_display_names = get_display_names(long=True)
     
     # Display selected variable
     if selected_variable:

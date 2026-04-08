@@ -1,17 +1,16 @@
+# Runtime dependencies — installed in the Docker image (Cloud Run)
 streamlit
-folium
-geopandas
 pandas
 numpy
-matplotlib
 plotly
-cenpy
 requests
 us>=1.24.0
-geopandas>=0.14.0
 python-dotenv>=1.0.0
-fiona>=1.9.0
-pyproj>=3.0.0
-shapely>=2.0.0
-streamlit-folium>=0.15.0
 openpyxl>=3.0.0
+
+# Removed (confirmed unused in production import chain):
+#   folium, streamlit-folium — superseded by Leaflet.js implementation
+#   cenpy     — Census API client only used in deleted pipeline scripts
+#   matplotlib — Plotly is used instead; matplotlib never imported in src/
+#   geopandas + transitive deps (fiona, pyproj, shapely) — only used by
+#               scripts/update_data.py; see requirements-scripts.txt

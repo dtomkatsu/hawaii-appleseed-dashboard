@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "streamlit",
+      "runtimeExecutable": "/Users/devinthomas/Library/Python/3.9/bin/streamlit",
+      "runtimeArgs": ["run", "run_leaflet.py", "--server.port", "8501"],
+      "port": 8501
+    }
+  ]
+}

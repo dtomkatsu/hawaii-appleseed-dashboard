@@ -1,0 +1,16 @@
+# Dependencies for local data pipeline scripts (NOT needed in Docker/Cloud Run)
+# Install with: pip install -r requirements-scripts.txt
+#
+# Required for:
+#   scripts/update_data.py   — fetches ACS data from Census API
+#   scripts/process_cep_data.py
+#   scripts/match_schools_to_districts.py
+#   scripts/simplify_geojson.py
+#   scripts/compress_geojson.py
+
+-r requirements.txt
+
+geopandas>=0.14.0
+fiona>=1.9.0
+pyproj>=3.0.0
+shapely>=2.0.0

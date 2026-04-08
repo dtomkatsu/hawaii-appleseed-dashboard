@@ -11,10 +11,10 @@ spec:
         run.googleapis.com/cpu-throttling: "false"
         run.googleapis.com/memory: "2Gi"
         run.googleapis.com/cpu: "1"
-        run.googleapis.com/timeout: "3600s"
-        run.googleapis.com/max-instances: "10"
+        run.googleapis.com/timeout: "300s"
+        run.googleapis.com/max-instances: "3"
     spec:
-      containerConcurrency: 80
+      containerConcurrency: 10
       containers:
       - image: gcr.io/YOUR_PROJECT_ID/hawaii-appleseed-dashboard
         ports:

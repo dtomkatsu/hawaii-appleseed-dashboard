@@ -6,6 +6,13 @@ import logging
 from typing import Dict, Any, Optional, Union
 
 from .leaflet_legend import get_legend_js
+from src.config.variable_registry import (
+    get_default_metrics,
+    get_special_variable_keys,
+    get_info_panel_categories_json,
+    get_color_thresholds_json,
+    get_default_color_thresholds_json,
+)
 
 
 class LeafletMapComponent:
@@ -19,27 +26,8 @@ class LeafletMapComponent:
         'purple': ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
     }
     
-    # Default metrics to display in popups
-    DEFAULT_METRICS = [
-        {'key': 'poverty_rate', 'label': 'Poverty Rate', 'type': 'percentage'},
-        {'key': 'median_income', 'label': 'Median Income', 'type': 'currency'},
-        {'key': 'unemployment_rate', 'label': 'Unemployment Rate', 'type': 'percentage'},
-        {'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'},
-        {'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'},
-        {'key': 'alice_rate', 'label': 'ALICE Households', 'type': 'percentage'},
-        {'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'},
-        {'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'},
-        {'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'},
-        {'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'},
-        {'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'},
-        {'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'},
-        {'key': 'travel_time_to_work_minutes', 'label': 'Average Travel Time to Work', 'type': 'minutes'},
-        {'key': 'ctc_avg_amount', 'label': 'Child Tax Credit - Average Amount', 'type': 'currency'},
-        {'key': 'ctc_participation_rate', 'label': 'Child Tax Credit - Participation Rate', 'type': 'percentage'},
-        {'key': 'federal_eitc_avg_amount', 'label': 'Federal EITC - Average Amount', 'type': 'currency'},
-        {'key': 'eitc_participation_rate', 'label': 'Federal EITC - Participation Rate', 'type': 'percentage'},
-        {'key': 'state_eitc_avg_amount', 'label': 'State EITC - Average Amount', 'type': 'currency'}
-    ]
+    # Default metrics loaded from centralized registry
+    DEFAULT_METRICS = get_default_metrics()
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -56,12 +44,8 @@ class LeafletMapComponent:
                 self.logger.info(f"Found {selected_variable} in feature properties")
                 return True
         
-        # For SNAP, CEP, travel_time_to_work_minutes, and tax credit variables, be more lenient since they might be merged later
-        special_variables = ['snap_household_rate', 'snap_benefit_annual_per_household', 'snap_benefits_annual_total', 
-                           'cep_percentage', 'cep_display', 'cep_schools', 'total_schools',
-                           'travel_time_to_work_minutes', 'ctc_avg_amount', 'ctc_participation_rate', 
-                           'federal_eitc_avg_amount', 'eitc_participation_rate', 'state_eitc_avg_amount', 
-                           'median_income', 'median_rent']
+        # Special variables that might be merged later — loaded from registry
+        special_variables = get_special_variable_keys()
         if selected_variable in special_variables:
             self.logger.info(f"Special variable '{selected_variable}' expected to be merged - proceeding")
             return True
@@ -366,43 +350,12 @@ class LeafletMapComponent:
                 getColorForValue(value, scheme = '{color_scheme}') {{
                     const numValue = parseFloat(value) || 0;
                     const colors = COLOR_SCHEMES[scheme] || COLOR_SCHEMES.blue;
-                    
-                    // Dynamic thresholds based on variable type
-                    let thresholds;
-                    if (SELECTED_VARIABLE === 'travel_time_to_work_minutes') {{
-                        // Custom thresholds for travel time to work in minutes (30-50 minute range)
-                        thresholds = [30, 35, 40, 45, 50];
-                    }} else if (SELECTED_VARIABLE === 'public_transportation_pct') {{
-                        // Custom thresholds for public transportation percentage (0-6% range)
-                        thresholds = [0.5, 1.0, 2.0, 4.0, 6.0];
-                    }} else if (SELECTED_VARIABLE === 'ctc_avg_amount' || SELECTED_VARIABLE === 'federal_eitc_avg_amount' || SELECTED_VARIABLE === 'state_eitc_avg_amount') {{
-                        // Custom thresholds for tax credit amounts ($500-$3000 range)
-                        thresholds = [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000];
-                    }} else if (SELECTED_VARIABLE === 'ctc_participation_rate' || SELECTED_VARIABLE === 'eitc_participation_rate') {{
-                        // Custom thresholds for tax credit participation rates (5-25% range)
-                        thresholds = [5, 8, 10, 12, 15, 18, 20, 22, 25];
-                    }} else if (SELECTED_VARIABLE === 'cep_percentage' || SELECTED_VARIABLE === 'cep_display') {{
-                        // Custom thresholds for CEP percentage (0-100% range with more granularity)
-                        thresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90];
-                    }} else if (SELECTED_VARIABLE === 'cep_schools' || SELECTED_VARIABLE === 'total_schools') {{
-                        // Custom thresholds for number of schools (0-60 range)
-                        thresholds = [5, 10, 15, 20, 25, 30, 40, 50, 60];
-                    }} else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {{
-                        thresholds = [5, 10, 15, 20, 25, 30, 35, 40, 45];
-                    }} else if (SELECTED_VARIABLE.includes('income')) {{
-                        thresholds = [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000];
-                    }} else if (SELECTED_VARIABLE === 'median_rent') {{
-                        // Custom thresholds for median rent to make differences more apparent
-                        // Typical rent range in Hawaii is ~$1000-$4000
-                        thresholds = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
-                    }} else if (SELECTED_VARIABLE === 'snap_benefits_annual_total') {{
-                        // Custom scale for total SNAP benefits to show more variation
-                        // Using logarithmic-like scale for better distribution
-                        thresholds = [1000000, 2000000, 5000000, 10000000, 15000000, 20000000, 30000000, 50000000, 75000000];
-                    }} else {{
-                        thresholds = [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000];
-                    }}
-                    
+
+                    // Thresholds loaded from centralized variable registry
+                    const THRESHOLD_MAP = {get_color_thresholds_json()};
+                    const DEFAULT_THRESHOLDS = {get_default_color_thresholds_json()};
+                    const thresholds = THRESHOLD_MAP[SELECTED_VARIABLE] || DEFAULT_THRESHOLDS;
+
                     for (let i = thresholds.length - 1; i >= 0; i--) {{
                         if (numValue >= thresholds[i]) {{
                             return colors[Math.min(i, colors.length - 1)];
@@ -412,41 +365,8 @@ class LeafletMapComponent:
                 }},
                 
                 createCategorizedMetricsHtml(properties) {{
-                    const categories = {{
-                        'Economic Security': [
-                            {{'key': 'alice_rate', 'label': 'ALICE Households', 'type': 'percentage'}},
-                            {{'key': 'poverty_rate', 'label': 'Poverty Rate', 'type': 'percentage'}},
-                            {{'key': 'median_income', 'label': 'Median Income', 'type': 'currency'}},
-                            {{'key': 'unemployment_rate', 'label': 'Unemployment Rate', 'type': 'percentage'}}
-                        ],
-                        'Food Security': [
-                            {{'key': 'snap_household_rate', 'label': 'SNAP Households', 'type': 'percentage'}},
-                            {{'key': 'snap_benefit_annual_per_household', 'label': 'Avg Annual SNAP Benefit', 'type': 'currency'}},
-                            {{'key': 'snap_benefits_annual_total', 'label': 'Total Annual SNAP Benefits', 'type': 'currency'}},
-                            {{'key': 'cep_percentage', 'label': 'Schools with CEP', 'type': 'percentage'}},
-                            {{'key': 'cep_display', 'label': 'CEP Schools', 'type': 'text'}}
-                        ],
-                        'Housing': [
-                            {{'key': 'median_home_value', 'label': 'Median Home Value', 'type': 'currency'}},
-                            {{'key': 'median_rent', 'label': 'Median Rent', 'type': 'currency'}},
-                            {{'key': 'renter_rate', 'label': 'Renter-Occupied', 'type': 'percentage'}},
-                            {{'key': 'rent_burden_rate', 'label': 'Housing Cost Burden', 'type': 'percentage'}}
-                        ],
-                        'Transportation': [
-                            {{'key': 'travel_time_to_work_minutes', 'label': 'Avg Commute Time', 'type': 'minutes'}},
-                            {{'key': 'public_transportation_pct', 'label': 'Public Transportation %', 'type': 'percentage'}}
-                        ],
-                        'Education': [
-                            {{'key': 'college_educated_pct', 'label': 'College Educated', 'type': 'percentage'}}
-                        ],
-                        'Tax Credits': [
-                            {{'key': 'ctc_avg_amount', 'label': 'Avg Child Tax Credit', 'type': 'currency'}},
-                            {{'key': 'ctc_participation_rate', 'label': 'CTC Participation', 'type': 'percentage'}},
-                            {{'key': 'federal_eitc_avg_amount', 'label': 'Avg Federal EITC', 'type': 'currency'}},
-                            {{'key': 'eitc_participation_rate', 'label': 'EITC Participation', 'type': 'percentage'}},
-                            {{'key': 'state_eitc_avg_amount', 'label': 'Avg State EITC', 'type': 'currency'}}
-                        ]
-                    }};
+                    // Categories loaded from centralized variable registry
+                    const categories = {get_info_panel_categories_json()};
                     
                     let html = '';
                     let categoryCount = 0;
@@ -1202,7 +1122,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-06-v16"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-07-v17"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
 def _build_cached_map_html(
