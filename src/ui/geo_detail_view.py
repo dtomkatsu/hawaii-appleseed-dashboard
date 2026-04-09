@@ -6,12 +6,9 @@ import logging
 from pathlib import Path
 import sys
 
-# Add the parent directory to the path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 # Import local modules
-from src.data.data_loader import DataLoader
-from src.config.variable_registry import get_fact_sheet_categories, get_fact_sheet_variables
+from data.data_loader import DataLoader
+from config.variable_registry import get_fact_sheet_categories, get_fact_sheet_variables
 
 # Set up logging
 logger = logging.getLogger(__name__)

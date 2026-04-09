@@ -8,14 +8,10 @@ from pathlib import Path
 import sys
 import plotly.express as px
 
-# Add the parent directory to the path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 # Import local modules
-from src.data.data_loader import DataLoader
-# Remove MapBuilder import as we're not using it in this implementation
-from src.ui.leaflet_component import create_leaflet_map
-from src.config.variable_registry import (
+from data.data_loader import DataLoader
+from .leaflet_component import create_leaflet_map
+from config.variable_registry import (
     get_valid_variable_keys,
     get_variables_for_dropdown,
     get_display_names,
@@ -135,23 +131,21 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.session_state['selected_variable'] = 'alice_rate'
         st.session_state['color_scheme'] = 'blue'
         
-    # Apply pending dropdown resets BEFORE widgets are created
-    # Setting widget keys here (before instantiation) forces dropdowns to show the correct value
+    # Apply pending dropdown resets BEFORE widgets are created.
+    # Mapping from group name -> (widget key, state key for selected variable)
+    _DROPDOWN_GROUPS = {
+        'econ': ('variable_selector', 'selected_variable'),
+        'food': ('food_security_selector', 'selected_food_security_variable'),
+        'housing': ('housing_transportation_selector', 'selected_housing_transportation_variable'),
+    }
+
     reset_flag = st.session_state.pop('_reset_other_dropdowns', None)
-    if reset_flag == 'econ':
-        # Economic Security was selected — reset Food Security and Housing dropdowns
-        st.session_state['food_security_selector'] = None
-        st.session_state['housing_transportation_selector'] = None
-    elif reset_flag == 'food':
-        # Food Security was selected — reset Economic Security and Housing dropdowns
-        st.session_state['variable_selector'] = None
-        st.session_state['housing_transportation_selector'] = None
-    elif reset_flag == 'housing':
-        # Housing was selected — reset Economic Security and Food Security dropdowns
-        st.session_state['variable_selector'] = None
-        st.session_state['food_security_selector'] = None
+    if reset_flag in _DROPDOWN_GROUPS:
+        # Clear all widget keys except the active group
+        for name, (widget_key, _state_key) in _DROPDOWN_GROUPS.items():
+            if name != reset_flag:
+                st.session_state[widget_key] = None
     elif reset_flag == 'restore_econ':
-        # Cleared a category with nothing else active — restore Economic Security default
         st.session_state['variable_selector'] = 'alice_rate'
 
     active_layer = st.session_state['active_layer']
@@ -178,315 +172,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         st.error(f"Failed to load GeoJSON data for {active_layer}")
         return
         
-    # Note: The enhanced data loader now handles all the merging automatically
-    # The following legacy code is no longer needed but kept for reference
-    if False:  # Disabled legacy manual merging code
-        for feature in geojson_data['features']:
-            # Get the feature ID based on the geo level
-            if geo_level == 'state':
-                feature_id = 'Hawaii'
-            elif geo_level == 'county':
-                # Get county name from county_name property (not NAME)
-                county_name = feature['properties'].get('county_name')
-                logger.info(f"County name from GeoJSON: {county_name}")
-                
-                # Set display name (special case for Oahu -> Honolulu)
-                display_name = 'Honolulu' if county_name == 'Oahu' else county_name
-                feature['properties']['display_name'] = display_name
-                
-                # Handle special case for Oahu/Honolulu data matching
-                if county_name == 'Oahu':
-                    logger.info("Special case: Oahu -> Honolulu for data matching")
-                    # Use all possible formats for data matching
-                    formats = [
-                        'Honolulu',
-                        'Honolulu County',
-                        'Honolulu County, Hawaii',
-                        '"Honolulu County, Hawaii"',
-                        'Honolulu, Hawaii',
-                        # Also keep original Oahu formats as fallback
-                        county_name,
-                        f"{county_name} County",
-                        f"{county_name} County, Hawaii",
-                        f"\"{county_name} County, Hawaii\"",
-                        f"{county_name}, Hawaii"
-                    ]
-                else:
-                    # Try different formats that might match the ACS data
-                    formats = [
-                        county_name,  # Original format (e.g., 'Hawaii')
-                        f"{county_name} County",  # Add 'County' suffix
-                        f"{county_name} County, Hawaii",  # Add state
-                        f"\"{county_name} County, Hawaii\"",  # Quoted format with state (matches CSV format)
-                        f"{county_name}, Hawaii"  # Without 'County' but with state
-                    ]
-                # Create unique county ID with prefix to avoid conflicts
-                county_fips = feature['properties'].get('county_fips')
-                state_fips = feature['properties'].get('state_fips', '15')
-                if county_fips and county_fips != 'null':
-                    feature_id = f"county_{state_fips}{county_fips}"
-                else:
-                    # Fallback for counties without FIPS (like Oahu)
-                    county_map = {'Hawaii': '001', 'Honolulu': '003', 'Kauai': '007', 'Maui': '009', 'Oahu': '003'}
-                    county_fips = county_map.get(county_name, '999')
-                    feature_id = f"county_{state_fips}{county_fips}"
-                
-                # Store the unique ID in the feature properties
-                feature['properties']['unique_id'] = feature_id
-                feature_formats = formats
-            elif geo_level == 'house':
-                # Extract district number from different possible property names
-                district_num = None
-                if 'DISTRICT' in feature['properties']:
-                    district_num = feature['properties']['DISTRICT']
-                elif 'house_id' in feature['properties']:
-                    district_num = feature['properties']['house_id']
-                elif 'house_name' in feature['properties'] and 'District' in feature['properties']['house_name']:
-                    # Try to extract the number from the name (e.g., 'State House District 1')
-                    import re
-                    match = re.search(r'District (\d+)', feature['properties']['house_name'])
-                    if match:
-                        district_num = match.group(1)
-                
-                # Create unique house district ID with prefix
-                feature_id = f"house_{district_num:05d}"  # e.g., house_00001
-                
-                # Store the unique ID and display name
-                feature['properties']['unique_id'] = feature_id
-                feature['properties']['display_name'] = f"House District {district_num}"
-                # Debug: Log the feature ID we're looking for
-                logger.info(f"Created unique house district ID: {feature_id}")
-            elif geo_level == 'senate':
-                # Extract district number from different possible property names
-                district_num = None
-                if 'DISTRICT' in feature['properties']:
-                    district_num = feature['properties']['DISTRICT']
-                elif 'senate_id' in feature['properties']:
-                    district_num = feature['properties']['senate_id']
-                elif 'senate_name' in feature['properties'] and 'District' in feature['properties']['senate_name']:
-                    # Try to extract the number from the name (e.g., 'State Senate District 1')
-                    import re
-                    match = re.search(r'District (\d+)', feature['properties']['senate_name'])
-                    if match:
-                        district_num = match.group(1)
-                
-                # Create unique senate district ID with prefix
-                feature_id = f"senate_{district_num:05d}"  # e.g., senate_00001
-                
-                # Store the unique ID and display name
-                feature['properties']['unique_id'] = feature_id
-                feature['properties']['display_name'] = f"Senate District {district_num}"
-                # Debug: Log the feature ID we're looking for
-                logger.info(f"Created unique senate district ID: {feature_id}")
-            else:
-                feature_id = None
-            
-            # Store the ID in the properties
-            feature['properties']['id'] = feature_id
-            
-            # Find matching data
-            if feature_id:
-                # Debug: Print feature ID we're trying to match
-                logger.info(f"Trying to match feature_id: {feature_id}")
-                
-                # Check if 'name' column exists, otherwise try 'NAME' or create a name field
-                name_col = 'name' if 'name' in acs_data.columns else 'NAME' if 'NAME' in acs_data.columns else None
-                logger.info(f"Using name column: {name_col}")
-                
-                if name_col:
-                    # For counties, use the feature_formats for matching if available
-                    if geo_level == 'county' and 'feature_formats' in locals():
-                        possible_ids = feature_formats
-                    else:
-                        possible_ids = [feature_id] if isinstance(feature_id, str) else [feature_id] 
-                    
-                    matching_rows = None
-                    logger.info(f"Trying to match feature with {len(possible_ids)} possible IDs for geo_level: {geo_level}")
-                    
-                    # Debug logging for ACS data
-                    logger.info(f"ACS data contains {len(acs_data)} rows with name column '{name_col}'")
-                    logger.info(f"First few values in name column: {acs_data[name_col].head().tolist()}")
-                    
-                    for i, fid in enumerate(possible_ids):
-                        logger.info(f"Trying ID format {i+1}: '{fid}'")
-                        matching_rows = acs_data[acs_data[name_col] == fid]
-                        if not matching_rows.empty:
-                            logger.info(f"Found exact match for '{fid}'")
-                            break
-                        if isinstance(fid, str):
-                            logger.info(f"Trying case-insensitive match for '{fid}'")
-                            matching_rows = acs_data[acs_data[name_col].str.lower() == fid.lower()]
-                            if not matching_rows.empty:
-                                logger.info(f"Found case-insensitive match for '{fid}'")
-                                break
-                    
-                    if matching_rows is not None:
-                        logger.info(f"Found {len(matching_rows)} matches for {possible_ids}")
-                        if len(matching_rows) > 0:
-                            logger.info(f"Match data: {matching_rows.iloc[0].to_dict()}")
-                    matching_data = matching_rows.to_dict('records') if matching_rows is not None else []
-                else:
-                    # If no name column exists, try matching by geoid or district number
-                    if 'geoid' in acs_data.columns and 'GEOID' in feature['properties']:
-                        geoid_val = feature['properties']['GEOID']
-                        logger.info(f"Trying to match by GEOID: {geoid_val}")
-                        matching_data = acs_data[acs_data['geoid'] == geoid_val].to_dict('records')
-                    elif 'district' in acs_data.columns and 'DISTRICT' in feature['properties']:
-                        district_val = feature['properties']['DISTRICT']
-                        logger.info(f"Trying to match by DISTRICT: {district_val}")
-                        matching_data = acs_data[acs_data['district'] == district_val].to_dict('records')
-                    else:
-                        # No matching criteria found
-                        logger.info("No matching criteria found")
-                        matching_data = []
-                
-                if matching_data:
-                    # Add ACS data to feature properties
-                    for key, value in matching_data[0].items():
-                        # Skip name/id fields as we already have them
-                        if key not in ['name', 'NAME', 'geoid', 'GEOID', 'district', 'DISTRICT']:
-                            feature['properties'][key] = value
-    
-    # Add custom styles for the map container and UI elements
+    # Dropdown scrolling fix (CSS styles are in app_style.css)
     st.markdown("""
-    <style>
-        /* Style for dropdown container */
-        .dropdown-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        /* Style for dropdown wrapper */
-        .dropdown-wrapper {
-            position: relative;
-            min-width: 200px;
-            flex: 1;
-        }
-        
-        /* Style for dropdown labels */
-        .dropdown-label {
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #1E88E5;
-            display: block;
-        }
-        
-        /* Style for dropdown hover effect */
-        .stSelectbox {
-            width: 100% !important;
-        }
-        
-        .stSelectbox > div {
-            width: 100% !important;
-        }
-        
-        .stSelectbox > div > div[data-baseweb="select"] {
-            transition: all 0.2s ease;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
-            background: white;
-            width: 100% !important;
-            min-height: 38px !important;
-        }
-        
-        .stSelectbox > div > div[data-baseweb="select"]:hover {
-            border-color: #1E88E5;
-            box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.2);
-        }
-        
-        /* Control the selected value display */
-        .stSelectbox > div > div[data-baseweb="select"] > div {
-            padding: 6px 12px !important;
-            font-size: 14px !important;
-        }
-        
-        /* Style for dropdown options */
-        [data-baseweb="popover"] {
-            z-index: 1000 !important;
-            position: fixed !important;
-        }
-        
-        /* Map container styles */
-        .map-container {
-            width: 100% !important;
-            height: 70vh !important;
-            min-height: 500px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin: 0 0 20px 0 !important;
-            padding: 0 !important;
-            position: relative;
-        }
-        
-        /* Force proper dropdown positioning and scrolling */
-        [data-baseweb="popover"] [data-baseweb="popover-content"] {
-            max-height: 400px !important;
-            overflow: hidden !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"] {
-            padding: 8px 0 !important;
-            max-height: 400px !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            scrollbar-width: thin !important;
-        }
-        
-        /* Webkit scrollbar styling for better UX */
-        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar {
-            width: 6px !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-track {
-            background: #f1f1f1 !important;
-            border-radius: 3px !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-thumb {
-            background: #c1c1c1 !important;
-            border-radius: 3px !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"]::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8 !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"] > div {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"] [role="option"] {
-            padding: 10px 16px 10px 12px !important;
-            margin: 0 !important;
-            transition: all 0.2s ease !important;
-            border-left: 3px solid transparent !important;
-            position: relative !important;
-            left: 0 !important;
-            z-index: 1 !important;
-            min-height: 40px !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-        
-        [data-baseweb="popover"] [role="listbox"] [role="option"]:hover {
-            background-color: #f5f5f5 !important;
-            border-left: 3px solid #1E88E5 !important;
-            transform: translateX(4px) !important;
-            z-index: 2 !important;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1) !important;
-        }
-        
-        /* Style for selected option */
-        [data-baseweb="popover"] [role="listbox"] [aria-selected="true"] {
-            background-color: #E3F2FD !important;
-            font-weight: 500 !important;
-            border-left: 3px solid #1E88E5 !important;
-        }
-    </style>
     <script>
     // Enhanced fix for dropdown scrolling issues
     function fixDropdownScrolling() {

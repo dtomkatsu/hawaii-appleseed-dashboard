@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
 
-from src.config.variable_registry import get_available_variables
-from src.data.data_source_registry import get_file_path, get_alice_excel_path
+from config.variable_registry import get_available_variables
+from data.data_source_registry import get_file_path, get_alice_excel_path
 
 logger = logging.getLogger(__name__)
 

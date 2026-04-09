@@ -8,25 +8,28 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Union
 
 from .leaflet_legend import get_legend_js
-from src.config.variable_registry import (
+from config.variable_registry import (
     get_default_metrics,
     get_special_variable_keys,
     get_info_panel_categories_json,
     get_color_thresholds_json,
     get_default_color_thresholds_json,
 )
+from config.theme_registry import (
+    get_color_scheme_colors,
+    get_color_scheme_colors_json,
+    get_map_config,
+    get_colors,
+    get_layout,
+    get_typography,
+)
 
 
 class LeafletMapComponent:
     """A class to handle Leaflet map creation and configuration."""
     
-    # Color schemes for the map
-    COLOR_SCHEMES = {
-        'blue': ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
-        'green': ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
-        'red': ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
-        'purple': ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d']
-    }
+    # Color schemes loaded from centralized theme config
+    COLOR_SCHEMES = get_color_scheme_colors()
     
     # Default metrics loaded from centralized registry
     DEFAULT_METRICS = get_default_metrics()
@@ -289,27 +292,40 @@ class LeafletMapComponent:
             }
         """
     
-    def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str,
-                           variable_display_name: str, color_scheme: str, show_side_panel: bool = True,
-                           rep_data_json: str = "{}") -> str:
-        """Generate JavaScript code for the map."""
+    def _get_js_config(self, map_id: str, selected_variable: str,
+                       variable_display_name: str, color_scheme: str) -> str:
+        """Generate JS configuration constants section."""
+        map_cfg = get_map_config()
         return f"""
-        (function() {{
-            // Configuration constants
+            // Configuration constants — loaded from theme.json
             const MAP_CONFIG = {{
-                center: [20.7984, -156.3319],
-                zoom: 7,
-                zoomSnap: 0.6,      // Increased from 0.1 for faster zooming
-                zoomDelta: 0.8,       // Increased from 0.5 for larger zoom steps
-                zoomAnimationThreshold: 4,  // Fewer animation frames
-                fadeAnimation: false,       // Disable fade animation
-                markerZoomAnimation: false   // Disable marker animation
+                center: {json.dumps(map_cfg["center"])},
+                zoom: {map_cfg["zoom"]},
+                zoomSnap: {map_cfg.get("zoom_snap", 0.6)},
+                zoomDelta: {map_cfg.get("zoom_delta", 0.8)},
+                zoomAnimationThreshold: {map_cfg.get("zoom_animation_threshold", 4)},
+                fadeAnimation: false,
+                markerZoomAnimation: false
             }};
-            
+
             const COLOR_SCHEMES = {json.dumps(self.COLOR_SCHEMES)};
             const SELECTED_VARIABLE = '{selected_variable}';
             const VARIABLE_DISPLAY_NAME = '{variable_display_name}';
             const MAP_ID = '{map_id}';
+        """
+
+    def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str,
+                           variable_display_name: str, color_scheme: str, show_side_panel: bool = True,
+                           rep_data_json: str = "{}") -> str:
+        """Generate JavaScript code for the map.
+
+        The JS is composed from _get_js_config (constants) plus the main body
+        containing utility functions, map init, event handlers, and legend setup.
+        """
+        js_config = self._get_js_config(map_id, selected_variable, variable_display_name, color_scheme)
+        return f"""
+        (function() {{
+            {js_config}
             
             // Utility functions
             const utils = {{

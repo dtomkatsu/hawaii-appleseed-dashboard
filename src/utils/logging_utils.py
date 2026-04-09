@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from src.config import LOG_DIR
+from config import LOG_DIR
 
 # Ensure log directory exists
 LOG_DIR.mkdir(parents=True, exist_ok=True)
