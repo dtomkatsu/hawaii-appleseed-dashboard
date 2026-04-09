@@ -1166,8 +1166,11 @@ def create_data_summary():
     unit_match = re.search(r'\(([^)]+)\)', var_label_long)
     unit = unit_match.group(1) if unit_match else ''
 
-    # Format axis title: "(Unit) Name"
-    x_axis_label = f"({unit}) {var_label_short}" if unit else var_label_short
+    # Chart title: "Percentage of X (GeoLevel)" for %, else "X (GeoLevel)"
+    if unit == '%':
+        chart_title = f"Percentage of {var_label_short} ({active_layer})"
+    else:
+        chart_title = f"{var_label_long} ({active_layer})"
 
     # ── Plotly chart config — remove autoscale, reset axes, and Plotly logo ─
     _chart_config = {
@@ -1194,20 +1197,28 @@ def create_data_summary():
                 f"<extra></extra>"
             )
 
+            # Bar label format: include unit symbol if available
+            if unit in ('%', '$'):
+                text_template = f'%{{text:.1f}}{unit}' if unit == '%' else f'{unit}%{{text:,.0f}}'
+            else:
+                text_template = '%{text:.1f}'
+
             fig = px.bar(
                 sorted_data,
                 x='name',
                 y=selected_variable,
+                text=selected_variable,
                 color_discrete_sequence=[bar_color],
                 labels={'name': '', selected_variable: var_label_short},
             )
             fig.update_traces(
+                texttemplate=text_template,
+                textposition='outside',
+                textfont=dict(size=9, color='#555'),
+                cliponaxis=False,
                 hovertemplate=hover_template,
                 hoverlabel=dict(bgcolor='white', bordercolor='#ccc', font_size=12, font_family='Roboto, Arial'),
             )
-            # Chart title with units in uppercase
-            chart_title = var_label_long.upper()
-
             common_layout = dict(
                 title=dict(
                     text=chart_title,
@@ -1215,7 +1226,7 @@ def create_data_summary():
                     xanchor='center',
                     font=dict(size=13, color='#333', family='Roboto, Arial'),
                 ),
-                height=380,
+                height=400,
                 showlegend=False,
                 plot_bgcolor='white',
                 paper_bgcolor='white',
@@ -1228,24 +1239,16 @@ def create_data_summary():
                     title_font=dict(size=11, color='#666'),
                     tickfont=dict(size=10),
                 ),
-                xaxis=dict(
-                    title_text=x_axis_label,
-                    title_font=dict(size=11, color='#666'),
-                    tickfont=dict(size=10),
-                ),
-                margin=dict(l=55, r=20, t=50, b=60 if num_items <= 10 else 32),
+                xaxis=dict(title_text='', showgrid=False),
+                margin=dict(l=55, r=20, t=50, b=60 if num_items <= 10 else 28),
                 hoverlabel=dict(bgcolor='white'),
+                uniformtext=dict(minsize=7, mode='hide'),
             )
             if num_items > 10:
-                fig.update_xaxes(showticklabels=False, title_text=x_axis_label, showgrid=False)
-                common_layout['margin']['b'] = 32
+                fig.update_xaxes(showticklabels=False)
+                common_layout['margin']['b'] = 28
             else:
-                fig.update_xaxes(
-                    tickangle=-40,
-                    tickfont=dict(size=10),
-                    showgrid=False,
-                    title_text=x_axis_label,
-                )
+                fig.update_xaxes(tickangle=-40, tickfont=dict(size=10))
             fig.update_layout(**common_layout)
             st.plotly_chart(fig, use_container_width=True, config=_chart_config)
             if num_items > 10:

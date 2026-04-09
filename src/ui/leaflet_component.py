@@ -3,6 +3,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 import json
 import logging
+import pandas as pd
+from pathlib import Path
 from typing import Dict, Any, Optional, Union
 
 from .leaflet_legend import get_legend_js
@@ -287,8 +289,9 @@ class LeafletMapComponent:
             }
         """
     
-    def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str, 
-                           variable_display_name: str, color_scheme: str, show_side_panel: bool = True) -> str:
+    def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str,
+                           variable_display_name: str, color_scheme: str, show_side_panel: bool = True,
+                           rep_data_json: str = "{}") -> str:
         """Generate JavaScript code for the map."""
         return f"""
         (function() {{
@@ -468,88 +471,8 @@ class LeafletMapComponent:
                 }},
                 
                 getRepresentativeInfo(properties) {{
-                    // Representative data with prefixed keys to distinguish House vs Senate
-                    const repData = {{
-                        // House Representatives (house_1 - house_51)
-                        "house_1": {{"name": "Matthias Kusch", "party": "D", "areas": "Hāmākua, portion of Hilo, Ka'ūmana"}},
-                        "house_2": {{"name": "Sue L. Keohokapu-Lee Loy", "party": "D", "areas": "Hilo"}},
-                        "house_3": {{"name": "Chris Todd", "party": "D", "areas": "Portion of Hilo, Keaukaha, Orchidlands Estate"}},
-                        "house_4": {{"name": "Greggor Ilagan", "party": "D", "areas": "Puna"}},
-                        "house_5": {{"name": "Jeanné Kapela", "party": "D", "areas": "North Kona, South Kona"}},
-                        "house_6": {{"name": "Nicole Lowen", "party": "D", "areas": "North Kona"}},
-                        "house_7": {{"name": "David Tarnas", "party": "D", "areas": "North Kona, South Kohala"}},
-                        "house_8": {{"name": "Troy Hashimoto", "party": "D", "areas": "Kahakuloa, Waiheʻe, Waiehu, Wailuku"}},
-                        "house_9": {{"name": "Justin Woodson", "party": "D", "areas": "Kahului, Puʻunēnē, Old Sand Hills, Maui Lani"}},
-                        "house_10": {{"name": "Angus McKelvey", "party": "D", "areas": "West Maui, Māʻalaea, North Kīhei"}},
-                        "house_11": {{"name": "Tina Wildberger", "party": "D", "areas": "South Maui"}},
-                        "house_12": {{"name": "Kyle Yamashita", "party": "D", "areas": "Upcountry Maui"}},
-                        "house_13": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Molokaʻi, Lānaʻi, Kahoʻolawe"}},
-                        "house_14": {{"name": "Nadine Nakamura", "party": "D", "areas": "Hanalei, Princeville, Kilauea"}},
-                        "house_15": {{"name": "Elle Cochran", "party": "D", "areas": "Wai‘ehu, Waihe‘e, Kahakuloa, Honokahua, Kahana, Māhinahina Camp, Kā‘anapali, Lahaina, Lahainaluna, Olowalu, Mā‘alaea "}},
-                        "house_16": {{"name": "Luke Evslin", "party": "D", "areas": "Wailua, Kapaʻa, Anahola"}},
-                        "house_17": {{"name": "Dee Morikawa", "party": "D", "areas": "Niʻihau, Lehua, Kōloa, Waimea"}},
-                        "house_18": {{"name": "Joe Gedeon", "party": "R", "areas": "Portlock, Hawaiʻi Kai, Kalama Valley"}},
-                        "house_19": {{"name": "Tina Nakada Grandinetti", "party": "D", "areas": "Wai'alae-Kāhala, 'Āina Haina, Niu Valley, Kuli'ou'ou"}},
-                        "house_20": {{"name": "Jackson Sayama", "party": "D", "areas": "St. Louis Heights, Pālolo, Mānoa"}},
-                        "house_21": {{"name": "Scot Matayoshi", "party": "D", "areas": "Kāneʻohe, Maunawili, Olomana"}},
-                        "house_22": {{"name": "Diamond Garcia", "party": "D", "areas": "Waipahu, Village Park, Waikele"}},
-                        "house_23": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Kāneʻohe MCAB, Kailua, Waimānalo"}},
-                        "house_24": {{"name": "Adrian Tam", "party": "D", "areas": "Waikīkī, Ala Moana"}},
-                        "house_25": {{"name": "Sylvia Luke", "party": "D", "areas": "Makiki, Punchbowl, Nuʻuanu, Pauoa"}},
-                        "house_26": {{"name": "Della Au Belatti", "party": "D", "areas": "Makiki, Tantalus, Papakōlea, McCully"}},
-                        "house_27": {{"name": "Jenna Takenouchi", "party": "D", "areas": "Pacific Heights, Nu'uanu, Liliha"}},
-                        "house_28": {{"name": "John Mizuno", "party": "D", "areas": "Kamehameha Heights, Kalihi Valley, Fort Shafter"}},
-                        "house_29": {{"name": "Daniel Holt", "party": "D", "areas": "Kalihi, Pālama, Iwilei, Chinatown"}},
-                        "house_30": {{"name": "Shirley Ann Templo", "party": "D", "areas": "Kalihi, Kalihi Kai, Ke'ehi Lagoon, Hickam Village"}},
-                        "house_31": {{"name": "Linda Ichiyama", "party": "D", "areas": "Fort Shafter Flats, Salt Lake, Pearl Harbor"}},
-                        "house_32": {{"name": "Garner Musashi Shimizu", "party": "R", "areas": "Moanalua Valley, Moanalua, Āliamanu, Foster Village"}},
-                        "house_33": {{"name": "Sam Kong", "party": "D", "areas": "ʻAiea, Pearl City"}},
-                        "house_34": {{"name": "Gregg Takayama", "party": "D", "areas": "Pearl City, Waimalu, Pacific Palisades"}},
-                        "house_35": {{"name": "Cory Chun", "party": "D", "areas": "Pearl City, Waipahu, Crestview"}},
-                        "house_36": {{"name": "Rachele Lamosao", "party": "D", "areas": "Pearl City, Waipahu, Crestview, Manana"}},
-                        "house_37": {{"name": "Trish La Chica", "party": "D", "areas": "Portions of Mililani Town, Mililani Mauka, Koa Ridge, and Waipiʻo Gentry"}},
-                        "house_38": {{"name": "Elijah Pierick", "party": "R", "areas": "Wahiawā, Mililani, Waipiʻo Acres"}},
-                        "house_39": {{"name": "Stacelynn Eli", "party": "D", "areas": "Mililani, Waipiʻo, Waikele"}},
-                        "house_40": {{"name": "Rose Martinez", "party": "D", "areas": "Makakilo, Kapolei, Ewa Villages"}},
-                        "house_41": {{"name": "David Alcos", "party": "R", "areas": "Portion of ʻEwa Beach, Ocean Pointe, Barbers Point"}},
-                        "house_42": {{"name": "Diamond Garcia", "party": "R", "areas": "Portions of Varona Village, Ewa, Kapolei, Fernandez Village"}},
-                        "house_43": {{"name": "Kanani Souza", "party": "R", "areas": "Kapolei, Makakilo"}},
-                        "house_44": {{"name": "Darius Kila", "party": "D", "areas": "Honokai Hale, Nānākuli, Māʻili"}},
-                        "house_45": {{"name": "Christopher Muraoka", "party": "R", "areas": "Waianae, Makaha, Makua"}},
-                        "house_46": {{"name": "Amy Perruso", "party": "D", "areas": "Portion of Waipio Acres, Wahiawa, Whitmore Village, Mokuleia"}},
-                        "house_47": {{"name": "Sean Quinlan", "party": "D", "areas": "Waialua, Hale'iwa, Kawailoa Beach, Waimea, Sunset Beach, Waiale'e, Kawela Bay, Kahuku, Lā'ie, Hau'ula, Punalu'u, Kahana"}},
-                        "house_48": {{"name": "Patrick Branco", "party": "R", "areas": "Kailua, Waimānalo, Hawaiʻi Kai"}},
-                        "house_49": {{"name": "Lisa Marten", "party": "D", "areas": "Hawaiʻi Kai, Portlock, Koko Head"}},
-                        "house_50": {{"name": "Mike Lee", "party": "D", "areas": "Hawaiʻi Kai, Koko Marina, Kalama Valley"}},
-                        "house_51": {{"name": "Lisa Kitagawa", "party": "D", "areas": "Kāneʻohe, Heʻeia, Ahuimanu"}},
-                        
-                        // Senate Representatives (senate_1 - senate_25)
-                        "senate_1": {{"name": "Lorraine R. Inouye", "party": "D", "areas": "Hilo, Pauka'a, Papaikou, Pepe'ekeo"}},
-                        "senate_2": {{"name": "Joy A. San Buenaventura", "party": "D", "areas": "Puna"}},
-                        "senate_3": {{"name": "Dru Mamo Kanuha", "party": "D", "areas": "Kona, Ka'ū, Volcano"}},
-                        "senate_4": {{"name": "Herbert M. 'Tim' Richards III", "party": "D", "areas": "North Hilo, Hāmākua, Kohala, Waimea, Waikoloa, North Kona"}},
-                        "senate_5": {{"name": "Troy N. Hashimoto", "party": "D", "areas": "Wailuku, Kahului, Waihe'e, Waikapu Mauka, Wai'ehu"}},
-                        "senate_6": {{"name": "Angus L.K. McKelvey", "party": "D", "areas": "West Maui, South Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
-                        "senate_7": {{"name": "Lynn DeCoite", "party": "D", "areas": "East Maui, Moloka'i, Lāna'i, Kaho'olawe"}},
-                        "senate_8": {{"name": "Ronald D. Kouchi", "party": "D", "areas": "Kaua'i, Ni'ihau"}},
-                        "senate_9": {{"name": "Stanley Chang", "party": "D", "areas": "Hawai'i Kai, Waikīkī, Ala Moana, Kaka'ako"}},
-                        "senate_10": {{"name": "Les Ihara", "party": "D", "areas": "Pālolo, St. Louis Heights, Kaimukī, Kāhala"}},
-                        "senate_11": {{"name": "Carol Fukunaga", "party": "D", "areas": "Makiki, Mānoa, Pūowaina, Ala Wai"}},
-                        "senate_12": {{"name": "Sharon Y. Moriwaki", "party": "D", "areas": "Waikīkī, McCully, Mōʻiliʻili, Ala Wai"}},
-                        "senate_13": {{"name": "Karl Rhoads", "party": "D", "areas": "Downtown, Iwilei, Kalihi, Nu'uanu"}},
-                        "senate_14": {{"name": "Donna Mercado Kim", "party": "D", "areas": "Kalihi Valley, Liliha, 'Ālewa Heights, Pu'unui"}},
-                        "senate_15": {{"name": "Glenn Wakai", "party": "D", "areas": "Kalihi, Mapunapuna, Airport, Salt Lake, Āliamanu"}},
-                        "senate_16": {{"name": "Brandon J.C. Elefante", "party": "D", "areas": "'Aiea, Hālawa, Pearlridge, 'Aiea Heights"}},
-                        "senate_17": {{"name": "Donovan M. Dela Cruz", "party": "D", "areas": "Wahiawā, Mililani, Mililani Mauka, Waipi'o Acres, Whitmore Village"}},
-                        "senate_18": {{"name": "Michelle N. Kidani", "party": "D", "areas": "Mililani Town, Waipi'o Gentry, Crestview, Waikele"}},
-                        "senate_19": {{"name": "Henry J.C. Aquino", "party": "D", "areas": "Waipahu, Crestview, Village Park, Waikele"}},
-                        "senate_20": {{"name": "Kurt Fevella", "party": "R", "areas": "Ewa Beach, Ocean Pointe, Ewa by Gentry, Iroquois Point"}},
-                        "senate_21": {{"name": "Mike Gabbard", "party": "D", "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale, Ko Olina"}},
-                        "senate_22": {{"name": "Samantha DeCorte", "party": "R", "areas": "Kapolei, 'Ewa Beach, Ocean Pointe, 'Ewa by Gentry"}},
-                        "senate_23": {{"name": "Brenton Awa", "party": "R", "areas": "Ko'olauloa, Ko'olaupoko, Kahuku, La'ie, Hau'ula, Punalu'u"}},
-                        "senate_24": {{"name": "Jarrett Keohokalole", "party": "D", "areas": "Kāne'ohe, Kailua, He'eia, Ahuimanu"}},
-                        "senate_25": {{"name": "Chris Lee", "party": "D", "areas": "Kailua, Lanikai, Waimānalo, Hawai'i Kai"}}
-                    }};
+                    // Representative data loaded from CSV files via Python and injected at render time
+                    const repData = {rep_data_json};
                     
                     // Determine district type and number
                     const getDistrictInfo = (properties) => {{
@@ -1122,9 +1045,42 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-08-v19"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-08-v21"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=20)
+def _load_rep_data_json() -> str:
+    """Load house and senate legislator data from CSVs and return as a JSON string
+    suitable for injection into the JS repData object."""
+    base = Path(__file__).parent.parent.parent / "data" / "processed"
+    rep = {}
+
+    # House districts
+    house_csv = base / "hawaii_house_districts_2025_complete.csv"
+    if house_csv.exists():
+        df = pd.read_csv(house_csv, skiprows=1)
+        for _, row in df.iterrows():
+            key = f"house_{int(row['District'])}"
+            rep[key] = {
+                "name": str(row["Representative_Name"]).strip(),
+                "party": str(row["Party"]).strip(),
+                "areas": str(row["Areas_Covered"]).strip(),
+            }
+
+    # Senate districts
+    senate_csv = base / "hawaii_senate_districts_2025_complete.csv"
+    if senate_csv.exists():
+        df = pd.read_csv(senate_csv)
+        for _, row in df.iterrows():
+            key = f"senate_{int(row['District'])}"
+            rep[key] = {
+                "name": str(row["Senator_Name"]).strip(),
+                "party": str(row["Party"]).strip(),
+                "areas": str(row["Areas_Covered"]).strip(),
+            }
+
+    return json.dumps(rep)
+
+
 def _build_cached_map_html(
     geojson_str: str,
     selected_variable: str,
@@ -1133,6 +1089,7 @@ def _build_cached_map_html(
     map_height: int,
     map_id: str,
     show_side_panel: bool,
+    rep_data_json: str = "{}",
     _code_version: str = _CODE_VERSION
 ) -> str:
     """Build and cache the complete HTML string for the map component.
@@ -1145,7 +1102,8 @@ def _build_cached_map_html(
     css_styles = component._get_css_styles()
     js_code = component._get_javascript_code(
         map_id, geojson_str, selected_variable,
-        variable_display_name, color_scheme, show_side_panel
+        variable_display_name, color_scheme, show_side_panel,
+        rep_data_json
     )
 
     current_color_scheme = color_scheme
@@ -1229,6 +1187,9 @@ def create_leaflet_map(
 
     current_color_scheme = st.session_state.get('color_scheme', color_scheme)
 
+    # Load legislator data from CSVs (cached)
+    rep_data_json = _load_rep_data_json()
+
     # Build or retrieve cached HTML
     component_html = _build_cached_map_html(
         geojson_str=geojson_str,
@@ -1237,7 +1198,8 @@ def create_leaflet_map(
         color_scheme=current_color_scheme,
         map_height=map_height,
         map_id=map_id,
-        show_side_panel=show_side_panel
+        show_side_panel=show_side_panel,
+        rep_data_json=rep_data_json
     )
 
     # Render component
