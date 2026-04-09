@@ -21,7 +21,7 @@ An interactive data visualization dashboard built with Streamlit and Leaflet.js,
 - `src/ui/leaflet_component.py` — Map rendering and interaction logic
 - `src/ui/sidebar.py` — Filters and controls
 - `src/ui/leaflet_legend.py` — Map legend
-- `src/ui/leaflet_style.css` — Custom styling
+- `src/ui/enhanced_style.css` — Custom styling
 
 ### Data Layer
 - `src/data/data_loader.py` — Loads and caches data (GeoJSON, CSV)

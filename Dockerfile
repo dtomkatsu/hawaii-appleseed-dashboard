@@ -4,20 +4,6 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies required for geospatial libraries
-RUN apt-get update && apt-get install -y \
-    gdal-bin \
-    libgdal-dev \
-    libspatialindex-dev \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables for GDAL
-ENV GDAL_CONFIG /usr/bin/gdal-config
-ENV CPLUS_INCLUDE_PATH /usr/include/gdal
-ENV C_INCLUDE_PATH /usr/include/gdal
-
 # Copy requirements first for better caching
 COPY requirements.txt .
 

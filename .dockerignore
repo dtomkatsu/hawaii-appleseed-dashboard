@@ -47,5 +47,9 @@ compress_geojson.py
 CLOUD_OPTIMIZATION.md
 requirements-cloud.txt
 
-# Note: GeoJSON files are now simplified at commit time (0.94 MB total)
-# and included in the image for faster loading than .gz decompression
+# Raw data and backups (only needed by offline scripts, not at runtime)
+data/raw/
+data/processed/*.bak
+
+# Note: Only compressed .geojson.gz files are included in the image;
+# load_geojson() decompresses once and the result is cached in memory.

@@ -1130,6 +1130,7 @@ class DataLoader:
         self.base_dir = Path(__file__).parent.parent.parent
         self.data_dir = self.base_dir / data_dir
         self.data_cache = {}
+        self._merged_cache = {}  # Cache merged DataFrames to avoid re-merging on every call
         
         # Initialize data loaders
         self._init_data_loaders()
@@ -1224,42 +1225,45 @@ class DataLoader:
     
     def get_data(self, geo_level: str) -> Optional[pd.DataFrame]:
         """Get combined data for a geographic level."""
+        # Return cached merged result if available (avoids re-merging 4 datasets)
+        if geo_level in self._merged_cache:
+            return self._merged_cache[geo_level].copy()
+
         geo_enum = GeoLevel(geo_level)
-        
+
         # Load data on-demand if not cached
         for data_type in DataType:
             cache_key = f"{data_type.value}_{geo_level}"
             if cache_key not in self.data_cache:
                 self._load_and_cache_data(data_type, geo_enum)
-        
+
         # Get individual datasets
         acs_data = self.data_cache.get(f"{DataType.ACS.value}_{geo_level}")
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
         cep_data = self.data_cache.get(f"{DataType.CEP.value}_{geo_level}")
-        
+
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
-        
+
         # Merge additional datasets
         if merged_data is not None and alice_data is not None:
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
-        
+
         if merged_data is not None and snap_data is not None:
-            logger.info(f"Merging SNAP data for {geo_level}, SNAP data shape: {snap_data.shape}")
-            logger.info(f"SNAP columns: {snap_data.columns.tolist()}")
-            logger.info(f"Sample SNAP data:\n{snap_data.head(2)}")
+            logger.debug(f"Merging SNAP data for {geo_level}, shape: {snap_data.shape}")
             merged_data = self.merger.merge_datasets(merged_data, snap_data, geo_enum, DataType.SNAP)
-            logger.info(f"After SNAP merge, merged data shape: {merged_data.shape}")
-            # Check if SNAP columns are in merged data
-            snap_cols_in_merged = [col for col in ['snap_households', 'snap_household_rate', 'snap_benefit_annual_per_household'] if col in merged_data.columns]
-            logger.info(f"SNAP columns in merged data: {snap_cols_in_merged}")
-        
+            logger.debug(f"After SNAP merge, shape: {merged_data.shape}")
+
         if merged_data is not None and cep_data is not None:
-            logger.info(f"Merging CEP data for {geo_level}, CEP data shape: {cep_data.shape}")
+            logger.debug(f"Merging CEP data for {geo_level}, shape: {cep_data.shape}")
             merged_data = self.merger.merge_datasets(merged_data, cep_data, geo_enum, DataType.CEP)
-            logger.info(f"After CEP merge, data shape: {merged_data.shape}")
-        
+            logger.debug(f"After CEP merge, shape: {merged_data.shape}")
+
+        # Cache the merged result for subsequent calls
+        if merged_data is not None:
+            self._merged_cache[geo_level] = merged_data
+
         return merged_data
     
     def get_all_data_for_geo(self, geo_id: str) -> Dict[str, Any]:

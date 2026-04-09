@@ -1,0 +1,446 @@
+/* ==========================================================================
+   Hawaii Appleseed Dashboard — App-level Styles
+   Extracted from run_leaflet.py inline CSS blocks for maintainability.
+   ========================================================================== */
+
+/* --- Map container -------------------------------------------------------- */
+.stMap, .map-container, .leaflet-container {
+    width: 100% !important;
+    height: 70vh !important;
+    min-height: 500px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Adjust sidebar */
+section[data-testid="stSidebar"] {
+    width: 300px !important;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin: 1rem 0 1rem 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- Hide sidebar and all related elements -------------------------------- */
+section[data-testid="stSidebar"],
+div[data-testid="stSidebarNav"],
+div[data-testid="stSidebarUserContent"],
+div[data-testid="collapsedControl"],
+div[data-testid="stToolbar"],
+.stApp > header,
+.stApp > div:first-child > div:first-child > div:first-child > div:first-child {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: -1000 !important;
+}
+
+/* Adjust main content layout */
+.stApp > div:first-child {
+    padding-top: 1rem;
+}
+
+/* Remove extra padding from main content */
+.main .block-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 100% !important;
+}
+
+/* Remove any remaining space where sidebar was */
+.stApp > div:first-child > div:first-child > div:first-child {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Hide the specific sidebar toggle SVG */
+svg.e10vaf9m1.st-emotion-cache-1f3w014.ex0cdmw0,
+svg[viewBox="0 0 24 24"][fill="currentColor"] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    z-index: -1000 !important;
+}
+
+/* Hide the parent button if needed */
+button[title="View app navigation"] {
+    display: none !important;
+}
+
+/* --- Base dropdown styles ------------------------------------------------- */
+.stSelectbox > div > div {
+    min-height: 40px;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Dropdown menu items */
+[data-baseweb="menu"] [role="option"] {
+    min-height: 40px !important;
+    padding: 8px 16px !important;
+    white-space: normal !important;
+    line-height: 1.4 !important;
+    color: #000 !important;
+}
+
+/* Ensure text is visible in dropdown */
+[data-baseweb="menu"] {
+    background: white !important;
+    color: #000 !important;
+}
+
+/* Selected value */
+[data-baseweb="select"] {
+    color: #000 !important;
+}
+
+/* Make sure dropdown is above other elements */
+[data-baseweb="popover"] {
+    z-index: 1000 !important;
+}
+
+/* --- Layout and typography (Roboto) --------------------------------------- */
+
+/* Reset all vertical spacing */
+html, body, #root, #root > div, #root > div > div,
+.stApp, .appview-container, .main, .block-container,
+[data-testid="stAppViewContainer"],
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"],
+[data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    min-height: 0 !important;
+}
+
+/* Target specific Streamlit containers */
+.stApp > div:first-child,
+.appview-container > div:first-child,
+[data-testid="stAppViewContainer"] > div:first-child,
+.main > div:first-child {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Remove any remaining spacing from vertical wrappers */
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    gap: 0 !important;
+}
+
+/* Add controlled spacing between elements */
+[data-testid="stVerticalBlock"] {
+    gap: 0.25rem !important;
+    row-gap: 0.25rem !important;
+}
+
+/* Add space below the title */
+h1 {
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0 !important;
+}
+
+/* Add space above tabs */
+[role="tablist"] {
+    margin-top: 0.5rem !important;
+    gap: 0.75rem !important;
+}
+
+/* Tab icon styling — replace emoji with SVG lineart icons */
+[role="tab"] {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
+/* Hide emoji characters in tab labels */
+[role="tab"] p {
+    font-size: 0 !important;
+}
+
+/* Show text at normal size but strip leading icon character */
+[role="tab"] p::after {
+    font-size: 0.875rem !important;
+}
+
+/* Map View tab — lineart map pin icon */
+[role="tab"]:nth-child(1) p::before {
+    content: "";
+    display: inline-block;
+    width: 1.1rem;
+    height: 1.1rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21'/%3E%3Cline x1='9' y1='3' x2='9' y2='18'/%3E%3Cline x1='15' y1='6' x2='15' y2='21'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+
+/* Map View tab — show label text */
+[role="tab"]:nth-child(1) p::after {
+    content: "Map View";
+}
+
+/* Data Analysis tab — lineart bar chart icon */
+[role="tab"]:nth-child(2) p::before {
+    content: "";
+    display: inline-block;
+    width: 1.1rem;
+    height: 1.1rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='18' y='3' width='4' height='18'/%3E%3Crect x='10' y='8' width='4' height='13'/%3E%3Crect x='2' y='13' width='4' height='8'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+    font-size: 1rem;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+
+/* Data Analysis tab — show label text */
+[role="tab"]:nth-child(2) p::after {
+    content: "Data Analysis";
+}
+
+/* Ensure dropdown labels have proper spacing */
+.dropdown-label {
+    margin-bottom: 0.5rem !important;
+    display: block;
+    font-weight: 500;
+    color: #2a5a0c;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Hide the sidebar collapse control and its spacer */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stLogoSpacer"] {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+header[data-testid="stHeader"] {
+    display: none;
+}
+section[data-testid="stSidebar"],
+div[data-testid="stSidebarNav"] {
+    padding-top: 0;
+    margin-top: 0;
+}
+.stApp > div:first-child {
+    margin-top: -1rem;
+}
+
+/* Apply Roboto to specific elements */
+h1, h2, h3, h4, h5, h6,
+.stMarkdown h1,
+.stMarkdown h2,
+.stMarkdown h3,
+.stMarkdown h4,
+.stMarkdown h5,
+.stMarkdown h6 {
+    font-family: 'Roboto', sans-serif !important;
+}
+
+/* Style form labels with higher specificity */
+.stSelectbox > label,
+.stRadio > label,
+.stButton > button,
+.stTextInput > label,
+.stNumberInput > label,
+.stSlider > label,
+.stMultiSelect > label,
+.stDateInput > label,
+.stTimeInput > label,
+.stFileUploader > label,
+div[data-testid='stForm'] label,
+div[data-baseweb='form-control'] > div:first-child {
+    font-family: 'Roboto', sans-serif !important;
+    color: #2a5a0c !important;
+    font-weight: 600 !important;
+}
+
+/* Target the actual text nodes */
+.stSelectbox > label > div:first-child,
+.stRadio > label > div:first-child,
+div[data-testid='stForm'] label > div:first-child,
+div[data-baseweb='form-control'] > div:first-child > div:first-child {
+    color: #2a5a0c !important;
+}
+
+/* --- Enhanced dropdown styling -------------------------------------------- */
+
+/* Remove internal borders within select controls (stable selectors) */
+.stSelectbox [data-baseweb="select"] > div > div {
+    border: none !important;
+    border-right: none !important;
+    border-left: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Dropdown menu container */
+[data-baseweb="popover"] {
+    z-index: 1000 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    padding: 4px 0 !important;
+    margin: 0 !important;
+}
+
+/* Inner popover container */
+[data-baseweb="popover"] > div {
+    max-height: 400px !important;
+    border-radius: 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+/* List container */
+[data-baseweb="popover"] ul[role="listbox"] {
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+}
+
+/* List items */
+[data-baseweb="popover"] li[role="option"] {
+    all: unset !important;
+    display: block !important;
+    padding: 8px 16px !important;
+    margin: 0 !important;
+    background: white !important;
+    border-left: 3px solid transparent !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    line-height: 1.5 !important;
+    min-height: 36px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
+/* Hover state */
+[data-baseweb="popover"] li[role="option"]:hover {
+    background-color: #f5f8ff !important;
+    border-left-color: #1E88E5 !important;
+    transform: translateX(8px) !important;
+    box-shadow: -4px 0 6px -2px rgba(30, 136, 229, 0.2) !important;
+    padding-left: 20px !important;
+}
+
+/* Remove gaps between items */
+[data-baseweb="popover"] li[role="option"] + li[role="option"] {
+    margin-top: 0 !important;
+}
+
+/* Selected item */
+[data-baseweb="popover"] li[aria-selected="true"] {
+    background-color: #e3f2fd !important;
+    font-weight: 500 !important;
+}
+
+/* Focus state */
+[data-baseweb="popover"] li[role="option"]:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.3) !important;
+}
+
+/* Active state */
+[data-baseweb="popover"] li[role="option"]:active {
+    background-color: #bbdefb !important;
+    transform: translateX(8px) scale(0.99) !important;
+}
+
+/* Dropdown menu - remove all borders */
+[data-baseweb="popover"],
+[data-baseweb="popover"] *,
+[data-baseweb="popover"]::before,
+[data-baseweb="popover"]::after,
+[data-baseweb="popover"] > div,
+[data-baseweb="popover"] > div > *,
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="popover"] [role="listbox"] * {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    --border-width: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-image: none !important;
+}
+
+/* Add back box-shadow to popover only */
+[data-baseweb="popover"] {
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* Menu items */
+[data-baseweb="menu"] {
+    padding: 4px 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: menuFadeIn 0.2s forwards;
+}
+
+@keyframes menuFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-baseweb="menu"] [role="option"] {
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateY(-5px);
+    animation: itemFadeIn 0.2s forwards;
+    transform-origin: left center;
+}
+
+/* Stagger the animation for each menu item */
+[data-baseweb="menu"] [role="option"]:nth-child(1) { animation-delay: 0.05s; }
+[data-baseweb="menu"] [role="option"]:nth-child(2) { animation-delay: 0.1s; }
+[data-baseweb="menu"] [role="option"]:nth-child(3) { animation-delay: 0.15s; }
+[data-baseweb="menu"] [role="option"]:nth-child(4) { animation-delay: 0.2s; }
+[data-baseweb="menu"] [role="option"]:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes itemFadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-baseweb="menu"] [role="option"]:hover {
+    background-color: var(--hover-color, #f5f8ff);
+    transform: translateY(0) translateX(8px);
+    padding-left: 20px;
+}

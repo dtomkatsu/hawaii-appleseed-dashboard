@@ -1047,7 +1047,7 @@ class LeafletMapComponent:
 
 _CODE_VERSION = "2026-04-08-v21"  # Bump to bust @st.cache_data after code changes
 
-@st.cache_data(show_spinner=False, max_entries=20)
+@st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
     """Load house and senate legislator data from CSVs and return as a JSON string
     suitable for injection into the JS repData object."""
@@ -1081,6 +1081,7 @@ def _load_rep_data_json() -> str:
     return json.dumps(rep)
 
 
+@st.cache_data(show_spinner=False)
 def _build_cached_map_html(
     geojson_str: str,
     selected_variable: str,
