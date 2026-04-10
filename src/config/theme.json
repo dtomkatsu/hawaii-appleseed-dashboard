@@ -40,9 +40,13 @@
   "map": {
     "center": [20.7984, -156.3319],
     "zoom": 7,
-    "zoom_snap": 0.6,
-    "zoom_delta": 0.8,
+    "zoom_snap": 0,
+    "zoom_delta": 0.5,
     "zoom_animation_threshold": 4,
+    "smooth_sensitivity": 0.5,
+    "smooth_pinch_sensitivity": 0.025,
+    "fade_animation": true,
+    "marker_zoom_animation": true,
     "container_height": "70vh",
     "container_min_height": "500px",
     "border_radius": "10px"

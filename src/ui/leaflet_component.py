@@ -282,13 +282,34 @@ class LeafletMapComponent:
                 outline: none !important;
                 box-shadow: none !important;
             }
-            
+
             /* Remove focus outline from interactive elements */
             .leaflet-interactive:focus,
             .leaflet-interactive:focus-within,
             .leaflet-interactive:focus-visible {
                 outline: none !important;
                 box-shadow: none !important;
+            }
+
+            /* Neutral background — visible between redraws */
+            .leaflet-container {
+                background: #e8f0e8;
+            }
+
+            /* During zoom Leaflet CSS-scales the SVG element.
+               non-scaling-stroke keeps border widths constant (no thickening/thinning).
+               geometricPrecision reduces sub-pixel rounding artifacts. */
+            .leaflet-overlay-pane svg {
+                shape-rendering: geometricPrecision;
+            }
+            .leaflet-overlay-pane svg path {
+                vector-effect: non-scaling-stroke;
+            }
+
+            /* Promote the overlay pane to its own GPU layer so CSS transforms
+               are composited without triggering layout/paint on each frame */
+            .leaflet-overlay-pane {
+                will-change: transform;
             }
         """
     
@@ -301,11 +322,13 @@ class LeafletMapComponent:
             const MAP_CONFIG = {{
                 center: {json.dumps(map_cfg["center"])},
                 zoom: {map_cfg["zoom"]},
-                zoomSnap: {map_cfg.get("zoom_snap", 0.6)},
-                zoomDelta: {map_cfg.get("zoom_delta", 0.8)},
+                zoomSnap: {map_cfg.get("zoom_snap", 0.25)},
+                zoomDelta: {map_cfg.get("zoom_delta", 0.5)},
                 zoomAnimationThreshold: {map_cfg.get("zoom_animation_threshold", 4)},
-                fadeAnimation: false,
-                markerZoomAnimation: false
+                smoothSensitivity: {map_cfg.get("smooth_sensitivity", 0.35)},
+                smoothPinchSensitivity: {map_cfg.get("smooth_pinch_sensitivity", 0.02)},
+                fadeAnimation: {"true" if map_cfg.get("fade_animation", True) else "false"},
+                markerZoomAnimation: {"true" if map_cfg.get("marker_zoom_animation", True) else "false"}
             }};
 
             const COLOR_SCHEMES = {json.dumps(self.COLOR_SCHEMES)};
@@ -599,16 +622,74 @@ class LeafletMapComponent:
                 zoom: MAP_CONFIG.zoom,
                 zoomControl: false,
                 attributionControl: false,
+                scrollWheelZoom: false,          // Disabled — replaced by smooth handler below
                 zoomSnap: MAP_CONFIG.zoomSnap,
                 zoomDelta: MAP_CONFIG.zoomDelta,
                 zoomAnimation: true,
                 zoomAnimationThreshold: MAP_CONFIG.zoomAnimationThreshold,
                 fadeAnimation: MAP_CONFIG.fadeAnimation,
                 markerZoomAnimation: MAP_CONFIG.markerZoomAnimation,
-                preferCanvas: true,  // Better performance for vector layers
-                updateWhenIdle: true,  // Only update when pan/zoom ends
-                updateWhenZooming: false  // Don't update during zoom animation
+                preferCanvas: false,
+                renderer: L.svg({{ padding: 0.5 }})
             }});
+
+            // Smooth wheel zoom — state on map._smoothZoom so fitBounds clicks can cancel it
+            map._smoothZoom = {{ target: map.getZoom(), animating: false }};
+            (function() {{
+                const SCROLL_SENSITIVITY = MAP_CONFIG.smoothSensitivity;       // zoom levels per scroll unit
+                const PINCH_FACTOR       = MAP_CONFIG.smoothPinchSensitivity;  // exponential factor per px
+                const MAX_DELTA = 100; // clamp ceiling — mouse wheel (~120px) and trackpad map into 0-100
+
+                map.getContainer().addEventListener('wheel', function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Normalise deltaMode: Firefox reports lines (mode=1) instead of pixels
+                    let raw = e.deltaY;
+                    if (e.deltaMode === 1) raw *= 40;   // DOM_DELTA_LINE → pixels
+                    if (e.deltaMode === 2) raw *= 800;  // DOM_DELTA_PAGE → pixels
+
+                    if (e.ctrlKey) {{
+                        // ── PINCH path: direct 1:1, no easing loop ──────────────────────
+                        // Bypass the target accumulator — apply immediately each frame.
+                        // Exponential math (log2 space) keeps zoom symmetric: pinch in then
+                        // out by the same amount always returns to the starting zoom level.
+                        map._smoothZoom.animating = false; // cancel any active scroll animation
+                        const rect = map.getContainer().getBoundingClientRect();
+                        const cursorPt = L.point(e.clientX - rect.left, e.clientY - rect.top);
+                        const cursorLatLng = map.containerPointToLatLng(cursorPt);
+                        const newZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(),
+                                            map.getZoom() + (-raw * PINCH_FACTOR / Math.LN2)));
+                        map.setZoomAround(cursorLatLng, newZoom, {{ animate: false }});
+                        map._smoothZoom.target = newZoom; // keep scroll target in sync
+
+                    }} else {{
+                        // ── SCROLL path: accumulated target + easing loop ────────────────
+                        // Clamp so mouse wheel (~120px) and trackpad scroll both hit same ceiling.
+                        const clamped = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, raw));
+                        const zoomDelta = -(clamped / MAX_DELTA) * SCROLL_SENSITIVITY;
+                        map._smoothZoom.target = Math.max(map.getMinZoom(),
+                                                 Math.min(map.getMaxZoom(),
+                                                          map._smoothZoom.target + zoomDelta));
+
+                        if (!map._smoothZoom.animating) {{
+                            map._smoothZoom.animating = true;
+                            (function step() {{
+                                if (!map._smoothZoom.animating) return; // cancelled by fitBounds/pinch
+                                const current = map.getZoom();
+                                const diff = map._smoothZoom.target - current;
+                                if (Math.abs(diff) < 0.01) {{
+                                    map.setZoom(map._smoothZoom.target, {{ animate: false }});
+                                    map._smoothZoom.animating = false;
+                                    return;
+                                }}
+                                map.setZoom(current + diff * 0.2, {{ animate: false }});
+                                requestAnimationFrame(step);
+                            }})();
+                        }}
+                    }}
+                }}, {{ passive: false }});
+            }})();
             
             // Set background color
             document.getElementById(MAP_ID).style.backgroundColor = 'white';
@@ -647,12 +728,18 @@ class LeafletMapComponent:
                 }},
                 
                 zoomToFeature(e) {{
-                    if (e.originalEvent && e.originalEvent.target && 
+                    if (e.originalEvent && e.originalEvent.target &&
                         e.originalEvent.target.closest('.leaflet-popup-content')) {{
                         return;
                     }}
-                    
+
+                    // Cancel any in-progress smooth wheel zoom so it doesn't fight fitBounds
+                    map._smoothZoom.animating = false;
                     map.fitBounds(e.target.getBounds());
+                    // Sync target to wherever fitBounds lands so next scroll starts from there
+                    map.once('zoomend', function() {{
+                        map._smoothZoom.target = map.getZoom();
+                    }});
                     
                     const featureId = e.target.feature.properties.id || 
                                     e.target.feature.properties.GEOID || 
