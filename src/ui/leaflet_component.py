@@ -622,74 +622,25 @@ class LeafletMapComponent:
                 zoom: MAP_CONFIG.zoom,
                 zoomControl: false,
                 attributionControl: false,
-                scrollWheelZoom: false,          // Disabled — replaced by smooth handler below
-                zoomSnap: MAP_CONFIG.zoomSnap,
-                zoomDelta: MAP_CONFIG.zoomDelta,
-                zoomAnimation: true,
-                zoomAnimationThreshold: MAP_CONFIG.zoomAnimationThreshold,
+                scrollWheelZoom: true,
+                wheelPxPerZoomLevel: 120,
+                zoomSnap: 0,
+                zoomDelta: 0.5,
+                zoomAnimation: false,
                 fadeAnimation: MAP_CONFIG.fadeAnimation,
                 markerZoomAnimation: MAP_CONFIG.markerZoomAnimation,
-                preferCanvas: false,
-                renderer: L.svg({{ padding: 0.5 }})
+                preferCanvas: true,
+                renderer: L.canvas({{ padding: 0.5 }})
             }});
 
-            // Smooth wheel zoom — state on map._smoothZoom so fitBounds clicks can cancel it
+            // Track smooth zoom state for fitBounds click cancellation
             map._smoothZoom = {{ target: map.getZoom(), animating: false }};
-            (function() {{
-                const SCROLL_SENSITIVITY = MAP_CONFIG.smoothSensitivity;       // zoom levels per scroll unit
-                const PINCH_FACTOR       = MAP_CONFIG.smoothPinchSensitivity;  // exponential factor per px
-                const MAX_DELTA = 100; // clamp ceiling — mouse wheel (~120px) and trackpad map into 0-100
 
-                map.getContainer().addEventListener('wheel', function(e) {{
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    // Normalise deltaMode: Firefox reports lines (mode=1) instead of pixels
-                    let raw = e.deltaY;
-                    if (e.deltaMode === 1) raw *= 40;   // DOM_DELTA_LINE → pixels
-                    if (e.deltaMode === 2) raw *= 800;  // DOM_DELTA_PAGE → pixels
-
-                    if (e.ctrlKey) {{
-                        // ── PINCH path: direct 1:1, no easing loop ──────────────────────
-                        // Bypass the target accumulator — apply immediately each frame.
-                        // Exponential math (log2 space) keeps zoom symmetric: pinch in then
-                        // out by the same amount always returns to the starting zoom level.
-                        map._smoothZoom.animating = false; // cancel any active scroll animation
-                        const rect = map.getContainer().getBoundingClientRect();
-                        const cursorPt = L.point(e.clientX - rect.left, e.clientY - rect.top);
-                        const cursorLatLng = map.containerPointToLatLng(cursorPt);
-                        const newZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(),
-                                            map.getZoom() + (-raw * PINCH_FACTOR / Math.LN2)));
-                        map.setZoomAround(cursorLatLng, newZoom, {{ animate: false }});
-                        map._smoothZoom.target = newZoom; // keep scroll target in sync
-
-                    }} else {{
-                        // ── SCROLL path: accumulated target + easing loop ────────────────
-                        // Clamp so mouse wheel (~120px) and trackpad scroll both hit same ceiling.
-                        const clamped = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, raw));
-                        const zoomDelta = -(clamped / MAX_DELTA) * SCROLL_SENSITIVITY;
-                        map._smoothZoom.target = Math.max(map.getMinZoom(),
-                                                 Math.min(map.getMaxZoom(),
-                                                          map._smoothZoom.target + zoomDelta));
-
-                        if (!map._smoothZoom.animating) {{
-                            map._smoothZoom.animating = true;
-                            (function step() {{
-                                if (!map._smoothZoom.animating) return; // cancelled by fitBounds/pinch
-                                const current = map.getZoom();
-                                const diff = map._smoothZoom.target - current;
-                                if (Math.abs(diff) < 0.01) {{
-                                    map.setZoom(map._smoothZoom.target, {{ animate: false }});
-                                    map._smoothZoom.animating = false;
-                                    return;
-                                }}
-                                map.setZoom(current + diff * 0.2, {{ animate: false }});
-                                requestAnimationFrame(step);
-                            }})();
-                        }}
-                    }}
-                }}, {{ passive: false }});
-            }})();
+            // Diagnostic: log every zoom change to find the bounce
+            console.log('INIT zoom:', map.getZoom());
+            map.on('zoomstart', function() {{ console.log('ZOOMSTART at:', map.getZoom()); }});
+            map.on('zoom', function() {{ console.log('ZOOM to:', map.getZoom()); }});
+            map.on('zoomend', function() {{ console.log('ZOOMEND at:', map.getZoom()); }});
             
             // Set background color
             document.getElementById(MAP_ID).style.backgroundColor = 'white';
@@ -980,7 +931,8 @@ class LeafletMapComponent:
                 onEachFeature: mapHandlers.onEachFeature
             }}).addTo(map);
             
-            map.fitBounds(geoJsonLayer.getBounds());
+            map.fitBounds(geoJsonLayer.getBounds(), {{ animate: false }});
+            console.log('AFTER fitBounds zoom:', map.getZoom());
             
             // Import legend functionality
             {get_legend_js()}
@@ -1148,7 +1100,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-08-v21"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-09-v5"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
