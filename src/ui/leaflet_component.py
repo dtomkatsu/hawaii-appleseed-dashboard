@@ -628,7 +628,7 @@ class LeafletMapComponent:
                 zoomControl: false,
                 attributionControl: false,
                 scrollWheelZoom: true,
-                wheelPxPerZoomLevel: 30,
+                wheelPxPerZoomLevel: 15,
                 zoomSnap: 0,
                 zoomDelta: 0.5,
                 zoomAnimation: true,
@@ -641,11 +641,6 @@ class LeafletMapComponent:
             // Track smooth zoom state for fitBounds click cancellation
             map._smoothZoom = {{ target: map.getZoom(), animating: false }};
 
-            // Diagnostic: log every zoom change to find the bounce
-            console.log('INIT zoom:', map.getZoom());
-            map.on('zoomstart', function() {{ console.log('ZOOMSTART at:', map.getZoom()); }});
-            map.on('zoom', function() {{ console.log('ZOOM to:', map.getZoom()); }});
-            map.on('zoomend', function() {{ console.log('ZOOMEND at:', map.getZoom()); }});
             
             // Set background color
             document.getElementById(MAP_ID).style.backgroundColor = 'white';
@@ -1105,7 +1100,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-09-v10"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-09-v13"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
