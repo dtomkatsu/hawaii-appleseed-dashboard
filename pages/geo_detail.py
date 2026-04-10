@@ -645,7 +645,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: #4a8c1a;
+                background: rgba(0, 0, 0, 0.65);
                 color: white;
                 border: none;
                 padding: 12px 20px;
@@ -657,9 +657,9 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                 font-size: 14px;
                 transition: background 0.2s ease;
             }}
-            
+
             .print-button:hover {{
-                background: #5a9c2a;
+                background: rgba(0, 0, 0, 0.8);
             }}
             
             @media print {{
@@ -732,7 +732,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
         </style>
     </head>
     <body>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save PDF</button>
+        <button class="print-button" onclick="window.print()">💾 Save PDF</button>
         <div class="fact-sheet-container">
             <div class="header">
                 {logo_html}
@@ -903,6 +903,25 @@ def main():
         #MainMenu, header, .stApp [data-testid="stToolbar"] {
             display: none !important;
         }
+
+        /* Hide the multi-page navigation sidebar entirely */
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarNav"],
+        div[data-testid="stSidebarUserContent"],
+        div[data-testid="collapsedControl"],
+        button[data-testid="stBaseButton-headerNoPadding"],
+        button[title="View app navigation"],
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="stLogoSpacer"] {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            z-index: -1000 !important;
+        }
         
         /* Reset body and html to full height */
         html, body, #root, .stApp {
@@ -913,26 +932,32 @@ def main():
             overflow: hidden;
         }
         
-        /* Main container */
+        /* Main container — clamp to viewport so the page itself never scrolls */
         .block-container {
             padding: 0 !important;
             max-width: 100% !important;
             height: 100vh !important;
+            overflow: hidden !important;
             margin: 0 !important;
         }
-        
-        /* Iframe styling */
+
+        /* Iframe takes all available height; its own scrollbar handles content */
         iframe {
             border: none !important;
             width: 100% !important;
-            height: 100% !important;
+            height: 100vh !important;
             min-height: 100vh !important;
+            display: block !important;
         }
-        
-        /* Hide Streamlit's default scrolling */
-        .stApp > div > div > div > div > section > div {
+
+        /* Lock every Streamlit wrapper so nothing leaks out to the document */
+        .stApp > div > div > div > div > section > div,
+        .stApp > div > div > div > div > section,
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"] {
             padding: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
+            height: 100vh !important;
         }
     </style>
     """
