@@ -311,6 +311,11 @@ class LeafletMapComponent:
             .leaflet-overlay-pane {
                 will-change: transform;
             }
+
+            /* Shorten zoom animation to reduce visible blur during canvas scaling */
+            .leaflet-zoom-anim .leaflet-zoom-animated {
+                transition-duration: 250ms !important;
+            }
         """
     
     def _get_js_config(self, map_id: str, selected_variable: str,
@@ -623,10 +628,10 @@ class LeafletMapComponent:
                 zoomControl: false,
                 attributionControl: false,
                 scrollWheelZoom: true,
-                wheelPxPerZoomLevel: 120,
+                wheelPxPerZoomLevel: 30,
                 zoomSnap: 0,
                 zoomDelta: 0.5,
-                zoomAnimation: false,
+                zoomAnimation: true,
                 fadeAnimation: MAP_CONFIG.fadeAnimation,
                 markerZoomAnimation: MAP_CONFIG.markerZoomAnimation,
                 preferCanvas: true,
@@ -659,7 +664,7 @@ class LeafletMapComponent:
                         fillColor: utils.getColorForValue(feature.properties[colorVariable]),
                         weight: 1,
                         opacity: 1,
-                        color: '#666',
+                        color: '#aaa',
                         fillOpacity: 0.7
                     }};
                 }},
@@ -1100,7 +1105,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-09-v5"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-09-v10"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
