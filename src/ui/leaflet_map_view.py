@@ -16,6 +16,7 @@ from config.variable_registry import (
     get_variables_for_dropdown,
     get_display_names,
     get_display_name,
+    get_variable_source,
 )
 
 # Set up logging
@@ -871,7 +872,9 @@ def create_data_summary():
 
     with chart_col:
         st.markdown(f'<p class="da-geo-pill">{active_layer}</p>', unsafe_allow_html=True)
-        st.markdown(f'<p class="da-section-label">{var_label_short} — ranked comparison</p>', unsafe_allow_html=True)
+        source = get_variable_source(selected_variable)
+        source_icon = f' <span title="Source: {source}" style="cursor:help;color:#999;font-style:normal">\u24D8</span>' if source else ''
+        st.markdown(f'<p class="da-section-label">{var_label_short} — ranked comparison{source_icon}</p>', unsafe_allow_html=True)
 
         if selected_variable in data.columns:
             sorted_data = data.sort_values(by=selected_variable, ascending=False)
@@ -937,6 +940,30 @@ def create_data_summary():
             else:
                 fig.update_xaxes(tickangle=-40, tickfont=dict(size=10))
             fig.update_layout(**common_layout)
+
+            # Add state average reference line for county/district charts
+            if geo_level != 'state':
+                state_data = data_loader.get_data('state')
+                if state_data is not None and selected_variable in state_data.columns:
+                    state_val = state_data[selected_variable].iloc[0]
+                    if pd.notna(state_val):
+                        # Format label based on unit
+                        if unit == '%':
+                            avg_label = f"State: {state_val:.1f}%"
+                        elif unit == '$':
+                            avg_label = f"State: ${state_val:,.0f}"
+                        else:
+                            avg_label = f"State: {state_val:.1f}"
+                        fig.add_hline(
+                            y=state_val,
+                            line_dash="dot",
+                            line_color="#e74c3c",
+                            annotation_text=avg_label,
+                            annotation_position="top right",
+                            annotation_font_size=10,
+                            annotation_font_color="#e74c3c",
+                        )
+
             st.plotly_chart(fig, use_container_width=True, config=_chart_config)
             if num_items > 10:
                 st.caption(f"Showing all {num_items} {active_layer.lower()} ranked by {var_label_short}. Hover for details.")

@@ -172,6 +172,36 @@ def get_default_color_thresholds_json() -> str:
 
 
 # ---------------------------------------------------------------------------
+# Legend direction + display names (injected into JS for legend indicator)
+# ---------------------------------------------------------------------------
+
+def get_legend_meta() -> Dict[str, dict]:
+    """Map of variable_key -> {direction, display_name_long} for JS legend."""
+    variables = get_all_variables()
+    return {
+        k: {
+            "direction": v.get("legend_direction", "neutral"),
+            "label": v.get("display_name_long", v.get("display_name", k)),
+        }
+        for k, v in variables.items()
+    }
+
+
+def get_legend_meta_json() -> str:
+    """JSON string ready for injection into JS template."""
+    return json.dumps(get_legend_meta())
+
+
+# ---------------------------------------------------------------------------
+# Data source (for tooltip display)
+# ---------------------------------------------------------------------------
+
+def get_variable_source(key: str) -> str:
+    """Return the data source string for a variable, or empty string."""
+    return get_all_variables().get(key, {}).get("source", "")
+
+
+# ---------------------------------------------------------------------------
 # Fact-sheet helpers
 # ---------------------------------------------------------------------------
 

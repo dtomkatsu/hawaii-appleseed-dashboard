@@ -14,6 +14,7 @@ from config.variable_registry import (
     get_info_panel_categories_json,
     get_color_thresholds_json,
     get_default_color_thresholds_json,
+    get_legend_meta_json,
 )
 from config.theme_registry import (
     get_color_scheme_colors,
@@ -124,6 +125,12 @@ class LeafletMapComponent:
                 z-index: 1000;
                 background: white;
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            }
+            @media (max-width: 768px) {
+                .info-panel.visible {
+                    width: 90vw;
+                    max-width: 350px;
+                }
             }
             
             /* Scroll indicator arrow */
@@ -398,9 +405,10 @@ class LeafletMapComponent:
                     const numValue = parseFloat(value) || 0;
                     const colors = COLOR_SCHEMES[scheme] || COLOR_SCHEMES.blue;
 
-                    // Thresholds loaded from centralized variable registry
+                    // Thresholds and metadata loaded from centralized variable registry
                     const THRESHOLD_MAP = {get_color_thresholds_json()};
                     const DEFAULT_THRESHOLDS = {get_default_color_thresholds_json()};
+                    const LEGEND_META = {get_legend_meta_json()};
                     const thresholds = THRESHOLD_MAP[SELECTED_VARIABLE] || DEFAULT_THRESHOLDS;
 
                     for (let i = thresholds.length - 1; i >= 0; i--) {{
@@ -650,7 +658,8 @@ class LeafletMapComponent:
             
             // Map interaction handlers
             let geoJsonLayer;
-            
+            let selectedLayer = null;  // Track the currently selected geography
+
             const mapHandlers = {{
                 style(feature) {{
                     // Use cep_percentage for coloring when cep_display is selected
@@ -663,7 +672,7 @@ class LeafletMapComponent:
                         fillOpacity: 0.7
                     }};
                 }},
-                
+
                 highlightFeature(e) {{
                     const layer = e.target;
                     layer.setStyle({{
@@ -672,35 +681,59 @@ class LeafletMapComponent:
                         fillOpacity: 0.9
                     }});
                     layer.bringToFront();
+                    if (layer._path) layer._path.style.cursor = 'pointer';
                 }},
-                
+
                 resetHighlight(e) {{
-                    geoJsonLayer.resetStyle(e.target);
+                    // Don't reset the selected feature's style
+                    if (e.target !== selectedLayer) {{
+                        geoJsonLayer.resetStyle(e.target);
+                        if (e.target._path) e.target._path.style.cursor = '';
+                    }}
                 }},
-                
+
                 zoomToFeature(e) {{
                     if (e.originalEvent && e.originalEvent.target &&
                         e.originalEvent.target.closest('.leaflet-popup-content')) {{
                         return;
                     }}
 
+                    // Reset previous selection
+                    if (selectedLayer) {{
+                        geoJsonLayer.resetStyle(selectedLayer);
+                    }}
+
+                    // Apply selected style
+                    selectedLayer = e.target;
+                    selectedLayer.setStyle({{
+                        weight: 4,
+                        color: '#1a73e8',
+                        dashArray: '6 4',
+                        fillOpacity: 0.85
+                    }});
+                    selectedLayer.bringToFront();
+
                     // Cancel any in-progress smooth wheel zoom so it doesn't fight fitBounds
-                    map._smoothZoom.animating = false;
+                    if (map._smoothZoom) {{
+                        map._smoothZoom.animating = false;
+                    }}
                     map.fitBounds(e.target.getBounds());
                     // Sync target to wherever fitBounds lands so next scroll starts from there
-                    map.once('zoomend', function() {{
-                        map._smoothZoom.target = map.getZoom();
-                    }});
-                    
-                    const featureId = e.target.feature.properties.id || 
-                                    e.target.feature.properties.GEOID || 
-                                    e.target.feature.properties.geoid || 
-                                    e.target.feature.properties.fips || 
-                                    e.target.feature.properties.FIPS || 
+                    if (map._smoothZoom) {{
+                        map.once('zoomend', function() {{
+                            map._smoothZoom.target = map.getZoom();
+                        }});
+                    }}
+
+                    const featureId = e.target.feature.properties.id ||
+                                    e.target.feature.properties.GEOID ||
+                                    e.target.feature.properties.geoid ||
+                                    e.target.feature.properties.fips ||
+                                    e.target.feature.properties.FIPS ||
                                     e.target.feature.properties.feature_id ||
                                     e.target.feature.properties.geo_id ||
                                     e.target.feature.id;
-                    
+
                     if (featureId) {{
                         localStorage.setItem('hawaii_dashboard_selected_feature', featureId);
                         window.parent.postMessage({{
@@ -920,6 +953,7 @@ class LeafletMapComponent:
                         }}
                     }}
                     
+                    tooltipContent += '<div style="font-size:10px;color:#999;margin-top:4px;font-style:italic">Click to explore</div>';
                     layer.bindTooltip(tooltipContent, {{ className: 'custom-tooltip', offset: [0, -10] }});
                 }}
             }};
@@ -940,7 +974,55 @@ class LeafletMapComponent:
             // Initialize legend
             legendManager.update();
             legendManager.setupColorSchemeHandler();
-            
+
+            // Helper: close info panel and clear selection
+            function closeInfoPanel() {{
+                const panel = document.getElementById(MAP_ID + '-info-panel');
+                if (panel && panel.classList.contains('visible')) {{
+                    const scrollIndicator = document.querySelector('.scroll-indicator');
+                    if (scrollIndicator) {{ scrollIndicator.style.display = 'none'; scrollIndicator.remove(); }}
+                    panel.classList.remove('visible');
+                    setTimeout(() => {{
+                        panel.style.display = 'none';
+                        if (window[MAP_ID]) window[MAP_ID].invalidateSize();
+                    }}, 300);
+                }}
+            }}
+
+            // Reset view button — zoom back to full state
+            const resetControl = L.control({{ position: 'topleft' }});
+            resetControl.onAdd = function() {{
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                container.innerHTML = '<a href="#" title="Reset view" style="font-size:18px;line-height:26px;text-align:center;display:block;width:26px;height:26px;text-decoration:none;color:#333;font-weight:bold">\u21BA</a>';
+                L.DomEvent.disableClickPropagation(container);
+                container.onclick = function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    map.fitBounds(geoJsonLayer.getBounds());
+                    if (selectedLayer) {{ geoJsonLayer.resetStyle(selectedLayer); selectedLayer = null; }}
+                    closeInfoPanel();
+                }};
+                return container;
+            }};
+            resetControl.addTo(map);
+
+            // Escape key closes info panel
+            document.addEventListener('keydown', function(e) {{
+                if (e.key === 'Escape') {{
+                    closeInfoPanel();
+                    if (selectedLayer) {{ geoJsonLayer.resetStyle(selectedLayer); selectedLayer = null; }}
+                }}
+            }});
+
+            // Click on map background closes info panel
+            map.on('click', function(e) {{
+                // Only if clicking empty map area (not a feature)
+                if (!e.originalEvent.target.closest('.leaflet-interactive')) {{
+                    closeInfoPanel();
+                    if (selectedLayer) {{ geoJsonLayer.resetStyle(selectedLayer); selectedLayer = null; }}
+                }}
+            }});
+
             // Scroll indicator functionality - embedded directly
             (function() {{
                 'use strict';
@@ -1100,7 +1182,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-09-v13"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-11-v22"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
