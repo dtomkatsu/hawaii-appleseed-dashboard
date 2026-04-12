@@ -848,7 +848,6 @@ class LeafletMapComponent:
                     
                     // Handle click to update info panel (JavaScript-only approach)
                     layer.on('click', function(e) {{
-                        console.log('Layer clicked');
                         L.DomEvent.stop(e);
                         
                         // Update the info panel with categorized content
@@ -877,7 +876,10 @@ class LeafletMapComponent:
                             infoPanel.innerHTML = infoPanelContent;
                             infoPanel.style.display = 'block';
                             infoPanel.classList.add('visible');
-                            
+
+                            // Initialize scroll indicator now that panel is visible
+                            if (window._initScrollIndicator) window._initScrollIndicator(0);
+
                             // Add close button handler
                             const closeBtn = document.getElementById(MAP_ID + '-close-panel');
                             if (closeBtn) {{
@@ -1027,12 +1029,14 @@ class LeafletMapComponent:
             (function() {{
                 'use strict';
 
-                // Scroll indicator functionality
-                function initScrollIndicator() {{
+                // Scroll indicator — only runs when panel is opened (called from click handler)
+                function initScrollIndicator(retries) {{
+                    retries = retries || 0;
                     var panel = document.querySelector('.info-panel.visible');
                     if (!panel) {{
-                        console.log('No visible panel found, retrying...');
-                        setTimeout(initScrollIndicator, 500);
+                        if (retries < 10) {{
+                            setTimeout(function() {{ initScrollIndicator(retries + 1); }}, 300);
+                        }}
                         return;
                     }}
 
@@ -1048,7 +1052,6 @@ class LeafletMapComponent:
                     scrollArrow.innerHTML = '▼';
                     document.body.appendChild(scrollArrow);
                     
-                    console.log('Scroll indicator created:', scrollArrow);
 
                     function updateScrollIndicator() {{
                         var scrollTop = panel.scrollTop;
@@ -1112,7 +1115,6 @@ class LeafletMapComponent:
                     
                     // Cleanup function
                     var cleanup = function() {{
-                        console.log('Cleaning up scroll indicator');
                         panel.removeEventListener('scroll', updateScrollIndicator);
                         window.removeEventListener('resize', updateScrollIndicator);
                         if (scrollArrow && scrollArrow.parentNode) {{
@@ -1132,8 +1134,8 @@ class LeafletMapComponent:
                     return cleanup;
                 }}
 
-                // Initialize with a delay to ensure DOM is ready
-                setTimeout(initScrollIndicator, 1000);
+                // Expose so the click handler can trigger it when panel opens
+                window._initScrollIndicator = initScrollIndicator;
             }})();
             
             // Store map reference for debugging
@@ -1182,7 +1184,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-11-v22"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-11-v23"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
