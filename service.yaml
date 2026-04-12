@@ -13,6 +13,7 @@ spec:
         run.googleapis.com/cpu: "1"
         run.googleapis.com/timeout: "300s"
         run.googleapis.com/max-instances: "3"
+        run.googleapis.com/sessionAffinity: "true"
     spec:
       containerConcurrency: 10
       containers:

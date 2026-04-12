@@ -3,12 +3,12 @@ streamlit
 pandas
 numpy
 plotly
-requests
-us>=1.24.0
-python-dotenv>=1.0.0
-openpyxl>=3.0.0
 
 # Removed (confirmed unused in production import chain):
+#   requests  — only imported in src/data/acs_data.py which is never imported
+#   us        — not imported anywhere in src/ or run_leaflet.py
+#   openpyxl  — not imported anywhere in src/ or run_leaflet.py
+#   python-dotenv — not imported anywhere in src/ or run_leaflet.py
 #   folium, streamlit-folium — superseded by Leaflet.js implementation
 #   cenpy     — Census API client only used in deleted pipeline scripts
 #   matplotlib — Plotly is used instead; matplotlib never imported in src/

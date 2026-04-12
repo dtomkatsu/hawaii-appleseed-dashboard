@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "streamlit",
-      "runtimeExecutable": "/Users/devinthomas/Library/Python/3.9/bin/streamlit",
-      "runtimeArgs": ["run", "run_leaflet.py", "--server.port", "8501"],
-      "port": 8501
+      "runtimeExecutable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "runtimeArgs": ["-m", "streamlit", "run", "run_leaflet.py"],
+      "port": 8501,
+      "autoPort": true
     }
   ]
 }

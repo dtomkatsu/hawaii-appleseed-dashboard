@@ -708,7 +708,6 @@ class LeafletMapComponent:
                     selectedLayer.setStyle({{
                         weight: 4,
                         color: '#1a73e8',
-                        dashArray: '6 4',
                         fillOpacity: 0.85
                     }});
                     selectedLayer.bringToFront();
@@ -1184,7 +1183,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-11-v23"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-11-v24"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
