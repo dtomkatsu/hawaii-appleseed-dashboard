@@ -636,7 +636,7 @@ class LeafletMapComponent:
                 zoomControl: false,
                 attributionControl: false,
                 scrollWheelZoom: true,
-                wheelPxPerZoomLevel: 15,
+                wheelPxPerZoomLevel: 10,
                 zoomSnap: 0,
                 zoomDelta: 0.5,
                 zoomAnimation: true,

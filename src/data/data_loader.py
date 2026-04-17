@@ -64,10 +64,12 @@ class DataMerger:
         
         return strategy(base_data, merge_data, data_type)
     
-    def _merge_state_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame, 
+    def _merge_state_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
                          data_type: DataType) -> pd.DataFrame:
         """Merge state-level data."""
         merged = base_data.copy()
+        # Always initialize columns so they exist even when merge_data is empty
+        self._initialize_columns_by_type(merged, data_type)
         if len(merge_data) > 0:
             merge_row = merge_data.iloc[0]
             self._add_columns_by_type(merged, merge_row, data_type)
@@ -1249,6 +1251,10 @@ class DataLoader:
         # Merge additional datasets
         if merged_data is not None and alice_data is not None:
             merged_data = self.merger.merge_datasets(merged_data, alice_data, geo_enum, DataType.ALICE)
+        elif merged_data is not None and alice_data is None:
+            # ALICE load failed or unavailable — still initialize columns so GeoJSON
+            # properties always contain alice_rate (as None) rather than missing entirely.
+            self.merger._initialize_columns_by_type(merged_data, DataType.ALICE)
 
         if merged_data is not None and snap_data is not None:
             logger.debug(f"Merging SNAP data for {geo_level}, shape: {snap_data.shape}")
