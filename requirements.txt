@@ -3,11 +3,11 @@ streamlit
 pandas
 numpy
 plotly
+openpyxl  # Required by ALICEDataLoader to read ALICE By Geography (2023).xlsx
 
 # Removed (confirmed unused in production import chain):
 #   requests  — only imported in src/data/acs_data.py which is never imported
 #   us        — not imported anywhere in src/ or run_leaflet.py
-#   openpyxl  — not imported anywhere in src/ or run_leaflet.py
 #   python-dotenv — not imported anywhere in src/ or run_leaflet.py
 #   folium, streamlit-folium — superseded by Leaflet.js implementation
 #   cenpy     — Census API client only used in deleted pipeline scripts

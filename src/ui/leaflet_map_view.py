@@ -78,8 +78,13 @@ def get_data_loader(_cache_version="v7"):
     # _cache_version parameter forces cache invalidation when changed
     return DataLoader()
 
+# Bump this to bust _get_merged_geojson cache when the data pipeline changes.
+# The cache has no other invalidation key, so stale merged GeoJSON persists until bumped.
+_MERGED_GEOJSON_VERSION = "2026-04-19-v2"
+
+
 @st.cache_data(show_spinner=False)
-def _get_merged_geojson(layer_name, geo_level):
+def _get_merged_geojson(layer_name, geo_level, _version=_MERGED_GEOJSON_VERSION):
     """Load GeoJSON and merge with statistical data, cached.
 
     Combines load_geojson + merge into one cached call so repeated

@@ -848,7 +848,12 @@ class LeafletMapComponent:
                     // Handle click to update info panel (JavaScript-only approach)
                     layer.on('click', function(e) {{
                         L.DomEvent.stop(e);
-                        
+
+                        // DIAGNOSTIC: log feature properties so we can verify ALICE key presence
+                        console.log('[DIAG] Feature clicked. Properties keys:', Object.keys(props));
+                        console.log('[DIAG] alice_rate value:', props.alice_rate, 'type:', typeof props.alice_rate);
+                        console.log('[DIAG] SELECTED_VARIABLE:', SELECTED_VARIABLE, 'value:', props[SELECTED_VARIABLE]);
+
                         // Update the info panel with categorized content
                         const categorizedMetrics = utils.createCategorizedMetricsHtml(props);
                         const infoPanelContent = [
@@ -1183,7 +1188,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-11-v24"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-19-v25"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
