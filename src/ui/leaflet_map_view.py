@@ -6,6 +6,7 @@ import json
 import logging
 from pathlib import Path
 import sys
+from urllib.parse import quote
 import plotly.express as px
 
 # Import local modules
@@ -17,6 +18,7 @@ from config.variable_registry import (
     get_display_names,
     get_display_name,
     get_variable_source,
+    get_all_variables,
 )
 
 # Set up logging
@@ -80,7 +82,7 @@ def get_data_loader(_cache_version="v7"):
 
 # Bump this to bust _get_merged_geojson cache when the data pipeline changes.
 # The cache has no other invalidation key, so stale merged GeoJSON persists until bumped.
-_MERGED_GEOJSON_VERSION = "2026-04-19-v2"
+_MERGED_GEOJSON_VERSION = "2026-04-22-v3"
 
 
 @st.cache_data(show_spinner=False)
@@ -97,10 +99,481 @@ def _get_merged_geojson(layer_name, geo_level, _version=_MERGED_GEOJSON_VERSION)
     return data_loader.merge_geojson_with_data(geojson_data, geo_level)
 
 
+# ---------------------------------------------------------------------------
+# Cascade menu helpers
+#
+# Replaces the Economic Security and Food Security selectboxes with
+# hover-reveal cascade menus. Long families of related variables
+# (Tax Credits = CTC + EITC, SNAP, CEP) collapse under a single
+# submenu, reducing the number of visible options at top level.
+#
+# Click round-trip: leaf items are plain <a href="?sel=<key>"> anchors.
+# Streamlit reruns when the URL changes; _route_cascade_click_from_url
+# reads the param, routes it to the right session-state key, clears
+# the URL so a refresh doesn't re-fire, and lets the rest of the view
+# render as usual.
+#
+# All four dropdowns (Geography, Econ, Food, H&T) use the same cascade
+# component so they open on hover rather than click, have no blinking
+# text cursor, and share identical styling. Geography and H&T happen
+# to be flat (no submenus) while Econ and Food collapse related
+# variables under Tax Credits / SNAP / CEP parent items.
+# ---------------------------------------------------------------------------
+
+# Variables that get grouped under the "Tax Credits" submenu in
+# the Economic Security cascade.
+_TAX_CREDIT_KEYS = {
+    "ctc_avg_amount",
+    "ctc_participation_rate",
+    "federal_eitc_avg_amount",
+    "eitc_participation_rate",
+    "state_eitc_avg_amount",
+}
+
+# Variables grouped under "SNAP" in the Food Security cascade.
+_SNAP_KEYS = {
+    "snap_household_rate",
+    "snap_benefit_annual_per_household",
+    "snap_benefits_annual_total",
+}
+
+# Variables grouped under "CEP" in the Food Security cascade.
+_CEP_KEYS = {
+    "cep_percentage",
+    "cep_display",
+}
+
+
+def _build_econ_cascade_items() -> list:
+    """Top-level items for the Economic Security cascade.
+
+    Single-variable options stay flat; CTC + EITC collapse into a
+    "Tax Credits" submenu.
+    """
+    items = get_variables_for_dropdown("economic_security")
+    main = [v for v in items if v["key"] not in _TAX_CREDIT_KEYS]
+    tax = [v for v in items if v["key"] in _TAX_CREDIT_KEYS]
+
+    out = [{"key": v["key"], "label": v["label"]} for v in main]
+    if tax:
+        out.append({
+            "label": "Tax Credits",
+            "children": [{"key": v["key"], "label": v["label"]} for v in tax],
+        })
+    return out
+
+
+def _build_food_cascade_items() -> list:
+    """Top-level items for the Food Security cascade.
+
+    SNAP and CEP variables each collapse into their own submenu.
+    Anything else (if added later) stays flat.
+    """
+    items = get_variables_for_dropdown("food_security")
+    snap = [v for v in items if v["key"] in _SNAP_KEYS]
+    cep = [v for v in items if v["key"] in _CEP_KEYS]
+    other = [v for v in items if v["key"] not in _SNAP_KEYS and v["key"] not in _CEP_KEYS]
+
+    out = [{"key": v["key"], "label": v["label"]} for v in other]
+    if snap:
+        out.append({
+            "label": "SNAP",
+            "children": [{"key": v["key"], "label": v["label"]} for v in snap],
+        })
+    if cep:
+        out.append({
+            "label": "CEP",
+            "children": [{"key": v["key"], "label": v["label"]} for v in cep],
+        })
+    return out
+
+
+# Geography layer names aren't in the variable registry (they aren't
+# variables — they toggle the map's boundary GeoJSON). We prefix their
+# keys with "layer:" in the URL so the router can distinguish them
+# from variable keys (which are always plain snake_case).
+_GEOGRAPHY_LAYER_OPTIONS = ["State Boundary", "Counties", "House Districts", "Senate Districts"]
+
+
+def _build_geography_cascade_items() -> list:
+    """Top-level items for the Geography cascade. Flat — no submenus."""
+    return [
+        {"key": f"layer:{name}", "label": name}
+        for name in _GEOGRAPHY_LAYER_OPTIONS
+    ]
+
+
+def _build_housing_cascade_items() -> list:
+    """Top-level items for the Housing & Transportation cascade.
+
+    Flat list pulled straight from the variable registry — no natural
+    sub-grouping like Econ (Tax Credits) or Food (SNAP/CEP).
+    """
+    items = get_variables_for_dropdown("housing_transportation")
+    return [{"key": v["key"], "label": v["label"]} for v in items]
+
+
+def _cascade_css() -> str:
+    """Shared CSS for every cascade on the page.
+
+    Mirrors the H&T selectbox resting styling (colors / radius / height),
+    then layers on:
+      * A staggered fade-in per menu item (cascadeItemIn keyframe + :nth-child delay).
+      * A gradient hover wash (left-to-right translucent green).
+      * A rotating parent caret (▸ → ▾) when a submenu opens.
+      * A soft, multi-layer popover shadow with a subtle top rim-light.
+      * A small green dot next to the currently-selected leaf.
+
+    Emitted inline per call; browsers dedupe identical style blocks.
+    """
+    return """
+    <style>
+      /* Staggered entry animation for each menu item */
+      @keyframes cascadeItemIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .cascade-root {
+        /* Inherit Streamlit's Source Sans Pro body font for a native feel. */
+        font-family: inherit;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        position: relative;
+        width: 100%;
+      }
+      /* Trigger — matches .stSelectbox > div[data-baseweb="select"] > div */
+      .cascade-trigger {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        min-height: 40px;
+        background-color: #f0f7e9;
+        border: 1px solid rgba(94, 82, 64, 0.2);
+        border-radius: 0.5rem;
+        color: rgba(19, 52, 59, 1);
+        cursor: pointer;
+        user-select: none;
+        box-sizing: border-box;
+        transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      /* Hover state — matches .stSelectbox > div[data-baseweb="select"] > div:hover */
+      .cascade-root:hover > .cascade-trigger {
+        background-color: #e8f3df;
+        border-color: #3a7710;
+      }
+      .cascade-current {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+      .cascade-current.is-placeholder,
+      .cascade-current.is-selected { color: rgba(19, 52, 59, 1); }
+      .cascade-trigger-caret {
+        margin-left: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+        color: rgba(19, 52, 59, 1);
+      }
+      .cascade-root:hover > .cascade-trigger .cascade-trigger-caret {
+        transform: rotate(180deg);
+      }
+
+      /* Popover surface — softer multi-layer shadow + a 1px top rim-light
+         using an inset highlight. Gives it a subtle "lifted card" feel
+         instead of one flat drop-shadow. */
+      .cascade-menu {
+        list-style: none;
+        padding: 6px 0;
+        margin: 0;
+        background-color: rgba(255, 255, 253, 1);
+        border: 1px solid rgba(94, 82, 64, 0.15);
+        border-radius: 0.625rem;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 1px 2px rgba(0, 0, 0, 0.04),
+          0 8px 20px rgba(20, 45, 15, 0.10),
+          0 18px 40px rgba(20, 45, 15, 0.08);
+        min-width: 100%;
+        width: max-content;
+        max-width: 360px;
+      }
+      .cascade-root > .cascade-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 9999;
+        margin-top: 4px;
+        animation: dropdownOpen 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        transform-origin: top center;
+      }
+      .cascade-root > .cascade-menu::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -6px;
+        height: 6px;
+        background: transparent;
+      }
+      .cascade-root:hover > .cascade-menu { display: block; }
+
+      .cascade-menu li {
+        padding: 0;
+        position: relative;
+        color: rgba(19, 52, 59, 1);
+      }
+      /* Stagger each menu item so they sweep in sequentially when the
+         menu opens. Works because each menu-open triggers the animation
+         (the parent's display flips from none to block). */
+      .cascade-menu > li {
+        opacity: 0;
+        animation: cascadeItemIn 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+      }
+      .cascade-menu > li:nth-child(1) { animation-delay: 0.04s; }
+      .cascade-menu > li:nth-child(2) { animation-delay: 0.07s; }
+      .cascade-menu > li:nth-child(3) { animation-delay: 0.10s; }
+      .cascade-menu > li:nth-child(4) { animation-delay: 0.13s; }
+      .cascade-menu > li:nth-child(5) { animation-delay: 0.16s; }
+      .cascade-menu > li:nth-child(6) { animation-delay: 0.19s; }
+      .cascade-menu > li:nth-child(7) { animation-delay: 0.22s; }
+      .cascade-menu > li:nth-child(n+8) { animation-delay: 0.25s; }
+
+      /* Leaf + parent row layout. Transparent left border holds the
+         green accent that slides in on hover. */
+      .cascade-leaf > a,
+      .cascade-parent > .cascade-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 16px;
+        color: rgba(19, 52, 59, 1);
+        text-decoration: none;
+        border-left: 4px solid transparent;
+        transition: background 0.22s ease, padding-left 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .cascade-parent > .cascade-label { cursor: default; }
+
+      /* Hover background — gradient wash (strong on left, fades right).
+         Pairs with the green accent bar to create a "light sweeping in
+         from the left" feel. */
+      .cascade-leaf:hover > a,
+      .cascade-parent:hover > .cascade-label {
+        background: linear-gradient(90deg, rgba(58, 119, 16, 0.18) 0%, rgba(58, 119, 16, 0.04) 60%, rgba(58, 119, 16, 0) 100%);
+        padding-left: 24px;
+        border-left-color: #3a7710;
+        color: #1f3d10;
+      }
+
+      /* Selected leaf — persistent green dot in the left margin
+         (positioned in the 16px padding, outside the text baseline). */
+      .cascade-leaf--selected > a {
+        color: #2a5a0c;
+        font-weight: 600;
+      }
+      .cascade-leaf--selected > a::before {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #3a7710;
+        box-shadow: 0 0 0 2px rgba(58, 119, 16, 0.15);
+      }
+
+      /* Parent caret — small chevron that rotates from ▸ (pointing right)
+         to ▾ (pointing down) when the submenu opens on hover. */
+      .cascade-parent > .cascade-label .cascade-caret {
+        margin-left: 12px;
+        color: #3a7710;
+        display: inline-block;
+        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform-origin: center;
+      }
+      .cascade-parent:hover > .cascade-label .cascade-caret {
+        transform: rotate(90deg);
+      }
+
+      /* Submenu — same visual treatment + same pop animation */
+      .cascade-parent > .cascade-menu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: -5px;
+        margin-left: 2px;
+      }
+      .cascade-parent > .cascade-menu::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -6px;
+        width: 6px;
+        background: transparent;
+      }
+      .cascade-parent:hover > .cascade-menu {
+        display: block;
+        animation: dropdownOpen 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        transform-origin: top left;
+      }
+    </style>
+    """
+
+
+def _render_cascade_menu(
+    items: list,
+    current_key: str | None = None,
+    placeholder: str = "Select",
+    current_label: str | None = None,
+) -> None:
+    """Render a single cascade dropdown as an st.html block.
+
+    Args:
+        items: top-level menu structure (see _build_*_cascade_items).
+        current_key: currently selected variable key for this group
+            (or None). Used to look up a label via the variable registry.
+        placeholder: text shown on the trigger when nothing is selected.
+        current_label: explicit trigger text (takes priority over the
+            registry lookup). Needed for Geography since layer names
+            aren't in the variable registry.
+    """
+    if current_label:
+        trigger_label = current_label
+        trigger_class = "cascade-current is-selected"
+    elif current_key:
+        all_vars = get_all_variables()
+        if current_key in all_vars:
+            trigger_label = (
+                all_vars[current_key].get("dropdown_label")
+                or all_vars[current_key].get("display_name", current_key)
+            )
+            trigger_class = "cascade-current is-selected"
+        else:
+            trigger_label = placeholder
+            trigger_class = "cascade-current is-placeholder"
+    else:
+        trigger_label = placeholder
+        trigger_class = "cascade-current is-placeholder"
+
+    # Determine which leaf key counts as "currently selected" so we can
+    # mark it with a persistent green dot. For Geography (current_label
+    # only), the key we match is "layer:<active_layer>".
+    if current_key:
+        selected_match_key = current_key
+    elif current_label:
+        selected_match_key = f"layer:{current_label}"
+    else:
+        selected_match_key = None
+
+    def render_items(items):
+        parts = ['<ul class="cascade-menu">']
+        for item in items:
+            if "children" in item:
+                parts.append(
+                    '<li class="cascade-parent">'
+                    f'<span class="cascade-label">{item["label"]}<span class="cascade-caret">▸</span></span>'
+                    f'{render_items(item["children"])}'
+                    '</li>'
+                )
+            else:
+                # Plain anchor — st.html keeps href but strips onclick.
+                # URL-encode the key so layer names like "State Boundary"
+                # (with a space) and the "layer:" prefix's colon round-trip
+                # cleanly through st.query_params.
+                encoded = quote(item["key"], safe="")
+                extra_cls = " cascade-leaf--selected" if item["key"] == selected_match_key else ""
+                parts.append(
+                    f'<li class="cascade-leaf{extra_cls}">'
+                    f'<a href="?sel={encoded}" target="_self">{item["label"]}</a>'
+                    '</li>'
+                )
+        parts.append('</ul>')
+        return ''.join(parts)
+
+    html = f"""
+    {_cascade_css()}
+    <div class="cascade-root">
+      <div class="cascade-trigger">
+        <span class="{trigger_class}">{trigger_label}</span>
+        <span class="cascade-trigger-caret">▾</span>
+      </div>
+      {render_items(items)}
+    </div>
+    """
+    st.html(html)
+
+
+def _route_cascade_click_from_url() -> None:
+    """Process ?sel=<key> from the URL and write to session state.
+
+    Two key shapes are recognized:
+      * "layer:<Name>" — Geography layer toggle (e.g. "layer:Counties").
+        Updates active_layer; doesn't touch variable selections.
+      * plain variable key — looked up in the variable registry and
+        routed to the session key matching its dropdown_group. Preserves
+        mutual exclusivity across the three variable groups
+        (economic_security / food_security / housing_transportation).
+    """
+    qp = st.query_params
+    if "sel" not in qp:
+        return
+
+    raw = qp["sel"]
+
+    # Geography layer selection.
+    if raw.startswith("layer:"):
+        layer_name = raw[len("layer:"):]
+        if layer_name in _GEOGRAPHY_LAYER_OPTIONS:
+            st.session_state["active_layer"] = layer_name
+        st.query_params.clear()
+        return
+
+    # Variable selection.
+    key = raw
+    all_vars = get_all_variables()
+    if key not in all_vars:
+        st.query_params.clear()
+        return
+
+    group = all_vars[key].get("dropdown_group")
+
+    # Wipe all three selection keys first; then set the one matching.
+    st.session_state["selected_variable"] = None
+    st.session_state["selected_food_security_variable"] = None
+    st.session_state["selected_housing_transportation_variable"] = None
+
+    if group == "economic_security":
+        st.session_state["selected_variable"] = key
+    elif group == "food_security":
+        st.session_state["selected_food_security_variable"] = key
+    elif group == "housing_transportation":
+        st.session_state["selected_housing_transportation_variable"] = key
+
+    # Drop the URL param so a refresh doesn't re-fire the selection.
+    st.query_params.clear()
+
+
 def create_leaflet_map_view(debug_info: bool = False) -> None:
     """Create the Leaflet map view."""
     logger.debug("Building Leaflet map view")
-    
+
+    # Handle ?sel=<key> clicks from the Econ/Food cascade menus.
+    # Must run BEFORE the reset-flag block so URL-driven selections
+    # aren't clobbered by the reset mechanism.
+    _route_cascade_click_from_url()
+
     # Initialize session state with comprehensive error handling
     try:
         # Ensure active_layer is set
@@ -294,150 +767,56 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
     with col1:
-        # Geography dropdown — styled distinctly via .st-key-layer_selector in enhanced_style.css
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
-                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #6a9a50; color: white; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
-        layer_options = ['State Boundary', 'Counties', 'House Districts', 'Senate Districts']
-        try:
-            layer_index = layer_options.index(active_layer)
-        except (ValueError, KeyError):
-            layer_index = 0
-            
-        selected_layer = st.selectbox(
-            "",
-            layer_options,
-            index=layer_index,
-            key="layer_selector",
-            label_visibility="collapsed"
+        # Geography cascade — flat list of layer names. Keys carry a
+        # "layer:" prefix so _route_cascade_click_from_url can distinguish
+        # them from variable keys. See _build_geography_cascade_items.
+        st.markdown('<div style="color: #2a5a0c; font-family: Inter, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: #6a9a50; color: white; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.03em;">Geography</span></div>', unsafe_allow_html=True)
+
+        _render_cascade_menu(
+            items=_build_geography_cascade_items(),
+            current_label=active_layer if active_layer in _GEOGRAPHY_LAYER_OPTIONS else None,
+            placeholder="Select Geography",
         )
-        
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_layer != active_layer:
-            st.session_state['active_layer'] = selected_layer
-            st.rerun()
     
     with col2:
-        # Economic Security dropdown with 'Choose your variable' text
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
-                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Economic Security</span></div>', unsafe_allow_html=True)
-        
-        # Economic security dropdown options from centralized registry
-        _econ_items = get_variables_for_dropdown('economic_security')
-        variable_options = {item['key']: item['label'] for item in _econ_items}
-        
-        econ_keys = list(variable_options.keys())
+        # Economic Security cascade menu — CTC + EITC collapsed under
+        # "Tax Credits" submenu. See _build_econ_cascade_items for the
+        # grouping rule and _route_cascade_click_from_url for the
+        # click round-trip.
+        st.markdown('<div style="color: #2a5a0c; font-family: Inter, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #c8e6b0;">Choose your variable</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Economic Security</span></div>', unsafe_allow_html=True)
 
-        # Determine index: None means show placeholder, otherwise find position
-        try:
-            var_index = econ_keys.index(selected_variable) if selected_variable is not None else None
-        except (ValueError, KeyError):
-            var_index = None
-
-        selected_var = st.selectbox(
-            "",
-            options=econ_keys,
-            format_func=lambda x: variable_options[x],
-            index=var_index,
+        _render_cascade_menu(
+            items=_build_econ_cascade_items(),
+            current_key=st.session_state.get('selected_variable'),
             placeholder="Select Variable",
-            key="variable_selector",
-            label_visibility="collapsed"
         )
-
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_var != selected_variable:
-            st.session_state['selected_variable'] = selected_var
-            # Clear food security and housing/transportation selections when an economic variable is selected
-            if selected_var is not None:
-                st.session_state['selected_food_security_variable'] = None
-                st.session_state['selected_housing_transportation_variable'] = None
-                st.session_state['_reset_other_dropdowns'] = 'econ'
-            st.rerun()
     
     with col3:
-        # Food Security dropdown — spacer matches "Choose your variable" height
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
-                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Food Security</span></div>', unsafe_allow_html=True)
-        
-        _food_items = get_variables_for_dropdown('food_security')
-        food_security_options = {item['key']: item['label'] for item in _food_items}
-        
-        fs_keys = list(food_security_options.keys())
+        # Food Security cascade menu — SNAP and CEP each collapse into
+        # their own submenu. See _build_food_cascade_items.
+        st.markdown('<div style="color: #2a5a0c; font-family: Inter, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Food Security</span></div>', unsafe_allow_html=True)
 
-        # Get current food security variable
-        selected_food_security_var = st.session_state.get('selected_food_security_variable', None)
-
-        try:
-            fs_index = fs_keys.index(selected_food_security_var) if selected_food_security_var is not None else None
-        except (ValueError, TypeError):
-            fs_index = None
-
-        selected_fs_var = st.selectbox(
-            "",
-            options=fs_keys,
-            format_func=lambda x: food_security_options[x],
-            index=fs_index,
+        _render_cascade_menu(
+            items=_build_food_cascade_items(),
+            current_key=st.session_state.get('selected_food_security_variable'),
             placeholder="Select Variable",
-            key="food_security_selector",
-            label_visibility="collapsed"
         )
-        
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_fs_var != selected_food_security_var:
-            st.session_state['selected_food_security_variable'] = selected_fs_var
-            # Clear other selections when food security variable is selected
-            if selected_fs_var is not None:
-                st.session_state['selected_variable'] = None
-                st.session_state['selected_housing_transportation_variable'] = None
-                st.session_state['_reset_other_dropdowns'] = 'food'
-            else:
-                # Restore default when food security is cleared and nothing else is active
-                if st.session_state.get('selected_housing_transportation_variable') is None:
-                    st.session_state['selected_variable'] = 'alice_rate'
-                    st.session_state['_reset_other_dropdowns'] = 'restore_econ'
-            st.rerun()
     
     with col4:
-        # Housing and Transportation dropdown — spacer matches "Choose your variable" height
-        st.markdown('<div style="color: #2a5a0c; font-family: Roboto, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
-                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Roboto, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Housing &amp; Transportation</span></div>', unsafe_allow_html=True)
-        
-        _ht_items = get_variables_for_dropdown('housing_transportation')
-        housing_transportation_options = {item['key']: item['label'] for item in _ht_items}
-        
-        ht_keys = list(housing_transportation_options.keys())
+        # Housing & Transportation cascade — flat list (no submenus
+        # since there's no natural sub-grouping). Router handles
+        # mutual exclusivity with Econ/Food the same way as before.
+        st.markdown('<div style="color: #2a5a0c; font-family: Inter, sans-serif; font-size: 0.7em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid transparent; visibility: hidden;">CHOOSE YOUR VARIABLE</div>'
+                   '<div style="padding-bottom: 18px;"><span style="display: inline-block; background: transparent; color: #2a5a0c; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.78em; padding: 3px 10px; border-radius: 4px; border: 1.5px solid #b8d4a0; letter-spacing: 0.03em;">Housing &amp; Transportation</span></div>', unsafe_allow_html=True)
 
-        # Get current housing/transportation variable
-        selected_housing_transportation_var = st.session_state.get('selected_housing_transportation_variable', None)
-
-        try:
-            ht_index = ht_keys.index(selected_housing_transportation_var) if selected_housing_transportation_var is not None else None
-        except (ValueError, TypeError):
-            ht_index = None
-
-        selected_ht_var = st.selectbox(
-            "",
-            options=ht_keys,
-            format_func=lambda x: housing_transportation_options[x],
-            index=ht_index,
+        _render_cascade_menu(
+            items=_build_housing_cascade_items(),
+            current_key=st.session_state.get('selected_housing_transportation_variable'),
             placeholder="Select Variable",
-            key="housing_transportation_selector",
-            label_visibility="collapsed"
         )
-        
-        # Update session state only if selection actually changes (prevents infinite loops)
-        if selected_ht_var != selected_housing_transportation_var:
-            st.session_state['selected_housing_transportation_variable'] = selected_ht_var
-            # Clear other selections when housing/transportation variable is selected
-            if selected_ht_var is not None:
-                st.session_state['selected_variable'] = None
-                st.session_state['selected_food_security_variable'] = None
-                st.session_state['_reset_other_dropdowns'] = 'housing'
-            else:
-                # Restore default when housing/transportation is cleared and nothing else is active
-                if st.session_state.get('selected_food_security_variable') is None:
-                    st.session_state['selected_variable'] = 'alice_rate'
-                    st.session_state['_reset_other_dropdowns'] = 'restore_econ'
-            st.rerun()
     
     # Display names from centralized registry
     variable_display_names = get_display_names(long=True)
@@ -469,6 +848,19 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         key=f"map-{active_layer}-{map_variable}-{color_scheme}",
         show_side_panel=True  # Enable the JavaScript panel as a popup-style panel
     )
+
+    # Source attribution for the currently-selected variable. Auto-updates
+    # when the variable or the data year in data_sources.json changes, so
+    # users always see the right vintage for the number they're looking at.
+    source_label = get_variable_source(map_variable)
+    if source_label:
+        st.markdown(
+            '<div style="font-size: 0.75rem; color: #6b8f71; margin-top: -4px; '
+            'padding: 4px 2px 12px; font-family: Inter, sans-serif; letter-spacing: 0.01em;">'
+            f'<span style="font-weight: 600; color: #4a7a54;">Source:</span> {source_label}'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
 def create_info_panel(selected_variable, geojson_data):
     """Create the static info panel that shows selected geography details."""
@@ -912,20 +1304,20 @@ def create_data_summary():
                 textfont=dict(size=9, color='#555'),
                 cliponaxis=False,
                 hovertemplate=hover_template,
-                hoverlabel=dict(bgcolor='white', bordercolor='#ccc', font_size=12, font_family='Roboto, Arial'),
+                hoverlabel=dict(bgcolor='white', bordercolor='#ccc', font_size=12, font_family='Inter, Arial'),
             )
             common_layout = dict(
                 title=dict(
                     text=chart_title,
                     x=0.5,
                     xanchor='center',
-                    font=dict(size=13, color='#333', family='Roboto, Arial'),
+                    font=dict(size=13, color='#333', family='Inter, Arial'),
                 ),
                 height=400,
                 showlegend=False,
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                font=dict(family='Roboto, Arial', size=12, color='#333'),
+                font=dict(family='Inter, Arial', size=12, color='#333'),
                 yaxis=dict(
                     gridcolor='#eef0ec',
                     gridwidth=1,

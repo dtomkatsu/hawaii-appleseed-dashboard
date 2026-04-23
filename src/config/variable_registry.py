@@ -12,12 +12,20 @@ from typing import Dict, List, Optional, Any
 
 
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "variables.json")
+_DATA_SOURCES_PATH = os.path.join(os.path.dirname(__file__), "data_sources.json")
 
 
 @lru_cache(maxsize=1)
 def _load_config() -> dict:
     with open(_CONFIG_PATH, "r") as f:
         return json.load(f)
+
+
+@lru_cache(maxsize=1)
+def _load_data_sources() -> dict:
+    """Load data_sources.json (single source of truth for per-source years)."""
+    with open(_DATA_SOURCES_PATH, "r") as f:
+        return json.load(f)["sources"]
 
 
 def get_all_variables() -> Dict[str, dict]:
@@ -193,12 +201,57 @@ def get_legend_meta_json() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Data source (for tooltip display)
+# Data source + vintage year (for tooltip/attribution display)
+#
+# Each variable has a `data_source` pointer (e.g. "acs", "snap") into
+# data_sources.json, which is the single source of truth for the year
+# that data was published. Display strings are composed at read time
+# from that pointer — so when the year for a source is updated in
+# data_sources.json, every label that mentions that source updates too.
+#
+# The old hardcoded `source` string (e.g. "American Community Survey
+# 2023") is kept on each variable as a fallback for cases where the
+# data_source pointer is missing, but the registry now prefers the
+# composed label.
 # ---------------------------------------------------------------------------
 
+def get_variable_data_source_key(key: str) -> Optional[str]:
+    """The `data_source` pointer for a variable (e.g. "acs"), or None."""
+    return get_all_variables().get(key, {}).get("data_source")
+
+
+def get_variable_year(key: str) -> Optional[int]:
+    """Return the data-vintage year for a variable, or None.
+
+    Looks up the variable's data_source pointer in data_sources.json
+    and returns sources[that_pointer].year.
+    """
+    ds_key = get_variable_data_source_key(key)
+    if not ds_key:
+        return None
+    return _load_data_sources().get(ds_key, {}).get("year")
+
+
 def get_variable_source(key: str) -> str:
-    """Return the data source string for a variable, or empty string."""
+    """Return the full source attribution string for a variable.
+
+    Composes "<short_label> <year>" from data_sources.json when the
+    variable has a `data_source` pointer. Falls back to the hardcoded
+    `source` field on the variable otherwise.
+    """
+    ds_key = get_variable_data_source_key(key)
+    if ds_key:
+        meta = _load_data_sources().get(ds_key, {})
+        label = meta.get("short_label") or meta.get("label") or ds_key
+        year = meta.get("year")
+        return f"{label} {year}" if year else label
+    # Legacy fallback: the freeform string baked into variables.json
     return get_all_variables().get(key, {}).get("source", "")
+
+
+def get_data_source_meta(source_key: str) -> dict:
+    """Return the full data_sources.json entry for a source key, or {}."""
+    return _load_data_sources().get(source_key, {})
 
 
 # ---------------------------------------------------------------------------

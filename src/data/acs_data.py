@@ -166,13 +166,14 @@ class ACSDataFetcher:
             
             # Map our level names to Census API geography names
             level_map = {
+                'state': 'state',
                 'tract': 'tract',
                 'block group': 'block group',
                 'county': 'county',
                 'state_lower': 'state legislative district (lower chamber)',
                 'state_upper': 'state legislative district (upper chamber)'
             }
-            
+
             if level not in level_map:
                 raise ValueError(f"Unsupported level: {level}. Must be one of {list(level_map.keys())}")
             
@@ -186,7 +187,11 @@ class ACSDataFetcher:
                 'key': self.api_key
             }
             
-            if level == 'county':
+            if level == 'state':
+                # For state level — single-row query for the specified state
+                params['for'] = f"state:{state}"
+
+            elif level == 'county':
                 # For county level
                 if county:
                     # If specific county is requested
@@ -194,7 +199,7 @@ class ACSDataFetcher:
                 else:
                     params['for'] = "county:*"
                 params['in'] = f"state:{state}"
-            
+
             elif level == 'tract':
                 # For tract level
                 params['for'] = "tract:*"
@@ -213,12 +218,14 @@ class ACSDataFetcher:
             
             elif level == 'state_lower':
                 # For state house districts
-                params['for'] = "legislative district (lower chamber):*"
+                # Census API requires the "state " prefix on the geography name
+                # (see https://api.census.gov/data/{year}/acs/acs5/geography.html)
+                params['for'] = "state legislative district (lower chamber):*"
                 params['in'] = f"state:{state}"
-            
+
             elif level == 'state_upper':
                 # For state senate districts
-                params['for'] = "legislative district (upper chamber):*"
+                params['for'] = "state legislative district (upper chamber):*"
                 params['in'] = f"state:{state}"
             
             # Make the API request with parameters
@@ -295,7 +302,25 @@ class ACSDataFetcher:
             
             # Convert to DataFrame
             df = pd.DataFrame(rows, columns=headers)
-            
+
+            # Normalize Census geography columns to the short FIPS-style names
+            # the GeoIDStandardizer expects. The API returns these as verbose
+            # header strings (e.g. "state legislative district (lower chamber)")
+            # but the standardizer looks up `sldlst` / `sldust`.
+            geo_col_renames = {
+                'state legislative district (lower chamber)': 'sldlst',
+                'state legislative district (upper chamber)': 'sldust',
+            }
+            df = df.rename(columns={k: v for k, v in geo_col_renames.items() if k in df.columns})
+
+            # The data_loader looks up the `NAME` column (uppercase) for
+            # county matching and display. The Census API returns `NAME`
+            # but our lowercased-headers step above turned it into `name`.
+            # Restore the uppercase alias to keep the CSV schema compatible
+            # with prior-year files.
+            if 'name' in df.columns and 'NAME' not in df.columns:
+                df['NAME'] = df['name']
+
             # Log the columns before conversion
             with open(self.debug_log_file, 'a', encoding='utf-8') as f:
                 f.write(f"Columns in raw DataFrame: {df.columns.tolist()}\n")
@@ -383,16 +408,80 @@ class ACSDataFetcher:
     
     def calculate_poverty_rate(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculate poverty rate and other metrics from ACS data.
-        
+
         Args:
             df: DataFrame with ACS data
-            
+
         Returns:
             DataFrame with calculated metrics
         """
         # Make a copy to avoid modifying the original
         df = df.copy()
-        
+
+        # ── Derived metrics using the column names produced by the rename
+        # dict in get_acs_data(). These match the schema the dashboard's
+        # data_loader expects (poverty_rate, renter_rate, rent_burden_rate,
+        # etc.), so downstream maps render properly.
+        def _safe_div(num, den):
+            """Element-wise division that returns NaN when den is 0/NaN."""
+            return (num / den.replace(0, np.nan)) * 100
+
+        # Poverty rate: below_poverty / total_population (B17001 universe) × 100
+        if 'below_poverty' in df.columns and 'total_population' in df.columns:
+            df['poverty_rate'] = _safe_div(df['below_poverty'], df['total_population']).round(2)
+
+        # Bachelor's-or-higher educational attainment
+        if 'bachelors_plus' in df.columns and 'pop_25_plus' in df.columns:
+            df['bachelors_rate'] = _safe_div(df['bachelors_plus'], df['pop_25_plus']).round(2)
+            # Dashboard exposes this under the `college_educated_pct` key too
+            df['college_educated_pct'] = df['bachelors_rate']
+
+        # Renter-occupied share of housing units
+        if 'renter_occupied' in df.columns and 'total_housing_units' in df.columns:
+            df['renter_rate'] = _safe_div(df['renter_occupied'], df['total_housing_units']).round(2)
+
+        # Rent burden (≥30% of income on rent) & severe rent burden (≥50%)
+        rent_bucket_cols = ['b25070_007e', 'b25070_008e', 'b25070_009e', 'b25070_010e']
+        rent_denom_col = 'b25070_001e'
+        if all(c in df.columns for c in rent_bucket_cols) and rent_denom_col in df.columns:
+            df['rent_burden_households'] = df[rent_bucket_cols].sum(axis=1)
+            df['rent_burden_rate'] = _safe_div(df['rent_burden_households'], df[rent_denom_col]).round(2)
+            df['severe_rent_burden_rate'] = _safe_div(df['b25070_010e'], df[rent_denom_col]).round(2)
+
+        # Median home value (rename)
+        if 'b25077_001e' in df.columns and 'median_home_value' not in df.columns:
+            df['median_home_value'] = df['b25077_001e']
+
+        # Unemployment rate: unemployed / civilian labor force × 100
+        if 'b23025_005e' in df.columns and 'b23025_003e' in df.columns:
+            df['unemployment_rate'] = _safe_div(df['b23025_005e'], df['b23025_003e']).round(2)
+
+        # Public transportation commute share: B08301_010E / B08303_001E × 100
+        if 'public_transit_workers' in df.columns and 'b08303_001e' in df.columns:
+            df['public_transportation_pct'] = _safe_div(df['public_transit_workers'], df['b08303_001e']).round(2)
+
+        # Mean commute time (minutes) among workers with ≥30-min commute —
+        # weighted average of the B08303 buckets we fetched, using bucket
+        # midpoints. This mirrors the metric stored in the 2023 CSVs.
+        commute_buckets = {
+            'b08303_008e': 32.0,   # 30-34 min
+            'b08303_009e': 37.0,   # 35-39 min
+            'b08303_010e': 42.0,   # 40-44 min
+            'b08303_011e': 52.0,   # 45-59 min
+            'b08303_012e': 74.5,   # 60-89 min
+            'b08303_013e': 95.0,   # 90+ min (open-ended; conservative midpoint)
+        }
+        if all(c in df.columns for c in commute_buckets):
+            total_time = sum(df[c] * midpoint for c, midpoint in commute_buckets.items())
+            total_workers = sum(df[c] for c in commute_buckets)
+            df['travel_time_to_work_minutes'] = (
+                total_time / total_workers.replace(0, np.nan)
+            ).round(2)
+
+        # ── Legacy branches below (unchanged) — these reference older column
+        # names that are not produced by the current rename dict and will
+        # simply be no-ops for our data.
+
         # Calculate poverty rate if we have the data
         if 'income_below_poverty_level' in df.columns and 'poverty_status_determined' in df.columns:
             df['poverty_rate'] = (df['income_below_poverty_level'] / df['poverty_status_determined']) * 100

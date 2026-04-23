@@ -12,6 +12,12 @@ class GeoIDStandardizer:
     
     # Mapping of geographic levels to their GEOID formats
     GEOID_FORMATS = {
+        'state': {
+            'length': 2,  # SS (State FIPS)
+            'source_columns': ['state'],
+            'target_columns': ['state_fips'],
+            'format': lambda x: str(x.get('state', '')).zfill(2)
+        },
         'county': {
             'length': 5,  # SSCCC (State + County)
             'source_columns': ['state', 'county'],

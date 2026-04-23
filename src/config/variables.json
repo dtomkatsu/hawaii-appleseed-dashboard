@@ -13,24 +13,53 @@
       "order": 3
     }
   },
-
   "info_panel_categories": {
-    "Economic Security": { "order": 1 },
-    "Food Security": { "order": 2 },
-    "Housing": { "order": 3 },
-    "Transportation": { "order": 4 },
-    "Education": { "order": 5 },
-    "Tax Credits": { "order": 6 }
+    "Economic Security": {
+      "order": 1
+    },
+    "Food Security": {
+      "order": 2
+    },
+    "Housing": {
+      "order": 3
+    },
+    "Transportation": {
+      "order": 4
+    },
+    "Education": {
+      "order": 5
+    },
+    "Tax Credits": {
+      "order": 6
+    }
   },
-
   "fact_sheet_categories": {
-    "demographics": { "label": "Demographics", "order": 1, "data_key": "demographics" },
-    "economic": { "label": "Economic", "order": 2, "data_key": "economic" },
-    "housing": { "label": "Housing", "order": 3, "data_key": "housing" },
-    "snap": { "label": "SNAP Benefits", "order": 4, "data_key": "snap" },
-    "tax_credits": { "label": "Tax Credits", "order": 5, "data_key": "tax_credits" }
+    "demographics": {
+      "label": "Demographics",
+      "order": 1,
+      "data_key": "demographics"
+    },
+    "economic": {
+      "label": "Economic",
+      "order": 2,
+      "data_key": "economic"
+    },
+    "housing": {
+      "label": "Housing",
+      "order": 3,
+      "data_key": "housing"
+    },
+    "snap": {
+      "label": "SNAP Benefits",
+      "order": 4,
+      "data_key": "snap"
+    },
+    "tax_credits": {
+      "label": "Tax Credits",
+      "order": 5,
+      "data_key": "tax_credits"
+    }
   },
-
   "variables": {
     "alice_rate": {
       "display_name": "ALICE Households",
@@ -49,10 +78,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "alice_rate",
       "legend_direction": "down",
-      "source": "United Way ALICE Report 2023"
+      "source": "United Way ALICE Report 2023",
+      "data_source": "alice"
     },
     "poverty_rate": {
       "display_name": "Poverty Rate",
@@ -71,10 +111,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "poverty_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "median_income": {
       "display_name": "Median Income",
@@ -93,10 +144,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000],
+      "color_thresholds": [
+        40000,
+        50000,
+        60000,
+        70000,
+        80000,
+        90000,
+        100000,
+        110000,
+        120000
+      ],
       "csv_column": "median_income",
       "legend_direction": "up",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "unemployment_rate": {
       "display_name": "Unemployment Rate",
@@ -115,10 +177,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "unemployment_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "ctc_avg_amount": {
       "display_name": "Avg Child Tax Credit",
@@ -137,10 +210,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000],
+      "color_thresholds": [
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+        2000,
+        2500,
+        3000,
+        4000
+      ],
       "csv_column": "ctc_avg_amount",
       "legend_direction": "up",
-      "source": "IRS Statistics of Income 2021"
+      "source": "IRS Statistics of Income 2021",
+      "data_source": "tax_credits"
     },
     "ctc_participation_rate": {
       "display_name": "CTC Participation",
@@ -159,10 +243,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [5, 8, 10, 12, 15, 18, 20, 22, 25],
+      "color_thresholds": [
+        5,
+        8,
+        10,
+        12,
+        15,
+        18,
+        20,
+        22,
+        25
+      ],
       "csv_column": "ctc_participation_rate",
       "legend_direction": "up",
-      "source": "IRS Statistics of Income 2021"
+      "source": "IRS Statistics of Income 2021",
+      "data_source": "tax_credits"
     },
     "federal_eitc_avg_amount": {
       "display_name": "Avg Federal EITC",
@@ -181,10 +276,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000],
+      "color_thresholds": [
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+        2000,
+        2500,
+        3000,
+        4000
+      ],
       "csv_column": "federal_eitc_avg_amount",
       "legend_direction": "up",
-      "source": "IRS Statistics of Income 2021"
+      "source": "IRS Statistics of Income 2021",
+      "data_source": "tax_credits"
     },
     "eitc_participation_rate": {
       "display_name": "EITC Participation",
@@ -203,10 +309,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [5, 8, 10, 12, 15, 18, 20, 22, 25],
+      "color_thresholds": [
+        5,
+        8,
+        10,
+        12,
+        15,
+        18,
+        20,
+        22,
+        25
+      ],
       "csv_column": "eitc_participation_rate",
       "legend_direction": "up",
-      "source": "IRS Statistics of Income 2021"
+      "source": "IRS Statistics of Income 2021",
+      "data_source": "tax_credits"
     },
     "state_eitc_avg_amount": {
       "display_name": "Avg State EITC",
@@ -225,10 +342,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000],
+      "color_thresholds": [
+        500,
+        750,
+        1000,
+        1250,
+        1500,
+        2000,
+        2500,
+        3000,
+        4000
+      ],
       "csv_column": "state_eitc_avg_amount",
       "legend_direction": "up",
-      "source": "IRS Statistics of Income 2021"
+      "source": "IRS Statistics of Income 2021",
+      "data_source": "tax_credits"
     },
     "snap_household_rate": {
       "display_name": "SNAP Households",
@@ -247,10 +375,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "snap_household_rate",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023"
+      "source": "USDA SNAP Data 2023",
+      "data_source": "snap"
     },
     "snap_benefit_annual_per_household": {
       "display_name": "Avg Annual SNAP Benefit",
@@ -269,10 +408,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "snap_benefit_annual_per_household",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023"
+      "source": "USDA SNAP Data 2023",
+      "data_source": "snap"
     },
     "snap_benefits_annual_total": {
       "display_name": "Total Annual SNAP Benefits",
@@ -291,10 +441,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [1000000, 2000000, 5000000, 10000000, 15000000, 20000000, 30000000, 50000000, 75000000],
+      "color_thresholds": [
+        1000000,
+        2000000,
+        5000000,
+        10000000,
+        15000000,
+        20000000,
+        30000000,
+        50000000,
+        75000000
+      ],
       "csv_column": "snap_benefits_annual_total",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023"
+      "source": "USDA SNAP Data 2023",
+      "data_source": "snap"
     },
     "cep_percentage": {
       "display_name": "Schools with CEP",
@@ -313,10 +474,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [10, 20, 30, 40, 50, 60, 70, 80, 90],
+      "color_thresholds": [
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90
+      ],
       "csv_column": "cep_percentage",
       "legend_direction": "up",
-      "source": "Hawaii DOE 2024"
+      "source": "Hawaii DOE CEP Data 2023",
+      "data_source": "cep"
     },
     "cep_display": {
       "display_name": "CEP Schools",
@@ -335,10 +507,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [10, 20, 30, 40, 50, 60, 70, 80, 90],
+      "color_thresholds": [
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90
+      ],
       "csv_column": "cep_display",
       "legend_direction": "up",
-      "source": "Hawaii DOE 2024"
+      "source": "Hawaii DOE CEP Data 2023",
+      "data_source": "cep"
     },
     "median_rent": {
       "display_name": "Median Rent",
@@ -357,10 +540,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": false,
       "is_special_variable": true,
-      "color_thresholds": [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
+      "color_thresholds": [
+        1000,
+        1500,
+        2000,
+        2500,
+        3000,
+        3500,
+        4000,
+        4500,
+        5000
+      ],
       "csv_column": "median_rent",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "rent_burden_rate": {
       "display_name": "Housing Cost Burden",
@@ -379,10 +573,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "rent_burden_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "travel_time_to_work_minutes": {
       "display_name": "Average Travel Time to Work",
@@ -401,10 +606,17 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": true,
       "is_special_variable": true,
-      "color_thresholds": [30, 35, 40, 45, 50],
+      "color_thresholds": [
+        30,
+        35,
+        40,
+        45,
+        50
+      ],
       "csv_column": "travel_time_to_work_minutes",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "public_transportation_pct": {
       "display_name": "Public Transportation %",
@@ -423,10 +635,17 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": false,
       "is_special_variable": false,
-      "color_thresholds": [0.5, 1.0, 2.0, 4.0, 6.0],
+      "color_thresholds": [
+        0.5,
+        1.0,
+        2.0,
+        4.0,
+        6.0
+      ],
       "csv_column": "public_transportation_pct",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "median_home_value": {
       "display_name": "Median Home Value",
@@ -445,10 +664,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [40000, 50000, 60000, 70000, 80000, 90000, 100000, 110000, 120000],
+      "color_thresholds": [
+        40000,
+        50000,
+        60000,
+        70000,
+        80000,
+        90000,
+        100000,
+        110000,
+        120000
+      ],
       "csv_column": "median_home_value",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "renter_rate": {
       "display_name": "Renter-Occupied",
@@ -467,10 +697,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": false,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "renter_rate",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "college_educated_pct": {
       "display_name": "College Educated",
@@ -489,10 +730,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": true,
       "is_special_variable": false,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 35, 40, 45],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45
+      ],
       "csv_column": "college_educated_pct",
       "legend_direction": "up",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "cep_schools": {
       "display_name": "Number of CEP Schools",
@@ -511,10 +763,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": false,
       "is_special_variable": true,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 40, 50, 60],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        40,
+        50,
+        60
+      ],
       "csv_column": "cep_schools",
       "legend_direction": "neutral",
-      "source": "Hawaii DOE 2024"
+      "source": "Hawaii DOE CEP Data 2023",
+      "data_source": "cep"
     },
     "total_schools": {
       "display_name": "Total Number of Schools",
@@ -533,10 +796,21 @@
       "show_in_fact_sheet": false,
       "show_in_default_metrics": false,
       "is_special_variable": true,
-      "color_thresholds": [5, 10, 15, 20, 25, 30, 40, 50, 60],
+      "color_thresholds": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        40,
+        50,
+        60
+      ],
       "csv_column": "total_schools",
       "legend_direction": "neutral",
-      "source": "Hawaii DOE 2024"
+      "source": "Hawaii DOE CEP Data 2023",
+      "data_source": "cep"
     },
     "population": {
       "display_name": "Total Population",
@@ -555,10 +829,21 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": false,
       "is_special_variable": false,
-      "color_thresholds": [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000],
+      "color_thresholds": [
+        0,
+        1000,
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000
+      ],
       "csv_column": "population",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     },
     "median_age": {
       "display_name": "Median Age",
@@ -577,12 +862,32 @@
       "show_in_fact_sheet": true,
       "show_in_default_metrics": false,
       "is_special_variable": false,
-      "color_thresholds": [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000],
+      "color_thresholds": [
+        0,
+        1000,
+        5000,
+        10000,
+        25000,
+        50000,
+        100000,
+        250000,
+        500000
+      ],
       "csv_column": "median_age",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023"
+      "source": "American Community Survey 2023",
+      "data_source": "acs"
     }
   },
-
-  "default_color_thresholds": [0, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000]
+  "default_color_thresholds": [
+    0,
+    1000,
+    5000,
+    10000,
+    25000,
+    50000,
+    100000,
+    250000,
+    500000
+  ]
 }

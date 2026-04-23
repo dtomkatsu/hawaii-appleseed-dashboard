@@ -124,7 +124,7 @@ button[title="View app navigation"] {
     z-index: 1000 !important;
 }
 
-/* --- Layout and typography (Roboto) --------------------------------------- */
+/* --- Layout and typography (Inter) --------------------------------------- */
 
 /* Reset all vertical spacing */
 html, body, #root, #root > div, #root > div > div,
@@ -239,7 +239,7 @@ h1 {
     display: block;
     font-weight: 500;
     color: #2a5a0c;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 /* Hide the sidebar collapse control and its spacer */
@@ -263,7 +263,7 @@ div[data-testid="stSidebarNav"] {
     margin-top: -1rem;
 }
 
-/* Apply Roboto to specific elements */
+/* Apply Inter to specific elements */
 h1, h2, h3, h4, h5, h6,
 .stMarkdown h1,
 .stMarkdown h2,
@@ -271,7 +271,7 @@ h1, h2, h3, h4, h5, h6,
 .stMarkdown h4,
 .stMarkdown h5,
 .stMarkdown h6 {
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
 }
 
 /* Style form labels with higher specificity */
@@ -287,7 +287,7 @@ h1, h2, h3, h4, h5, h6,
 .stFileUploader > label,
 div[data-testid='stForm'] label,
 div[data-baseweb='form-control'] > div:first-child {
-    font-family: 'Roboto', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     color: #2a5a0c !important;
     font-weight: 600 !important;
 }

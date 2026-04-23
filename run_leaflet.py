@@ -18,7 +18,11 @@ st.set_page_config(
     page_title=get_string("app_title", "Hawaii Appleseed Dashboard"),
     page_icon=get_string("app_icon", "🌴"),
     layout="wide",
-    initial_sidebar_state="expanded",
+    # "collapsed" rather than "expanded": the app hides the sidebar entirely via
+    # CSS, and "expanded" causes Streamlit to render the initial HTML with the
+    # sidebar open — producing a brief flash on every rerun (cascade clicks
+    # reload the page via ?sel=, so each variable change retriggered the flash).
+    initial_sidebar_state="collapsed",
     menu_items={
         'Get Help': get_string("help_url", "https://www.hawaiiappleseed.org/"),
         'About': get_string("app_about", "### Hawaii Appleseed Dashboard")
@@ -28,6 +32,24 @@ st.set_page_config(
 # Suppress deprecation warnings
 import warnings
 warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+# Pre-hide the sidebar with the earliest possible inline style, before any
+# other app CSS loads. Cascade variable clicks cause a full page reload, so
+# any CSS loaded later in the page body leaves a brief window where the
+# sidebar is visible. This minimal rule beats that race.
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"] {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Import and apply full-width layout utility
 from src.ui.full_width_utils import set_full_width_layout

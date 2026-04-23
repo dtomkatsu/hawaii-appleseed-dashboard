@@ -83,7 +83,7 @@ class LeafletMapComponent:
                 border: 1px solid rgba(0, 0, 0, 0.1);
                 z-index: 1000;
                 max-width: 180px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             }
             .info-panel {
                 width: 0;
@@ -92,7 +92,7 @@ class LeafletMapComponent:
                 overflow-x: hidden;  /* Prevent horizontal scrolling */
                 background: rgba(255, 255, 255, 0.98);
                 box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 font-size: 13px;
                 line-height: 1.4;
                 color: #333;
@@ -234,7 +234,7 @@ class LeafletMapComponent:
             .custom-popup .leaflet-popup-content {
                 margin: 10px 12px;
                 line-height: 1.4;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             }
             .custom-tooltip {
                 background-color: rgba(255, 255, 255, 0.97);
@@ -242,7 +242,7 @@ class LeafletMapComponent:
                 border-radius: 6px;
                 box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
                 padding: 8px 12px;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 font-size: 13px;
                 line-height: 1.3;
                 white-space: nowrap;
@@ -1188,7 +1188,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-19-v25"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-22-v27"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:

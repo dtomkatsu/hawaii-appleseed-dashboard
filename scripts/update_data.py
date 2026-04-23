@@ -37,6 +37,7 @@ from src.data.data_source_registry import (
     set_year,
     get_year,
     get_census_variables,
+    _BASE_DIR,
 )
 
 logging.basicConfig(
@@ -110,9 +111,22 @@ def cmd_fetch_acs(year: int, api_key: str):
         "senate": "state_upper",
     }
 
+    # Resolve output paths using the *target* year, not the year currently in
+    # data_sources.json (get_file_path reads the config's year, which we only
+    # bump on full success).
+    acs_info = get_source_info("acs")
+    file_patterns = acs_info["file_patterns"]
+    subdir = acs_info.get("subdirectory", "")
+    base = _BASE_DIR / "data" / "processed"
+    output_paths = {
+        level: (base / subdir / file_patterns[level].format(year=year))
+        if subdir else (base / file_patterns[level].format(year=year))
+        for level in geo_levels
+    }
+
     success_count = 0
     for level in geo_levels:
-        output_path = get_file_path("acs", level)
+        output_path = output_paths[level]
         output_path.parent.mkdir(parents=True, exist_ok=True)
         api_level = api_level_map[level]
         print(f"  Fetching {level} ({api_level})…", end=" ", flush=True)
