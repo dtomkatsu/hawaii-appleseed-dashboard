@@ -382,7 +382,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
             geo_name = geo_name.replace('Senate District', 'State Senate District')
     
     # Store original name for title
-    fact_sheet_title = f"Hawaiʻi Appleseed Fact Sheet: {geo_name}"
+    fact_sheet_title = f"Fact Sheet: {geo_name}"
     
     # Debug: Print the final title
     print(f"DEBUG: Final fact_sheet_title: '{fact_sheet_title}'")
