@@ -346,51 +346,71 @@ def _cascade_css() -> str:
       .cascade-menu > li:nth-child(7) { animation-delay: 0.22s; }
       .cascade-menu > li:nth-child(n+8) { animation-delay: 0.25s; }
 
-      /* Leaf + parent row layout. Transparent left border holds the
-         green accent that slides in on hover. */
+      /* Leaf + parent row layout. Tight symmetric padding; the green
+         accent that slides in on hover is an absolutely positioned
+         pseudo-element (see ::before below), so it costs no layout
+         space and items don't reserve a left gutter for it. */
       .cascade-leaf > a,
       .cascade-parent > .cascade-label {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 16px;
+        padding: 9px 12px;
         color: rgba(19, 52, 59, 1);
         text-decoration: none;
-        border-left: 4px solid transparent;
-        transition: background 0.22s ease, padding-left 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+        transition: background 0.22s ease, color 0.22s ease;
         white-space: nowrap;
         font-weight: 500;
       }
       .cascade-parent > .cascade-label { cursor: default; }
 
+      /* Hover accent stripe — absolutely positioned on the <li>, so it
+         never pushes content sideways. Transparent by default; turns
+         green on hover. */
+      .cascade-leaf > a::before,
+      .cascade-parent > .cascade-label::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 4px;
+        bottom: 4px;
+        width: 3px;
+        background: transparent;
+        border-radius: 0 2px 2px 0;
+        transition: background 0.22s ease;
+        pointer-events: none;
+      }
+      .cascade-leaf:hover > a::before,
+      .cascade-parent:hover > .cascade-label::before {
+        background: #3a7710;
+      }
+
       /* Hover background — gradient wash (strong on left, fades right).
-         Pairs with the green accent bar to create a "light sweeping in
-         from the left" feel. */
+         No padding shift now since the stripe is absolute. */
       .cascade-leaf:hover > a,
       .cascade-parent:hover > .cascade-label {
         background: linear-gradient(90deg, rgba(58, 119, 16, 0.18) 0%, rgba(58, 119, 16, 0.04) 60%, rgba(58, 119, 16, 0) 100%);
-        padding-left: 24px;
-        border-left-color: #3a7710;
         color: #1f3d10;
       }
 
-      /* Selected leaf — persistent green dot in the left margin
-         (positioned in the 16px padding, outside the text baseline). */
+      /* Selected leaf — moved to ::after so ::before stays free for the
+         accent stripe. Persistent green dot at the left edge of the row. */
       .cascade-leaf--selected > a {
         color: #2a5a0c;
         font-weight: 600;
       }
-      .cascade-leaf--selected > a::before {
+      .cascade-leaf--selected > a::after {
         content: '';
         position: absolute;
-        left: 6px;
+        left: 4px;
         top: 50%;
         transform: translateY(-50%);
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
         border-radius: 50%;
         background: #3a7710;
         box-shadow: 0 0 0 2px rgba(58, 119, 16, 0.15);
+        pointer-events: none;
       }
 
       /* Parent caret — small chevron that rotates from ▸ (pointing right)
