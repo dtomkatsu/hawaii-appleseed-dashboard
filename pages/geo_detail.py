@@ -13,7 +13,11 @@ from pathlib import Path
 
 # Import data loader and other utilities
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(_PROJECT_ROOT)
+# Also add src/ so bare `from config.x import y` calls inside src modules resolve
+# when this page is loaded directly (e.g. via /geo_detail link in a new tab).
+sys.path.insert(0, os.path.join(_PROJECT_ROOT, "src"))
 from src.data.data_loader import DataLoader
 from src.ui.full_width_utils import set_full_width_layout
 
@@ -398,6 +402,13 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
     # Format rates and fractions
     alice_rate_value = geo_data.get('economic', {}).get('alice_rate', 0)
     alice_rate = format_number(alice_rate_value, is_percent=True)
+    # Dynamic fraction text matching the alice rate (e.g. "over 1 in 2 households").
+    # Falls back to a neutral phrasing when ALICE data is missing for this geography.
+    try:
+        _alice_numeric = float(alice_rate_value) if alice_rate_value is not None else 0
+    except (ValueError, TypeError):
+        _alice_numeric = 0
+    alice_fraction_text = get_fraction_text(_alice_numeric, "households") or "many households"
     
     # Get tax credit data
     tax_credit_data = geo_data.get('tax_credits', {})
@@ -743,7 +754,7 @@ def generate_fact_sheet_html(geo_data: Dict[str, Any]) -> str:
                 <!-- Did You Know Section -->
                 <div class="did-you-know">
                     <h3>Did you know?</h3>
-                    <p>over 3 in 7 households ({alice_rate}) households are employed, yet struggling to make ends meet.</p>
+                    <p>{alice_fraction_text} ({alice_rate}) are employed, yet struggling to make ends meet.</p>
                 </div>
                 
                 <!-- Stats Row -->
