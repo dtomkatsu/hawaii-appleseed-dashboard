@@ -184,6 +184,7 @@ class DataMerger:
         possible_cols = [
             'state legislative district (lower chamber)',
             'state legislative district (upper chamber)',
+            'sldlst', 'sldust',
             'district', 'DISTRICT'
         ]
         

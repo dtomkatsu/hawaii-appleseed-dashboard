@@ -1188,7 +1188,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-22-v27"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-23-v28"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
