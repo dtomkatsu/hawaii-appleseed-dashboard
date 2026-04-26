@@ -432,6 +432,49 @@ def _cascade_css() -> str:
     """
 
 
+_VALID_COLOR_SCHEMES = {"blue", "green", "red", "purple"}
+
+
+def _current_active_var() -> str | None:
+    """The currently-selected variable across all three mutually-exclusive
+    dropdown groups (Econ / Food / H&T), or None if nothing is selected."""
+    return (
+        st.session_state.get("selected_variable")
+        or st.session_state.get("selected_food_security_variable")
+        or st.session_state.get("selected_housing_transportation_variable")
+    )
+
+
+def _build_state_query_string() -> str:
+    """Build a "&k=v&k=v..." suffix that round-trips current session
+    state through cascade-link URLs.
+
+    Why: the cascade renders <a href="?sel=..."> links. Clicking one
+    triggers a real browser navigation, which Streamlit treats as a
+    refresh — session state is cleared on the new connection. Without
+    this preservation, every cascade click resets active_layer to its
+    init default ('Counties' from run_leaflet.py), even if the user
+    had selected House/Senate Districts. Same for the active variable
+    when the user clicks a Geography option.
+
+    Each click URL therefore carries a snapshot of layer + var + color,
+    which the router (_route_cascade_click_from_url) re-applies BEFORE
+    handling the click, so the new click's effect is the only thing
+    that overrides the snapshot.
+    """
+    parts = []
+    layer = st.session_state.get("active_layer")
+    if layer:
+        parts.append(f"layer={quote(layer, safe='')}")
+    var = _current_active_var()
+    if var:
+        parts.append(f"var={quote(var, safe='')}")
+    color = st.session_state.get("color_scheme")
+    if color:
+        parts.append(f"color={quote(color, safe='')}")
+    return ("&" + "&".join(parts)) if parts else ""
+
+
 def _render_cascade_menu(
     items: list,
     current_key: str | None = None,
@@ -477,6 +520,13 @@ def _render_cascade_menu(
     else:
         selected_match_key = None
 
+    # Build the state-preservation suffix that every link carries. The
+    # cascade uses <a href="?sel=..."> which triggers a full browser
+    # navigation; Streamlit treats that as a refresh and clears session
+    # state. So we must round-trip every piece of state we want kept
+    # through the URL itself, not session state.
+    preserved = _build_state_query_string()
+
     def render_items(items):
         parts = ['<ul class="cascade-menu">']
         for item in items:
@@ -496,7 +546,7 @@ def _render_cascade_menu(
                 extra_cls = " cascade-leaf--selected" if item["key"] == selected_match_key else ""
                 parts.append(
                     f'<li class="cascade-leaf{extra_cls}">'
-                    f'<a href="?sel={encoded}" target="_self">{item["label"]}</a>'
+                    f'<a href="?sel={encoded}{preserved}" target="_self">{item["label"]}</a>'
                     '</li>'
                 )
         parts.append('</ul>')
@@ -515,45 +565,17 @@ def _render_cascade_menu(
     st.html(html)
 
 
-def _route_cascade_click_from_url() -> None:
-    """Process ?sel=<key> from the URL and write to session state.
-
-    Two key shapes are recognized:
-      * "layer:<Name>" — Geography layer toggle (e.g. "layer:Counties").
-        Updates active_layer; doesn't touch variable selections.
-      * plain variable key — looked up in the variable registry and
-        routed to the session key matching its dropdown_group. Preserves
-        mutual exclusivity across the three variable groups
-        (economic_security / food_security / housing_transportation).
-    """
-    qp = st.query_params
-    if "sel" not in qp:
-        return
-
-    raw = qp["sel"]
-
-    # Geography layer selection.
-    if raw.startswith("layer:"):
-        layer_name = raw[len("layer:"):]
-        if layer_name in _GEOGRAPHY_LAYER_OPTIONS:
-            st.session_state["active_layer"] = layer_name
-        st.query_params.clear()
-        return
-
-    # Variable selection.
-    key = raw
+def _apply_var_to_session_state(key: str) -> None:
+    """Set the variable session-state slot for a given variable key,
+    clearing the other two groups so mutual exclusivity holds. No-op if
+    key isn't a known variable."""
     all_vars = get_all_variables()
     if key not in all_vars:
-        st.query_params.clear()
         return
-
-    group = all_vars[key].get("dropdown_group")
-
-    # Wipe all three selection keys first; then set the one matching.
     st.session_state["selected_variable"] = None
     st.session_state["selected_food_security_variable"] = None
     st.session_state["selected_housing_transportation_variable"] = None
-
+    group = all_vars[key].get("dropdown_group")
     if group == "economic_security":
         st.session_state["selected_variable"] = key
     elif group == "food_security":
@@ -561,7 +583,57 @@ def _route_cascade_click_from_url() -> None:
     elif group == "housing_transportation":
         st.session_state["selected_housing_transportation_variable"] = key
 
-    # Drop the URL param so a refresh doesn't re-fire the selection.
+
+def _route_cascade_click_from_url() -> None:
+    """Process the URL params from a cascade click and write them to
+    session state.
+
+    Param shape (set by _render_cascade_menu's <a href> generation):
+      * sel=<key>           — the clicked target. Either "layer:<Name>"
+                              or a plain variable key.
+      * layer=<Name>        — preserved Geography layer (state survival).
+      * var=<key>           — preserved active variable (state survival).
+      * color=<scheme>      — preserved color scheme (state survival).
+
+    Apply order matters: first restore the preserved snapshot (layer/var/
+    color), THEN apply the clicked sel — so the click overrides the
+    snapshot but unrelated state stays put. Without the preservation
+    pass, a navigation-driven session-state reset on Cloud Run would
+    silently drop the user's geography or variable on every click.
+    """
+    qp = st.query_params
+    if not any(k in qp for k in ("sel", "layer", "var", "color")):
+        return
+
+    # ── 1. Restore preserved state (snapshot from prior click) ────────
+    if "layer" in qp:
+        layer_name = qp["layer"]
+        if layer_name in _GEOGRAPHY_LAYER_OPTIONS:
+            st.session_state["active_layer"] = layer_name
+
+    if "var" in qp:
+        _apply_var_to_session_state(qp["var"])
+
+    if "color" in qp:
+        color = qp["color"]
+        if color in _VALID_COLOR_SCHEMES:
+            st.session_state["color_scheme"] = color
+
+    # ── 2. Apply the actual click action (sel) ────────────────────────
+    if "sel" in qp:
+        raw = qp["sel"]
+
+        if raw.startswith("layer:"):
+            # Geography layer change: only set active_layer; the var
+            # snapshot above already restored variable selections.
+            layer_name = raw[len("layer:"):]
+            if layer_name in _GEOGRAPHY_LAYER_OPTIONS:
+                st.session_state["active_layer"] = layer_name
+        else:
+            # Variable change: replaces whatever var the snapshot restored.
+            _apply_var_to_session_state(raw)
+
+    # Drop the URL params so a refresh doesn't re-fire the click.
     st.query_params.clear()
 
 
