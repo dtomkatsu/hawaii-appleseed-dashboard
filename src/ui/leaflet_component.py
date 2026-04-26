@@ -382,11 +382,15 @@ class LeafletMapComponent:
                         variableType.includes('percent')) {{
                         return numValue.toFixed(1) + '%';
                     }} 
-                    // Check for currency types — always round to nearest dollar
+                    // Check for currency types — always round to nearest dollar.
+                    // Caller may pass the data_type ('currency') OR the variable
+                    // key (e.g. 'ctc_avg_amount'); cover both by also matching
+                    // the substrings that appear in currency variable keys.
                     else if (variableType === 'currency' ||
                              variableType.includes('income') ||
                              variableType.includes('value') ||
-                             variableType.includes('benefit')) {{
+                             variableType.includes('benefit') ||
+                             variableType.includes('amount')) {{
                         return '$' + Math.round(numValue).toLocaleString();
                     }}
                     // Check for minutes types
@@ -1188,7 +1192,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-25-v30"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-25-v31"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:

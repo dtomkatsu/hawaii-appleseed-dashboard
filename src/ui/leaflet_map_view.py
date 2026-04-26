@@ -346,44 +346,68 @@ def _cascade_css() -> str:
       .cascade-menu > li:nth-child(7) { animation-delay: 0.22s; }
       .cascade-menu > li:nth-child(n+8) { animation-delay: 0.25s; }
 
-      /* Leaf + parent row layout. Transparent left border holds the
-         green accent that slides in on hover. */
+      /* Leaf + parent row layout. Tighter left padding than before;
+         the green accent on hover is delivered by the ::before pseudo
+         below (absolutely positioned, no layout cost) instead of a
+         reserved transparent border. The slide-on-hover animation and
+         gradient wash are preserved exactly. */
       .cascade-leaf > a,
       .cascade-parent > .cascade-label {
+        position: relative;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 16px;
+        padding: 10px 14px;
         color: rgba(19, 52, 59, 1);
         text-decoration: none;
-        border-left: 4px solid transparent;
-        transition: background 0.22s ease, padding-left 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+        transition: background 0.22s ease, padding-left 0.22s ease, color 0.22s ease;
         white-space: nowrap;
         font-weight: 500;
       }
       .cascade-parent > .cascade-label { cursor: default; }
 
-      /* Hover background — gradient wash (strong on left, fades right).
-         Pairs with the green accent bar to create a "light sweeping in
-         from the left" feel. */
+      /* Hover accent stripe — replaces the old border-left:4px transparent.
+         Sits absolutely at the very left edge of each row so it never
+         pushes content sideways. Transparent by default; turns green on
+         hover (matched to the row's color transition). */
+      .cascade-leaf > a::before,
+      .cascade-parent > .cascade-label::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: transparent;
+        transition: background 0.22s ease;
+        pointer-events: none;
+      }
+      .cascade-leaf:hover > a::before,
+      .cascade-parent:hover > .cascade-label::before {
+        background: #3a7710;
+      }
+
+      /* Hover background — gradient wash + a +6px slide-right. Kept
+         (slightly tightened) so hover still has the bold "light sweeping
+         in from the left" feel instead of just a subtle tint. */
       .cascade-leaf:hover > a,
       .cascade-parent:hover > .cascade-label {
         background: linear-gradient(90deg, rgba(58, 119, 16, 0.18) 0%, rgba(58, 119, 16, 0.04) 60%, rgba(58, 119, 16, 0) 100%);
-        padding-left: 24px;
-        border-left-color: #3a7710;
+        padding-left: 20px;
         color: #1f3d10;
       }
 
-      /* Selected leaf — persistent green dot in the left margin
-         (positioned in the 16px padding, outside the text baseline). */
+      /* Selected leaf — moved to ::after (so ::before stays free for the
+         accent stripe). Kept at full 6×6 size to preserve the prior
+         visual weight; just nudged 2px inward to fit the tighter padding. */
       .cascade-leaf--selected > a {
         color: #2a5a0c;
         font-weight: 600;
       }
-      .cascade-leaf--selected > a::before {
+      .cascade-leaf--selected > a::after {
         content: '';
         position: absolute;
-        left: 6px;
+        left: 4px;
         top: 50%;
         transform: translateY(-50%);
         width: 6px;
@@ -391,6 +415,7 @@ def _cascade_css() -> str:
         border-radius: 50%;
         background: #3a7710;
         box-shadow: 0 0 0 2px rgba(58, 119, 16, 0.15);
+        pointer-events: none;
       }
 
       /* Parent caret — small chevron that rotates from ▸ (pointing right)
@@ -1350,17 +1375,25 @@ def create_data_summary():
             num_items = len(sorted_data)
 
             bar_color = '#4a8c64'
+
+            # Hover + bar-label formats. For currency, round to nearest
+            # dollar (otherwise raw floats like 1039.2409 leak through);
+            # for percent, one decimal; everything else, default.
+            if unit == '$':
+                hover_value_fmt = '$%{y:,.0f}'
+                text_template = '$%{text:,.0f}'
+            elif unit == '%':
+                hover_value_fmt = '%{y:.1f}%'
+                text_template = '%{text:.1f}%'
+            else:
+                hover_value_fmt = '%{y}'
+                text_template = '%{text:.1f}'
+
             hover_template = (
                 f"<b>%{{x}}</b><br>"
-                f"{var_label_short}: %{{y}}<br>"
+                f"{var_label_short}: {hover_value_fmt}<br>"
                 f"<extra></extra>"
             )
-
-            # Bar label format: include unit symbol if available
-            if unit in ('%', '$'):
-                text_template = f'%{{text:.1f}}{unit}' if unit == '%' else f'{unit}%{{text:,.0f}}'
-            else:
-                text_template = '%{text:.1f}'
 
             fig = px.bar(
                 sorted_data,
@@ -1397,6 +1430,10 @@ def create_data_summary():
                     title_text=var_label_long,
                     title_font=dict(size=11, color='#666'),
                     tickfont=dict(size=10),
+                    # Match the rounding used by hover/text labels so the
+                    # axis doesn't show fractional dollars while the bar
+                    # tops show whole dollars.
+                    tickformat=('$,d' if unit == '$' else (None if unit == '%' else None)),
                 ),
                 xaxis=dict(title_text='', showgrid=False),
                 margin=dict(l=55, r=20, t=50, b=60 if num_items <= 10 else 28),
@@ -1442,13 +1479,21 @@ def create_data_summary():
     with table_col:
         st.markdown('<p class="da-section-label" style="margin-top:2.3rem">Selected variable</p>', unsafe_allow_html=True)
         display_cols = [c for c in ['name', selected_variable] if c in data.columns]
+        # Format matches unit: dollars get rounded ($1,039), percents one
+        # decimal (12.5), everything else one decimal as before.
+        if unit == '$':
+            value_format = '$%d'
+        elif unit == '%':
+            value_format = '%.1f%%'
+        else:
+            value_format = '%.1f'
         st.dataframe(
             data[display_cols],
             height=400,
             use_container_width=True,
             column_config={
                 'name': st.column_config.TextColumn('Area'),
-                selected_variable: st.column_config.NumberColumn(var_label_long, format='%.1f'),
+                selected_variable: st.column_config.NumberColumn(var_label_long, format=value_format),
             },
         )
 
