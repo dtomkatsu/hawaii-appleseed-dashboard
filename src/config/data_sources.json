@@ -106,7 +106,7 @@
     "tax_credits": {
       "label": "IRS Statistics of Income",
       "short_label": "IRS SOI",
-      "year": 2021,
+      "year": 2022,
       "fetch_method": "manual",
       "description": "Tax credit data is sourced from IRS SOI data and Columbia Center on Poverty & Social Policy estimates.",
       "instructions": "Obtain updated tax credit estimates from the Columbia Center on Poverty & Social Policy (https://www.povertycenter.columbia.edu/) or IRS Statistics of Income. Save CSVs to data/processed/tax_credits/ following the naming pattern below. Required columns: geoid, ctc_avg_amount, ctc_participation_rate, federal_eitc_avg_amount, eitc_participation_rate, state_eitc_avg_amount.",

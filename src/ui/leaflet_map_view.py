@@ -82,7 +82,7 @@ def get_data_loader(_cache_version="v7"):
 
 # Bump this to bust _get_merged_geojson cache when the data pipeline changes.
 # The cache has no other invalidation key, so stale merged GeoJSON persists until bumped.
-_MERGED_GEOJSON_VERSION = "2026-04-23-v4"
+_MERGED_GEOJSON_VERSION = "2026-04-25-v5"
 
 
 @st.cache_data(show_spinner=False)
