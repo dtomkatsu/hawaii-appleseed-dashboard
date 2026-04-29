@@ -475,25 +475,22 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  /* Taller strip than the displacement-era version (25px → 42px) — with
-     no refraction selling the medium, the glass needs more vertical
-     real estate for the meniscus + specular gradient to read. */
   height: 42px;
   pointer-events: none;
   z-index: 500;
-  /* Liquid-glass stack (Apple-style):
-     - url(#liquidGlass) — smooth, low-frequency, blur-softened noise
-       drives feDisplacementMap as a normal map, so pixels under the
-       strip bend along gentle lensing curves. Reads as refraction
-       through curved glass, not turbulent water.
-     - saturate(1.28) contrast(1.08) brightness(1.04) — slight chroma
-       and tone pop, mimicking how a real glass meniscus enhances
-       (rather than mutes) what's behind it. */
-  -webkit-backdrop-filter: url(#liquidGlass) saturate(1.28) contrast(1.08) brightness(1.04);
-          backdrop-filter: url(#liquidGlass) saturate(1.28) contrast(1.08) brightness(1.04);
 }
 .map-wrap::before {
   top: 0;
+  /* Top strip backdrop-filter chain:
+     - url(#liquidGlassTop): pre-computed gradient displacement map,
+       refracts pixels purely vertically — strongest at the rim,
+       zero in the interior. The gradient (G channel only) is what
+       gives clean lensing instead of the wavy turbulence look.
+     - saturate(1.25) contrast(1.07) brightness(1.04): glass-clarity
+       bumps so map content under the strip pops slightly rather
+       than muting. */
+  -webkit-backdrop-filter: url(#liquidGlassTop) saturate(1.25) contrast(1.07) brightness(1.04);
+          backdrop-filter: url(#liquidGlassTop) saturate(1.25) contrast(1.07) brightness(1.04);
   /* Specular gradient: bright at the rim, fading inward — light
      catching the curve of a glass surface. With the linear mask
      applied below, the highlight is strongest at the edge and
@@ -513,6 +510,8 @@ body {
 }
 .map-wrap::after {
   bottom: 0;
+  -webkit-backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
+          backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
   background: linear-gradient(to top,
     rgba(255, 255, 255, 0.62) 0%,
     rgba(255, 255, 255, 0.26) 30%,
