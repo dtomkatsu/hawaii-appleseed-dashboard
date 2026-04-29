@@ -16,6 +16,16 @@
   box-sizing: border-box;
 }
 
+/* Inline SVG that only carries <filter> defs (referenced by CSS via
+   url(#...)). Pull it out of layout entirely — zero size, no flow. */
+.svg-filter-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 html,
 body {
   margin: 0;
@@ -471,12 +481,16 @@ body {
   height: 42px;
   pointer-events: none;
   z-index: 500;
-  /* Glass-clarity stack — no displacement, no blur. A real glass
-     meniscus enhances chroma and tone slightly rather than muddying
-     them; saturate/contrast/brightness do exactly that to the map
-     content beneath. */
-  -webkit-backdrop-filter: saturate(1.28) contrast(1.08) brightness(1.04);
-          backdrop-filter: saturate(1.28) contrast(1.08) brightness(1.04);
+  /* Liquid-glass stack (Apple-style):
+     - url(#liquidGlass) — smooth, low-frequency, blur-softened noise
+       drives feDisplacementMap as a normal map, so pixels under the
+       strip bend along gentle lensing curves. Reads as refraction
+       through curved glass, not turbulent water.
+     - saturate(1.28) contrast(1.08) brightness(1.04) — slight chroma
+       and tone pop, mimicking how a real glass meniscus enhances
+       (rather than mutes) what's behind it. */
+  -webkit-backdrop-filter: url(#liquidGlass) saturate(1.28) contrast(1.08) brightness(1.04);
+          backdrop-filter: url(#liquidGlass) saturate(1.28) contrast(1.08) brightness(1.04);
 }
 .map-wrap::before {
   top: 0;
