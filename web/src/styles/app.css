@@ -531,6 +531,11 @@ body {
 .map-wrap:has(.info-panel.visible)::before,
 .map-wrap:has(.info-panel.visible)::after {
   right: 360px;
+  /* Round the inner (right) end of each strip so it doesn't meet the
+     rim's outer (left) end as a square corner. With the rim pill-
+     shaped via .info-panel-glass-rim's border-radius, both pieces
+     end in matching curves and read as one continuous glass run. */
+  border-radius: 0 14px 14px 0;
 }
 .leaflet-container {
   background: white !important;
@@ -861,6 +866,12 @@ body {
   right: 360px;
   width: 25px;
   pointer-events: none;
+  /* Pill-shape: round the outer (top and bottom) ends so they don't
+     meet the map's top/bottom strips as a square 90° L-junction. The
+     inner (right) edge stays sharp — it has to sit flush against the
+     panel. Combined with the strips' rounded right ends below, the
+     corners flow as connected curves rather than two distinct tiles. */
+  border-radius: 14px 0 0 14px;
   /* Above the map (and the map's own top/bottom feather strips at
      z 500) but BELOW the info-panel (z 1001) so the panel still wins
      when they're touching. */
