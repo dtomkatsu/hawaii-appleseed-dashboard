@@ -1,9 +1,41 @@
+import L from 'leaflet';
 import { getState, setState } from '../state/store.js';
 import { showInfoPanel } from '../ui/infoPanel.js';
 
 let VARIABLES = null;
 let REP_DATA = {};
 let selectedLayer = null;
+
+const SmartTooltip = L.Tooltip.extend({
+  _updatePosition() {
+    if (this._map && this._container) {
+      const map = this._map;
+      const latlng = this._latlng || (this._source && this._source.getCenter && this._source.getCenter());
+      if (latlng) {
+        const layerPoint = map.latLngToLayerPoint(latlng);
+        const containerPoint = map.layerPointToContainerPoint(layerPoint);
+        const tooltipHeight = this._container.offsetHeight || 100;
+        const tooltipWidth = this._container.offsetWidth || 200;
+        const mapSize = map.getSize();
+        const margin = 10;
+
+        let dir = 'top';
+        if (containerPoint.y - tooltipHeight - margin < 0) dir = 'bottom';
+        if (dir === 'top' && containerPoint.y + margin > mapSize.y) dir = 'bottom';
+
+        if (containerPoint.x - tooltipWidth / 2 < margin) dir = 'right';
+        else if (containerPoint.x + tooltipWidth / 2 > mapSize.x - margin) dir = 'left';
+
+        this.options.direction = dir;
+        this.options.offset = L.point(
+          dir === 'left' ? -10 : dir === 'right' ? 10 : 0,
+          dir === 'top' ? -10 : dir === 'bottom' ? 10 : 0
+        );
+      }
+    }
+    L.Tooltip.prototype._updatePosition.call(this);
+  },
+});
 
 export function initPopup(variablesConfig, repData) {
   VARIABLES = variablesConfig.variables;
@@ -134,10 +166,12 @@ export function bindFeature(feature, layer) {
     },
   });
 
-  layer.bindTooltip(() => buildTooltipContent(feature.properties), {
+  const tooltip = new SmartTooltip({
     className: 'custom-tooltip',
-    direction: 'auto',
+    direction: 'top',
     offset: [0, -10],
     sticky: true,
   });
+  tooltip.setContent(() => buildTooltipContent(feature.properties));
+  layer.bindTooltip(tooltip);
 }
