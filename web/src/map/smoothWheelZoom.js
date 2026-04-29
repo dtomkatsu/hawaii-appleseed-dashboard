@@ -7,88 +7,77 @@ L.Map.mergeOptions({
 
 const SmoothWheelZoom = L.Handler.extend({
   addHooks() {
-    L.DomEvent.on(this._map._container, 'wheel', this._onWheelScroll, this);
+    L.DomEvent.on(this._map._container, 'wheel', this._onWheel, this);
   },
   removeHooks() {
-    L.DomEvent.off(this._map._container, 'wheel', this._onWheelScroll, this);
+    L.DomEvent.off(this._map._container, 'wheel', this._onWheel, this);
   },
-  _onWheelScroll(e) {
-    if (!this._isWheeling) this._onWheelStart(e);
-    this._onWheeling(e);
-  },
-  _onWheelStart(e) {
-    const map = this._map;
-    this._isWheeling = true;
-    this._wheelMousePosition = map.mouseEventToContainerPoint(e);
-    this._centerPoint = map.getSize()._divideBy(2);
-    this._startLatLng = map.containerPointToLatLng(this._centerPoint);
-    this._wheelStartLatLng = map.containerPointToLatLng(this._wheelMousePosition);
-    this._startZoom = map.getZoom();
-    this._zooming = true;
-    map._stop();
-    if (this._goalZoom == null) this._goalZoom = map.getZoom();
-    this._prevCenter = map.getCenter();
-    this._prevZoom = map.getZoom();
-    if (!this._frameId) {
-      this._frameId = requestAnimationFrame(this._update.bind(this));
-    }
-  },
-  _onWheeling(e) {
-    const map = this._map;
-    this._goalZoom += L.DomEvent.getWheelDelta(e) * 0.003 * map.options.smoothSensitivity;
-    this._goalZoom = map._limitZoom(this._goalZoom);
-    this._wheelMousePosition = map.mouseEventToContainerPoint(e);
-    clearTimeout(this._timeoutId);
-    this._timeoutId = setTimeout(this._onWheelEnd.bind(this), 200);
+
+  _onWheel(e) {
     L.DomEvent.preventDefault(e);
     L.DomEvent.stopPropagation(e);
-  },
-  _onWheelEnd() {
-    this._isWheeling = false;
-  },
-  _update() {
     const map = this._map;
-    if (!map.getCenter().equals(this._prevCenter) || map.getZoom() !== this._prevZoom) return;
+    const delta = L.DomEvent.getWheelDelta(e) * 0.003 * (map.options.smoothSensitivity || 1);
 
-    const currentZoom = map.getZoom();
-    const zoomDiff = this._goalZoom - currentZoom;
-    const settled = Math.abs(zoomDiff) < 0.005;
+    if (!this._active) {
+      this._fromZoom = map.getZoom();
+      this._viewZoom = this._fromZoom;
+      this._goalZoom = this._fromZoom;
+      this._mousePoint = map.mouseEventToContainerPoint(e);
+      this._mouseLatLng = map.containerPointToLatLng(this._mousePoint);
+      this._active = true;
+      this._wheeling = true;
+      map._stop();
+    } else {
+      this._wheeling = true;
+    }
 
-    if (settled && !this._isWheeling) {
-      if (this._moved) {
-        const delta = this._wheelMousePosition.subtract(this._centerPoint);
-        const finalCenter = map.unproject(
-          map.project(this._wheelStartLatLng, this._goalZoom).subtract(delta),
-          this._goalZoom,
-        );
-        map._move(finalCenter, this._goalZoom);
-        map._moveEnd(true);
-        this._moved = false;
-      }
-      this._frameId = null;
+    this._goalZoom = map._limitZoom(this._goalZoom + delta);
+
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => { this._wheeling = false; }, 200);
+
+    if (!this._raf) {
+      this._raf = requestAnimationFrame(() => this._tick());
+    }
+  },
+
+  _tick() {
+    this._raf = null;
+    if (!this._active) return;
+
+    const diff = this._goalZoom - this._viewZoom;
+    const settled = !this._wheeling && Math.abs(diff) < 0.005;
+
+    if (settled) {
+      this._viewZoom = this._goalZoom;
+      this._applyTransform();
+      this._settle();
       return;
     }
 
-    this._zoom = settled ? this._goalZoom : currentZoom + zoomDiff * 0.3;
-    this._zoom = Math.round(this._zoom * 1000) / 1000;
+    this._viewZoom += diff * 0.3;
+    this._applyTransform();
+    this._raf = requestAnimationFrame(() => this._tick());
+  },
 
-    const delta = this._wheelMousePosition.subtract(this._centerPoint);
-    if (delta.x === 0 && delta.y === 0) {
-      this._frameId = requestAnimationFrame(this._update.bind(this));
-      return;
-    }
-    this._center = map.unproject(
-      map.project(this._wheelStartLatLng, this._zoom).subtract(delta),
-      this._zoom,
-    );
-    if (!this._moved) {
-      map._moveStart(true, false);
-      this._moved = true;
-    }
-    map._move(this._center, this._zoom);
-    this._prevCenter = map.getCenter();
-    this._prevZoom = map.getZoom();
-    this._frameId = requestAnimationFrame(this._update.bind(this));
+  _applyTransform() {
+    const map = this._map;
+    const s = map.getZoomScale(this._viewZoom, this._fromZoom);
+    const mp = this._mousePoint;
+    L.DomUtil.setTransform(map._mapPane, L.point(mp.x * (1 - s), mp.y * (1 - s)), s);
+  },
+
+  _settle() {
+    const map = this._map;
+    L.DomUtil.setTransform(map._mapPane, L.point(0, 0), 1);
+    map._animatingZoom = false;
+    map.setZoomAround(this._mouseLatLng, this._goalZoom, { animate: false });
+    this._active = false;
+    this._raf = null;
+    this._goalZoom = null;
+    this._fromZoom = null;
+    this._viewZoom = null;
   },
 });
 
