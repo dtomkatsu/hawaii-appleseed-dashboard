@@ -530,12 +530,13 @@ body {
    without this). */
 .map-wrap:has(.info-panel.visible)::before,
 .map-wrap:has(.info-panel.visible)::after {
-  right: 360px;
-  /* Round the inner (right) end of each strip so it doesn't meet the
-     rim's outer (left) end as a square corner. With the rim pill-
-     shaped via .info-panel-glass-rim's border-radius, both pieces
-     end in matching curves and read as one continuous glass run. */
-  border-radius: 0 14px 14px 0;
+  /* Retract by 385px (rim 25 + panel 360) so the map strip's right
+     edge butts flush against the new top/bottom panel strips, which
+     start at right:0 width:385. Both pieces use #liquidGlassTop/
+     Bottom (same filter, same direction), so the boundary at
+     x = mapWidth - 385 reads as one continuous strip rather than
+     two segments. Border-radius removed — sharp flush meeting. */
+  right: 385px;
 }
 .leaflet-container {
   background: white !important;
@@ -815,8 +816,21 @@ body {
   top: 0;
   bottom: 0;
   width: 360px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.98);
+  /* Vertical padding bumped to 30 so content stays clear of the top/
+     bottom 25px transparent zones (the glass strips show through
+     those). Horizontal padding unchanged. */
+  padding: 30px 20px;
+  /* Bg is opaque only in the middle band (y = 25 → height-25); the
+     top and bottom 25px are transparent so the .info-panel-glass-top
+     and .info-panel-glass-bottom strips (at z 1000, behind the
+     panel's z 1001) refract the map content directly. */
+  background: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0) 25px,
+    rgba(255, 255, 255, 0.98) 25px,
+    rgba(255, 255, 255, 0.98) calc(100% - 25px),
+    rgba(255, 255, 255, 0) calc(100% - 25px),
+    rgba(255, 255, 255, 0) 100%);
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   overflow-x: hidden;
@@ -828,18 +842,18 @@ body {
   color: #333;
   scrollbar-width: none;
   visibility: hidden;
-  /* Top/bottom scroll-edge feather. Content fades in/out as it crosses
-     the visible region instead of being clipped abruptly by the panel
-     border. Side edges stay solid so the panel itself reads as a card. */
+  /* Mask fade extended to 25px (was 16) so it lines up with the bg's
+     transparent zone — content scrolling near the rim fades out
+     before crossing into the glass-strip area. */
   -webkit-mask-image: linear-gradient(to bottom,
     transparent 0,
-    black 16px,
-    black calc(100% - 16px),
+    black 25px,
+    black calc(100% - 25px),
     transparent 100%);
           mask-image: linear-gradient(to bottom,
     transparent 0,
-    black 16px,
-    black calc(100% - 16px),
+    black 25px,
+    black calc(100% - 25px),
     transparent 100%);
 }
 .info-panel::-webkit-scrollbar {
@@ -850,53 +864,94 @@ body {
   visibility: visible;
 }
 
-/* Liquid-glass rim along the panel's left edge. Lives in .map-wrap as
-   a SIBLING of the info-panel (not a child) — the panel has both
-   `transform: translateX` and `mask-image`, both of which create
-   offscreen compositing buffers and break a child's backdrop-filter
-   sampling. As a .map-wrap-direct child, this strip's backdrop-filter
-   samples the leaflet map directly. Slide-in/out is synced to the
-   panel via :has(.info-panel.visible). */
+/* Liquid-glass frame around the info-panel — three pieces forming a
+   U-shape (top, left, bottom; the right side is the screen edge).
+   All three live in .map-wrap as siblings of the info-panel because
+   the panel has transform + mask-image, either of which would push a
+   child into an offscreen buffer and break its backdrop-filter.
+   Pieces don't overlap spatially: top/bottom strips cover the 385px
+   panel area at the top and bottom 25px, rim covers ONLY the middle
+   vertical span (top:25 → bottom:25). No compounded refraction.
+   All three slide in together via :has(.info-panel.visible). */
+.info-panel-glass-top,
+.info-panel-glass-bottom {
+  position: absolute;
+  right: 0;
+  /* 385px = rim width (25) + panel width (360). Spans from the rim's
+     outer edge across the full panel top/bottom. */
+  width: 385px;
+  height: 25px;
+  pointer-events: none;
+  z-index: 1000;
+  visibility: hidden;
+  transform: translateX(385px);
+  transition:
+    transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1),
+    visibility 0.32s;
+}
+.info-panel-glass-top {
+  top: 0;
+  -webkit-backdrop-filter: url(#liquidGlassTop) saturate(1.25) contrast(1.07) brightness(1.04);
+          backdrop-filter: url(#liquidGlassTop) saturate(1.25) contrast(1.07) brightness(1.04);
+  /* Specular: white at the top rim, fading down. */
+  background: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.26) 30%,
+    rgba(255, 255, 255, 0.10) 60%,
+    rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.24);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  /* Round only the OUTER corners — top-left (frame's top-left) and
+     top-right (at the screen edge). Inner corners (where this strip
+     meets the rim) stay sharp so the rim sits flush against it. */
+  border-radius: 14px 14px 0 0;
+}
+.info-panel-glass-bottom {
+  bottom: 0;
+  -webkit-backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
+          backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
+  background: linear-gradient(to top,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.26) 30%,
+    rgba(255, 255, 255, 0.10) 60%,
+    rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 1px 2px rgba(255, 255, 255, 0.24);
+  -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+          mask-image: linear-gradient(to top, black 0%, transparent 100%);
+  border-radius: 0 0 14px 14px;
+}
 .info-panel-glass-rim {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  /* Visible position: 360px from the .map-wrap right edge, so the
-     strip butts up against the panel's left edge. */
+  /* Middle section only — top/bottom strips cover the rest. */
+  top: 25px;
+  bottom: 25px;
   right: 360px;
   width: 25px;
   pointer-events: none;
-  /* Pill-shape: round the outer (top and bottom) ends so they don't
-     meet the map's top/bottom strips as a square 90° L-junction. The
-     inner (right) edge stays sharp — it has to sit flush against the
-     panel. Combined with the strips' rounded right ends below, the
-     corners flow as connected curves rather than two distinct tiles. */
-  border-radius: 14px 0 0 14px;
-  /* Above the map (and the map's own top/bottom feather strips at
-     z 500) but BELOW the info-panel (z 1001) so the panel still wins
-     when they're touching. */
   z-index: 1000;
   visibility: hidden;
-  /* Hidden state: parked off-screen to the right, by the panel's
-     width + the strip's own width, so it slides in alongside the
-     panel without ever peeking out. */
   transform: translateX(385px);
   transition:
     transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1),
     visibility 0.32s;
   -webkit-backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
           backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
-  /* Specular gradient: bright at the rim (left), fading inward. */
   background: linear-gradient(to right,
     rgba(255, 255, 255, 0.62) 0%,
     rgba(255, 255, 255, 0.26) 30%,
     rgba(255, 255, 255, 0.10) 60%,
     rgba(255, 255, 255, 0) 100%);
-  /* Crisp left-rim highlight + softer interior bevel. */
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.88),
     inset -1px 0 2px rgba(255, 255, 255, 0.24);
 }
+.map-wrap:has(.info-panel.visible) .info-panel-glass-top,
+.map-wrap:has(.info-panel.visible) .info-panel-glass-bottom,
 .map-wrap:has(.info-panel.visible) .info-panel-glass-rim {
   visibility: visible;
   transform: translateX(0);

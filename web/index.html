@@ -116,13 +116,16 @@
               <select id="color-scheme-select"></select>
             </div>
           </div>
-          <!-- Liquid-glass rim sits OUTSIDE the info-panel so its
-               backdrop-filter samples directly from the .map-wrap (the
-               leaflet map). If it lived inside the panel, the panel's
-               transform + mask-image would push it into an offscreen
-               buffer and the filter would only see the panel's own bg
-               — i.e., a flat plate of nothing to refract. -->
+          <!-- Three-piece glass frame around the info-panel. All three
+               sit OUTSIDE the panel because the panel has both transform
+               and mask-image, either of which would push children into
+               an offscreen buffer and break their backdrop-filter.
+               The pieces don't overlap (rim runs y=25 → height-25
+               only; strips cover the top and bottom 25px including the
+               rim's outer column) so refraction never compounds. -->
+          <div class="info-panel-glass-top" aria-hidden="true"></div>
           <div class="info-panel-glass-rim" aria-hidden="true"></div>
+          <div class="info-panel-glass-bottom" aria-hidden="true"></div>
           <aside id="info-panel" class="info-panel"></aside>
         </section>
       </div>
