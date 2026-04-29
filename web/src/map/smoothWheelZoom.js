@@ -24,13 +24,14 @@ const SmoothWheelZoom = L.Handler.extend({
     this._startLatLng = map.containerPointToLatLng(this._centerPoint);
     this._wheelStartLatLng = map.containerPointToLatLng(this._wheelMousePosition);
     this._startZoom = map.getZoom();
-    this._moved = false;
     this._zooming = true;
     map._stop();
     if (this._goalZoom == null) this._goalZoom = map.getZoom();
     this._prevCenter = map.getCenter();
     this._prevZoom = map.getZoom();
-    this._frameId = requestAnimationFrame(this._update.bind(this));
+    if (!this._frameId) {
+      this._frameId = requestAnimationFrame(this._update.bind(this));
+    }
   },
   _onWheeling(e) {
     const map = this._map;
@@ -44,8 +45,6 @@ const SmoothWheelZoom = L.Handler.extend({
   },
   _onWheelEnd() {
     this._isWheeling = false;
-    cancelAnimationFrame(this._frameId);
-    this._map._moveEnd(true);
   },
   _update() {
     const map = this._map;
