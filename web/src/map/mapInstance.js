@@ -16,7 +16,7 @@ export function createMap(containerId, theme) {
     center,
     zoom,
     zoomSnap: mapCfg.zoom_snap ?? 0,
-    zoomDelta: mapCfg.zoom_delta ?? 0.5,
+    zoomDelta: 0.25,
     fadeAnimation: mapCfg.fade_animation ?? true,
     markerZoomAnimation: mapCfg.marker_zoom_animation ?? true,
     zoomControl: false,
@@ -24,8 +24,8 @@ export function createMap(containerId, theme) {
     preferCanvas: false,
     renderer: L.svg({ padding: 1.0 }),
     scrollWheelZoom: true,
-    wheelPxPerZoomLevel: 70,
-    wheelDebounceTime: 40,
+    wheelPxPerZoomLevel: 40,
+    wheelDebounceTime: 20,
   });
 
   L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
