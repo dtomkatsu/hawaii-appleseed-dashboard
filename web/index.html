@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/app.css" />
   </head>
   <body>
@@ -22,12 +22,16 @@
     </header>
 
     <main class="app-main">
-      <aside id="sidebar" class="sidebar"></aside>
+      <div id="controls-bar" class="controls-bar"></div>
       <section class="map-wrap">
         <div id="main-map" class="map-container"></div>
         <div id="main-map-legend" class="map-legend">
           <div class="legend-title"></div>
           <div id="main-map-legend-items"></div>
+          <div class="legend-color-scheme">
+            <label for="color-scheme-select">Color scheme</label>
+            <select id="color-scheme-select"></select>
+          </div>
         </div>
       </section>
       <aside id="info-panel" class="info-panel"></aside>

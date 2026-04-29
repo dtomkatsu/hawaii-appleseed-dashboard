@@ -25,3 +25,7 @@ export function loadLayer(level) {
 export function loadStateSummary() {
   return fetchJson('/data/state_summary.json');
 }
+
+export function loadRepData() {
+  return fetchJson('/data/rep_data.json').catch(() => ({}));
+}

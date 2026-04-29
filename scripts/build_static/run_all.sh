@@ -16,4 +16,7 @@ echo "==> 02_build_layer_geojsons"
 echo "==> 03_build_state_summary"
 "$PY" scripts/build_static/03_build_state_summary.py
 
+echo "==> 04_build_rep_data"
+"$PY" scripts/build_static/04_build_rep_data.py
+
 echo "==> done"

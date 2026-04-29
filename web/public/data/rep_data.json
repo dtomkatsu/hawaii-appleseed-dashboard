@@ -1,0 +1,382 @@
+{
+  "house_1": {
+    "name": "Matthias Kusch",
+    "party": "D",
+    "areas": "Hāmākua, portion of Hilo, Ka'ūmana"
+  },
+  "house_2": {
+    "name": "Sue L. Keohokapu-Lee Loy",
+    "party": "D",
+    "areas": "Hilo"
+  },
+  "house_3": {
+    "name": "Chris Todd",
+    "party": "D",
+    "areas": "Portion of Hilo, Keaukaha, Orchidlands Estate, Ainaloa, Hawaiian Acres, Fern Acres, portions of Kurtistown and Kea'au"
+  },
+  "house_4": {
+    "name": "Greggor Ilagan",
+    "party": "D",
+    "areas": "Hawaiian Paradise Park, Hawaiian Beaches, Nānāwale Estates, Leilani Estates"
+  },
+  "house_5": {
+    "name": "Jeanne Kapela",
+    "party": "D",
+    "areas": "Portions of Kea'au and Kurtistown, Mountain View, Glenwood, Fern Forest, Volcano, Pāhala, Punalu'u, Nā'ālehu, Wai'ōhinu, Hawaiian Ocean View, Ho'okena"
+  },
+  "house_6": {
+    "name": "Kirstin Kahaloa",
+    "party": "D",
+    "areas": "Hōnaunau, Nāpo'opo'o, Captain Cook, Kealakekua, Keauhou, Hōlualoa, Kailua-Kona"
+  },
+  "house_7": {
+    "name": "Nicole E. Lowen",
+    "party": "D",
+    "areas": "Kailua-Kona, Honokōhau, Kalaoa, Pu'uanahulu, Puakō, portion of Waikōloa"
+  },
+  "house_8": {
+    "name": "David A. Tarnas",
+    "party": "D",
+    "areas": "Hawi, Hala'ula, Waimea, Makahalau, Waiki'i, Waikōloa, Kawaihae, and Māhukona"
+  },
+  "house_9": {
+    "name": "Justin H. Woodson",
+    "party": "D",
+    "areas": "Kahului, Pu'unēnē, portion of Wailuku"
+  },
+  "house_10": {
+    "name": "Tyson K. Miyake",
+    "party": "D",
+    "areas": "Portion of Waiehu, Paukukalo, Wailuku, Wailuku Heights, Waikapu, Hyashi Village"
+  },
+  "house_11": {
+    "name": "Terez Amato",
+    "party": "D",
+    "areas": "Portion of Mā'alaea, Kīhei, Keawakapu, Wailea, Mākena, Kanahena, Keone'ō'io"
+  },
+  "house_12": {
+    "name": "Kyle T. Yamashita",
+    "party": "D",
+    "areas": "Portion of Keāhua, Hāli'imaile, Pukalani, Makawao, Pūlehu, Waiakoa, Kēōkea, and 'Ulupalakua"
+  },
+  "house_13": {
+    "name": "Mahina M. Poepoe",
+    "party": "D",
+    "areas": "Molokai', Lāna'i, Kaho'olawe, portion of Kahului, Ha'ikū, Pe'ahi, Huelo, Nāhiku, Hāna, Kīpahulu"
+  },
+  "house_14": {
+    "name": "Elle Cochran",
+    "party": "D",
+    "areas": "Kahakuloa, Waihe'e, portions of Wai'ehu and Mā'alaea, Olowalu, Lahaina, Lahainaluna, Kā'anapali, Māhinahina Camp, Kahana, Honokahua"
+  },
+  "house_15": {
+    "name": "Nadine K. Nakamura",
+    "party": "D",
+    "areas": "Hā'ena, Wainiha, Hanalei, Princeville, Kīlauea, Anahola, Keālia, Kāpa'a, portion of Wailuā, Kawaihau"
+  },
+  "house_16": {
+    "name": "Luke A. Evslin",
+    "party": "D",
+    "areas": "Wailuā, Hanamā'ulu, Kapaia, Līhu'e, Puhi, portion of 'Ōma'o"
+  },
+  "house_17": {
+    "name": "Dee Morikawa",
+    "party": "D",
+    "areas": "Ni'ihau, portion of 'Ōma'o, Kōloa, Po'ipū, Lāwa'i, Kalāheo, 'Ele'ele, Hanapēpē, Kaawanui Village, Pākalā Village, Waimea, Kekaha"
+  },
+  "house_18": {
+    "name": "Joe Gedeon",
+    "party": "R",
+    "areas": "Portlock, Hawaiʻi Kai, Kalama Valley"
+  },
+  "house_19": {
+    "name": "Tina Nakada Grandinetti",
+    "party": "D",
+    "areas": "Wai'alae-Kāhala, 'Āina Haina, Niu Valley, Kuli'ou'ou"
+  },
+  "house_20": {
+    "name": "Tina Nakada Grandinetti",
+    "party": "D",
+    "areas": "Kāhala, Ka'alāwai, Wai'alae, Kaimukī, Kapahulu"
+  },
+  "house_21": {
+    "name": "Jackson Sayama",
+    "party": "D",
+    "areas": "Wilhelmina Rise, Maunalani Heights, St. Louis Heights"
+  },
+  "house_22": {
+    "name": "Andrew Takuya Garrett",
+    "party": "D",
+    "areas": "Mānoa"
+  },
+  "house_23": {
+    "name": "Ikaika Olds",
+    "party": "D",
+    "areas": "Mō'ili'ili, McCully"
+  },
+  "house_24": {
+    "name": "Adrian K. Tam",
+    "party": "D",
+    "areas": "Waikīkī"
+  },
+  "house_25": {
+    "name": "Kim Coco Iwamoto",
+    "party": "D",
+    "areas": "Ala Moana, Kaka'ako, Downtown"
+  },
+  "house_26": {
+    "name": "Della Au Belatti",
+    "party": "D",
+    "areas": "Makiki, Punchbowl"
+  },
+  "house_27": {
+    "name": "Jenna Takenouchi",
+    "party": "D",
+    "areas": "Pacific Heights, Nu'uanu, Liliha"
+  },
+  "house_28": {
+    "name": "Daniel Holt",
+    "party": "D",
+    "areas": "Sand Island, Iwilei, Chinatown"
+  },
+  "house_29": {
+    "name": "Ikaika Hussey",
+    "party": "D",
+    "areas": "Kamehameha Heights, Kalihi Valley, portion of Kalihi"
+  },
+  "house_30": {
+    "name": "Shirley Ann Templo",
+    "party": "D",
+    "areas": "Kalihi, Kalihi Kai, Ke'ehi Lagoon, Hickam Village"
+  },
+  "house_31": {
+    "name": "Linda Ichiyama",
+    "party": "D",
+    "areas": "Fort Shafter Flats, Salt Lake, Pearl Harbor"
+  },
+  "house_32": {
+    "name": "Garner M. Shimizu",
+    "party": "R",
+    "areas": "Fort Shafter, Moanalua, Āliamanu, Foster Village, portions of 'Aiea and Hālawa"
+  },
+  "house_33": {
+    "name": "Sam Satoru Kong",
+    "party": "D",
+    "areas": "Portion of Hālawa, 'Aiea, Waimalu"
+  },
+  "house_34": {
+    "name": "Gregg Takayama",
+    "party": "D",
+    "areas": "Waiau, a portion of Pearl City, and Pacific Palisades"
+  },
+  "house_35": {
+    "name": "Cory M. Chun",
+    "party": "D",
+    "areas": "Portions of Pearl City and Waipahū, Crestview"
+  },
+  "house_36": {
+    "name": "Rachelle F. Lamosao",
+    "party": "D",
+    "areas": "Waipahū"
+  },
+  "house_37": {
+    "name": "Trish La Chica",
+    "party": "D",
+    "areas": "Portions of Waipi'o and Mililani"
+  },
+  "house_38": {
+    "name": "Lauren Cheape Matsumoto",
+    "party": "R",
+    "areas": "Portions of Mililani and Waipio Acres, Mililani Mauka"
+  },
+  "house_39": {
+    "name": "Elijah Pierick",
+    "party": "R",
+    "areas": "Royal Kunia, portion of Waipahu, Honouliuli, portion of Lower Village"
+  },
+  "house_40": {
+    "name": "Julie Reyes Oda",
+    "party": "R",
+    "areas": "Portions of Lower Village and 'Ewa Beach, Iroquois Point"
+  },
+  "house_41": {
+    "name": "David Alcos III",
+    "party": "R",
+    "areas": "Portion of 'Ewa Beach, Ocean Pointe, Barbers Point"
+  },
+  "house_42": {
+    "name": "Diamond Garcia",
+    "party": "R",
+    "areas": "Portions of Varona Village, Ewa, and Kapolei, Fernandez Village"
+  },
+  "house_43": {
+    "name": "Kanani Souza",
+    "party": "R",
+    "areas": "Kapolei, Makakilo"
+  },
+  "house_44": {
+    "name": "Darius K. Kila",
+    "party": "D",
+    "areas": "Honokai Hale, Nānākuli, Mā'ili"
+  },
+  "house_45": {
+    "name": "Christopher L. Muraoka",
+    "party": "R",
+    "areas": "Wai'anae, Mākaha"
+  },
+  "house_46": {
+    "name": "Amy Perruso",
+    "party": "D",
+    "areas": "Portion of Waipio Acres, Wahiawa, Whitmore Village, Mokuleia"
+  },
+  "house_47": {
+    "name": "Sean Quinlan",
+    "party": "D",
+    "areas": "Waialua, Hale'iwa, Kawailoa Beach, Waimea, Sunset Beach, Waiale'e, Kawela Bay, Kahuku, Lā'ie, Hau'ula, Punalu'u, Kahana"
+  },
+  "house_48": {
+    "name": "Lisa Kitagawa",
+    "party": "D",
+    "areas": "Ka'a'awa, Kahalu'u, 'Āhuimanu, He'eia, Kāne'ohe"
+  },
+  "house_49": {
+    "name": "Scot Z. Matayoshi",
+    "party": "D",
+    "areas": "Portion of Kāne'ohe, Pūʻōhala Village, Maunawili"
+  },
+  "house_50": {
+    "name": "Mike Lee",
+    "party": "D",
+    "areas": "Kailua, portion of Kāne'ohe Bay"
+  },
+  "house_51": {
+    "name": "Lisa Marten",
+    "party": "D",
+    "areas": "Waimānalo, Keolu Hills, Lanikai, portion of Kailua"
+  },
+  "senate_1": {
+    "name": "Lorraine R. Inouye",
+    "party": "D",
+    "areas": "Hilo, Pauka'a, Papaikou, Pepe'ekeo"
+  },
+  "senate_2": {
+    "name": "Joy A. San Buenaventura",
+    "party": "D",
+    "areas": "Puna"
+  },
+  "senate_3": {
+    "name": "Dru Mamo Kanuha",
+    "party": "D",
+    "areas": "Kona, Ka'ū, Volcano"
+  },
+  "senate_4": {
+    "name": "Herbert M. 'Tim' Richards III",
+    "party": "D",
+    "areas": "North Hilo, Hāmākua, Kohala, Waimea, Waikoloa, North Kona"
+  },
+  "senate_5": {
+    "name": "Troy N. Hashimoto",
+    "party": "D",
+    "areas": "Wailuku, Kahului, Waihe'e, Waikapu Mauka, Wai'ehu"
+  },
+  "senate_6": {
+    "name": "Angus L.K. McKelvey",
+    "party": "D",
+    "areas": "West Maui, South Maui, Moloka'i, Lāna'i, Kaho'olawe"
+  },
+  "senate_7": {
+    "name": "Lynn DeCoite",
+    "party": "D",
+    "areas": "East Maui, Moloka'i, Lāna'i, Kaho'olawe"
+  },
+  "senate_8": {
+    "name": "Ronald D. Kouchi",
+    "party": "D",
+    "areas": "Kaua'i, Ni'ihau"
+  },
+  "senate_9": {
+    "name": "Stanley Chang",
+    "party": "D",
+    "areas": "Hawai'i Kai, Waikīkī, Ala Moana, Kaka'ako"
+  },
+  "senate_10": {
+    "name": "Les Ihara",
+    "party": "D",
+    "areas": "Pālolo, St. Louis Heights, Kaimukī, Kāhala"
+  },
+  "senate_11": {
+    "name": "Carol Fukunaga",
+    "party": "D",
+    "areas": "Makiki, Mānoa, Pūowaina, Ala Wai"
+  },
+  "senate_12": {
+    "name": "Sharon Y. Moriwaki",
+    "party": "D",
+    "areas": "Waikīkī, McCully, Mōʻiliʻili, Ala Wai"
+  },
+  "senate_13": {
+    "name": "Karl Rhoads",
+    "party": "D",
+    "areas": "Downtown, Iwilei, Kalihi, Nu'uanu"
+  },
+  "senate_14": {
+    "name": "Donna Mercado Kim",
+    "party": "D",
+    "areas": "Kalihi Valley, Liliha, 'Ālewa Heights, Pu'unui"
+  },
+  "senate_15": {
+    "name": "Glenn Wakai",
+    "party": "D",
+    "areas": "Kalihi, Mapunapuna, Airport, Salt Lake, Āliamanu"
+  },
+  "senate_16": {
+    "name": "Brandon J.C. Elefante",
+    "party": "D",
+    "areas": "'Aiea, Hālawa, Pearlridge, 'Aiea Heights"
+  },
+  "senate_17": {
+    "name": "Donovan M. Dela Cruz",
+    "party": "D",
+    "areas": "Wahiawā, Mililani, Mililani Mauka, Waipi'o Acres, Whitmore Village"
+  },
+  "senate_18": {
+    "name": "Michelle N. Kidani",
+    "party": "D",
+    "areas": "Mililani Town, Waipi'o Gentry, Crestview, Waikele"
+  },
+  "senate_19": {
+    "name": "Rachelle Lamosao",
+    "party": "D",
+    "areas": "Waipahu, Crestview, Village Park, Waikele"
+  },
+  "senate_20": {
+    "name": "Kurt Fevella",
+    "party": "R",
+    "areas": "Ewa Beach, Ocean Pointe, Ewa by Gentry, Iroquois Point"
+  },
+  "senate_21": {
+    "name": "Mike Gabbard",
+    "party": "D",
+    "areas": "Kapolei, Makakilo, Kalaeloa, Honokai Hale, Ko Olina"
+  },
+  "senate_22": {
+    "name": "Samantha DeCorte",
+    "party": "R",
+    "areas": "Kapolei, 'Ewa Beach, Ocean Pointe, 'Ewa by Gentry"
+  },
+  "senate_23": {
+    "name": "Brenton Awa",
+    "party": "R",
+    "areas": "Ko'olauloa, Ko'olaupoko, Kahuku, La'ie, Hau'ula, Punalu'u"
+  },
+  "senate_24": {
+    "name": "Jarrett Keohokalole",
+    "party": "D",
+    "areas": "Kāne'ohe, Kailua, He'eia, Ahuimanu"
+  },
+  "senate_25": {
+    "name": "Chris Lee",
+    "party": "D",
+    "areas": "Kailua, Lanikai, Waimānalo, Hawai'i Kai"
+  }
+}

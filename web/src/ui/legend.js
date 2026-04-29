@@ -1,6 +1,8 @@
-import { getSchemeColors, getThresholds } from '../map/colors.js';
+import { getSchemeColors, getThresholds, listSchemes } from '../map/colors.js';
+import { getState, setState } from '../state/store.js';
 
 let VARIABLES = null;
+let schemeBound = false;
 
 export function initLegend(variablesConfig) {
   VARIABLES = variablesConfig.variables;
@@ -8,8 +10,7 @@ export function initLegend(variablesConfig) {
 
 function formatRange(from, next, dataType) {
   const isPct = dataType === 'percentage' || /rate|pct|percent/.test(dataType || '');
-  const isCurrency =
-    dataType === 'currency' || /income|value|benefit|amount/.test(dataType || '');
+  const isCurrency = dataType === 'currency' || /income|value|benefit|amount/.test(dataType || '');
   const isCount = dataType === 'count';
 
   if (next === undefined) {
@@ -34,7 +35,27 @@ function formatRange(from, next, dataType) {
   return `${from}-${next}`;
 }
 
+function ensureColorSchemeOptions() {
+  const select = document.getElementById('color-scheme-select');
+  if (!select) return;
+  const s = getState();
+  if (!select.options.length) {
+    select.innerHTML = listSchemes()
+      .map((sk) => `<option value="${sk}">${capitalize(sk)}</option>`)
+      .join('');
+  }
+  if (select.value !== s.colorScheme) {
+    select.value = s.colorScheme;
+  }
+  if (!schemeBound) {
+    select.addEventListener('change', (e) => setState({ colorScheme: e.target.value }));
+    schemeBound = true;
+  }
+}
+
 export function renderLegend(varKey, scheme) {
+  ensureColorSchemeOptions();
+
   const titleEl = document.querySelector('#main-map-legend .legend-title');
   const itemsEl = document.getElementById('main-map-legend-items');
   if (!titleEl || !itemsEl) return;
@@ -62,4 +83,8 @@ export function renderLegend(varKey, scheme) {
   }
 
   itemsEl.innerHTML = html;
+}
+
+function capitalize(s) {
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
