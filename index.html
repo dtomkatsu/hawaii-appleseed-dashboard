@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hawaii Appleseed Data Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/main-popkPxHu.js"></script>
+    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/loader-xgymrUWK.js">
+    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DPecaqwd.js">
+    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-CvAOkh-y.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="/assets/logo.png" alt="Hawaii Appleseed" class="brand-logo" onerror="this.style.display='none'" />
+        <h1>Hawaii Data Dashboard</h1>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <nav class="main-tabs" role="tablist">
+        <button class="main-tab active" data-tab="map" role="tab" aria-selected="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="tab-icon"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          Map View
+        </button>
+        <button class="main-tab" data-tab="data" role="tab" aria-selected="false">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="tab-icon"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
+          Data Analysis
+        </button>
+      </nav>
+
+      <div id="tab-map" class="tab-pane" role="tabpanel">
+        <div id="controls-bar" class="controls-bar"></div>
+        <section class="map-wrap">
+          <div id="main-map" class="map-container"></div>
+          <div id="main-map-legend" class="map-legend">
+            <div class="legend-title"></div>
+            <div id="main-map-legend-items"></div>
+            <div class="legend-color-scheme">
+              <label for="color-scheme-select">Color scheme</label>
+              <select id="color-scheme-select"></select>
+            </div>
+          </div>
+          <aside id="info-panel" class="info-panel"></aside>
+        </section>
+      </div>
+
+      <div id="tab-data" class="tab-pane" role="tabpanel" hidden>
+        <div class="da-controls-row">
+          <div id="da-controls" class="da-controls"></div>
+        </div>
+        <div class="da-chart-row">
+          <div class="da-chart-wrap">
+            <p class="da-section-label">Ranked comparison</p>
+            <div id="da-chart"></div>
+          </div>
+          <div class="da-table-wrap">
+            <p class="da-section-label">Selected variable</p>
+            <div id="da-side-table"></div>
+          </div>
+        </div>
+        <hr class="da-divider" />
+        <p class="da-section-label">Full data table</p>
+        <div id="da-full-table" class="da-full-table-wrap"></div>
+      </div>
+    </main>
+
+  </body>
+</html>
