@@ -594,17 +594,31 @@ body {
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  /* Lower bg alpha than before (0.72 → 0.55) so the underlying
+     refraction reads through the panel — text stays readable thanks
+     to the legend's own internal text contrast on the map. */
+  background: rgba(255, 255, 255, 0.55);
   padding: 14px 16px 12px;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  /* Add a top-rim inset highlight to the existing drop-shadow stack
+     — gives the panel a hint of physical thickness, the same trick
+     used on the map's edge strips. */
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  /* Slightly bolder rim than before (0.5 → 0.7) to sell the glass
+     edge alongside the refraction. */
+  border: 1px solid rgba(255, 255, 255, 0.7);
   z-index: 1000;
   min-width: 120px;
   max-width: 158px;
   font-size: 12px;
-  backdrop-filter: blur(10px) saturate(1.2);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  /* Liquid-glass panel filter (whole-element, refracts at all four
+     rims) + glass-clarity color stack. Replaces the prior plain
+     blur(10px). */
+  backdrop-filter: url(#liquidGlassPanel) saturate(1.25) contrast(1.07) brightness(1.04);
+  -webkit-backdrop-filter: url(#liquidGlassPanel) saturate(1.25) contrast(1.07) brightness(1.04);
 }
 .legend-title {
   position: relative;

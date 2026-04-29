@@ -64,6 +64,23 @@
                    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.35' stop-color='rgb(158,128,128)'/><stop offset='1' stop-color='rgb(128,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
           <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
+        <!-- WHOLE-PANEL glass (legend + any rectangular UI element):
+             two displacement passes inside one filter. Pass 1 uses a
+             vertical gradient on G (refracts at top/bottom rims).
+             Pass 2 uses a horizontal gradient on R (refracts at left/
+             right rims). Compound effect = pillowed lensing strongest
+             at the perimeter, near-zero in the middle. Lower scale
+             (15) than the edge strips (32) since the legend is small;
+             we don't want over-distortion of its interior. -->
+        <filter id="liquidGlassPanel" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="vMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='rgb(128,205,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(128,51,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="vMap" scale="15" xChannelSelector="R" yChannelSelector="G" result="vDisp"/>
+          <feImage preserveAspectRatio="none" result="hMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(51,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="vDisp" in2="hMap" scale="15" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
       </defs>
     </svg>
     <main class="app-main">
