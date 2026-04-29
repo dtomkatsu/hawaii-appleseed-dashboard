@@ -3,10 +3,15 @@ import { showInfoPanel } from '../ui/infoPanel.js';
 
 let VARIABLES = null;
 let REP_DATA = {};
+let selectedLayer = null;
 
 export function initPopup(variablesConfig, repData) {
   VARIABLES = variablesConfig.variables;
   REP_DATA = repData || {};
+}
+
+export function clearSelectedLayer() {
+  selectedLayer = null;
 }
 
 function cleanName(rawName) {
@@ -95,13 +100,34 @@ export function bindFeature(feature, layer) {
       e.target.bringToFront();
     },
     mouseout: (e) => {
+      if (e.target === selectedLayer) return;
       e.target.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
     },
     click: (e) => {
+      if (selectedLayer && selectedLayer !== e.target) {
+        selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+      }
+      selectedLayer = e.target;
       const props = e.target.feature.properties;
       const id = props.GEOID || feature.id;
       setState({ selectedFeatureId: id });
       showInfoPanel(props);
+      try {
+        const bounds = e.target.getBounds();
+        if (bounds && bounds.isValid()) {
+          const panel = document.getElementById('info-panel');
+          const panelOpen = panel && panel.classList.contains('visible');
+          const rightPad = panelOpen ? (panel.getBoundingClientRect().width || 360) + 40 : 40;
+          e.target._map.flyToBounds(bounds, {
+            paddingTopLeft: [40, 40],
+            paddingBottomRight: [rightPad, 40],
+            duration: 0.6,
+            maxZoom: 10,
+          });
+        }
+      } catch (_) {
+        /* no-op */
+      }
     },
   });
 

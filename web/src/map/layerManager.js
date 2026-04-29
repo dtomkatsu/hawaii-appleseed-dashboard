@@ -2,7 +2,7 @@ import L from 'leaflet';
 import { getMap } from './mapInstance.js';
 import { getColorForValue } from './colors.js';
 import { loadLayer } from '../data/loader.js';
-import { bindFeature } from './popup.js';
+import { bindFeature, clearSelectedLayer } from './popup.js';
 
 const cachedGeoJson = new Map();
 let currentLayer = null;
@@ -15,7 +15,7 @@ function styleFor(properties) {
   return {
     fillColor: getColorForValue(value, currentVariable, currentScheme),
     weight: 1,
-    color: '#666',
+    color: '#aaa',
     fillOpacity: 0.75,
   };
 }
@@ -33,6 +33,7 @@ export async function setLayer(level) {
     map.removeLayer(currentLayer);
     currentLayer = null;
   }
+  clearSelectedLayer();
 
   const data = cachedGeoJson.get(level);
   currentLayer = L.geoJSON(data, {
