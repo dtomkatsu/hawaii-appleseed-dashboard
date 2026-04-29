@@ -212,12 +212,19 @@ export function bindFeature(feature, layer) {
         if (bounds && bounds.isValid()) {
           const panel = document.getElementById('info-panel');
           const panelOpen = panel && panel.classList.contains('visible');
-          const rightPad = panelOpen ? (panel.getBoundingClientRect().width || 360) + 40 : 40;
+          // Generous padding so the district has breathing room within the
+          // viewport (and the lift-shadow doesn't get clipped at edges).
+          const sidePad = 70;
+          const rightPad = panelOpen
+            ? (panel.getBoundingClientRect().width || 360) + sidePad
+            : sidePad;
           e.target._map.flyToBounds(bounds, {
-            paddingTopLeft: [40, 40],
-            paddingBottomRight: [rightPad, 40],
+            paddingTopLeft: [sidePad, sidePad],
+            paddingBottomRight: [rightPad, sidePad],
             duration: 0.6,
-            maxZoom: 14,
+            // Cap zoom slightly lower so very small districts don't fill
+            // the viewport edge-to-edge — keeps surrounding context visible.
+            maxZoom: 13,
           });
         }
       } catch (_) {
