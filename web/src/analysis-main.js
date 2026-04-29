@@ -116,7 +116,7 @@ async function refreshChart() {
       stateGeojson?.features || null,
     );
 
-    renderFullTable('da-full-table', geojson.features, config.variables);
+    renderFullTable('da-full-table', geojson.features, config.variables, activeLayer);
   } catch (err) {
     console.error('Analysis error:', err);
     if (chartEl) chartEl.innerHTML = `<p style="color:#c0392b;padding:20px">Error: ${err.message}</p>`;

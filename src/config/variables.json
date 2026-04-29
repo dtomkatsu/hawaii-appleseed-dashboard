@@ -64,6 +64,7 @@
     "alice_rate": {
       "display_name": "ALICE Households",
       "display_name_long": "ALICE Households (%)",
+      "description": "Households earning above the federal poverty line but below the cost of basic needs in Hawaii.",
       "data_type": "percentage",
       "dropdown_group": "economic_security",
       "dropdown_label": "ALICE Households",
@@ -97,6 +98,7 @@
     "poverty_rate": {
       "display_name": "Poverty Rate",
       "display_name_long": "Poverty Rate (%)",
+      "description": "Share of people living below the federal poverty threshold.",
       "data_type": "percentage",
       "dropdown_group": "economic_security",
       "dropdown_label": "Poverty Rate",
@@ -130,6 +132,7 @@
     "median_income": {
       "display_name": "Median Income",
       "display_name_long": "Median Household Income ($)",
+      "description": "Midpoint household income; half of households earn more, half earn less.",
       "data_type": "currency",
       "dropdown_group": "economic_security",
       "dropdown_label": "Median Income",
@@ -163,6 +166,7 @@
     "unemployment_rate": {
       "display_name": "Unemployment Rate",
       "display_name_long": "Unemployment Rate (%)",
+      "description": "Share of the civilian labor force that is jobless and actively seeking work.",
       "data_type": "percentage",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -196,6 +200,7 @@
     "ctc_avg_amount": {
       "display_name": "Avg Child Tax Credit",
       "display_name_long": "Child Tax Credit - Average Amount ($)",
+      "description": "Average federal Child Tax Credit dollar amount claimed per qualifying tax return.",
       "data_type": "currency",
       "dropdown_group": "economic_security",
       "dropdown_label": "Child Tax Credit - Average Amount ($)",
@@ -229,6 +234,7 @@
     "ctc_participation_rate": {
       "display_name": "CTC Participation",
       "display_name_long": "Child Tax Credit - Participation Rate (%)",
+      "description": "Share of tax returns claiming the federal Child Tax Credit.",
       "data_type": "percentage",
       "dropdown_group": "economic_security",
       "dropdown_label": "Child Tax Credit - Participation Rate (%)",
@@ -262,6 +268,7 @@
     "federal_eitc_avg_amount": {
       "display_name": "Avg Federal EITC",
       "display_name_long": "Federal EITC - Average Amount ($)",
+      "description": "Average federal Earned Income Tax Credit dollar amount claimed per return.",
       "data_type": "currency",
       "dropdown_group": "economic_security",
       "dropdown_label": "Federal EITC - Average Amount ($)",
@@ -295,6 +302,7 @@
     "eitc_participation_rate": {
       "display_name": "EITC Participation",
       "display_name_long": "Federal EITC - Participation Rate (%)",
+      "description": "Share of tax returns claiming the federal Earned Income Tax Credit.",
       "data_type": "percentage",
       "dropdown_group": "economic_security",
       "dropdown_label": "Federal EITC - Participation Rate (%)",
@@ -328,6 +336,7 @@
     "state_eitc_avg_amount": {
       "display_name": "Avg State EITC",
       "display_name_long": "State EITC - Average Amount ($)",
+      "description": "Average Hawaii State Earned Income Tax Credit claimed per qualifying return.",
       "data_type": "currency",
       "dropdown_group": "economic_security",
       "dropdown_label": "State EITC - Average Amount ($)",
@@ -361,6 +370,7 @@
     "snap_household_rate": {
       "display_name": "SNAP Households",
       "display_name_long": "SNAP Households (%)",
+      "description": "Share of households receiving SNAP (food stamp) benefits.",
       "data_type": "percentage",
       "dropdown_group": "food_security",
       "dropdown_label": "SNAP Households (%)",
@@ -394,6 +404,7 @@
     "snap_benefit_annual_per_household": {
       "display_name": "Avg Annual SNAP Benefit",
       "display_name_long": "Avg Annual SNAP Benefit ($)",
+      "description": "Average yearly SNAP benefit dollars received per recipient household.",
       "data_type": "currency",
       "dropdown_group": "food_security",
       "dropdown_label": "Avg Annual SNAP Benefit",
@@ -427,6 +438,7 @@
     "snap_benefits_annual_total": {
       "display_name": "Total Annual SNAP Benefits",
       "display_name_long": "Total Annual SNAP Benefits ($)",
+      "description": "Total SNAP benefit dollars distributed to households in this area each year.",
       "data_type": "currency",
       "dropdown_group": "food_security",
       "dropdown_label": "Total Annual SNAP Benefits",
@@ -460,6 +472,7 @@
     "cep_percentage": {
       "display_name": "Schools with CEP",
       "display_name_long": "Schools with CEP (%)",
+      "description": "Share of public schools enrolled in the Community Eligibility Provision, which provides free meals to all students.",
       "data_type": "percentage",
       "dropdown_group": "food_security",
       "dropdown_label": "Schools with CEP (%)",
@@ -493,6 +506,7 @@
     "cep_display": {
       "display_name": "CEP Schools",
       "display_name_long": "CEP Schools (Count)",
+      "description": "Number of public schools enrolled in CEP, providing free meals to all students.",
       "data_type": "text",
       "dropdown_group": "food_security",
       "dropdown_label": "Number of CEP Schools",
@@ -526,6 +540,7 @@
     "median_rent": {
       "display_name": "Median Rent",
       "display_name_long": "Median Rent ($)",
+      "description": "Midpoint monthly gross rent paid by renter-occupied households.",
       "data_type": "currency",
       "dropdown_group": "housing_transportation",
       "dropdown_label": "Median Rent ($)",
@@ -559,6 +574,7 @@
     "rent_burden_rate": {
       "display_name": "Housing Cost Burden",
       "display_name_long": "Housing Cost Burden (%)",
+      "description": "Share of renter households spending 30% or more of their income on housing costs.",
       "data_type": "percentage",
       "dropdown_group": "housing_transportation",
       "dropdown_label": "Housing Cost Burden (%)",
@@ -592,6 +608,7 @@
     "travel_time_to_work_minutes": {
       "display_name": "Average Travel Time to Work",
       "display_name_long": "Average Travel Time to Work (minutes)",
+      "description": "Average one-way commute time for workers age 16 and older.",
       "data_type": "minutes",
       "dropdown_group": "housing_transportation",
       "dropdown_label": "Average Travel Time to Work (minutes)",
@@ -621,6 +638,7 @@
     "public_transportation_pct": {
       "display_name": "Public Transportation %",
       "display_name_long": "Public Transportation Commuters (%)",
+      "description": "Share of workers who commute primarily by public transit (bus, rail, etc.).",
       "data_type": "percentage",
       "dropdown_group": "housing_transportation",
       "dropdown_label": "Public Transportation Commuters (%)",
@@ -650,6 +668,7 @@
     "median_home_value": {
       "display_name": "Median Home Value",
       "display_name_long": "Median Home Value ($)",
+      "description": "Midpoint estimated value of owner-occupied homes.",
       "data_type": "currency",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -683,6 +702,7 @@
     "renter_rate": {
       "display_name": "Renter-Occupied",
       "display_name_long": "Renter-Occupied Housing (%)",
+      "description": "Share of occupied housing units that are rented rather than owner-occupied.",
       "data_type": "percentage",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -716,6 +736,7 @@
     "college_educated_pct": {
       "display_name": "College Educated",
       "display_name_long": "College Educated (%)",
+      "description": "Share of adults age 25 or older who hold a bachelor's degree or higher.",
       "data_type": "percentage",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -749,6 +770,7 @@
     "cep_schools": {
       "display_name": "Number of CEP Schools",
       "display_name_long": "Number of CEP Schools",
+      "description": "Number of public schools enrolled in the Community Eligibility Provision.",
       "data_type": "count",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -782,6 +804,7 @@
     "total_schools": {
       "display_name": "Total Number of Schools",
       "display_name_long": "Total Number of Schools",
+      "description": "Total number of public schools located in this area.",
       "data_type": "count",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -815,6 +838,7 @@
     "population": {
       "display_name": "Total Population",
       "display_name_long": "Total Population",
+      "description": "Estimated total resident population.",
       "data_type": "count",
       "dropdown_group": null,
       "dropdown_label": null,
@@ -848,6 +872,7 @@
     "median_age": {
       "display_name": "Median Age",
       "display_name_long": "Median Age",
+      "description": "Median age of residents in years.",
       "data_type": "count",
       "dropdown_group": null,
       "dropdown_label": null,
