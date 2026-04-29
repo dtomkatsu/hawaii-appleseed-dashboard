@@ -441,6 +441,24 @@ body {
 .leaflet-interactive:focus {
   outline: none;
 }
+/* Smooth animation when feature styles change on hover. SVG presentation
+   attributes (stroke-width, stroke, fill-opacity) transition correctly in
+   modern browsers. fill is intentionally NOT transitioned so variable/
+   color-scheme switches update instantly. */
+.leaflet-interactive {
+  transition:
+    stroke-width 0.18s ease-out,
+    stroke 0.18s ease-out,
+    fill-opacity 0.18s ease-out,
+    filter 0.25s ease-out;
+}
+/* Selected feature: subtle "lifting" effect via drop-shadow filter.
+   Replaces the persistent bold black border. */
+.leaflet-interactive.geo-selected {
+  filter:
+    drop-shadow(0 3px 4px rgba(0, 0, 0, 0.32))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
+}
 .leaflet-reset-zoom {
   display: flex !important;
   align-items: center;

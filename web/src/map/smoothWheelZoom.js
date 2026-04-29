@@ -40,7 +40,29 @@ const SmoothWheelZoom = L.Handler.extend({
 
     if (!this._active) {
       if (map.stop) map.stop();
-      L.DomUtil.setTransform(map._mapPane, L.point(0, 0), 1);
+      // Capture the mapPane's current pan offset so the gesture can
+      // SCALE-AROUND the cursor without wiping the existing pan.
+      // Prior code reset to (0,0,1), which caused the map to visually
+      // teleport when the user wheeled while panned (common after a
+      // flyToBounds or drag at high zoom).
+      const bp = L.DomUtil.getPosition(map._mapPane) || L.point(0, 0);
+      this._basePos = bp;
+
+      // Clear any leftover CSS transforms on the renderer's SVG container
+      // (Leaflet's _onZoom may have applied a scale/translate during a
+      // prior animation that wasn't fully cleared by stop()).
+      const overlay = map._panes.overlayPane;
+      if (overlay) {
+        const overlayChildren = overlay.children;
+        for (let i = 0; i < overlayChildren.length; i++) {
+          const child = overlayChildren[i];
+          const pos = L.DomUtil.getPosition(child) || L.point(0, 0);
+          L.DomUtil.setTransform(child, pos, 1);
+        }
+      }
+
+      // Initialize tooltip/popup panes to identity so counter-transforms
+      // start from a known baseline.
       if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, L.point(0, 0), 1);
       if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, L.point(0, 0), 1);
       map._animatingZoom = false;
@@ -87,19 +109,36 @@ const SmoothWheelZoom = L.Handler.extend({
     const map = this._map;
     const s = map.getZoomScale(this._viewZoom, this._fromZoom);
     const mp = this._mousePoint;
-    L.DomUtil.setTransform(map._mapPane, L.point(mp.x * (1 - s), mp.y * (1 - s)), s);
+    const bp = this._basePos || L.point(0, 0);
+    // Scale around mp while preserving the mapPane's pre-gesture pan offset.
+    // Math derivation: if a point P (in container coords) was at mapPane local
+    //   X = P - bp before, after applying transform `translate(T) scale(s)`
+    //   it appears at T + X*s. Setting cursor's latlng (X = mp - bp) to stay
+    //   at mp gives T = mp*(1-s) + bp*s.
+    L.DomUtil.setTransform(
+      map._mapPane,
+      L.point(mp.x * (1 - s) + bp.x * s, mp.y * (1 - s) + bp.y * s),
+      s
+    );
 
-    const counterOffset = L.point((-mp.x * (1 - s)) / s, (-mp.y * (1 - s)) / s);
-    const counterScale = 1 / s;
-    if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, counterOffset, counterScale);
-    if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, counterOffset, counterScale);
+    // Counter-transform child panes (tooltipPane, popupPane) so their content
+    // appears unscaled and unshifted in container coords. Derived similarly:
+    //   counter_translate = (bp - mp) * (1 - s) / s,  counter_scale = 1 / s
+    const cs = 1 / s;
+    const cx = (bp.x - mp.x) * (1 - s) / s;
+    const cy = (bp.y - mp.y) * (1 - s) / s;
+    if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, L.point(cx, cy), cs);
+    if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, L.point(cx, cy), cs);
   },
 
   _settle() {
     const map = this._map;
-    L.DomUtil.setTransform(map._mapPane, L.point(0, 0), 1);
+    // Restore tooltip/popup panes to identity.
     if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, L.point(0, 0), 1);
     if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, L.point(0, 0), 1);
+    // Restore mapPane to its pre-gesture pan offset (setView/_resetView below
+    // will re-position it as needed for the new zoom).
+    L.DomUtil.setTransform(map._mapPane, this._basePos || L.point(0, 0), 1);
     map._animatingZoom = false;
     map.setZoomAround(this._mouseLatLng, this._goalZoom, { animate: false });
     this._active = false;
@@ -107,6 +146,7 @@ const SmoothWheelZoom = L.Handler.extend({
     this._goalZoom = null;
     this._fromZoom = null;
     this._viewZoom = null;
+    this._basePos = null;
   },
 });
 

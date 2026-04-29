@@ -149,6 +149,13 @@ function buildTooltipContent(properties) {
   return html;
 }
 
+function setSelectedClass(layer, on) {
+  const path = layer && layer._path;
+  if (!path) return;
+  if (on) path.classList.add('geo-selected');
+  else path.classList.remove('geo-selected');
+}
+
 export function bindFeature(feature, layer) {
   layer.on({
     mouseover: (e) => {
@@ -158,23 +165,21 @@ export function bindFeature(feature, layer) {
       const map = e.target._map;
       if (map) {
         map.eachLayer((l) => {
-          if (l === e.target || l === selectedLayer) return;
+          if (l === e.target) return;
           if (l.closeTooltip) l.closeTooltip();
-          if (l.feature && l.setStyle) {
+          if (l.feature && l.setStyle && l !== selectedLayer) {
             l.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
           }
         });
       }
       e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
       e.target.bringToFront();
-      // NOTE: do NOT bring selectedLayer to front here — its bold 2.5px border
-      // would otherwise sit above the hovered geo and intercept clicks near
-      // the shared border. Selected layer is restored on mouseout.
     },
     mouseout: (e) => {
-      if (e.target === selectedLayer) return;
+      // Always reset hover style — selected geo gets its visual prominence
+      // from the .geo-selected lift effect, not from a persistent bold border.
       e.target.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
-      if (selectedLayer) selectedLayer.bringToFront();
+      if (selectedLayer && selectedLayer !== e.target) selectedLayer.bringToFront();
     },
     tooltipopen: (e) => {
       if (isAnimating || e.target === selectedLayer) e.target.closeTooltip();
@@ -185,9 +190,11 @@ export function bindFeature(feature, layer) {
       closeAllTooltips(map);
       if (selectedLayer && selectedLayer !== e.target) {
         selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+        setSelectedClass(selectedLayer, false);
       }
       selectedLayer = e.target;
       selectedLayer.bringToFront();
+      setSelectedClass(selectedLayer, true);
       const props = e.target.feature.properties;
       const id = props.GEOID || feature.id;
       setState({ selectedFeatureId: id });
