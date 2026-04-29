@@ -465,7 +465,7 @@ body {
 /* Hover state: the geo "lights up" via brightness/saturation/contrast
    boost — no border, no shadow. The existing color reacts. */
 .leaflet-interactive.geo-hover {
-  filter: brightness(1.12) saturate(1.25) contrast(1.05);
+  filter: brightness(1.08) saturate(1.25) contrast(1.05);
 }
 /* Selected feature: pronounced "lifting" effect via stacked drop-shadow
    filters. Replaces the persistent bold black border. Wins over .geo-hover
