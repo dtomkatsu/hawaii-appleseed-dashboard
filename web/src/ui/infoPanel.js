@@ -28,13 +28,13 @@ function ensureFloatingTip() {
 function positionTip(target) {
   const tip = ensureFloatingTip();
   const r = target.getBoundingClientRect();
-  // Show tip above the metric, then below if no room.
   tip.classList.remove('below');
-  tip.style.visibility = 'hidden';
-  tip.style.opacity = '0';
-  tip.classList.add('measuring');
+  // Measure off-screen without touching visibility/opacity
+  const savedPos = tip.style.cssText;
+  tip.style.position = 'fixed';
+  tip.style.left = '-9999px';
+  tip.style.top = '-9999px';
   const tipRect = tip.getBoundingClientRect();
-  tip.classList.remove('measuring');
   const wantTop = r.top - tipRect.height - 10;
   const placeBelow = wantTop < 8;
   let left = r.left + r.width / 2 - tipRect.width / 2;
@@ -44,18 +44,24 @@ function positionTip(target) {
     left = window.innerWidth - margin - tipRect.width;
   const top = placeBelow ? r.bottom + 10 : wantTop;
   tip.classList.toggle('below', placeBelow);
-  // Arrow X position relative to tip
   const arrowX = r.left + r.width / 2 - left;
   tip.style.setProperty('--tip-arrow-x', `${arrowX}px`);
   tip.style.left = `${Math.round(left)}px`;
   tip.style.top = `${Math.round(top)}px`;
-  tip.style.visibility = 'visible';
-  tip.style.opacity = '';
 }
 
 function bindMetricTooltips(panel) {
   const tip = ensureFloatingTip();
+  let hideTimer = null;
+
+  const cancelHide = () => { clearTimeout(hideTimer); hideTimer = null; };
+  const scheduleHide = () => {
+    cancelHide();
+    hideTimer = setTimeout(() => tip.classList.remove('visible'), 200);
+  };
+
   const showFor = (el) => {
+    cancelHide();
     const desc = el.getAttribute('data-desc') || '';
     const year = el.getAttribute('data-year') || '';
     const label = el.getAttribute('data-label') || '';
@@ -68,18 +74,14 @@ function bindMetricTooltips(panel) {
     tip.classList.add('visible');
     positionTip(el);
   };
-  const hide = () => tip.classList.remove('visible');
 
   panel.querySelectorAll('.ip-metric').forEach((el) => {
     el.addEventListener('mouseenter', () => showFor(el));
-    el.addEventListener('mousemove', () => {
-      if (tip.classList.contains('visible')) positionTip(el);
-    });
-    el.addEventListener('mouseleave', hide);
+    el.addEventListener('mouseleave', scheduleHide);
     el.addEventListener('focus', () => showFor(el));
-    el.addEventListener('blur', hide);
+    el.addEventListener('blur', scheduleHide);
   });
-  panel.addEventListener('scroll', hide, { passive: true });
+  panel.addEventListener('scroll', () => { cancelHide(); tip.classList.remove('visible'); }, { passive: true });
 }
 
 function formatValue(value, dataType) {
@@ -196,7 +198,6 @@ export function showInfoPanel(properties) {
          data-year="${escapeHtml(selectedYear)}"
          data-label="${escapeHtml(selectedDisplayName)}">
       <div class="ip-headline-band">
-        <span class="ip-headline-eyebrow">Selected variable</span>
         <span class="ip-headline-name">${escapeHtml(selectedDisplayName)}</span>
       </div>
       <div class="ip-headline-body">

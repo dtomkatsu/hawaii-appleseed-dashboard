@@ -7,6 +7,20 @@
       "runtimeArgs": ["-m", "streamlit", "run", "run_leaflet.py"],
       "port": 8501,
       "autoPort": true
+    },
+    {
+      "name": "cascade-test",
+      "runtimeExecutable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "runtimeArgs": ["-m", "streamlit", "run", "test_cascade.py", "--server.port", "8502", "--server.headless", "true"],
+      "port": 8502,
+      "autoPort": false
+    },
+    {
+      "name": "rebuild-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "web"],
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }

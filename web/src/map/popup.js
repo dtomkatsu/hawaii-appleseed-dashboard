@@ -152,9 +152,23 @@ function buildTooltipContent(properties) {
 export function bindFeature(feature, layer) {
   layer.on({
     mouseover: (e) => {
+      // Defensive sweep: close any other tooltips, and reset any feature
+      // that's stuck in bold style (besides the current target and selected).
+      // Guards against DOM-reorder cascades that fail to fire mouseout.
+      const map = e.target._map;
+      if (map) {
+        map.eachLayer((l) => {
+          if (l === e.target || l === selectedLayer) return;
+          if (l.closeTooltip) l.closeTooltip();
+          if (l.feature && l.setStyle) {
+            l.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+          }
+        });
+      }
       e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
-      if (!selectedLayer || selectedLayer === e.target) {
-        e.target.bringToFront();
+      e.target.bringToFront();
+      if (selectedLayer && selectedLayer !== e.target) {
+        selectedLayer.bringToFront();
       }
     },
     mouseout: (e) => {
