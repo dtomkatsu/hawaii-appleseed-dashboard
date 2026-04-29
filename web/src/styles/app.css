@@ -796,8 +796,17 @@ body {
   top: 0;
   bottom: 0;
   width: 360px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.98);
+  /* Padding adjusts to leave the leftmost 25px clear for the glass-rim
+     strip — content stays visually centered in the panel body. */
+  padding: 20px 20px 20px 38px;
+  /* Transparent in the leftmost 25px so the ::before's backdrop-filter
+     has actual map content to refract (instead of the panel's own
+     opaque bg). Solid rgba(...,0.98) takes over from x=25px onward. */
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0) 25px,
+    rgba(255, 255, 255, 0.98) 25px,
+    rgba(255, 255, 255, 0.98) 100%);
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   overflow-x: hidden;
@@ -829,6 +838,38 @@ body {
 .info-panel.visible {
   transform: translateX(0);
   visibility: visible;
+}
+
+/* Liquid-glass rim along the panel's left edge — vertical analog of
+   the map's top/bottom strips. Sits over the panel's transparent
+   leftmost 25px (see .info-panel background gradient), so the
+   url(#liquidGlassLeft) backdrop-filter actually refracts the map
+   content beneath instead of the panel's own bg. */
+.info-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 25px;
+  pointer-events: none;
+  /* z-index: -1 so the strip paints AFTER the panel's bg (step 1) but
+     BEFORE in-flow content (steps 3–5). The panel itself has z-index
+     1001, which establishes its own stacking context — so -1 keeps
+     ::before within that context, just at the bottom of it. */
+  z-index: -1;
+  -webkit-backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
+          backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
+  /* Specular gradient: bright at the rim (left), fading inward. */
+  background: linear-gradient(to right,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.26) 30%,
+    rgba(255, 255, 255, 0.10) 60%,
+    rgba(255, 255, 255, 0) 100%);
+  /* Crisp left-rim highlight + softer interior bevel. */
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.88),
+    inset -1px 0 2px rgba(255, 255, 255, 0.24);
 }
 
 .info-panel .ip-header {

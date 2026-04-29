@@ -51,6 +51,19 @@
                    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='rgb(128,128,128)'/><stop offset='0.65' stop-color='rgb(128,98,128)'/><stop offset='1' stop-color='rgb(128,51,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
           <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
+        <!-- LEFT strip (info-panel rim): rotated version of the top
+             filter — gradient runs HORIZONTALLY this time, R channel
+             only (X displacement). R high at outer rim (x=0) → mid
+             at inner edge (x=1). R > 128 ⇒ pixels sampled from the
+             RIGHT ⇒ map content is pulled rightward at the panel's
+             left rim, like a vertical cylinder lens laid along the
+             info-panel's edge. -->
+        <filter id="liquidGlassLeft" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="dispMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.35' stop-color='rgb(158,128,128)'/><stop offset='1' stop-color='rgb(128,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
       </defs>
     </svg>
     <main class="app-main">
