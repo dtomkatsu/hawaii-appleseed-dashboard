@@ -217,7 +217,7 @@ export function bindFeature(feature, layer) {
             paddingTopLeft: [40, 40],
             paddingBottomRight: [rightPad, 40],
             duration: 0.6,
-            maxZoom: 10,
+            maxZoom: 14,
           });
         }
       } catch (_) {
