@@ -31,6 +31,21 @@ export function createMap(containerId, theme) {
 
   L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
 
+  const ResetControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd(map) {
+      const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-reset-zoom');
+      btn.title = 'Reset view';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        map.setView(center, zoom);
+      });
+      return btn;
+    },
+  });
+  new ResetControl().addTo(mapInstance);
+
   return mapInstance;
 }
 

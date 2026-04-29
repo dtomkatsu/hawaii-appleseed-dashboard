@@ -405,6 +405,22 @@ body {
 .leaflet-interactive:focus {
   outline: none;
 }
+.leaflet-reset-zoom {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 30px !important;
+  height: 30px !important;
+  background: white;
+  color: #444;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.leaflet-reset-zoom:hover {
+  color: var(--primary);
+  background: #f4f4f4;
+}
 
 .map-legend {
   position: absolute;
