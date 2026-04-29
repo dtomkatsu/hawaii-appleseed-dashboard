@@ -1,5 +1,4 @@
 import L from 'leaflet';
-import './smoothWheelZoom.js';
 
 let mapInstance = null;
 
@@ -24,9 +23,9 @@ export function createMap(containerId, theme) {
     attributionControl: false,
     preferCanvas: false,
     renderer: L.svg({ padding: 1.0 }),
-    scrollWheelZoom: false,
-    smoothWheelZoom: true,
-    smoothSensitivity: mapCfg.smooth_sensitivity ?? 1,
+    scrollWheelZoom: true,
+    wheelPxPerZoomLevel: 70,
+    wheelDebounceTime: 40,
   });
 
   L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
