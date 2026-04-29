@@ -8,20 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/main-mtLy7mtO.js"></script>
+    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/main-Z8GI8kAT.js"></script>
     <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/loader-xgymrUWK.js">
-    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DILxN3Cp.js">
-    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DNf47cUN.css">
+    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DrsEqwIF.js">
+    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DD3aBiBT.css">
   </head>
   <body>
-    <button id="fullscreen-btn" class="fullscreen-btn" type="button" aria-label="Open in full tab" title="Open in full tab" hidden>
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M14 3h7v7"/>
-        <path d="M21 3l-9 9"/>
-        <path d="M10 21H3v-7"/>
-        <path d="M3 21l9-9"/>
-      </svg>
-    </button>
     <main class="app-main">
       <nav class="main-tabs" role="tablist">
         <button class="main-tab active" data-tab="map" role="tab" aria-selected="true">
@@ -35,7 +27,16 @@
       </nav>
 
       <div id="tab-map" class="tab-pane" role="tabpanel">
-        <div id="controls-bar" class="controls-bar"></div>
+        <div id="controls-bar" class="controls-bar">
+          <button id="fullscreen-btn" class="fullscreen-btn" type="button" aria-label="Open in full tab" title="Open in full tab" hidden>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3h7v7"/>
+              <path d="M21 3l-9 9"/>
+              <path d="M10 21H3v-7"/>
+              <path d="M3 21l9-9"/>
+            </svg>
+          </button>
+        </div>
         <section class="map-wrap">
           <div id="main-map" class="map-container"></div>
           <div id="main-map-legend" class="map-legend">
