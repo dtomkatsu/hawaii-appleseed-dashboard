@@ -169,7 +169,6 @@ export function showInfoPanel(properties) {
              data-label="${escapeHtml(label)}">
           <div class="ip-metric-value">${escapeHtml(displayValue)}</div>
           <div class="ip-metric-label">${escapeHtml(label)}</div>
-          <span class="ip-metric-info" aria-hidden="true">i</span>
         </div>`;
     }
     if (items.length % 2 === 1) {

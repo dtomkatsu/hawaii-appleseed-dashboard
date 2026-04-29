@@ -388,6 +388,12 @@ body {
   background: var(--primary);
   box-shadow: 0 0 0 2px rgba(58, 119, 16, 0.15);
   pointer-events: none;
+  /* Match the <a>'s padding-left transition so the dot slides in lockstep
+     with the text instead of staying frozen while everything around it moves. */
+  transition: left 0.22s ease;
+}
+.cascade-leaf--selected:hover > a::after {
+  left: 10px;
 }
 
 .cascade-parent > .cascade-label .cascade-caret {
@@ -435,6 +441,24 @@ body {
   height: 100%;
   background: white;
 }
+/* Edge-feather: a thin white-fade vignette on all four sides of the map.
+   Eliminates the abrupt rectangular crop where geos pass off the viewport
+   — features dissolve into the page background instead of being sliced
+   by a hard border. Sits ABOVE the map content but BELOW the legend
+   (z 1000), info-panel (z 1001), and controls-bar so it never veils UI.
+   pointer-events: none lets the map receive clicks unchanged. */
+.map-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+  background:
+    linear-gradient(to right,  white 0, rgba(255,255,255,0) 28px) left   / 28px 100% no-repeat,
+    linear-gradient(to left,   white 0, rgba(255,255,255,0) 28px) right  / 28px 100% no-repeat,
+    linear-gradient(to bottom, white 0, rgba(255,255,255,0) 28px) top    / 100% 28px no-repeat,
+    linear-gradient(to top,    white 0, rgba(255,255,255,0) 28px) bottom / 100% 28px no-repeat;
+}
 .leaflet-container {
   background: white !important;
 }
@@ -472,9 +496,9 @@ body {
    via being declared after, in case both classes are momentarily present. */
 .leaflet-interactive.geo-selected {
   filter:
-    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.42))
-    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.26))
+    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.16))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.10));
 }
 .leaflet-reset-zoom {
   display: flex !important;
@@ -709,6 +733,19 @@ body {
   color: #333;
   scrollbar-width: none;
   visibility: hidden;
+  /* Top/bottom scroll-edge feather. Content fades in/out as it crosses
+     the visible region instead of being clipped abruptly by the panel
+     border. Side edges stay solid so the panel itself reads as a card. */
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%);
+          mask-image: linear-gradient(to bottom,
+    transparent 0,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%);
 }
 .info-panel::-webkit-scrollbar {
   display: none;
@@ -1018,33 +1055,6 @@ body {
   height: 3px;
   background: var(--primary);
 }
-.ip-metric-info {
-  position: absolute;
-  top: 5px;
-  right: 6px;
-  width: 13px;
-  height: 13px;
-  font-size: 9px;
-  font-weight: 800;
-  font-style: italic;
-  font-family: 'Georgia', serif;
-  color: #6B9E78;
-  background: rgba(125, 211, 192, 0.15);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  opacity: 0.55;
-  transition: opacity 0.18s ease, background 0.18s ease, transform 0.18s ease;
-  pointer-events: none;
-}
-.ip-metric:hover .ip-metric-info,
-.ip-metric:focus-visible .ip-metric-info {
-  opacity: 1;
-  background: rgba(125, 211, 192, 0.3);
-  transform: scale(1.12);
-}
 .ip-metric-value {
   font-size: 18px;
   font-weight: 800;
@@ -1052,7 +1062,6 @@ body {
   letter-spacing: -0.02em;
   line-height: 1.1;
   margin-bottom: 2px;
-  padding-right: 14px;
 }
 .ip-metric.selected .ip-metric-value {
   font-size: 22px;
