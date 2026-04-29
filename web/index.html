@@ -12,6 +12,24 @@
     <link rel="stylesheet" href="/src/styles/analysis.css" />
   </head>
   <body>
+    <!--
+      Inline SVG filter referenced by .map-wrap::before / ::after via
+      `backdrop-filter: url(#fluidDisplace)`. feTurbulence (fractalNoise)
+      drives feDisplacementMap to push the underlying map pixels along
+      organic, slow-undulating curves — a "fluid displace" feathering
+      that replaces the prior blur. The SVG element itself is zero-size
+      and aria-hidden so it never participates in layout.
+    -->
+    <svg class="svg-filter-defs" aria-hidden="true" focusable="false">
+      <defs>
+        <filter id="fluidDisplace" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.013 0.022" numOctaves="2" seed="7" result="noise">
+            <animate attributeName="baseFrequency" dur="22s" values="0.013 0.022;0.018 0.028;0.013 0.022" repeatCount="indefinite"/>
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+    </svg>
     <main class="app-main">
       <nav class="main-tabs" role="tablist">
         <button class="main-tab active" data-tab="map" role="tab" aria-selected="true">

@@ -16,6 +16,16 @@
   box-sizing: border-box;
 }
 
+/* Inline SVG that only carries <filter> defs (referenced by CSS via
+   url(#...)). Pull it out of layout entirely — zero size, no flow. */
+.svg-filter-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 html,
 body {
   margin: 0;
@@ -443,30 +453,33 @@ body {
   height: 100%;
   background: white;
 }
-/* Edge-feather (TOP and BOTTOM only): two thin strips that apply a
-   backdrop-filter blur to the underlying map content, with the blur
-   strength masked from full → zero so its inner edge dissolves smoothly
-   instead of cutting a hard line. This softens the abrupt rectangular
-   crop where geos pass off the viewport.
+/* Edge-feather (TOP and BOTTOM only): two strips that apply a
+   fluid-displacement SVG filter (#fluidDisplace, defined inline in
+   index.html) to the underlying map content via backdrop-filter.
+   feTurbulence + feDisplacementMap push pixels along slow, organic
+   waves so geos near the edge bleed into the page like wet paint
+   instead of being sliced by a hard rectangular crop. The strip's
+   strength is masked from full → zero so its inner edge dissolves
+   smoothly. The strip is taller than the prior blur version (40px)
+   because the displacement scale (20px) needs room to "breathe"
+   without the displaced pixels reaching the masked-off region.
 
    Sides are intentionally NOT feathered (sidebar/info-panel sit there).
 
-   Stacking: z-index 500 — above leaflet panes (max ~700 inside the
-   leaflet container's own stacking context, which is z:auto here, so
-   500 still wins over them) but below legend (z 1000), info-panel
-   (z 1001), and controls-bar (z 1100). pointer-events: none keeps map
-   clicks intact. */
+   Stacking: z-index 500 — above leaflet panes but below legend (1000),
+   info-panel (1001), and controls-bar (1100). pointer-events: none
+   keeps map clicks intact. */
 .map-wrap::before,
 .map-wrap::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  height: 26px;
+  height: 40px;
   pointer-events: none;
   z-index: 500;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: url(#fluidDisplace);
+          backdrop-filter: url(#fluidDisplace);
 }
 .map-wrap::before {
   top: 0;
