@@ -61,10 +61,60 @@ body {
 }
 
 .app-main {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   height: calc(100vh - 56px);
+  overflow: hidden;
+}
+
+/* ========== Main tab bar ========== */
+.main-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  background: white;
+  border-bottom: 1px solid #e0e8dc;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.main-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 18px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.main-tab:hover { color: var(--primary); }
+.main-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* ========== Tab panes ========== */
+.tab-pane[hidden] { display: none !important; }
+
+#tab-map {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#tab-data {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px 40px;
+  min-height: 0;
 }
 
 /* ========== Controls bar (above map) ========== */
@@ -332,6 +382,8 @@ body {
 .map-wrap {
   position: relative;
   background: white;
+  flex: 1;
+  min-height: 0;
 }
 .map-container {
   width: 100%;

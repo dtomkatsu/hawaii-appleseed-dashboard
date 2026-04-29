@@ -11,6 +11,15 @@ const LAYERS = [
 let config = null;
 let activeLayer = 'county';
 let activeVar = 'poverty_rate';
+let initialized = false;
+
+export async function initAnalysis(sharedConfig) {
+  if (initialized) return;
+  initialized = true;
+  config = sharedConfig || await loadConfig();
+  buildControls();
+  await refreshChart();
+}
 
 async function main() {
   config = await loadConfig();
@@ -114,4 +123,7 @@ async function refreshChart() {
   }
 }
 
-main().catch(console.error);
+// Only auto-run on the standalone data-analysis.html page
+if (document.getElementById('da-standalone')) {
+  main().catch(console.error);
+}

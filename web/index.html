@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/app.css" />
+    <link rel="stylesheet" href="/src/styles/analysis.css" />
   </head>
   <body>
     <header class="app-header">
@@ -16,25 +17,48 @@
         <img src="/assets/logo.png" alt="Hawaii Appleseed" class="brand-logo" onerror="this.style.display='none'" />
         <h1>Hawaii Data Dashboard</h1>
       </div>
-      <nav class="header-nav">
-        <a href="/data-analysis.html">Data Analysis</a>
-      </nav>
     </header>
 
     <main class="app-main">
-      <div id="controls-bar" class="controls-bar"></div>
-      <section class="map-wrap">
-        <div id="main-map" class="map-container"></div>
-        <div id="main-map-legend" class="map-legend">
-          <div class="legend-title"></div>
-          <div id="main-map-legend-items"></div>
-          <div class="legend-color-scheme">
-            <label for="color-scheme-select">Color scheme</label>
-            <select id="color-scheme-select"></select>
+      <nav class="main-tabs" role="tablist">
+        <button class="main-tab active" data-tab="map" role="tab" aria-selected="true">🗺️ Map View</button>
+        <button class="main-tab" data-tab="data" role="tab" aria-selected="false">📊 Data Analysis</button>
+      </nav>
+
+      <div id="tab-map" class="tab-pane" role="tabpanel">
+        <div id="controls-bar" class="controls-bar"></div>
+        <section class="map-wrap">
+          <div id="main-map" class="map-container"></div>
+          <div id="main-map-legend" class="map-legend">
+            <div class="legend-title"></div>
+            <div id="main-map-legend-items"></div>
+            <div class="legend-color-scheme">
+              <label for="color-scheme-select">Color scheme</label>
+              <select id="color-scheme-select"></select>
+            </div>
+          </div>
+          <aside id="info-panel" class="info-panel"></aside>
+        </section>
+      </div>
+
+      <div id="tab-data" class="tab-pane" role="tabpanel" hidden>
+        <div class="da-controls-row">
+          <div id="da-controls" class="da-controls"></div>
+        </div>
+        <div class="da-chart-row">
+          <div class="da-chart-wrap">
+            <p class="da-section-label">Ranked comparison</p>
+            <div id="da-chart"></div>
+          </div>
+          <div class="da-table-wrap">
+            <p class="da-section-label">Selected variable</p>
+            <div id="da-side-table"></div>
           </div>
         </div>
-        <aside id="info-panel" class="info-panel"></aside>
-      </section>
+        <hr class="da-divider" />
+        <p class="da-section-label">Full data table</p>
+        <div id="da-full-table" class="da-full-table-wrap"></div>
+      </div>
     </main>
 
     <script type="module" src="/src/main.js"></script>
