@@ -1,0 +1,20 @@
+{
+  "name": "hawaii-appleseed-dashboard-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Static JS/HTML port of the Hawaii Appleseed Data Dashboard",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "bash ../scripts/build_static/run_all.sh",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "plotly.js-dist-min": "^2.35.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hawaii Appleseed Data Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/styles/app.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="/assets/logo.png" alt="Hawaii Appleseed" class="brand-logo" onerror="this.style.display='none'" />
+        <h1>Hawaii Data Dashboard</h1>
+      </div>
+      <nav class="header-nav">
+        <a href="/data-analysis.html">Data Analysis</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <aside id="sidebar" class="sidebar"></aside>
+      <section class="map-wrap">
+        <div id="main-map" class="map-container"></div>
+        <div id="main-map-legend" class="map-legend">
+          <div class="legend-title"></div>
+          <div id="main-map-legend-items"></div>
+        </div>
+      </section>
+      <aside id="info-panel" class="info-panel"></aside>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

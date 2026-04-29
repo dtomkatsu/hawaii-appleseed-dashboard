@@ -41,3 +41,7 @@ ENV/
 .DS_Store
 Thumbs.db
 *.code-workspace
+
+# Node
+web/node_modules/
+web/dist/

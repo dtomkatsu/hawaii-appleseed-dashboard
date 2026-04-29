@@ -1,0 +1,46 @@
+{
+  "id": "15",
+  "name": "Hawaii",
+  "demographics": {
+    "population": "1408357",
+    "median_age": null,
+    "population_by_race": {
+      "White": 0,
+      "Native Hawaiian/Pacific Islander": 0,
+      "Asian": 0,
+      "Two or More Races": 0,
+      "Other": 0
+    }
+  },
+  "economic": {
+    "median_income": "100389",
+    "poverty_rate": 10.04,
+    "unemployment_rate": 4.92,
+    "alice_rate": 35.0
+  },
+  "housing": {
+    "median_home_value": "839100",
+    "median_rent": "1971",
+    "homeownership_rate": null,
+    "renter_rate": 37.0,
+    "rent_burden_rate": 52.1,
+    "severe_rent_burden_rate": 26.28
+  },
+  "snap": {
+    "snap_household_count": "54955",
+    "snap_household_rate": 19.41,
+    "snap_benefit_annual_per_household": 9764.64,
+    "snap_benefits_annual_total": 926937745.92
+  },
+  "tax_credits": {
+    "ctc_avg_amount": 1039.2409240924092,
+    "ctc_participation_rate": 8.98230219666202,
+    "federal_eitc_avg_amount": 2198.428758481133,
+    "eitc_participation_rate": 12.45219814425043,
+    "state_eitc_avg_amount": 879.3715033924533
+  },
+  "transportation": {
+    "travel_time_to_work_minutes": 47.17,
+    "public_transportation_pct": 4.23
+  }
+}
