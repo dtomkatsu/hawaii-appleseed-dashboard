@@ -1,20 +1,24 @@
 const cache = new Map();
 
+// BASE_URL is '/' in dev, '/hawaii-appleseed-dashboard/' in production GH Pages build
+const BASE = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+
 export async function fetchJson(path) {
-  if (cache.has(path)) return cache.get(path);
-  const promise = fetch(path).then((r) => {
-    if (!r.ok) throw new Error(`Failed to fetch ${path}: ${r.status}`);
+  const url = BASE + path;
+  if (cache.has(url)) return cache.get(url);
+  const promise = fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`Failed to fetch ${url}: ${r.status}`);
     return r.json();
   });
-  cache.set(path, promise);
+  cache.set(url, promise);
   return promise;
 }
 
 export function loadConfig() {
   return Promise.all([
-    fetchJson('/src/config/variables.json'),
-    fetchJson('/src/config/theme.json'),
-    fetchJson('/src/config/ui_strings.json'),
+    fetchJson('/config/variables.json'),
+    fetchJson('/config/theme.json'),
+    fetchJson('/config/ui_strings.json'),
   ]).then(([variables, theme, uiStrings]) => ({ variables, theme, uiStrings }));
 }
 

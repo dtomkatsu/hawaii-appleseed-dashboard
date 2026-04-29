@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/hawaii-appleseed-dashboard/' : '/',
   root: '.',
   publicDir: 'public',
   build: {
@@ -18,4 +19,4 @@ export default defineConfig({
     port: 5173,
     open: true,
   },
-});
+}));
