@@ -114,9 +114,20 @@ function renderTable(tableId, rows, varKey, varMeta) {
       <thead><tr><th>Area</th><th>${escapeHtml(varLabel)}</th></tr></thead>
       <tbody>${rows.map((r) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(fmt(r.value))}</td></tr>`).join('')}</tbody>
     </table>`;
+
+  // Wire side-table CSV download (button lives in HTML, separate from this container)
+  const sideBtn = document.getElementById('da-side-download');
+  if (sideBtn) {
+    sideBtn.onclick = () => {
+      const headers = ['Area', varLabel];
+      const csvRows = rows.map((r) => [r.name, fmt(r.value)]);
+      downloadCsv(`hawaii_${varKey}_ranked.csv`, headers, csvRows);
+    };
+    sideBtn.disabled = rows.length === 0;
+  }
 }
 
-export function renderFullTable(containerId, features, variablesConfig) {
+export function renderFullTable(containerId, features, variablesConfig, layerKey) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const vars = variablesConfig?.variables || {};
@@ -145,6 +156,45 @@ export function renderFullTable(containerId, features, variablesConfig) {
       }).join('')}</tbody>
     </table>`;
   el.innerHTML = tableHtml;
+
+  // Wire full-table CSV download (button lives in HTML)
+  const fullBtn = document.getElementById('da-full-download');
+  if (fullBtn) {
+    fullBtn.onclick = () => {
+      const csvHeaders = ['Area', ...showCols.map(([, v]) => v.display_name_long || v.display_name)];
+      const csvRows = rows.map((p) => [
+        cleanName(p),
+        ...showCols.map(([k, v]) => formatCell(p[k], v.data_type)),
+      ]);
+      const stamp = new Date().toISOString().slice(0, 10);
+      const layerSlug = (layerKey || 'data').replace(/\s+/g, '_').toLowerCase();
+      downloadCsv(`hawaii_${layerSlug}_${stamp}.csv`, csvHeaders, csvRows);
+    };
+    fullBtn.disabled = rows.length === 0;
+  }
+}
+
+function csvEscape(value) {
+  const s = value == null ? '' : String(value);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function downloadCsv(filename, headers, rows) {
+  const lines = [headers.map(csvEscape).join(',')];
+  for (const r of rows) lines.push(r.map(csvEscape).join(','));
+  // BOM helps Excel detect UTF-8
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 function getUnit(meta) {

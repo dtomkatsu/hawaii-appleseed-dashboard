@@ -3,10 +3,83 @@ import { lookupRep } from '../map/popup.js';
 
 let VARIABLES = null;
 let CATEGORIES = null;
+let floatingTip = null;
 
 export function initInfoPanel(variablesConfig) {
   VARIABLES = variablesConfig.variables;
   CATEGORIES = variablesConfig.info_panel_categories;
+}
+
+function extractYear(source) {
+  if (!source) return '';
+  const m = String(source).match(/(19|20)\d{2}/);
+  return m ? m[0] : '';
+}
+
+function ensureFloatingTip() {
+  if (floatingTip) return floatingTip;
+  floatingTip = document.createElement('div');
+  floatingTip.className = 'ip-floating-tip';
+  floatingTip.setAttribute('role', 'tooltip');
+  document.body.appendChild(floatingTip);
+  return floatingTip;
+}
+
+function positionTip(target) {
+  const tip = ensureFloatingTip();
+  const r = target.getBoundingClientRect();
+  // Show tip above the metric, then below if no room.
+  tip.classList.remove('below');
+  tip.style.visibility = 'hidden';
+  tip.style.opacity = '0';
+  tip.classList.add('measuring');
+  const tipRect = tip.getBoundingClientRect();
+  tip.classList.remove('measuring');
+  const wantTop = r.top - tipRect.height - 10;
+  const placeBelow = wantTop < 8;
+  let left = r.left + r.width / 2 - tipRect.width / 2;
+  const margin = 8;
+  if (left < margin) left = margin;
+  if (left + tipRect.width > window.innerWidth - margin)
+    left = window.innerWidth - margin - tipRect.width;
+  const top = placeBelow ? r.bottom + 10 : wantTop;
+  tip.classList.toggle('below', placeBelow);
+  // Arrow X position relative to tip
+  const arrowX = r.left + r.width / 2 - left;
+  tip.style.setProperty('--tip-arrow-x', `${arrowX}px`);
+  tip.style.left = `${Math.round(left)}px`;
+  tip.style.top = `${Math.round(top)}px`;
+  tip.style.visibility = 'visible';
+  tip.style.opacity = '';
+}
+
+function bindMetricTooltips(panel) {
+  const tip = ensureFloatingTip();
+  const showFor = (el) => {
+    const desc = el.getAttribute('data-desc') || '';
+    const year = el.getAttribute('data-year') || '';
+    const label = el.getAttribute('data-label') || '';
+    if (!desc && !year) return;
+    tip.innerHTML = `
+      ${label ? `<div class="ip-tip-title">${label}</div>` : ''}
+      ${desc ? `<div class="ip-tip-desc">${desc}</div>` : ''}
+      ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${year}</div>` : ''}
+    `;
+    tip.classList.add('visible');
+    positionTip(el);
+  };
+  const hide = () => tip.classList.remove('visible');
+
+  panel.querySelectorAll('.ip-metric').forEach((el) => {
+    el.addEventListener('mouseenter', () => showFor(el));
+    el.addEventListener('mousemove', () => {
+      if (tip.classList.contains('visible')) positionTip(el);
+    });
+    el.addEventListener('mouseleave', hide);
+    el.addEventListener('focus', () => showFor(el));
+    el.addEventListener('blur', hide);
+  });
+  panel.addEventListener('scroll', hide, { passive: true });
 }
 
 function formatValue(value, dataType) {
@@ -64,6 +137,8 @@ export function showInfoPanel(properties) {
   const selectedDisplayName =
     selectedVar?.info_panel_label || selectedVar?.display_name || (s.selectedVariable || '').replace(/_/g, ' ');
   const selectedValue = formatValue(properties[s.selectedVariable], selectedVar?.data_type);
+  const selectedDesc = selectedVar?.description || '';
+  const selectedYear = extractYear(selectedVar?.source);
 
   const grouped = variablesByCategory();
   const cats = Object.entries(CATEGORIES || {})
@@ -81,10 +156,18 @@ export function showInfoPanel(properties) {
       if (m.key === 'cep_display') {
         displayValue = String(properties[m.key]).replace(/\s*CEP\s*schools?/i, '').trim();
       }
+      const desc = m.description || '';
+      const year = extractYear(m.source);
+      const label = m.info_panel_label || m.display_name || '';
       body += `
-        <div class="ip-metric ${isSelected ? 'selected' : ''}">
+        <div class="ip-metric ${isSelected ? 'selected' : ''}"
+             tabindex="0"
+             data-desc="${escapeHtml(desc)}"
+             data-year="${escapeHtml(year)}"
+             data-label="${escapeHtml(label)}">
           <div class="ip-metric-value">${escapeHtml(displayValue)}</div>
-          <div class="ip-metric-label">${escapeHtml(m.info_panel_label || m.display_name)}</div>
+          <div class="ip-metric-label">${escapeHtml(label)}</div>
+          <span class="ip-metric-info" aria-hidden="true">i</span>
         </div>`;
     }
     if (items.length % 2 === 1) {
@@ -107,22 +190,63 @@ export function showInfoPanel(properties) {
       <button class="ip-close" aria-label="Close">×</button>
       <h2>${escapeHtml(name)}</h2>
     </div>
-    <div class="ip-headline">
-      <div class="ip-headline-band"><span>${escapeHtml(selectedDisplayName)}</span></div>
-      <div class="ip-headline-body"><span>${escapeHtml(selectedValue)}</span></div>
+    <div class="ip-headline"
+         tabindex="0"
+         data-desc="${escapeHtml(selectedDesc)}"
+         data-year="${escapeHtml(selectedYear)}"
+         data-label="${escapeHtml(selectedDisplayName)}">
+      <div class="ip-headline-band">
+        <span class="ip-headline-eyebrow">Selected variable</span>
+        <span class="ip-headline-name">${escapeHtml(selectedDisplayName)}</span>
+      </div>
+      <div class="ip-headline-body">
+        <span class="ip-headline-value">${escapeHtml(selectedValue)}</span>
+        ${selectedYear ? `<span class="ip-headline-year">${escapeHtml(selectedYear)}</span>` : ''}
+      </div>
     </div>
     ${repHtml}
     <div class="ip-actions">
-      <a class="ip-btn" href="${factsheetUrl}" target="_blank" rel="noopener">View / Print Fact Sheet</a>
+      <a class="ip-btn" href="${factsheetUrl}" target="_blank" rel="noopener">
+        <span>View / Print Fact Sheet</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 5l7 7-7 7"/></svg>
+      </a>
     </div>
     ${body}
   `;
   panel.classList.add('visible');
 
   panel.querySelector('.ip-close')?.addEventListener('click', hideInfoPanel);
+
+  // Bind tooltips for headline + each metric
+  const headline = panel.querySelector('.ip-headline');
+  if (headline) bindHeadlineTooltip(headline);
+  bindMetricTooltips(panel);
+}
+
+function bindHeadlineTooltip(el) {
+  const tip = ensureFloatingTip();
+  const showFor = () => {
+    const desc = el.getAttribute('data-desc') || '';
+    const year = el.getAttribute('data-year') || '';
+    const label = el.getAttribute('data-label') || '';
+    if (!desc && !year) return;
+    tip.innerHTML = `
+      ${label ? `<div class="ip-tip-title">${label}</div>` : ''}
+      ${desc ? `<div class="ip-tip-desc">${desc}</div>` : ''}
+      ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${year}</div>` : ''}
+    `;
+    tip.classList.add('visible');
+    positionTip(el);
+  };
+  const hide = () => tip.classList.remove('visible');
+  el.addEventListener('mouseenter', showFor);
+  el.addEventListener('mouseleave', hide);
+  el.addEventListener('focus', showFor);
+  el.addEventListener('blur', hide);
 }
 
 export function hideInfoPanel() {
   const panel = document.getElementById('info-panel');
   if (panel) panel.classList.remove('visible');
+  if (floatingTip) floatingTip.classList.remove('visible');
 }
