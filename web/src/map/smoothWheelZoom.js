@@ -50,8 +50,29 @@ const SmoothWheelZoom = L.Handler.extend({
   _update() {
     const map = this._map;
     if (!map.getCenter().equals(this._prevCenter) || map.getZoom() !== this._prevZoom) return;
-    this._zoom = map.getZoom() + (this._goalZoom - map.getZoom()) * 0.3;
-    this._zoom = Math.floor(this._zoom * 100) / 100;
+
+    const currentZoom = map.getZoom();
+    const zoomDiff = this._goalZoom - currentZoom;
+    const settled = Math.abs(zoomDiff) < 0.005;
+
+    if (settled && !this._isWheeling) {
+      if (this._moved) {
+        const delta = this._wheelMousePosition.subtract(this._centerPoint);
+        const finalCenter = map.unproject(
+          map.project(this._wheelStartLatLng, this._goalZoom).subtract(delta),
+          this._goalZoom,
+        );
+        map._move(finalCenter, this._goalZoom);
+        map._moveEnd(true);
+        this._moved = false;
+      }
+      this._frameId = null;
+      return;
+    }
+
+    this._zoom = settled ? this._goalZoom : currentZoom + zoomDiff * 0.3;
+    this._zoom = Math.round(this._zoom * 1000) / 1000;
+
     const delta = this._wheelMousePosition.subtract(this._centerPoint);
     if (delta.x === 0 && delta.y === 0) {
       this._frameId = requestAnimationFrame(this._update.bind(this));
