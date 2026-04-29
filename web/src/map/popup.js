@@ -156,33 +156,39 @@ function setSelectedClass(layer, on) {
   else path.classList.remove('geo-selected');
 }
 
+function setHoverClass(layer, on) {
+  const path = layer && layer._path;
+  if (!path) return;
+  if (on) path.classList.add('geo-hover');
+  else path.classList.remove('geo-hover');
+}
+
 export function bindFeature(feature, layer) {
   layer.on({
     mouseover: (e) => {
-      // Defensive sweep: close any other tooltips, and reset any feature
-      // that's stuck in bold style (besides the current target and selected).
-      // Guards against DOM-reorder cascades that fail to fire mouseout.
+      // Defensive sweep: close any other tooltips and clear any stuck
+      // geo-hover classes on other features. Guards against DOM-reorder
+      // cascades that fail to fire mouseout.
       const map = e.target._map;
       if (map) {
         map.eachLayer((l) => {
           if (l === e.target) return;
           if (l.closeTooltip) l.closeTooltip();
-          if (l.feature && l.setStyle && l !== selectedLayer) {
-            l.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+          if (l._path && l !== selectedLayer) {
+            l._path.classList.remove('geo-hover');
           }
         });
       }
-      // Don't apply bold hover border to the selected geo — its prominence
-      // comes from the .geo-selected lift, not a persistent bold ring.
+      // Hover state is purely a CSS filter (brightness + saturation boost).
+      // No border, no setStyle change — the geo's existing color "lights up".
+      // Skipped for the selected geo so it doesn't compete with the lift.
       if (e.target !== selectedLayer) {
-        e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
+        setHoverClass(e.target, true);
       }
       e.target.bringToFront();
     },
     mouseout: (e) => {
-      // Always reset hover style — selected geo gets its visual prominence
-      // from the .geo-selected lift effect, not from a persistent bold border.
-      e.target.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+      setHoverClass(e.target, false);
       if (selectedLayer && selectedLayer !== e.target) selectedLayer.bringToFront();
     },
     tooltipopen: (e) => {
@@ -193,14 +199,12 @@ export function bindFeature(feature, layer) {
       ensureAnimationListeners(map);
       closeAllTooltips(map);
       if (selectedLayer && selectedLayer !== e.target) {
-        selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
         setSelectedClass(selectedLayer, false);
       }
       selectedLayer = e.target;
-      // Strip the bold hover border immediately on click, even though the
-      // cursor is still over this geo. The lift effect alone signals
-      // selection now.
-      selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+      // Drop the hover class so the brightness boost doesn't compete with
+      // the lift effect on the selected geo.
+      setHoverClass(selectedLayer, false);
       selectedLayer.bringToFront();
       setSelectedClass(selectedLayer, true);
       const props = e.target.feature.properties;

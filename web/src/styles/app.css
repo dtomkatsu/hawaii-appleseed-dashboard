@@ -462,8 +462,14 @@ body {
   vector-effect: non-scaling-stroke;
   shape-rendering: geometricPrecision;
 }
+/* Hover state: the geo "lights up" via brightness/saturation/contrast
+   boost — no border, no shadow. The existing color reacts. */
+.leaflet-interactive.geo-hover {
+  filter: brightness(1.12) saturate(1.25) contrast(1.05);
+}
 /* Selected feature: pronounced "lifting" effect via stacked drop-shadow
-   filters. Replaces the persistent bold black border. */
+   filters. Replaces the persistent bold black border. Wins over .geo-hover
+   via being declared after, in case both classes are momentarily present. */
 .leaflet-interactive.geo-selected {
   filter:
     drop-shadow(0 8px 12px rgba(0, 0, 0, 0.42))
