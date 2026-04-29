@@ -105,9 +105,9 @@ function buildTooltipContent(properties) {
   const value = formatValue(properties[varKey], meta?.data_type);
 
   let html = `<div class="tt-name">${escapeHtml(name)}</div>` +
-             `<div class="tt-stat-row">` +
-             `<span class="tt-stat-label">${escapeHtml(displayName)}</span>` +
-             `<span class="tt-stat-badge">${escapeHtml(value)}</span>` +
+             `<div class="tt-stat-card">` +
+             `<div class="tt-stat-label">${escapeHtml(displayName)}</div>` +
+             `<div class="tt-stat-value">${escapeHtml(value)}</div>` +
              `</div>`;
 
   const rep = lookupRep(properties, s.activeLayer);
@@ -118,13 +118,14 @@ function buildTooltipContent(properties) {
       areas = list.slice(0, 2).join(', ');
       if (list.length > 2) areas += `, +${list.length - 2} more`;
     }
-    const repName = `${rep.name} (${rep.party})`;
-    html += `<div class="tt-divider"></div>` +
-            `<div class="tt-rep">${escapeHtml(repName)}</div>` +
-            `<div class="tt-areas">${escapeHtml(areas)}</div>`;
+    html += `<div class="tt-rep-card">` +
+            `<div class="tt-rep-label">Representative</div>` +
+            `<div class="tt-rep-name">${escapeHtml(rep.name)} <span class="tt-rep-party">${escapeHtml(rep.party)}</span></div>` +
+            `<div class="tt-areas">${escapeHtml(areas)}</div>` +
+            `</div>`;
   }
 
-  html += `<div class="tt-hint">Click to explore</div>`;
+  html += `<div class="tt-hint">Click to explore →</div>`;
   return html;
 }
 
