@@ -66,11 +66,18 @@ const SmoothWheelZoom = L.Handler.extend({
     const s = map.getZoomScale(this._viewZoom, this._fromZoom);
     const mp = this._mousePoint;
     L.DomUtil.setTransform(map._mapPane, L.point(mp.x * (1 - s), mp.y * (1 - s)), s);
+
+    const counterOffset = L.point((-mp.x * (1 - s)) / s, (-mp.y * (1 - s)) / s);
+    const counterScale = 1 / s;
+    if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, counterOffset, counterScale);
+    if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, counterOffset, counterScale);
   },
 
   _settle() {
     const map = this._map;
     L.DomUtil.setTransform(map._mapPane, L.point(0, 0), 1);
+    if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, L.point(0, 0), 1);
+    if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, L.point(0, 0), 1);
     map._animatingZoom = false;
     map.setZoomAround(this._mouseLatLng, this._goalZoom, { animate: false });
     this._active = false;
