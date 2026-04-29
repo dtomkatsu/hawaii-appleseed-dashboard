@@ -163,7 +163,9 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  padding: 16px 24px 18px;
+  /* Tightened bottom padding so the map starts directly beneath the dropdown
+     triggers instead of sitting in a band of empty white. */
+  padding: 16px 24px 4px;
   background: linear-gradient(to bottom, var(--background) 0%, #ffffff 100%);
   position: relative;
   z-index: 1100;
@@ -441,23 +443,49 @@ body {
   height: 100%;
   background: white;
 }
-/* Edge-feather: a thin white-fade vignette on all four sides of the map.
-   Eliminates the abrupt rectangular crop where geos pass off the viewport
-   — features dissolve into the page background instead of being sliced
-   by a hard border. Sits ABOVE the map content but BELOW the legend
-   (z 1000), info-panel (z 1001), and controls-bar so it never veils UI.
-   pointer-events: none lets the map receive clicks unchanged. */
+/* Edge-feather (TOP and BOTTOM only): two thin strips that apply a
+   backdrop-filter blur to the underlying map content, with the blur
+   strength masked from full → zero so its inner edge dissolves smoothly
+   instead of cutting a hard line. This softens the abrupt rectangular
+   crop where geos pass off the viewport.
+
+   Sides are intentionally NOT feathered (sidebar/info-panel sit there).
+
+   Stacking: z-index 500 — above leaflet panes (max ~700 inside the
+   leaflet container's own stacking context, which is z:auto here, so
+   500 still wins over them) but below legend (z 1000), info-panel
+   (z 1001), and controls-bar (z 1100). pointer-events: none keeps map
+   clicks intact. */
+.map-wrap::before,
 .map-wrap::after {
   content: '';
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
   pointer-events: none;
   z-index: 500;
-  background:
-    linear-gradient(to right,  white 0, rgba(255,255,255,0) 28px) left   / 28px 100% no-repeat,
-    linear-gradient(to left,   white 0, rgba(255,255,255,0) 28px) right  / 28px 100% no-repeat,
-    linear-gradient(to bottom, white 0, rgba(255,255,255,0) 28px) top    / 100% 28px no-repeat,
-    linear-gradient(to top,    white 0, rgba(255,255,255,0) 28px) bottom / 100% 28px no-repeat;
+  -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
+}
+.map-wrap::before {
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+}
+.map-wrap::after {
+  bottom: 0;
+  -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+          mask-image: linear-gradient(to top, black 0%, transparent 100%);
+}
+/* When the info-panel is visible, retract the blur strips so they stop
+   at the panel's left edge — the panel sits at higher z-index anyway,
+   but pulling the strip back guarantees no blur ever bleeds beneath
+   it (the panel bg is rgba(...,0.98), so there's a hair of show-through
+   without this). */
+.map-wrap:has(.info-panel.visible)::before,
+.map-wrap:has(.info-panel.visible)::after {
+  right: 360px;
 }
 .leaflet-container {
   background: white !important;
@@ -611,7 +639,10 @@ body {
   padding: 4px 8px;
   border: 1px solid var(--border-trigger);
   border-radius: 4px;
-  background: var(--primary-bg);
+  /* Near-white field — reads clean against the translucent legend bg
+     (rgba(255,255,255,0.72)) instead of disappearing into the green tint
+     that --primary-bg gave it. */
+  background: rgba(255, 255, 255, 0.96);
   color: var(--text-primary);
   font-size: 12px;
   font-family: inherit;
@@ -619,7 +650,7 @@ body {
   transition: all 200ms ease;
 }
 #color-scheme-select:hover {
-  background: var(--primary-bg-hover);
+  background: #ffffff;
   border-color: var(--primary);
 }
 
