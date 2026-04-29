@@ -1,0 +1,177 @@
+import Plotly from 'plotly.js-dist-min';
+
+export function renderChart(containerId, tableId, features, varKey, varMeta, layerLabel, stateFeatures) {
+  const unit = getUnit(varMeta);
+
+  // Build sorted data
+  const rows = features
+    .map((f) => ({ name: cleanName(f.properties), value: f.properties[varKey] }))
+    .filter((r) => r.value != null && !isNaN(parseFloat(r.value)))
+    .sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+
+  if (!rows.length) {
+    document.getElementById(containerId).innerHTML =
+      `<p style="padding:20px;color:#888">No data available for this variable.</p>`;
+    return;
+  }
+
+  const names = rows.map((r) => r.name);
+  const values = rows.map((r) => parseFloat(r.value));
+  const n = rows.length;
+
+  const hoverFmt = unit === '$' ? '$%{y:,.0f}' : unit === '%' ? '%{y:.1f}%' : '%{y:.1f}';
+  const textFmt = unit === '$' ? '$%{text:,.0f}' : unit === '%' ? '%{text:.1f}%' : '%{text:.1f}';
+  const varShort = varMeta?.display_name || varKey;
+  const varLong = varMeta?.display_name_long || varShort;
+  const chartTitle = unit === '%'
+    ? `Percentage of ${varShort} (${layerLabel})`
+    : `${varLong} (${layerLabel})`;
+
+  const trace = {
+    type: 'bar',
+    x: names,
+    y: values,
+    text: values,
+    texttemplate: textFmt,
+    textposition: 'outside',
+    textfont: { size: 9, color: '#555' },
+    cliponaxis: false,
+    marker: { color: '#4a8c64' },
+    hovertemplate: `<b>%{x}</b><br>${varShort}: ${hoverFmt}<extra></extra>`,
+    hoverlabel: { bgcolor: 'white', bordercolor: '#ccc', font: { size: 12, family: 'Inter, Arial' } },
+  };
+
+  const layout = {
+    title: { text: chartTitle, x: 0.5, xanchor: 'center', font: { size: 13, color: '#333', family: 'Inter, Arial' } },
+    height: 400,
+    showlegend: false,
+    plot_bgcolor: 'white',
+    paper_bgcolor: 'white',
+    font: { family: 'Inter, Arial', size: 12, color: '#333' },
+    yaxis: {
+      gridcolor: '#eef0ec',
+      zeroline: false,
+      title: { text: varLong, font: { size: 11, color: '#666' } },
+      tickfont: { size: 10 },
+      tickformat: unit === '$' ? '$,d' : undefined,
+    },
+    xaxis: {
+      title: { text: '' },
+      showgrid: false,
+      showticklabels: n <= 10,
+      tickangle: n <= 10 ? -40 : 0,
+      tickfont: { size: 10 },
+    },
+    margin: { l: 55, r: 20, t: 50, b: n <= 10 ? 60 : 28 },
+    uniformtext: { minsize: 7, mode: 'hide' },
+  };
+
+  const shapes = [];
+  const annotations = [];
+  if (stateFeatures && stateFeatures.length > 0) {
+    const sv = parseFloat(stateFeatures[0].properties[varKey]);
+    if (!isNaN(sv)) {
+      const lbl = unit === '%' ? `State: ${sv.toFixed(1)}%` : unit === '$' ? `State: $${sv.toLocaleString()}` : `State: ${sv.toFixed(1)}`;
+      shapes.push({ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: sv, y1: sv, line: { color: '#e74c3c', width: 1.5, dash: 'dot' } });
+      annotations.push({ xref: 'paper', x: 1, y: sv, text: lbl, showarrow: false, font: { size: 10, color: '#e74c3c' }, xanchor: 'right', yanchor: 'bottom' });
+    }
+  }
+  if (shapes.length) { layout.shapes = shapes; layout.annotations = annotations; }
+
+  const config = {
+    displaylogo: false,
+    modeBarButtonsToRemove: ['autoScale2d', 'resetScale2d'],
+    toImageButtonOptions: { filename: `hawaii_${varKey}` },
+    responsive: true,
+  };
+
+  Plotly.newPlot(containerId, [trace], layout, config);
+
+  if (n > 10) {
+    const caption = document.createElement('p');
+    caption.style.cssText = 'font-size:12px;color:#888;margin-top:6px';
+    caption.textContent = `Showing all ${n} ${layerLabel.toLowerCase()} ranked by ${varShort}. Hover for details.`;
+    document.getElementById(containerId).after(caption);
+  }
+
+  renderTable(tableId, rows, varKey, varMeta);
+}
+
+function renderTable(tableId, rows, varKey, varMeta) {
+  const unit = getUnit(varMeta);
+  const varLabel = varMeta?.display_name_long || varKey;
+  const el = document.getElementById(tableId);
+  if (!el) return;
+  const fmt = (v) => {
+    const n = parseFloat(v);
+    if (isNaN(n)) return v;
+    if (unit === '$') return '$' + Math.round(n).toLocaleString();
+    if (unit === '%') return n.toFixed(1) + '%';
+    return n.toFixed(1);
+  };
+  el.innerHTML = `
+    <table class="da-table">
+      <thead><tr><th>Area</th><th>${escapeHtml(varLabel)}</th></tr></thead>
+      <tbody>${rows.map((r) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(fmt(r.value))}</td></tr>`).join('')}</tbody>
+    </table>`;
+}
+
+export function renderFullTable(containerId, features, variablesConfig) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const vars = variablesConfig?.variables || {};
+  const showCols = Object.entries(vars)
+    .filter(([, v]) => v.show_in_dropdown)
+    .sort(([, a], [, b]) => (a.dropdown_order || 999) - (b.dropdown_order || 999));
+
+  const rows = features
+    .map((f) => f.properties)
+    .sort((a, b) => {
+      const na = cleanName(a), nb = cleanName(b);
+      return na.localeCompare(nb);
+    });
+
+  const headers = ['Area', ...showCols.map(([, v]) => v.display_name)];
+  const tableHtml = `
+    <table class="da-full-table">
+      <thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map((p) => {
+        const nameCell = `<td>${escapeHtml(cleanName(p))}</td>`;
+        const valCells = showCols.map(([k, v]) => {
+          const val = p[k];
+          return `<td>${escapeHtml(formatCell(val, v.data_type))}</td>`;
+        }).join('');
+        return `<tr>${nameCell}${valCells}</tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  el.innerHTML = tableHtml;
+}
+
+function getUnit(meta) {
+  const long = meta?.display_name_long || '';
+  if (long.includes('($)') || long.includes('($')) return '$';
+  if (long.includes('(%)') || meta?.data_type === 'percentage') return '%';
+  return '';
+}
+
+function cleanName(props) {
+  if (typeof props === 'string') return props;
+  let name = props.display_name || props.NAME || props.name || '';
+  name = name.replace(/[,;]\s*Hawaii/g, '').replace(/\s*\(\d{4}\)\s*/g, '').trim();
+  return name || 'Unknown';
+}
+
+function formatCell(value, dataType) {
+  if (value == null || value === '') return '';
+  const n = parseFloat(value);
+  if (isNaN(n)) return String(value);
+  if (dataType === 'percentage' || /rate|pct|percent/.test(dataType || '')) return n.toFixed(1) + '%';
+  if (dataType === 'currency' || /income|value|benefit|amount/.test(dataType || '')) return '$' + Math.round(n).toLocaleString();
+  if (dataType === 'minutes') return n.toFixed(1) + ' min';
+  if (dataType === 'count') return n.toLocaleString();
+  return n.toLocaleString();
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}

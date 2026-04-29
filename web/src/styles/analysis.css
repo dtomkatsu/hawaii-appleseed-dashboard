@@ -1,0 +1,130 @@
+.da-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+}
+
+.da-controls-row {
+  margin-bottom: 20px;
+}
+
+.da-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.da-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.da-select {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #cdd9c8;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  min-width: 140px;
+}
+.da-select-wide { min-width: 240px; }
+.da-select:focus { outline: none; border-color: #6a9a50; }
+
+/* Chart + side table row */
+.da-chart-row {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.da-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b8f71;
+  margin: 0 0 8px;
+}
+
+.da-chart-wrap {}
+.da-table-wrap {
+  padding-top: 2px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.da-loading { padding: 20px; color: #999; font-style: italic; }
+
+.da-divider {
+  border: none;
+  border-top: 1px solid #e2e8e3;
+  margin: 16px 0 14px;
+}
+
+/* Side table */
+.da-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.da-table th {
+  position: sticky;
+  top: 0;
+  background: white;
+  font-weight: 600;
+  color: #555;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 2px solid #e0e0e0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.da-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+}
+.da-table tr:hover td { background: #f6fbf4; }
+
+/* Full data table */
+.da-full-table-wrap {
+  overflow-x: auto;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid #e2e8e3;
+  border-radius: 6px;
+}
+.da-full-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.da-full-table th {
+  position: sticky;
+  top: 0;
+  background: #f8fbf6;
+  font-weight: 600;
+  color: #444;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid #dde8d8;
+  font-size: 11px;
+}
+.da-full-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f0f4ef;
+  color: #333;
+}
+.da-full-table tr:hover td { background: #f1f8ec; }

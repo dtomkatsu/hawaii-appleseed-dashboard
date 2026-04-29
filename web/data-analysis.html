@@ -7,14 +7,33 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/app.css" />
+    <link rel="stylesheet" href="/src/styles/analysis.css" />
   </head>
   <body>
     <header class="app-header">
-      <div class="brand"><h1>Data Analysis</h1></div>
+      <div class="brand">
+        <img src="/assets/logo.png" alt="Hawaii Appleseed" class="brand-logo" onerror="this.style.display='none'" />
+        <h1>Hawaii Data Dashboard</h1>
+      </div>
       <nav class="header-nav"><a href="/">← Back to Map</a></nav>
     </header>
-    <main class="analysis-main">
-      <div id="charts-root"></div>
+    <main class="da-main">
+      <div class="da-controls-row">
+        <div id="da-controls" class="da-controls"></div>
+      </div>
+      <div class="da-chart-row">
+        <div class="da-chart-wrap">
+          <p class="da-section-label">Ranked comparison</p>
+          <div id="da-chart"></div>
+        </div>
+        <div class="da-table-wrap">
+          <p class="da-section-label">Selected variable</p>
+          <div id="da-side-table"></div>
+        </div>
+      </div>
+      <hr class="da-divider" />
+      <p class="da-section-label">Full data table</p>
+      <div id="da-full-table" class="da-full-table-wrap"></div>
     </main>
     <script type="module" src="/src/analysis-main.js"></script>
   </body>
