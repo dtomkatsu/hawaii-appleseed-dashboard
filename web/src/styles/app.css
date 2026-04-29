@@ -91,6 +91,15 @@ body {
   white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tab-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 .main-tab:hover { color: var(--primary); }
 .main-tab.active {

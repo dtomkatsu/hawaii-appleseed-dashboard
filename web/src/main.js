@@ -49,6 +49,18 @@ async function main() {
   renderSidebar();
   writeToUrl();
 
+  // Update tab text nodes from ui_strings.json (preserves SVG icon child nodes)
+  const tabs = config.uiStrings?.tabs || {};
+  function setTabText(btn, fullLabel) {
+    if (!btn || !fullLabel) return;
+    // Strip leading emoji (everything before the first space after a non-letter char)
+    const text = fullLabel.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    const textNode = [...btn.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+    if (textNode) textNode.textContent = ' ' + (text || fullLabel);
+  }
+  setTabText(document.querySelector('.main-tab[data-tab="map"]'), tabs.map);
+  setTabText(document.querySelector('.main-tab[data-tab="data"]'), tabs.data);
+
   // Tab switching
   document.querySelectorAll('.main-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {
