@@ -402,6 +402,9 @@ body {
 .leaflet-container {
   background: white !important;
 }
+.leaflet-interactive:focus {
+  outline: none;
+}
 
 .map-legend {
   position: absolute;
