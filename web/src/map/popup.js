@@ -125,7 +125,6 @@ function buildTooltipContent(properties) {
             `</div>`;
   }
 
-  html += `<div class="tt-hint">Click to explore →</div>`;
   return html;
 }
 
