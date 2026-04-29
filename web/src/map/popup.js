@@ -136,7 +136,7 @@ export function bindFeature(feature, layer) {
 
   layer.bindTooltip(() => buildTooltipContent(feature.properties), {
     className: 'custom-tooltip',
-    direction: 'top',
+    direction: 'auto',
     offset: [0, -10],
     sticky: true,
   });
