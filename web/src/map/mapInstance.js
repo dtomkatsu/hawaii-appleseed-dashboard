@@ -23,6 +23,7 @@ export function createMap(containerId, theme) {
     zoomControl: false,
     attributionControl: false,
     preferCanvas: false,
+    renderer: L.svg({ padding: 1.0 }),
     scrollWheelZoom: false,
     smoothWheelZoom: true,
     smoothSensitivity: mapCfg.smooth_sensitivity ?? 1,
