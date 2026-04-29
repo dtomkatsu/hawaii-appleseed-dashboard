@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/loader-xgymrUWK.js"></script>
-    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/analysis-main-Dd0UXe-8.js"></script>
-    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-pZ5SvRiJ.css">
+    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/analysis-main-kP8bRCRl.js"></script>
+    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DLr9pXik.css">
   </head>
   <body>
     <header class="app-header">
@@ -28,12 +28,24 @@
           <div id="da-chart"></div>
         </div>
         <div class="da-table-wrap">
-          <p class="da-section-label">Selected variable</p>
+          <div class="da-section-head">
+            <p class="da-section-label">Selected variable</p>
+            <button id="da-side-download" type="button" class="da-download-btn" title="Download CSV">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>CSV</span>
+            </button>
+          </div>
           <div id="da-side-table"></div>
         </div>
       </div>
       <hr class="da-divider" />
-      <p class="da-section-label">Full data table</p>
+      <div class="da-section-head">
+        <p class="da-section-label">Full data table</p>
+        <button id="da-full-download" type="button" class="da-download-btn da-download-btn-primary" title="Download full table as CSV">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download CSV</span>
+        </button>
+      </div>
       <div id="da-full-table" class="da-full-table-wrap"></div>
     </main>
   </body>
