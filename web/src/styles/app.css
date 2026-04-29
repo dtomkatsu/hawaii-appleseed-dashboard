@@ -16,16 +16,6 @@
   box-sizing: border-box;
 }
 
-/* Inline SVG that only carries <filter> defs (referenced by CSS via
-   url(#...)). Pull it out of layout entirely — zero size, no flow. */
-.svg-filter-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
 html,
 body {
   margin: 0;
@@ -475,49 +465,48 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 25px;
+  /* Taller strip than the displacement-era version (25px → 42px) — with
+     no refraction selling the medium, the glass needs more vertical
+     real estate for the meniscus + specular gradient to read. */
+  height: 42px;
   pointer-events: none;
   z-index: 500;
-  /* Liquid-glass stack:
-     - url(#fluidDisplace) — refraction along turbulence waves (the
-       "looking through curved glass" pixel push).
-     - saturate(1.22) contrast(1.06) brightness(1.03) — real glass
-       meniscus enhances chroma and pops contrast slightly rather than
-       muddying it. This is what differentiates glass from frost.
-     No blur: glass is clear; the distortion alone sells the medium. */
-  -webkit-backdrop-filter: url(#fluidDisplace) saturate(1.22) contrast(1.06) brightness(1.03);
-          backdrop-filter: url(#fluidDisplace) saturate(1.22) contrast(1.06) brightness(1.03);
+  /* Glass-clarity stack — no displacement, no blur. A real glass
+     meniscus enhances chroma and tone slightly rather than muddying
+     them; saturate/contrast/brightness do exactly that to the map
+     content beneath. */
+  -webkit-backdrop-filter: saturate(1.28) contrast(1.08) brightness(1.04);
+          backdrop-filter: saturate(1.28) contrast(1.08) brightness(1.04);
 }
 .map-wrap::before {
   top: 0;
-  /* Specular highlight: a thin bright streak right at the rim, fading
-     down through the strip. Simulates light catching the curve of a
-     glass meniscus. The mask further fades it into the map so the
-     highlight is strongest right at the edge — same place a real
-     glass rim would catch light brightest. */
+  /* Specular gradient: bright at the rim, fading inward — light
+     catching the curve of a glass surface. With the linear mask
+     applied below, the highlight is strongest at the edge and
+     dissolves into the map by ~42px in. */
   background: linear-gradient(to bottom,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.22) 28%,
-    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.26) 30%,
+    rgba(255, 255, 255, 0.10) 60%,
     rgba(255, 255, 255, 0) 100%);
-  /* Sharp top edge highlight + soft underbevel, gives the strip
-     a sense of physical thickness. */
+  /* Crisp rim highlight + softer underbevel — gives the strip a hint
+     of physical thickness, like the glass actually has a top surface. */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.24);
   -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
           mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
 }
 .map-wrap::after {
   bottom: 0;
   background: linear-gradient(to top,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.22) 28%,
-    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.26) 30%,
+    rgba(255, 255, 255, 0.10) 60%,
     rgba(255, 255, 255, 0) 100%);
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 1px 2px rgba(255, 255, 255, 0.22);
+    inset 0 -1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 1px 2px rgba(255, 255, 255, 0.24);
   -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
           mask-image: linear-gradient(to top, black 0%, transparent 100%);
 }
