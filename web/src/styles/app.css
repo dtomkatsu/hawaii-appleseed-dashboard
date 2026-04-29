@@ -475,7 +475,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 22px;
+  height: 25px;
   pointer-events: none;
   z-index: 500;
   -webkit-backdrop-filter: url(#fluidDisplace);
