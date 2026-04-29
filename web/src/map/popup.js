@@ -172,7 +172,11 @@ export function bindFeature(feature, layer) {
           }
         });
       }
-      e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
+      // Don't apply bold hover border to the selected geo — its prominence
+      // comes from the .geo-selected lift, not a persistent bold ring.
+      if (e.target !== selectedLayer) {
+        e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
+      }
       e.target.bringToFront();
     },
     mouseout: (e) => {
@@ -193,6 +197,10 @@ export function bindFeature(feature, layer) {
         setSelectedClass(selectedLayer, false);
       }
       selectedLayer = e.target;
+      // Strip the bold hover border immediately on click, even though the
+      // cursor is still over this geo. The lift effect alone signals
+      // selection now.
+      selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
       selectedLayer.bringToFront();
       setSelectedClass(selectedLayer, true);
       const props = e.target.feature.properties;

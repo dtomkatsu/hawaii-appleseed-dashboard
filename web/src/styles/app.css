@@ -438,6 +438,11 @@ body {
 .leaflet-container {
   background: white !important;
 }
+/* Hint browser to use a dedicated compositing layer for the SVG overlay
+   during transform animations. Reduces sub-pixel blur from CSS-scale. */
+.leaflet-overlay-pane svg {
+  will-change: transform;
+}
 .leaflet-interactive:focus {
   outline: none;
 }
@@ -450,13 +455,19 @@ body {
     stroke-width 0.18s ease-out,
     stroke 0.18s ease-out,
     fill-opacity 0.18s ease-out,
-    filter 0.25s ease-out;
+    filter 0.28s ease-out;
+  /* Sharpness hints for smoothWheelZoom CSS-scale animation. The renderer
+     CSS-scales the SVG container during the gesture (rather than re-
+     projecting paths), so without these hints, strokes/edges blur. */
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
 }
-/* Selected feature: subtle "lifting" effect via drop-shadow filter.
-   Replaces the persistent bold black border. */
+/* Selected feature: pronounced "lifting" effect via stacked drop-shadow
+   filters. Replaces the persistent bold black border. */
 .leaflet-interactive.geo-selected {
   filter:
-    drop-shadow(0 3px 4px rgba(0, 0, 0, 0.32))
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.42))
+    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28))
     drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
 }
 .leaflet-reset-zoom {
