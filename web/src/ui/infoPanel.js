@@ -1,4 +1,5 @@
 import { getState } from '../state/store.js';
+import { lookupRep } from '../map/popup.js';
 
 let VARIABLES = null;
 let CATEGORIES = null;
@@ -92,6 +93,15 @@ export function showInfoPanel(properties) {
     body += '</div></div>';
   }
 
+  const rep = lookupRep(properties, s.activeLayer);
+  const repHtml = rep
+    ? `<div class="ip-rep">
+         <div class="ip-rep-label">Representative</div>
+         <div class="ip-rep-name">${escapeHtml(rep.name)} <span class="ip-rep-party">(${escapeHtml(rep.party)})</span></div>
+         <div class="ip-rep-areas">${escapeHtml((rep.areas || '').trim())}</div>
+       </div>`
+    : '';
+
   panel.innerHTML = `
     <div class="ip-header">
       <button class="ip-close" aria-label="Close">×</button>
@@ -101,6 +111,7 @@ export function showInfoPanel(properties) {
       <div class="ip-headline-band"><span>${escapeHtml(selectedDisplayName)}</span></div>
       <div class="ip-headline-body"><span>${escapeHtml(selectedValue)}</span></div>
     </div>
+    ${repHtml}
     <div class="ip-actions">
       <a class="ip-btn" href="${factsheetUrl}" target="_blank" rel="noopener">View / Print Fact Sheet</a>
     </div>

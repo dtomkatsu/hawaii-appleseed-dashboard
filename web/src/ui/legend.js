@@ -75,13 +75,6 @@ export function renderLegend(varKey, scheme) {
     html += `<div class="legend-item"><i style="background:${c}"></i><span>${range}</span></div>`;
   }
 
-  const direction = meta?.legend_direction;
-  if (direction === 'up') {
-    html += '<div class="legend-direction up">↑ Higher is better</div>';
-  } else if (direction === 'down') {
-    html += '<div class="legend-direction down">↓ Lower is better</div>';
-  }
-
   itemsEl.innerHTML = html;
 }
 

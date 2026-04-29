@@ -37,7 +37,7 @@ function formatValue(value, dataType) {
   return num.toLocaleString();
 }
 
-function lookupRep(properties, activeLayer) {
+export function lookupRep(properties, activeLayer) {
   if (activeLayer !== 'house' && activeLayer !== 'senate') return null;
 
   let key = null;
@@ -73,7 +73,10 @@ function buildTooltipContent(properties) {
   const value = formatValue(properties[varKey], meta?.data_type);
 
   let html = `<div class="tt-name">${escapeHtml(name)}</div>` +
-             `<div class="tt-stat">${escapeHtml(displayName)}: ${escapeHtml(value)}</div>`;
+             `<div class="tt-stat-row">` +
+             `<span class="tt-stat-label">${escapeHtml(displayName)}</span>` +
+             `<span class="tt-stat-badge">${escapeHtml(value)}</span>` +
+             `</div>`;
 
   const rep = lookupRep(properties, s.activeLayer);
   if (rep) {
