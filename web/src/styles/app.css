@@ -478,8 +478,13 @@ body {
   height: 25px;
   pointer-events: none;
   z-index: 500;
-  -webkit-backdrop-filter: url(#fluidDisplace);
-          backdrop-filter: url(#fluidDisplace);
+  /* Stack both filters: SVG fluid displace pushes pixels along organic
+     waves; the trailing blur(2.5px) softens the displaced edges so
+     they melt rather than read as crisp wavy paint. Order matters —
+     displacement first, blur applied after on the already-distorted
+     output. */
+  -webkit-backdrop-filter: url(#fluidDisplace) blur(2.5px);
+          backdrop-filter: url(#fluidDisplace) blur(2.5px);
 }
 .map-wrap::before {
   top: 0;
