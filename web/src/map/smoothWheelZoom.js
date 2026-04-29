@@ -20,17 +20,20 @@ const SmoothWheelZoom = L.Handler.extend({
     const delta = L.DomEvent.getWheelDelta(e) * 0.003 * (map.options.smoothSensitivity || 1);
 
     if (!this._active) {
+      if (map.stop) map.stop();
+      L.DomUtil.setTransform(map._mapPane, L.point(0, 0), 1);
+      if (map._panes.tooltipPane) L.DomUtil.setTransform(map._panes.tooltipPane, L.point(0, 0), 1);
+      if (map._panes.popupPane) L.DomUtil.setTransform(map._panes.popupPane, L.point(0, 0), 1);
+      map._animatingZoom = false;
+
       this._fromZoom = map.getZoom();
       this._viewZoom = this._fromZoom;
       this._goalZoom = this._fromZoom;
       this._mousePoint = map.mouseEventToContainerPoint(e);
       this._mouseLatLng = map.containerPointToLatLng(this._mousePoint);
       this._active = true;
-      this._wheeling = true;
-      map._stop();
-    } else {
-      this._wheeling = true;
     }
+    this._wheeling = true;
 
     this._goalZoom = map._limitZoom(this._goalZoom + delta);
 

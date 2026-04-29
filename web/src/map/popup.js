@@ -5,6 +5,27 @@ import { showInfoPanel } from '../ui/infoPanel.js';
 let VARIABLES = null;
 let REP_DATA = {};
 let selectedLayer = null;
+let isAnimating = false;
+let animationListenersBound = false;
+
+function closeAllTooltips(map) {
+  if (!map) return;
+  map.eachLayer((l) => {
+    if (l.closeTooltip) l.closeTooltip();
+  });
+}
+
+function ensureAnimationListeners(map) {
+  if (animationListenersBound || !map) return;
+  map.on('movestart zoomstart', () => {
+    isAnimating = true;
+    closeAllTooltips(map);
+  });
+  map.on('moveend zoomend', () => {
+    isAnimating = false;
+  });
+  animationListenersBound = true;
+}
 
 const SmartTooltip = L.Tooltip.extend({
   _updatePosition() {
@@ -132,17 +153,27 @@ export function bindFeature(feature, layer) {
   layer.on({
     mouseover: (e) => {
       e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
-      e.target.bringToFront();
+      if (!selectedLayer || selectedLayer === e.target) {
+        e.target.bringToFront();
+      }
     },
     mouseout: (e) => {
       if (e.target === selectedLayer) return;
       e.target.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
+      if (selectedLayer) selectedLayer.bringToFront();
+    },
+    tooltipopen: (e) => {
+      if (isAnimating || e.target === selectedLayer) e.target.closeTooltip();
     },
     click: (e) => {
+      const map = e.target._map;
+      ensureAnimationListeners(map);
+      closeAllTooltips(map);
       if (selectedLayer && selectedLayer !== e.target) {
         selectedLayer.setStyle({ weight: 1, color: '#aaa', fillOpacity: 0.75 });
       }
       selectedLayer = e.target;
+      selectedLayer.bringToFront();
       const props = e.target.feature.properties;
       const id = props.GEOID || feature.id;
       setState({ selectedFeatureId: id });
