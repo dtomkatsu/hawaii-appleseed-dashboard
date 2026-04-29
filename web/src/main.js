@@ -61,6 +61,29 @@ async function main() {
   setTabText(document.querySelector('.main-tab[data-tab="map"]'), tabs.map);
   setTabText(document.querySelector('.main-tab[data-tab="data"]'), tabs.data);
 
+  // Full Screen button: only visible when embedded in an iframe.
+  // Click opens the same URL (preserving hash state) in a new top-level tab.
+  try {
+    const isEmbedded = window.self !== window.top;
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn && isEmbedded) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', () => {
+        window.open(window.location.href, '_blank', 'noopener');
+      });
+    }
+  } catch (_) {
+    // Cross-origin frame access can throw — in that case we are embedded,
+    // so still show the button.
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', () => {
+        window.open(window.location.href, '_blank', 'noopener');
+      });
+    }
+  }
+
   // Tab switching
   document.querySelectorAll('.main-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {

@@ -167,9 +167,9 @@ export function bindFeature(feature, layer) {
       }
       e.target.setStyle({ weight: 2.5, color: '#222', fillOpacity: 0.85 });
       e.target.bringToFront();
-      if (selectedLayer && selectedLayer !== e.target) {
-        selectedLayer.bringToFront();
-      }
+      // NOTE: do NOT bring selectedLayer to front here — its bold 2.5px border
+      // would otherwise sit above the hovered geo and intercept clicks near
+      // the shared border. Selected layer is restored on mouseout.
     },
     mouseout: (e) => {
       if (e.target === selectedLayer) return;
