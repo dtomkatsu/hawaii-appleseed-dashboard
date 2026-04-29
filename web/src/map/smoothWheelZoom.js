@@ -18,6 +18,25 @@ const SmoothWheelZoom = L.Handler.extend({
     L.DomEvent.stopPropagation(e);
     const map = this._map;
     const delta = L.DomEvent.getWheelDelta(e) * 0.003 * (map.options.smoothSensitivity || 1);
+    const newMousePoint = map.mouseEventToContainerPoint(e);
+
+    // If a gesture is active but the cursor has jumped to a different area,
+    // commit the current visible state and start a fresh gesture from the
+    // new cursor position. Prevents the post-settle setZoomAround() from
+    // anchoring at the stale original location, which "teleports" the view.
+    if (this._active) {
+      const dist = newMousePoint.distanceTo(this._mousePoint);
+      if (dist > 60) {
+        if (this._raf) {
+          cancelAnimationFrame(this._raf);
+          this._raf = null;
+        }
+        clearTimeout(this._timer);
+        this._wheeling = false;
+        this._goalZoom = this._viewZoom; // freeze at current visual zoom
+        this._settle(); // commits with old anchor, sets _active = false
+      }
+    }
 
     if (!this._active) {
       if (map.stop) map.stop();
@@ -29,7 +48,7 @@ const SmoothWheelZoom = L.Handler.extend({
       this._fromZoom = map.getZoom();
       this._viewZoom = this._fromZoom;
       this._goalZoom = this._fromZoom;
-      this._mousePoint = map.mouseEventToContainerPoint(e);
+      this._mousePoint = newMousePoint;
       this._mouseLatLng = map.containerPointToLatLng(this._mousePoint);
       this._active = true;
     }
