@@ -22,7 +22,7 @@ export function createMap(containerId, theme) {
     markerZoomAnimation: mapCfg.marker_zoom_animation ?? true,
     zoomControl: false,
     attributionControl: false,
-    preferCanvas: true,
+    preferCanvas: false,
     scrollWheelZoom: false,
     smoothWheelZoom: true,
     smoothSensitivity: mapCfg.smooth_sensitivity ?? 1,
