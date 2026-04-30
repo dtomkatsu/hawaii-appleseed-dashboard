@@ -8,12 +8,83 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/main-DUduwtcz.js"></script>
+    <script type="module" crossorigin src="/hawaii-appleseed-dashboard/assets/main-D2D24pOK.js"></script>
     <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/loader-xgymrUWK.js">
-    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-DvSrnseT.js">
-    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-C4GyUfDc.css">
+    <link rel="modulepreload" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-BYDs_Nk9.js">
+    <link rel="stylesheet" crossorigin href="/hawaii-appleseed-dashboard/assets/analysis-main-BP2nViwI.css">
   </head>
   <body>
+    <!--
+      Apple-style liquid-glass refraction. The trick (per the LogRocket
+      and kube.io tutorials): feed feDisplacementMap a *pre-computed*
+      smooth gradient image, NOT random turbulence. The gradient
+      encodes per-pixel refraction vectors (R = X shift, G = Y shift,
+      with 128 = no shift). For our top/bottom edge strips we need a
+      vertical gradient on the green channel only — strongest near the
+      outer rim, fading to mid-gray (no displacement) at the inner
+      edge. R is held flat at 128 (no horizontal shift), so the glass
+      bends pixels purely vertically, like a horizontal cylindrical
+      lens laid along the rim. This produces clean lensing instead of
+      the wavy/blurry look that turbulence-driven displacement gives.
+
+      The displacement map is inline as an SVG data URI; preserveAspectRatio="none"
+      stretches the 1x1 viewBox to whatever filter region the strip
+      defines. The 1px Gaussian blur on SourceGraphic before
+      displacement smooths sub-pixel artifacts.
+    -->
+    <svg class="svg-filter-defs" aria-hidden="true" focusable="false">
+      <defs>
+        <!-- TOP strip: G high at outer rim (y=0) → mid at inner edge (y=1).
+             G > 128 ⇒ pixels sampled from BELOW their position ⇒ content
+             appears pulled DOWN at the rim, like light refracting toward
+             the cylinder axis. -->
+        <filter id="liquidGlassTop" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="dispMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='rgb(128,205,128)'/><stop offset='0.35' stop-color='rgb(128,158,128)'/><stop offset='1' stop-color='rgb(128,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <!-- BOTTOM strip: mirror — G mid at top → low at outer rim (y=1).
+             G < 128 ⇒ pixels sampled from ABOVE ⇒ content pulled UP at
+             the rim. -->
+        <filter id="liquidGlassBottom" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="dispMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='rgb(128,128,128)'/><stop offset='0.65' stop-color='rgb(128,98,128)'/><stop offset='1' stop-color='rgb(128,51,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <!-- LEFT strip (info-panel rim): rotated version of the top
+             filter — gradient runs HORIZONTALLY this time, R channel
+             only (X displacement). R high at outer rim (x=0) → mid
+             at inner edge (x=1). R > 128 ⇒ pixels sampled from the
+             RIGHT ⇒ map content is pulled rightward at the panel's
+             left rim, like a vertical cylinder lens laid along the
+             info-panel's edge. -->
+        <filter id="liquidGlassLeft" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="dispMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.35' stop-color='rgb(158,128,128)'/><stop offset='1' stop-color='rgb(128,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="dispMap" scale="32" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <!-- WHOLE-PANEL glass (legend + any rectangular UI element):
+             two displacement passes inside one filter. Pass 1 uses a
+             vertical gradient on G (refracts at top/bottom rims).
+             Pass 2 uses a horizontal gradient on R (refracts at left/
+             right rims). Compound effect = pillowed lensing strongest
+             at the perimeter, near-zero in the middle. Lower scale
+             (15) than the edge strips (32) since the legend is small;
+             we don't want over-distortion of its interior. -->
+        <filter id="liquidGlassPanel" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="softSrc"/>
+          <feImage preserveAspectRatio="none" result="vMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g' x2='0' y2='1'><stop offset='0' stop-color='rgb(128,205,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(128,51,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="softSrc" in2="vMap" scale="15" xChannelSelector="R" yChannelSelector="G" result="vDisp"/>
+          <feImage preserveAspectRatio="none" result="hMap"
+                   href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(51,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
+          <feDisplacementMap in="vDisp" in2="hMap" scale="15" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+    </svg>
     <main class="app-main">
       <nav class="main-tabs" role="tablist">
         <button class="main-tab active" data-tab="map" role="tab" aria-selected="true">
@@ -47,6 +118,16 @@
               <select id="color-scheme-select"></select>
             </div>
           </div>
+          <!-- Three-piece glass frame around the info-panel. All three
+               sit OUTSIDE the panel because the panel has both transform
+               and mask-image, either of which would push children into
+               an offscreen buffer and break their backdrop-filter.
+               The pieces don't overlap (rim runs y=25 → height-25
+               only; strips cover the top and bottom 25px including the
+               rim's outer column) so refraction never compounds. -->
+          <div class="info-panel-glass-top" aria-hidden="true"></div>
+          <div class="info-panel-glass-rim" aria-hidden="true"></div>
+          <div class="info-panel-glass-bottom" aria-hidden="true"></div>
           <aside id="info-panel" class="info-panel"></aside>
         </section>
       </div>
