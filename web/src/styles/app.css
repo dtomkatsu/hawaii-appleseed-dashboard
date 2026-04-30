@@ -631,11 +631,15 @@ body {
   margin: -2px -2px 10px -2px;
   padding: 6px 10px 8px 14px;
   font-family: Inter, sans-serif;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  color: #0d3a3a;
-  background: none;
+  font-weight: 900;
+  font-size: 13.5px;
+  letter-spacing: -0.005em;
+  /* Subtle gradient text — slate→teal, distinct from the info-panel's
+     all-green palette. */
+  background: linear-gradient(135deg, #0e3d3d 0%, #1a7a66 70%, #2da189 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   border-radius: 4px;
   text-transform: none;
   line-height: 1.25;
@@ -644,10 +648,11 @@ body {
   content: '';
   display: block;
   margin-top: 6px;
-  height: 2px;
-  width: 32px;
-  background: linear-gradient(90deg, #354F52 0%, rgba(53, 79, 82, 0) 100%);
+  height: 2.5px;
+  width: 36px;
+  background: linear-gradient(90deg, #2da189 0%, #6BCFB6 50%, rgba(45, 161, 137, 0) 100%);
   border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(45, 161, 137, 0.18);
 }
 .legend-item {
   display: flex;
@@ -661,16 +666,26 @@ body {
   transition: background 0.18s ease, transform 0.18s ease;
 }
 .legend-item:hover {
-  background: rgba(125, 211, 192, 0.12);
+  background: rgba(45, 161, 137, 0.12);
   transform: translateX(2px);
 }
+/* Range labels: tabular-nums monospace numerals + bolder/tighter
+   lettering give them a "data-display" feel — clearly distinct from
+   the panel's UI text. A subtle gradient on the foreground keeps the
+   rim visually anchored to the legend title. */
 .legend-item span {
-  font-family: 'Inter', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, 'Inter', monospace;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 11.5px;
   letter-spacing: 0.01em;
-  color: #1f3d10;
+  color: #0e3d3d;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.legend-item:hover span {
+  color: #1a7a66;
+  transform: translateX(1px);
 }
 .legend-item i {
   width: 24px;
@@ -679,10 +694,13 @@ body {
   display: inline-block;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.08);
-  transition: transform 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .legend-item:hover i {
-  transform: scale(1.08);
+  transform: scale(1.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 2px 5px rgba(13, 60, 60, 0.18);
 }
 
 .legend-color-scheme {
@@ -957,45 +975,83 @@ body {
   transform: translateX(0);
 }
 
+@keyframes ipHeaderIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .info-panel .ip-header {
   position: relative;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #c8e6b0;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  /* Replace static green underline with a soft gradient that fades
+     out at the rims — gives the top section a defined "frame" that
+     matches the legend's title underline. */
+  border-bottom: none;
+  animation: ipHeaderIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.info-panel .ip-header::after {
+  content: '';
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    rgba(107, 158, 120, 0) 0%,
+    rgba(45, 161, 137, 0.55) 25%,
+    rgba(58, 119, 16, 0.55) 75%,
+    rgba(107, 158, 120, 0) 100%);
+  border-radius: 2px;
 }
 .info-panel .ip-header h2 {
   margin: 0;
-  font-weight: 700;
-  font-size: 17px;
+  font-weight: 800;
+  font-size: 18px;
   color: #1a2e10;
   text-align: center;
   line-height: 1.2;
+  letter-spacing: -0.015em;
+  /* Subtle two-tone treatment so the geography title stands out from
+     the surrounding panel text. */
+  background: linear-gradient(135deg, #1a2e10 0%, #2a5a0c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .info-panel .ip-close {
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
-  border: none;
-  font-size: 20px;
+  background: rgba(240, 247, 233, 0);
+  border: 1px solid transparent;
+  font-size: 18px;
   color: #6a8a5a;
   cursor: pointer;
   padding: 0;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   line-height: 28px;
   border-radius: 50%;
-  transition: all 0.2s;
+  transition:
+    background 0.22s ease,
+    color 0.22s ease,
+    border-color 0.22s ease,
+    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .info-panel .ip-close:hover {
   background: #f0f7e9;
   color: #2a5a0c;
+  border-color: rgba(58, 119, 16, 0.25);
+  transform: translateY(-50%) rotate(90deg);
+}
+.info-panel .ip-close:active {
+  transform: translateY(-50%) rotate(90deg) scale(0.92);
 }
 
 @keyframes ipHeadlineIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes ipShine {
   0%   { transform: translateX(-150%) skewX(-18deg); opacity: 0; }
@@ -1004,40 +1060,50 @@ body {
   100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
 }
 @keyframes ipValuePop {
-  0%   { transform: scale(0.96); opacity: 0; }
-  60%  { transform: scale(1.02); opacity: 1; }
+  0%   { transform: scale(0.94); opacity: 0; }
+  60%  { transform: scale(1.03); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ipBandShimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 .ip-headline {
   position: relative;
   margin-bottom: 18px;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #6B9E78;
+  border: 1px solid rgba(107, 158, 120, 0.55);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 8px 18px rgba(20, 60, 50, 0.12),
-    0 1px 2px rgba(20, 60, 50, 0.08);
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 8px 20px rgba(20, 60, 50, 0.14),
+    0 2px 4px rgba(20, 60, 50, 0.08);
   cursor: help;
   transition:
-    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.32s ease,
-    border-color 0.32s ease;
-  animation: ipHeadlineIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.36s ease,
+    border-color 0.36s ease;
+  animation: ipHeadlineIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   outline: none;
+  /* Triggers compositor layer for buttery hover transforms. */
+  will-change: transform;
 }
 .ip-headline:focus-visible {
   outline: none;
 }
 .ip-headline:hover,
 .ip-headline:focus {
-  transform: translateY(-2px);
-  border-color: rgba(107, 158, 120, 0.45);
+  transform: translateY(-3px) scale(1.012);
+  border-color: rgba(45, 161, 137, 0.55);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 14px 28px rgba(20, 60, 50, 0.18),
-    0 2px 4px rgba(20, 60, 50, 0.1);
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 18px 36px rgba(20, 60, 50, 0.22),
+    0 4px 8px rgba(20, 60, 50, 0.12);
+}
+.ip-headline:active {
+  transform: translateY(-1px) scale(1.005);
+  transition-duration: 0.12s;
 }
 .ip-headline::before {
   content: '';
@@ -1050,32 +1116,58 @@ body {
     rgba(255, 255, 255, 0) 70%);
   transform: translateX(-150%) skewX(-18deg);
   opacity: 0;
+  z-index: 2;
 }
 .ip-headline:hover::before {
   animation: ipShine 1.1s ease-out;
 }
 .ip-headline-band {
-  background: linear-gradient(95deg, #2a5a0c 0%, #3a7710 55%, #6B9E78 100%);
-  padding: 8px 14px;
+  position: relative;
+  /* Wider gradient + 200% size + animated background-position so the
+     band gently shimmers when the panel is hovered, like an Apple
+     "Hello" glyph slowly catching light. */
+  background:
+    linear-gradient(95deg,
+      #1a4008 0%,
+      #2a5a0c 30%,
+      #3a7710 55%,
+      #6B9E78 80%,
+      #2a5a0c 100%);
+  background-size: 200% 100%;
+  padding: 9px 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Soft inset highlight on the top edge to sell the curvature of the
+     surface — light catching the rim. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+  transition: background-position 0.6s ease;
+}
+.ip-headline:hover .ip-headline-band {
+  animation: ipBandShimmer 3.2s ease-in-out infinite;
 }
 .ip-headline-name {
   font-size: 13px;
   font-weight: 700;
   color: white;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 .ip-headline-body {
   position: relative;
-  background: linear-gradient(180deg, #f4faec 0%, #e7f3d6 100%);
-  padding: 16px 18px 14px;
+  background:
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0) 60%),
+    linear-gradient(180deg, #f4faec 0%, #e7f3d6 100%);
+  padding: 18px 18px 16px;
   text-align: center;
 }
 .ip-headline-body::after {
@@ -1085,60 +1177,90 @@ body {
   right: 16px;
   bottom: 0;
   height: 2px;
-  background: linear-gradient(90deg, rgba(107, 158, 120, 0) 0%, rgba(107, 158, 120, 0.6) 50%, rgba(107, 158, 120, 0) 100%);
-  transform: scaleX(0.3);
+  background: linear-gradient(90deg,
+    rgba(107, 158, 120, 0) 0%,
+    rgba(45, 161, 137, 0.7) 50%,
+    rgba(107, 158, 120, 0) 100%);
+  transform: scaleX(0.25);
   transform-origin: center;
-  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .ip-headline:hover .ip-headline-body::after {
   transform: scaleX(1);
 }
 .ip-headline-value {
   display: inline-block;
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 900;
   color: #1a4008;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   line-height: 1;
-  background: linear-gradient(135deg, #1a4008 0%, #2a5a0c 60%, #6B9E78 130%);
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #1a4008 0%, #2a5a0c 50%, #6B9E78 130%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: ipValuePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: ipValuePop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ip-headline:hover .ip-headline-value {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 .ip-headline-year {
-  display: block;
-  margin-top: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #6B9E78;
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 9px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #1a7a66;
+  background: rgba(45, 161, 137, 0.1);
+  border: 1px solid rgba(45, 161, 137, 0.28);
+  border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ip-headline:hover .ip-headline-year {
+  background: rgba(45, 161, 137, 0.16);
+  border-color: rgba(45, 161, 137, 0.45);
+  color: #0e3d3d;
+  transform: translateY(-1px);
 }
 .ip-headline-year::before {
-  content: '◆';
-  margin-right: 5px;
-  font-size: 7px;
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2da189;
+  box-shadow: 0 0 0 2px rgba(45, 161, 137, 0.18);
+  margin-right: 6px;
   vertical-align: middle;
-  opacity: 0.7;
+  transform: translateY(-1px);
 }
 
+@keyframes ipRepIn {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 .ip-rep {
   position: relative;
   margin-bottom: 18px;
-  padding: 12px 14px 12px 16px;
+  padding: 13px 14px 13px 18px;
   background: linear-gradient(135deg, #f4faec 0%, #ebf5dd 100%);
-  border-radius: 10px;
-  border: 1px solid #6B9E78;
+  border-radius: 12px;
+  border: 1px solid rgba(107, 158, 120, 0.5);
   overflow: hidden;
   transition:
-    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+    transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.28s ease,
+    border-color 0.28s ease,
+    background 0.28s ease;
+  animation: ipRepIn 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) 0.05s both;
 }
 .ip-rep::before {
   content: '';
@@ -1147,26 +1269,44 @@ body {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(180deg, #3a7710 0%, #6B9E78 100%);
-  transition: width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(180deg, #2a5a0c 0%, #3a7710 50%, #6B9E78 100%);
+  transition:
+    width 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.28s ease;
+}
+.ip-rep::after {
+  /* Soft glow that warms up on hover — frames the card without
+     adding visual noise at rest. */
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 rgba(58, 119, 16, 0);
+  transition: box-shadow 0.32s ease;
 }
 .ip-rep:hover {
-  transform: translateY(-1px);
-  border-color: rgba(58, 119, 16, 0.32);
-  box-shadow: 0 6px 14px rgba(20, 60, 50, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(58, 119, 16, 0.45);
+  background: linear-gradient(135deg, #f8fdf0 0%, #eff7e1 100%);
+  box-shadow: 0 8px 18px rgba(20, 60, 50, 0.13);
 }
 .ip-rep:hover::before {
   width: 6px;
+  background: linear-gradient(180deg, #1a4008 0%, #2a5a0c 50%, #2da189 100%);
+}
+.ip-rep:hover::after {
+  box-shadow: 0 0 0 3px rgba(45, 161, 137, 0.12);
 }
 .ip-rep-label {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 10px;
   font-weight: 800;
   color: var(--primary-dark);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   margin-bottom: 6px;
 }
 .ip-rep-label::before {
@@ -1176,13 +1316,18 @@ body {
   border-radius: 50%;
   background: linear-gradient(135deg, #3a7710 0%, #6B9E78 100%);
   box-shadow: 0 0 0 2px rgba(58, 119, 16, 0.18);
+  transition: box-shadow 0.28s ease, transform 0.28s ease;
+}
+.ip-rep:hover .ip-rep-label::before {
+  box-shadow: 0 0 0 3px rgba(45, 161, 137, 0.22);
+  transform: scale(1.08);
 }
 .ip-rep-name {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 800;
   color: #1a2e10;
   margin-bottom: 4px;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
 }
 .ip-rep-party {
   font-weight: 500;
@@ -1284,60 +1429,107 @@ body {
   text-align: center;
 }
 .ip-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background: linear-gradient(135deg, #3a7710 0%, #2a5a0c 100%);
   color: white;
-  padding: 9px 20px;
-  border-radius: 6px;
+  padding: 10px 22px;
+  border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.01em;
-  box-shadow: 0 2px 8px rgba(42, 90, 12, 0.3);
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s, background 0.18s;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(42, 90, 12, 0.3);
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.22s ease,
+    background 0.22s ease;
+  overflow: hidden;
+}
+.ip-btn::before {
+  /* Sliding sheen on hover, mirroring the headline shine. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 70%);
+  transform: translateX(-150%) skewX(-18deg);
+  opacity: 0;
+}
+.ip-btn:hover::before {
+  animation: ipShine 0.9s ease-out;
 }
 .ip-btn svg {
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ip-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(42, 90, 12, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 18px rgba(42, 90, 12, 0.5);
   background: linear-gradient(135deg, #3a7710 0%, #6B9E78 130%);
 }
 .ip-btn:hover svg {
   transform: translateX(3px);
 }
+.ip-btn:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
+}
 
-/* ========== Floating tooltip (info-panel metric hover) ========== */
+/* ========== Floating tooltip (info-panel metric hover) ==========
+   Visually distinct from the info-panel: deep-teal/seafoam palette
+   (vs. the panel's green). Dark slate background with a glowing
+   seafoam accent rim makes it read as a separate UI layer hovering
+   above the panel rather than blending into it. */
 @keyframes ipTipIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ipTipShimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 .ip-floating-tip {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 4000;
-  width: 230px;
+  width: 240px;
   max-width: 90vw;
-  padding: 10px 12px 10px 14px;
-  background: linear-gradient(135deg, #f4faec 0%, #ebf5dd 100%);
-  color: var(--text-primary);
-  border-radius: 10px;
-  border: 1px solid #6B9E78;
-  border-left: 3px solid #354F52;
+  padding: 12px 14px 11px 16px;
+  /* Cool slate-teal background with a subtle gradient — clearly
+     non-green so it doesn't read as part of the info-panel. */
+  background:
+    linear-gradient(135deg,
+      rgba(244, 252, 251, 0.98) 0%,
+      rgba(220, 240, 240, 0.98) 100%);
+  color: #0e3d3d;
+  border-radius: 12px;
+  border: 1px solid rgba(82, 121, 111, 0.35);
+  /* Bright seafoam accent rim runs the full left edge — the
+     defining visual cue that separates this from the panel. */
   box-shadow:
-    0 4px 16px rgba(20, 60, 30, 0.12),
-    0 1px 3px rgba(20, 60, 30, 0.08);
+    inset 4px 0 0 #2da189,
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 24px rgba(13, 60, 60, 0.18),
+    0 2px 6px rgba(13, 60, 60, 0.12);
   font-size: 12px;
   line-height: 1.45;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
-  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  transform: translateY(6px) scale(0.97);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
 }
 .ip-floating-tip.measuring {
   visibility: visible;
@@ -1347,46 +1539,64 @@ body {
 .ip-floating-tip.visible {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
-  animation: ipTipIn 0.18s ease both;
+  transform: translateY(0) scale(1);
+  animation: ipTipIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .ip-floating-tip::before,
 .ip-floating-tip::after { content: none; }
 .ip-tip-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0e3d3d;
   letter-spacing: -0.005em;
-  margin-bottom: 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(107, 158, 120, 0.3);
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  padding-left: 2px;
+  border-bottom: 1px solid rgba(45, 161, 137, 0.28);
+  position: relative;
+}
+.ip-tip-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #2da189;
+  box-shadow: 0 0 0 3px rgba(45, 161, 137, 0.18);
+  margin-right: 7px;
+  vertical-align: middle;
+  transform: translateY(-1px);
 }
 .ip-tip-desc {
   font-size: 11.5px;
   font-weight: 400;
-  color: var(--text-secondary);
+  color: #2c4f4f;
   line-height: 1.5;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding-left: 2px;
 }
 .ip-tip-year {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  margin-left: 2px;
   font-size: 9.5px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #52796F;
-  background: rgba(82, 121, 111, 0.1);
-  padding: 2px 7px;
+  letter-spacing: 0.12em;
+  color: white;
+  background: linear-gradient(135deg, #2da189 0%, #1a7a66 100%);
+  padding: 3px 9px;
   border-radius: 999px;
-  border: 1px solid rgba(82, 121, 111, 0.25);
+  border: 1px solid rgba(13, 60, 60, 0.18);
+  box-shadow: 0 1px 3px rgba(13, 60, 60, 0.18);
 }
 .ip-tip-year-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #52796F;
+  background: white;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.5);
   flex-shrink: 0;
 }
 
