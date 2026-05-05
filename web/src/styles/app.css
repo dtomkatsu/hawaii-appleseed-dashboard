@@ -26,11 +26,17 @@
   pointer-events: none;
 }
 
-html,
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  height: 100dvh; /* dvh tracks visible area; 100vh on mobile Safari includes hidden chrome */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--background);
   color: var(--text-primary);
@@ -73,7 +79,8 @@ body {
 .app-main {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 76px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
