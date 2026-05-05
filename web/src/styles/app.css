@@ -540,6 +540,10 @@ body {
 }
 .leaflet-container {
   background: white !important;
+  cursor: none !important;
+}
+.leaflet-container * {
+  cursor: none !important;
 }
 /* Hint browser to use a dedicated compositing layer for the SVG overlay
    during transform animations. Reduces sub-pixel blur from CSS-scale. */

@@ -29,6 +29,32 @@ export function createMap(containerId, theme) {
     smoothSensitivity: mapCfg.smooth_sensitivity ?? 1,
   });
 
+  // Grey circle cursor
+  const cursorEl = document.createElement('div');
+  cursorEl.style.cssText = [
+    'position:absolute',
+    'width:20px',
+    'height:20px',
+    'border-radius:50%',
+    'background:rgba(140,140,140,0.25)',
+    'border:1.5px solid rgba(100,100,100,0.55)',
+    'pointer-events:none',
+    'transform:translate(-50%,-50%)',
+    'z-index:1000',
+    'display:none',
+    'transition:opacity 0.1s',
+  ].join(';');
+  if (container) {
+    container.style.cursor = 'none';
+    container.appendChild(cursorEl);
+  }
+  mapInstance.on('mousemove', (e) => {
+    cursorEl.style.left = e.containerPoint.x + 'px';
+    cursorEl.style.top = e.containerPoint.y + 'px';
+    cursorEl.style.display = 'block';
+  });
+  mapInstance.on('mouseout', () => { cursorEl.style.display = 'none'; });
+
   L.control.zoom({ position: 'topleft' }).addTo(mapInstance);
 
   const ResetControl = L.Control.extend({
