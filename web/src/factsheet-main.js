@@ -16,8 +16,8 @@ async function main() {
 
   try {
     const [geojson, stateSummary] = await Promise.all([
-      fetchJson(`${import.meta.env.BASE_URL}data/${level}.geojson`),
-      fetchJson(`${import.meta.env.BASE_URL}data/state_summary.json`).catch(() => ({})),
+      fetchJson(`/data/${level}.geojson`),
+      fetchJson('/data/state_summary.json').catch(() => ({})),
     ]);
 
     const feature = geojson.features.find(
