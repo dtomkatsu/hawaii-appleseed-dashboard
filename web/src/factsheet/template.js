@@ -10,7 +10,7 @@ export function generateFactSheetHTML(geo) {
     <button class="print-button" onclick="window.print()">Save PDF</button>
     <div class="fact-sheet-container">
       <div class="fs-header">
-        <img src="/assets/logo.png" class="fs-logo" alt="Hawaii Appleseed" onerror="this.style.display='none'">
+        <img src="${import.meta.env.BASE_URL}assets/logo.png" class="fs-logo" alt="Hawaii Appleseed" onerror="this.style.display='none'">
         <div class="fs-header-title">${esc(title)}</div>
       </div>
 
@@ -93,7 +93,7 @@ export function generateFactSheetHTML(geo) {
 
       <div class="fs-footer">
         <div class="fs-footer-brand">
-          <img src="/assets/logo.png" alt="" onerror="this.style.display='none'" style="height:30px">
+          <img src="${import.meta.env.BASE_URL}assets/logo.png" alt="" onerror="this.style.display='none'" style="height:30px">
           <span>HAWAIʻI APPLESEED<br><small>CENTER FOR LAW &amp; ECONOMIC JUSTICE</small></span>
         </div>
         <div class="fs-footer-url">www.hiappleseed.org/data-dashboard</div>

@@ -133,7 +133,7 @@ export function showInfoPanel(properties) {
   const s = getState();
   const geoid = properties.GEOID || properties.geoid || '';
   const name = cleanName(properties.display_name || properties.NAME || properties.name || `Geography ${geoid}`);
-  const factsheetUrl = `/factsheet.html?geo_id=${encodeURIComponent(geoid)}&level=${encodeURIComponent(s.activeLayer)}`;
+  const factsheetUrl = `${import.meta.env.BASE_URL}factsheet.html?geo_id=${encodeURIComponent(geoid)}&level=${encodeURIComponent(s.activeLayer)}`;
 
   const selectedVar = VARIABLES?.[s.selectedVariable];
   const selectedDisplayName =
