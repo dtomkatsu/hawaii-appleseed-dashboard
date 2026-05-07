@@ -42,15 +42,7 @@ export async function setLayer(level) {
   }).addTo(map);
 
   currentLevel = level;
-
-  try {
-    const bounds = currentLayer.getBounds();
-    if (bounds.isValid()) {
-      map.flyToBounds(bounds, { padding: [20, 20], duration: 0.6, maxZoom: 8 });
-    }
-  } catch (_) {
-    /* no-op */
-  }
+  // Stay at the user's current view when switching layers — don't auto-fit.
 }
 
 export function setVariable(varKey) {
