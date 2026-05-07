@@ -67,9 +67,9 @@ function bindMetricTooltips(panel) {
     const label = el.getAttribute('data-label') || '';
     if (!desc && !year) return;
     tip.innerHTML = `
-      ${label ? `<div class="ip-tip-title">${label}</div>` : ''}
-      ${desc ? `<div class="ip-tip-desc">${desc}</div>` : ''}
-      ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${year}</div>` : ''}
+      ${label ? `<div class="ip-tip-title">${escapeHtml(label)}</div>` : ''}
+      ${desc ? `<div class="ip-tip-desc">${renderDescription(desc)}</div>` : ''}
+      ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${escapeHtml(year)}</div>` : ''}
     `;
     tip.classList.add('visible');
     positionTip(el);
@@ -117,6 +117,26 @@ function variablesByCategory() {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Renders a description for tooltip display: converts **phrase** to <mark>
+// pills, auto-highlights percentages and dollar amounts. Returns HTML.
+function renderDescription(text) {
+  if (!text) return '';
+  const highlightNumbers = (esc) => esc
+    .replace(/(\$[\d,]+(?:\.\d+)?)/g, '<mark>$1</mark>')
+    .replace(/(\d+(?:\.\d+)?%)/g, '<mark>$1</mark>');
+  const re = /\*\*([^*]+)\*\*/g;
+  let lastIdx = 0;
+  let result = '';
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    result += highlightNumbers(escapeHtml(text.slice(lastIdx, match.index)));
+    result += `<mark>${escapeHtml(match[1])}</mark>`;
+    lastIdx = match.index + match[0].length;
+  }
+  result += highlightNumbers(escapeHtml(text.slice(lastIdx)));
+  return result;
 }
 
 function cleanName(rawName) {

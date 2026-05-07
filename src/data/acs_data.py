@@ -371,13 +371,30 @@ class ACSDataFetcher:
                 'b17001_001e': 'total_population',
                 'b19013_001e': 'median_income',
                 'b19013_001m': 'median_income_moe',
+                'b15003_017e': 'edu_hs_diploma',
+                'b15003_018e': 'edu_ged',
+                'b15003_019e': 'edu_some_college_lt1',
+                'b15003_020e': 'edu_some_college_1plus',
+                'b15003_021e': 'edu_associates',
                 'b15003_022e': 'bachelors_plus',
+                'b15003_023e': 'edu_masters',
+                'b15003_024e': 'edu_professional',
+                'b15003_025e': 'edu_doctorate',
                 'b15003_001e': 'pop_25_plus',
                 'b25003_003e': 'renter_occupied',
                 'b25003_001e': 'total_housing_units',
                 'b25064_001e': 'median_rent',  # Added median rent variable
                 'b08301_001e': 'total_workers',  # Total workers 16 years and over
-                'b08301_010e': 'public_transit_workers'  # Workers using public transportation
+                'b08301_010e': 'public_transit_workers',  # Workers using public transportation
+                'b02001_001e': 'race_total_pop',
+                'b02008_001e': 'white_aoic',
+                'b02009_001e': 'black_aoic',
+                'b02011_001e': 'asian_aoic',
+                'b02012_001e': 'nhpi_aoic',
+                'b03002_001e': 'hispanic_universe',
+                'b03002_012e': 'hispanic_total',
+                'b25002_001e': 'occupancy_universe',
+                'b25002_003e': 'vacant_units'
             }
             
             # Only rename columns that exist in the dataframe
@@ -435,6 +452,38 @@ class ACSDataFetcher:
             df['bachelors_rate'] = _safe_div(df['bachelors_plus'], df['pop_25_plus']).round(2)
             # Dashboard exposes this under the `college_educated_pct` key too
             df['college_educated_pct'] = df['bachelors_rate']
+
+        # High-school-or-higher attainment: sum of B15003_017E … _025E (everyone
+        # who has at least a regular HS diploma) divided by B15003_001E.
+        hs_plus_cols = [
+            'edu_hs_diploma', 'edu_ged', 'edu_some_college_lt1',
+            'edu_some_college_1plus', 'edu_associates', 'bachelors_plus',
+            'edu_masters', 'edu_professional', 'edu_doctorate',
+        ]
+        if all(c in df.columns for c in hs_plus_cols) and 'pop_25_plus' in df.columns:
+            df['hs_or_higher'] = df[hs_plus_cols].sum(axis=1)
+            df['high_school_or_higher_pct'] = _safe_div(df['hs_or_higher'], df['pop_25_plus']).round(2)
+
+        # Race / ethnicity rates. Races use "alone or in combination" tables
+        # (B02008–B02012), so the categories overlap and don't sum to 100% —
+        # this is intentional for Hawaii where ~25% of residents are multi-racial.
+        # Hispanic/Latino comes from B03002 and is reported as "any race".
+        if 'race_total_pop' in df.columns:
+            denom = df['race_total_pop']
+            for src, out in (
+                ('white_aoic', 'white_pct'),
+                ('black_aoic', 'black_pct'),
+                ('asian_aoic', 'asian_pct'),
+                ('nhpi_aoic', 'nhpi_pct'),
+            ):
+                if src in df.columns:
+                    df[out] = _safe_div(df[src], denom).round(2)
+        if 'hispanic_total' in df.columns and 'hispanic_universe' in df.columns:
+            df['hispanic_pct'] = _safe_div(df['hispanic_total'], df['hispanic_universe']).round(2)
+
+        # Housing vacancy: B25002_003E / B25002_001E (vacant / total housing units)
+        if 'vacant_units' in df.columns and 'occupancy_universe' in df.columns:
+            df['vacancy_rate'] = _safe_div(df['vacant_units'], df['occupancy_universe']).round(2)
 
         # Renter-occupied share of housing units
         if 'renter_occupied' in df.columns and 'total_housing_units' in df.columns:

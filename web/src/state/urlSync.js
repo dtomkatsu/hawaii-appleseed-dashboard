@@ -1,6 +1,9 @@
 import { getState, setState } from './store.js';
 
-const KEYS = ['activeLayer', 'selectedVariable', 'colorScheme'];
+// selectedVariable is intentionally NOT synced to the URL — the page should
+// always open with the in-store default (ALICE). Only geography and color
+// scheme persist across reloads.
+const KEYS = ['activeLayer', 'colorScheme'];
 
 export function readFromUrl() {
   if (!window.location.hash) return;

@@ -1,6 +1,6 @@
 const state = {
   activeLayer: 'county',
-  selectedVariable: 'poverty_rate',
+  selectedVariable: 'alice_rate',
   colorScheme: 'blue',
   displayOptions: { showLabels: false, showLegend: true },
   selectedFeatureId: null,
