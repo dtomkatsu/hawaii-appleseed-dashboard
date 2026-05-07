@@ -134,6 +134,13 @@ export function showInfoPanel(properties) {
   const geoid = properties.GEOID || properties.geoid || '';
   const name = cleanName(properties.display_name || properties.NAME || properties.name || `Geography ${geoid}`);
   const factsheetUrl = `${import.meta.env.BASE_URL}factsheet.html?geo_id=${encodeURIComponent(geoid)}&level=${encodeURIComponent(s.activeLayer)}`;
+  const kickerLabels = {
+    county: 'County',
+    house: 'House District',
+    senate: 'Senate District',
+    state: 'State',
+  };
+  const kicker = kickerLabels[s.activeLayer] || (s.activeLayer || '').replace(/_/g, ' ');
 
   const selectedVar = VARIABLES?.[s.selectedVariable];
   const selectedDisplayName =
@@ -189,7 +196,9 @@ export function showInfoPanel(properties) {
   panel.innerHTML = `
     <div class="ip-header">
       <button class="ip-close" aria-label="Close">×</button>
+      <div class="ip-kicker">${escapeHtml(kicker)}</div>
       <h2>${escapeHtml(name)}</h2>
+      <div class="ip-header-accent" aria-hidden="true"></div>
     </div>
     <div class="ip-headline"
          tabindex="0"
