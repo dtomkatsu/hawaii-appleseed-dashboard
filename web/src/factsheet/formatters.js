@@ -11,25 +11,31 @@ export function formatNumber(value, { isPercent = false, isCurrency = false, dec
   }
 }
 
-export function getComparisonText(currentValue, comparisonValue, comparisonType = 'state', isCurrency = true) {
-  if (currentValue == null || comparisonValue == null || comparisonValue === 0) return '';
+// Returns a structured comparison object so the template can style
+// the arrow / value / percentage / descriptor independently:
+//   { direction: 'up'|'down'|'same', value: '+$5,806', pct: '5.8%',
+//     descriptor: 'above state avg' }
+// or null when comparison can't be computed.
+export function getComparison(currentValue, comparisonValue, comparisonType = 'state', isCurrency = true) {
+  if (currentValue == null || comparisonValue == null || comparisonValue === 0) return null;
   try {
     const current = parseFloat(currentValue);
     const comparison = parseFloat(comparisonValue);
-    if (isNaN(current) || isNaN(comparison)) return '';
-    if (current > comparison) {
-      const diff = current - comparison;
-      const pct = (diff / comparison) * 100;
-      const diffStr = isCurrency ? '$' + Math.round(diff).toLocaleString() : Math.round(diff).toLocaleString();
-      return `+${diffStr} (+${pct.toFixed(1)}%) above ${comparisonType} average`;
-    } else if (current < comparison) {
-      const diff = comparison - current;
-      const pct = (diff / comparison) * 100;
-      const diffStr = isCurrency ? '$' + Math.round(diff).toLocaleString() : Math.round(diff).toLocaleString();
-      return `-${diffStr} (${pct.toFixed(1)}%) below ${comparisonType} average`;
+    if (isNaN(current) || isNaN(comparison)) return null;
+    if (current === comparison) {
+      return { direction: 'same', value: '', pct: '', descriptor: `same as ${comparisonType} avg` };
     }
-    return `Same as ${comparisonType} average`;
-  } catch (_) { return ''; }
+    const direction = current > comparison ? 'up' : 'down';
+    const diff = Math.abs(current - comparison);
+    const pct = (diff / comparison) * 100;
+    const valueStr = isCurrency ? '$' + Math.round(diff).toLocaleString() : Math.round(diff).toLocaleString();
+    return {
+      direction,
+      value: (direction === 'up' ? '+' : '−') + valueStr,
+      pct: pct.toFixed(1) + '%',
+      descriptor: `${direction === 'up' ? 'above' : 'below'} ${comparisonType} avg`,
+    };
+  } catch (_) { return null; }
 }
 
 export function getFractionText(rate, suffix = 'households') {
@@ -92,9 +98,9 @@ export function buildGeoData(props, stateSummary) {
     name: cleanGeoName(props.display_name || props.NAME || props.name),
     population: formatNumber(props.total_population),
     medianIncome: formatNumber(medianIncome, { isCurrency: true }),
-    incomeVsState: getComparisonText(medianIncome, stateEcon.median_income, 'state', true),
+    incomeVsState: getComparison(medianIncome, stateEcon.median_income, 'state', true),
     medianRent: formatNumber(medianRent, { isCurrency: true }),
-    rentVsState: getComparisonText(medianRent, stateHousing.median_rent, 'state', true),
+    rentVsState: getComparison(medianRent, stateHousing.median_rent, 'state', true),
     aliceRate: formatNumber(aliceRate, { isPercent: true }),
     aliceFraction: getFractionText(aliceRate, 'households') || 'many households',
     snapRate: formatNumber(snapRate, { isPercent: true }),

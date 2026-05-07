@@ -5,11 +5,25 @@ function esc(s) {
 const ICONS = {
   bulb: `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M9 14a4 4 0 1 1 6 0c-.6.7-1 1.6-1 2.5V18h-4v-1.5c0-.9-.4-1.8-1-2.5z"/></svg>`,
   dollar: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-  utensils: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/></svg>`,
+  utensils: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 22V11"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/></svg>`,
   bus: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`,
   home: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   download: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  arrowUp: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>`,
+  arrowDown: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="18 13 12 19 6 13"/></svg>`,
 };
+
+function comparisonHTML(c) {
+  if (!c) return '';
+  if (c.direction === 'same') {
+    return `<div class="fs-stat-comparison"><span class="fs-stat-desc">${c.descriptor}</span></div>`;
+  }
+  const arrow = c.direction === 'up' ? ICONS.arrowUp : ICONS.arrowDown;
+  return `<div class="fs-stat-comparison">
+    <span class="fs-stat-delta fs-stat-delta-${c.direction}">${arrow}<span class="fs-stat-value">${c.value}</span><span class="fs-stat-pct">(${c.pct})</span></span>
+    <span class="fs-stat-desc">${c.descriptor}</span>
+  </div>`;
+}
 
 export function generateFactSheetHTML(geo) {
   const nameUpper = geo.name.toUpperCase();
@@ -30,7 +44,7 @@ export function generateFactSheetHTML(geo) {
           <div class="fs-did-you-know-icon">${ICONS.bulb}</div>
           <div>
             <h3>Did you know?</h3>
-            <p>${esc(geo.aliceFraction)} (${esc(geo.aliceRate)}) are employed, yet struggling to make ends meet.</p>
+            <p><strong class="fs-dyk-fraction">${esc(geo.aliceFraction)}</strong><span class="fs-dyk-rate">${esc(geo.aliceRate)}</span><span class="fs-dyk-context">are employed, yet struggling to make ends meet.</span></p>
           </div>
         </div>
 
@@ -42,12 +56,12 @@ export function generateFactSheetHTML(geo) {
           <div class="fs-stat-card">
             <span class="fs-stat-number">${esc(geo.medianIncome)}</span>
             <div class="fs-stat-label">Median Income</div>
-            <div class="fs-stat-comparison">${esc(geo.incomeVsState)}</div>
+            ${comparisonHTML(geo.incomeVsState)}
           </div>
           <div class="fs-stat-card">
             <span class="fs-stat-number">${esc(geo.medianRent)}</span>
             <div class="fs-stat-label">Median Rent</div>
-            <div class="fs-stat-comparison">${esc(geo.rentVsState)}</div>
+            ${comparisonHTML(geo.rentVsState)}
           </div>
         </div>
 

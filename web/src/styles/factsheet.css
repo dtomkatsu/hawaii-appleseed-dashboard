@@ -140,9 +140,33 @@ body {
 }
 .fs-did-you-know p {
   font-size: 15px;
-  font-weight: 500;
-  line-height: 1.45;
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+/* Did-you-know data hierarchy: big bold fraction (the headline data),
+   inline tinted chip for the precise percentage, lighter prose for the
+   surrounding context. */
+.fs-dyk-fraction {
+  font-weight: 800;
   color: white;
+  letter-spacing: -0.005em;
+}
+.fs-dyk-rate {
+  display: inline-block;
+  margin: 0 6px 0 7px;
+  padding: 1px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fs-primary-tint);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.005em;
+  vertical-align: 1px;
+}
+.fs-dyk-context {
+  /* uses paragraph default */
 }
 
 /* ── Hero stats row ── */
@@ -176,11 +200,38 @@ body {
   color: var(--fs-primary);
   margin-bottom: 4px;
 }
+/* Stat comparison: arrow + bold value + small percentage chip,
+   color-coded by direction. Descriptor below in small uppercase. */
 .fs-stat-comparison {
-  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+.fs-stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 800;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.005em;
+}
+.fs-stat-delta svg { flex-shrink: 0; }
+.fs-stat-delta-up { color: #2a7a1f; }
+.fs-stat-delta-down { color: #b04a1a; }
+.fs-stat-pct {
+  font-weight: 600;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.fs-stat-desc {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   color: var(--fs-text-muted);
-  line-height: 1.35;
-  font-weight: 500;
 }
 
 /* ── Content cards grid ── */
