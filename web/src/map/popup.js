@@ -163,6 +163,44 @@ function setHoverClass(layer, on) {
   else path.classList.remove('geo-hover');
 }
 
+// Inner-ring hover effect fades in/out by animating the alpha of the
+// #geoHoverRing filter's feColorMatrix. CSS can't transition between
+// `none` and `url(...)` filters, so we drive the alpha directly via
+// requestAnimationFrame. Only one geo is hovered at a time, so a single
+// shared filter is fine.
+const RING_ALPHA = 0.28;
+const FADE_DURATION_MS = 220;
+let hoverAnimRaf = null;
+let hoverAlpha = 0;
+let hoverFadeoutTarget = null;
+
+function setRingAlpha(value) {
+  hoverAlpha = value;
+  const matrix = document.querySelector('#geoHoverRing feColorMatrix');
+  if (matrix) {
+    matrix.setAttribute('values',
+      `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${value} 0`);
+  }
+}
+
+function animateRing(target, onDone) {
+  if (hoverAnimRaf) cancelAnimationFrame(hoverAnimRaf);
+  const start = hoverAlpha;
+  const startTime = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - startTime) / FADE_DURATION_MS);
+    const eased = 1 - Math.pow(1 - t, 3);
+    setRingAlpha(start + (target - start) * eased);
+    if (t < 1) {
+      hoverAnimRaf = requestAnimationFrame(tick);
+    } else {
+      hoverAnimRaf = null;
+      if (onDone) onDone();
+    }
+  }
+  hoverAnimRaf = requestAnimationFrame(tick);
+}
+
 export function bindFeature(feature, layer) {
   layer.on({
     mouseover: (e) => {
@@ -183,6 +221,9 @@ export function bindFeature(feature, layer) {
       // Skipped for the selected geo so it doesn't compete with the lift.
       if (e.target !== selectedLayer) {
         setHoverClass(e.target, true);
+        // Cancel any pending fade-out class removal — we're hovering again
+        hoverFadeoutTarget = null;
+        animateRing(RING_ALPHA);
       }
       // Only bring the hovered to front when there's no selected. If there
       // is a selected layer, leave DOM order alone so the selected stays
@@ -194,7 +235,18 @@ export function bindFeature(feature, layer) {
       }
     },
     mouseout: (e) => {
-      setHoverClass(e.target, false);
+      // Animate the ring out, then remove the hover class.
+      const path = e.target && e.target._path;
+      if (path && path.classList.contains('geo-hover')) {
+        const target = e.target;
+        hoverFadeoutTarget = target;
+        animateRing(0, () => {
+          if (hoverFadeoutTarget === target) {
+            setHoverClass(target, false);
+            hoverFadeoutTarget = null;
+          }
+        });
+      }
       if (selectedLayer && selectedLayer !== e.target) selectedLayer.bringToFront();
     },
     tooltipopen: (e) => {

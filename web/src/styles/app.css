@@ -830,10 +830,10 @@ body {
   top: 0;
   bottom: 0;
   width: 360px;
-  /* Vertical padding bumped to 30 so content stays clear of the top/
-     bottom 25px transparent zones (the glass strips show through
-     those). Horizontal padding unchanged. */
-  padding: 30px 20px;
+  /* Top padding pushed to 48px so the H2 title sits clearly below the
+     25px glass-strip zone (geo content visible behind the refraction
+     was visually compressing the title's top edge at the prior 30px). */
+  padding: 48px 20px 30px;
   /* Bg is opaque only in the middle band (y = 25 → height-25); the
      top and bottom 25px are transparent so the .info-panel-glass-top
      and .info-panel-glass-bottom strips (at z 1000, behind the
@@ -979,11 +979,15 @@ body {
 }
 .info-panel .ip-header h2 {
   margin: 0;
-  font-weight: 700;
-  font-size: 17px;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
   color: #1a2e10;
   text-align: center;
   line-height: 1.2;
+  /* Subtle white halo for legibility — protects the title against any
+     map content visible through the glass strip just above the panel. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.95), 0 0 12px rgba(255, 255, 255, 0.7);
 }
 .info-panel .ip-close {
   position: absolute;
