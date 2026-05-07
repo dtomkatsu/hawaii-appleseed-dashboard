@@ -91,13 +91,13 @@
              so it doesn't replace the natural outline and doesn't bleed
              into the outer-shadow zone used by the selected state. -->
         <filter id="geoHoverRing" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
-          <feMorphology in="SourceAlpha" operator="erode" radius="2.5" result="inner"/>
+          <feMorphology in="SourceAlpha" operator="erode" radius="1.5" result="inner"/>
           <feComposite in="SourceAlpha" in2="inner" operator="out" result="ring"/>
           <feColorMatrix in="ring" type="matrix"
             values="0 0 0 0 0
                     0 0 0 0 0
                     0 0 0 0 0
-                    0 0 0 0.55 0" result="darkRing"/>
+                    0 0 0 0.28 0" result="darkRing"/>
           <feMerge>
             <feMergeNode in="SourceGraphic"/>
             <feMergeNode in="darkRing"/>
