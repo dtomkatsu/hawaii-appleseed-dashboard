@@ -401,7 +401,7 @@
       ],
       "csv_column": "snap_household_rate",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023",
+      "source": "USDA SNAP Data 2024",
       "data_source": "snap"
     },
     "snap_benefit_annual_per_household": {
@@ -435,7 +435,7 @@
       ],
       "csv_column": "snap_benefit_annual_per_household",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023",
+      "source": "USDA SNAP Data 2024",
       "data_source": "snap"
     },
     "snap_benefits_annual_total": {
@@ -469,7 +469,7 @@
       ],
       "csv_column": "snap_benefits_annual_total",
       "legend_direction": "neutral",
-      "source": "USDA SNAP Data 2023",
+      "source": "USDA SNAP Data 2024",
       "data_source": "snap"
     },
     "cep_percentage": {
