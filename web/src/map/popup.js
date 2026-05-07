@@ -184,13 +184,13 @@ export function bindFeature(feature, layer) {
       if (e.target !== selectedLayer) {
         setHoverClass(e.target, true);
       }
-      e.target.bringToFront();
-      // Re-promote the selected layer above the hovered one so its outer
-      // shadow always renders ON TOP of the hovered geo's effects. Without
-      // this, the hovered geo (last bringToFront) would sit above the
-      // selected in DOM order and clip its halo.
-      if (selectedLayer && selectedLayer !== e.target) {
-        selectedLayer.bringToFront();
+      // Only bring the hovered to front when there's no selected. If there
+      // is a selected layer, leave DOM order alone so the selected stays
+      // last (on top). Reshuffling DOM mid-hover causes the browser to
+      // re-run hit-tests, which can intermittently steal pointer events
+      // from the hovered path and break subsequent clicks.
+      if (!selectedLayer) {
+        e.target.bringToFront();
       }
     },
     mouseout: (e) => {
