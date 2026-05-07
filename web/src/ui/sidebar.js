@@ -65,11 +65,18 @@ function variablesForGroup(groupKey) {
   return items;
 }
 
+function extractYear(source) {
+  if (!source) return '';
+  const m = String(source).match(/(19|20)\d{2}/);
+  return m ? m[0] : '';
+}
+
 function leaf(v) {
   return {
     key: v.key,
     label: v.dropdown_label || v.display_name,
     tooltip: v.description || '',
+    year: extractYear(v.source),
     category: v.info_panel_category || null,
   };
 }
@@ -145,10 +152,11 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function tipAttrs(tip, pos) {
+function tipAttrs(tip, pos, year) {
   if (!tip) return '';
   const parts = [`data-tip="${escapeHtml(tip)}"`];
   if (pos) parts.push(`data-tip-pos="${escapeHtml(pos)}"`);
+  if (year) parts.push(`data-tip-year="${escapeHtml(year)}"`);
   return ' ' + parts.join(' ');
 }
 
@@ -171,7 +179,7 @@ function renderCascade(rootKey, items, currentKey, placeholder) {
             </li>`;
         }
         const sel = it.key === currentKey ? 'cascade-leaf--selected' : '';
-        return `<li class="cascade-leaf ${sel}"><a href="#" data-cascade-key="${escapeHtml(it.key)}"><span class="cascade-leaf-text"${tipAttrs(it.tooltip, 'right')}>${escapeHtml(it.label)}</span></a></li>`;
+        return `<li class="cascade-leaf ${sel}"><a href="#" data-cascade-key="${escapeHtml(it.key)}"><span class="cascade-leaf-text"${tipAttrs(it.tooltip, 'right', it.year)}>${escapeHtml(it.label)}</span></a></li>`;
       })
       .join('');
   }
@@ -236,8 +244,11 @@ function buildTooltipBody(text) {
   return result;
 }
 
-function renderTooltipContent(text) {
-  return `<div class="cascade-tooltip-text">${buildTooltipBody(text)}</div>`;
+function renderTooltipContent(text, year) {
+  const yearBadge = year
+    ? `<div class="cascade-tooltip-year"><span class="cascade-tooltip-year-dot"></span>Data Year ${escapeHtml(year)}</div>`
+    : '';
+  return `<div class="cascade-tooltip-text">${buildTooltipBody(text)}</div>${yearBadge}`;
 }
 
 function positionTooltip(target, pos) {
@@ -274,9 +285,9 @@ function positionTooltip(target, pos) {
   el.style.top = `${Math.round(top)}px`;
 }
 
-function showTooltip(target, text, pos) {
+function showTooltip(target, text, pos, year) {
   const el = ensureTooltipEl();
-  el.innerHTML = renderTooltipContent(text);
+  el.innerHTML = renderTooltipContent(text, year);
   el.style.opacity = '0';
   el.style.display = 'block';
   // Delay so it doesn't fire on quick passes.
@@ -297,9 +308,10 @@ function attachTooltipListeners(root) {
   const tipped = root.querySelectorAll('[data-tip]');
   tipped.forEach((node) => {
     const pos = node.dataset.tipPos;
-    node.addEventListener('mouseenter', () => showTooltip(node, node.dataset.tip, pos));
+    const year = node.dataset.tipYear;
+    node.addEventListener('mouseenter', () => showTooltip(node, node.dataset.tip, pos, year));
     node.addEventListener('mouseleave', hideTooltip);
-    node.addEventListener('focus', () => showTooltip(node, node.dataset.tip, pos));
+    node.addEventListener('focus', () => showTooltip(node, node.dataset.tip, pos, year));
     node.addEventListener('blur', hideTooltip);
   });
 }

@@ -542,6 +542,28 @@ body {
   color: #1a2e10;
   font-weight: 700;
 }
+.cascade-tooltip-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 9px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #52796F;
+  background: rgba(82, 121, 111, 0.1);
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(82, 121, 111, 0.25);
+}
+.cascade-tooltip-year-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #52796F;
+  flex-shrink: 0;
+}
 
 /* ========== Map ========== */
 .map-wrap {
@@ -613,13 +635,10 @@ body {
    it (the panel bg is rgba(...,0.98), so there's a hair of show-through
    without this). */
 .map-wrap:has(.info-panel.visible)::before {
-  /* Retract by 385px (rim 25 + panel 360) so the map strip's right
-     edge butts flush against the new top/bottom panel strips, which
-     start at right:0 width:385. Both pieces use #liquidGlassTop/
-     Bottom (same filter, same direction), so the boundary at
-     x = mapWidth - 385 reads as one continuous strip rather than
-     two segments. Border-radius removed — sharp flush meeting. */
-  right: 385px;
+  /* Retract just the panel width (360px) — glass rim retired, so no
+     extra 25px buffer needed. Strip's right edge butts flush against
+     the panel's left edge. */
+  right: 360px;
 }
 .leaflet-container {
   background: white !important;
@@ -693,22 +712,17 @@ body {
   /* Lower bg alpha than before (0.72 → 0.55) so the underlying
      refraction reads through the panel — text stays readable thanks
      to the legend's own internal text contrast on the map. */
-  background: rgba(255, 255, 255, 0.55);
-  padding: 14px 16px 12px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 14px 13px 12px;
   border-radius: 12px;
-  /* Add a top-rim inset highlight to the existing drop-shadow stack
-     — gives the panel a hint of physical thickness, the same trick
-     used on the map's edge strips. */
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.10),
     0 1px 3px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  /* Slightly bolder rim than before (0.5 → 0.7) to sell the glass
-     edge alongside the refraction. */
   border: 1px solid rgba(255, 255, 255, 0.7);
   z-index: 1000;
-  min-width: 120px;
-  max-width: 158px;
+  min-width: 110px;
+  max-width: 144px;
   font-size: 12px;
   /* Liquid-glass panel filter (whole-element, refracts at all four
      rims) + glass-clarity color stack. Replaces the prior plain
@@ -916,8 +930,19 @@ body {
   bottom: 0;
   width: 360px;
   padding: 30px 20px 30px;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  /* Warm paper base + procedural fiber noise (SVG fractalNoise, 5% alpha,
+     warm-brown tint). Tiles seamlessly via stitchTiles. Top layer is the
+     noise; bottom is the warm cream base. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.34 0 0 0 0 0.30 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    #fdfcfb;
+  /* Symmetric soft drop shadow on top + left, no insets — keeps the
+     corner clean since nothing terminates at the panel boundary. */
+  box-shadow:
+    -1px 0 1px rgba(20, 30, 16, 0.04),
+    -10px 0 28px rgba(20, 30, 16, 0.08),
+    0 -1px 1px rgba(20, 30, 16, 0.04),
+    0 -10px 28px rgba(20, 30, 16, 0.08);
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(100%);
@@ -942,28 +967,10 @@ body {
    the panel because the panel uses transform, which would push a
    child into an offscreen buffer and break backdrop-filter. */
 .info-panel-glass-rim {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 360px;
-  width: 25px;
-  pointer-events: none;
-  z-index: 1000;
-  visibility: hidden;
-  transform: translateX(385px);
-  transition:
-    transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1),
-    visibility 0.32s;
-  -webkit-backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
-          backdrop-filter: url(#liquidGlassLeft) saturate(1.25) contrast(1.07) brightness(1.04);
-  background: linear-gradient(to right,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 255, 255, 0.26) 30%,
-    rgba(255, 255, 255, 0.10) 60%,
-    rgba(255, 255, 255, 0) 100%);
-  box-shadow:
-    inset 1px 0 0 rgba(255, 255, 255, 0.88),
-    inset -1px 0 2px rgba(255, 255, 255, 0.24);
+  /* Retired in favor of a unified panel-edge feather (mask on the panel
+     itself covers both top and left). Keeping the element in the DOM
+     harmless but invisible. */
+  display: none;
 }
 .map-wrap:has(.info-panel.visible) .info-panel-glass-rim {
   visibility: visible;
