@@ -126,7 +126,7 @@
       ],
       "csv_column": "poverty_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "median_income": {
@@ -160,7 +160,7 @@
       ],
       "csv_column": "median_income",
       "legend_direction": "up",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "unemployment_rate": {
@@ -194,7 +194,7 @@
       ],
       "csv_column": "unemployment_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "ctc_avg_amount": {
@@ -568,7 +568,7 @@
       ],
       "csv_column": "median_rent",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "rent_burden_rate": {
@@ -602,7 +602,7 @@
       ],
       "csv_column": "rent_burden_rate",
       "legend_direction": "down",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "travel_time_to_work_minutes": {
@@ -632,7 +632,7 @@
       ],
       "csv_column": "travel_time_to_work_minutes",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "public_transportation_pct": {
@@ -662,7 +662,7 @@
       ],
       "csv_column": "public_transportation_pct",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "median_home_value": {
@@ -696,7 +696,7 @@
       ],
       "csv_column": "median_home_value",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "renter_rate": {
@@ -730,7 +730,7 @@
       ],
       "csv_column": "renter_rate",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "college_educated_pct": {
@@ -764,7 +764,7 @@
       ],
       "csv_column": "college_educated_pct",
       "legend_direction": "up",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "cep_schools": {
@@ -866,7 +866,7 @@
       ],
       "csv_column": "population",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     },
     "median_age": {
@@ -900,7 +900,7 @@
       ],
       "csv_column": "median_age",
       "legend_direction": "neutral",
-      "source": "American Community Survey 2023",
+      "source": "American Community Survey 2024",
       "data_source": "acs"
     }
   },
