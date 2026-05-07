@@ -576,15 +576,12 @@ body {
   vector-effect: non-scaling-stroke;
   shape-rendering: geometricPrecision;
 }
-/* Hover state: clean white stroke "pops" the boundary — instantly readable
-   as "this is the one being inspected" without changing the choropleth
-   color. paint-order ensures the stroke sits on top of the fill so the
-   line stays crisp. */
+/* Hover state: a soft inner ring drawn JUST INSIDE the boundary (via
+   #geoHoverRing SVG filter in index.html). Doesn't touch the natural
+   outline stroke, doesn't enter the outer-shadow zone used by the
+   selected state, and doesn't change fill color. */
 .leaflet-interactive.geo-hover {
-  stroke: #ffffff;
-  stroke-width: 2.5;
-  stroke-opacity: 1;
-  paint-order: fill stroke;
+  filter: url(#geoHoverRing);
 }
 /* Selected feature: a strong shadow lifts the geo off the map WITHOUT
    darkening the fill itself. Uses the #geoSelectedShadow SVG filter
