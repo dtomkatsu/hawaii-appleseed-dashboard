@@ -836,16 +836,15 @@ body {
   padding: 48px 20px 30px;
   /* Bg is opaque in the middle band; the top and bottom transparent
      zones let the .info-panel-glass-top/-bottom strips (z 1000, behind
-     the panel's z 1001) refract the map content directly. The
-     transition is GRADIENT (22→34px and mirrored at bottom), not a
-     hard cutoff at 25px — softens the visual seam between the glass
-     strip and the panel body. */
+     the panel's z 1001) refract the map content directly. A small
+     ~3px feather at the boundary softens the otherwise-sharp seam
+     without dragging the panel content visibly into the glass zone. */
   background: linear-gradient(to bottom,
     rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0) 22px,
-    rgba(255, 255, 255, 0.98) 34px,
-    rgba(255, 255, 255, 0.98) calc(100% - 34px),
-    rgba(255, 255, 255, 0) calc(100% - 22px),
+    rgba(255, 255, 255, 0) 24px,
+    rgba(255, 255, 255, 0.98) 27px,
+    rgba(255, 255, 255, 0.98) calc(100% - 27px),
+    rgba(255, 255, 255, 0) calc(100% - 24px),
     rgba(255, 255, 255, 0) 100%);
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
@@ -858,21 +857,21 @@ body {
   color: #333;
   scrollbar-width: none;
   visibility: hidden;
-  /* Mask matches the softened bg gradient — the 22→34px ramp dissolves
-     the panel content into the glass strip rather than slicing it. */
+  /* Mask matches the bg's 3px feather — softens the seam without
+     blurring panel content far into the glass-strip zone. */
   -webkit-mask-image: linear-gradient(to bottom,
     transparent 0,
-    transparent 22px,
-    black 34px,
-    black calc(100% - 34px),
-    transparent calc(100% - 22px),
+    transparent 24px,
+    black 27px,
+    black calc(100% - 27px),
+    transparent calc(100% - 24px),
     transparent 100%);
           mask-image: linear-gradient(to bottom,
     transparent 0,
-    transparent 22px,
-    black 34px,
-    black calc(100% - 34px),
-    transparent calc(100% - 22px),
+    transparent 24px,
+    black 27px,
+    black calc(100% - 27px),
+    transparent calc(100% - 24px),
     transparent 100%);
 }
 .info-panel::-webkit-scrollbar {
@@ -1010,18 +1009,17 @@ body {
 }
 .info-panel .ip-close {
   position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: -2px;
+  right: -4px;
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   color: #6a8a5a;
   cursor: pointer;
   padding: 0;
   width: 28px;
   height: 28px;
-  line-height: 28px;
+  line-height: 26px;
   border-radius: 50%;
   transition: all 0.2s;
 }
