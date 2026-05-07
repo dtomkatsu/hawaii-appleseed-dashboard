@@ -38,7 +38,7 @@ const TRANSPORTATION_KEYS = new Set([
 
 const GROUP_DESCRIPTIONS = {
   'Tax Credits': 'Refundable tax credits — like the **Child Tax Credit** and **Earned Income Tax Credit** — that put money back in **working families’** pockets at tax time.',
-  'Educational Attainment': 'Highest level of education completed by adults **age 25 or older**.',
+  'Educational Attainment': 'The **highest level of school or degree** completed by adult residents.',
   'Race & Ethnicity': 'Self-reported race and Hispanic origin from the Census. Race uses **alone or in combination**, so multi-racial residents are counted in every group they identify with — categories overlap and don’t sum to 100%.',
   'SNAP': 'Supplemental Nutrition Assistance Program — **federal food benefits** (formerly food stamps) that help **low-income households** afford groceries.',
   'CEP': 'Community Eligibility Provision — lets schools in high-poverty areas serve **free breakfast and lunch** to **every student** without individual applications.',
@@ -145,11 +145,10 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function tipAttrs(tip, pos, category) {
+function tipAttrs(tip, pos) {
   if (!tip) return '';
   const parts = [`data-tip="${escapeHtml(tip)}"`];
   if (pos) parts.push(`data-tip-pos="${escapeHtml(pos)}"`);
-  if (category) parts.push(`data-tip-category="${escapeHtml(category)}"`);
   return ' ' + parts.join(' ');
 }
 
@@ -172,7 +171,7 @@ function renderCascade(rootKey, items, currentKey, placeholder) {
             </li>`;
         }
         const sel = it.key === currentKey ? 'cascade-leaf--selected' : '';
-        return `<li class="cascade-leaf ${sel}"><a href="#" data-cascade-key="${escapeHtml(it.key)}"><span class="cascade-leaf-text"${tipAttrs(it.tooltip, 'right', it.category)}>${escapeHtml(it.label)}</span></a></li>`;
+        return `<li class="cascade-leaf ${sel}"><a href="#" data-cascade-key="${escapeHtml(it.key)}"><span class="cascade-leaf-text"${tipAttrs(it.tooltip, 'right')}>${escapeHtml(it.label)}</span></a></li>`;
       })
       .join('');
   }
@@ -237,9 +236,8 @@ function buildTooltipBody(text) {
   return result;
 }
 
-function renderTooltipContent(text, category) {
-  const badge = category ? `<div class="cascade-tooltip-badge">${escapeHtml(category)}</div>` : '';
-  return `${badge}<div class="cascade-tooltip-text">${buildTooltipBody(text)}</div>`;
+function renderTooltipContent(text) {
+  return `<div class="cascade-tooltip-text">${buildTooltipBody(text)}</div>`;
 }
 
 function positionTooltip(target, pos) {
@@ -276,9 +274,9 @@ function positionTooltip(target, pos) {
   el.style.top = `${Math.round(top)}px`;
 }
 
-function showTooltip(target, text, pos, category) {
+function showTooltip(target, text, pos) {
   const el = ensureTooltipEl();
-  el.innerHTML = renderTooltipContent(text, category);
+  el.innerHTML = renderTooltipContent(text);
   el.style.opacity = '0';
   el.style.display = 'block';
   // Delay so it doesn't fire on quick passes.
@@ -299,10 +297,9 @@ function attachTooltipListeners(root) {
   const tipped = root.querySelectorAll('[data-tip]');
   tipped.forEach((node) => {
     const pos = node.dataset.tipPos;
-    const category = node.dataset.tipCategory;
-    node.addEventListener('mouseenter', () => showTooltip(node, node.dataset.tip, pos, category));
+    node.addEventListener('mouseenter', () => showTooltip(node, node.dataset.tip, pos));
     node.addEventListener('mouseleave', hideTooltip);
-    node.addEventListener('focus', () => showTooltip(node, node.dataset.tip, pos, category));
+    node.addEventListener('focus', () => showTooltip(node, node.dataset.tip, pos));
     node.addEventListener('blur', hideTooltip);
   });
 }

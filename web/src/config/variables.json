@@ -475,7 +475,7 @@
     "cep_percentage": {
       "display_name": "Schools with CEP",
       "display_name_long": "Schools with CEP (%)",
-      "description": "Share of public schools enrolled in the **Community Eligibility Provision**, which provides **free meals** to all students.",
+      "description": "Share of public schools enrolled in **CEP**, which provides **free meals** to every student.",
       "data_type": "percentage",
       "dropdown_group": "food_security",
       "dropdown_label": "Schools with CEP (%)",

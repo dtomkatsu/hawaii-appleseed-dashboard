@@ -2,11 +2,11 @@ import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
-import { setLayer, setVariable, setColorScheme } from './map/layerManager.js';
+import { setLayer, setVariable, setColorScheme, getFeatureProperties } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
 import { initLegend, renderLegend } from './ui/legend.js';
 import { initSidebar, renderSidebar } from './ui/sidebar.js';
-import { initInfoPanel } from './ui/infoPanel.js';
+import { initInfoPanel, showInfoPanel } from './ui/infoPanel.js';
 import { getState, subscribe } from './state/store.js';
 import { readFromUrl, writeToUrl } from './state/urlSync.js';
 
@@ -33,6 +33,13 @@ async function main() {
     if ('selectedVariable' in changed) {
       setVariable(state.selectedVariable);
       renderLegend(state.selectedVariable, state.colorScheme);
+      // If a geo is selected and the info panel is open, re-render it so the
+      // headline reflects the newly chosen variable.
+      const panel = document.getElementById('info-panel');
+      if (state.selectedFeatureId && panel?.classList.contains('visible')) {
+        const props = getFeatureProperties(state.selectedFeatureId);
+        if (props) showInfoPanel(props);
+      }
     }
     if ('colorScheme' in changed) {
       setColorScheme(state.colorScheme);

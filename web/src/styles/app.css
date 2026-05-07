@@ -425,7 +425,6 @@ body {
   gap: 14px;
 }
 .cascade-parent > .cascade-label .cascade-label-text {
-  flex: 1;
   min-width: 0;
 }
 .cascade-parent > .cascade-label .cascade-caret {
@@ -526,16 +525,18 @@ body {
   color: #13343b;
 }
 .cascade-tooltip-text mark {
-  display: inline-block;
+  display: inline;
   background: #f0f7e9;
   color: #1a2e10;
   font-weight: 700;
-  padding: 1px 6px;
-  margin: 0 1px;
-  border-radius: 4px;
+  padding: 1px 3px;
+  margin: 0;
+  border-radius: 3px;
   font-feature-settings: 'tnum' 1;
   border: 1px solid rgba(58, 119, 16, 0.18);
   line-height: 1.3;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .cascade-tooltip-text strong {
   color: #1a2e10;
@@ -570,18 +571,15 @@ body {
    Stacking: z-index 500 — above leaflet panes but below legend (1000),
    info-panel (1001), and controls-bar (1100). pointer-events: none
    keeps map clicks intact. */
-.map-wrap::before,
-.map-wrap::after {
+.map-wrap::before {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
+  top: 0;
   height: 42px;
   pointer-events: none;
   z-index: 500;
-}
-.map-wrap::before {
-  top: 0;
   /* Top strip backdrop-filter chain:
      - url(#liquidGlassTop): pre-computed gradient displacement map,
        refracts pixels purely vertically — strongest at the rim,
@@ -609,28 +607,12 @@ body {
   -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
           mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
 }
-.map-wrap::after {
-  bottom: 0;
-  -webkit-backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
-          backdrop-filter: url(#liquidGlassBottom) saturate(1.25) contrast(1.07) brightness(1.04);
-  background: linear-gradient(to top,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 255, 255, 0.26) 30%,
-    rgba(255, 255, 255, 0.10) 60%,
-    rgba(255, 255, 255, 0) 100%);
-  box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.88),
-    inset 0 1px 2px rgba(255, 255, 255, 0.24);
-  -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
-          mask-image: linear-gradient(to top, black 0%, transparent 100%);
-}
-/* When the info-panel is visible, retract the blur strips so they stop
+/* When the info-panel is visible, retract the blur strip so it stops
    at the panel's left edge — the panel sits at higher z-index anyway,
    but pulling the strip back guarantees no blur ever bleeds beneath
    it (the panel bg is rgba(...,0.98), so there's a hair of show-through
    without this). */
-.map-wrap:has(.info-panel.visible)::before,
-.map-wrap:has(.info-panel.visible)::after {
+.map-wrap:has(.info-panel.visible)::before {
   /* Retract by 385px (rim 25 + panel 360) so the map strip's right
      edge butts flush against the new top/bottom panel strips, which
      start at right:0 width:385. Both pieces use #liquidGlassTop/
@@ -857,7 +839,7 @@ body {
 .tt-stat-card {
   padding: 10px 14px;
   background: linear-gradient(180deg, #f8fbf3 0%, #f0f7e8 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(58, 119, 16, 0.12);
 }
 .tt-stat-label {
   font-size: 10px;
@@ -875,37 +857,46 @@ body {
   line-height: 1.1;
 }
 .tt-rep-card {
-  padding: 8px 14px;
-  border-left: 3px solid var(--primary);
-  background: rgba(240, 247, 233, 0.5);
+  padding: 10px 14px 11px;
+  background: linear-gradient(180deg, #f0f7e8 0%, #e7f1da 100%);
   margin: 0;
 }
 .tt-rep-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--primary-dark);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 .tt-rep-name {
-  font-size: 12px;
-  color: var(--text-primary);
-  font-weight: 600;
+  font-size: 13px;
+  color: #1a4008;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .tt-rep-party {
-  font-weight: 400;
+  font-weight: 500;
   color: #6a8a5a;
-  margin-left: 2px;
+  margin-left: 3px;
 }
 .tt-areas {
-  font-size: 11px;
-  color: #5a7a4a;
-  margin-top: 3px;
-  line-height: 1.4;
+  font-size: 10.5px;
+  color: #6a8a5a;
+  margin-top: 5px;
+  line-height: 1.45;
   white-space: normal;
   max-width: 260px;
   font-weight: 400;
+  font-style: italic;
+}
+.tt-areas::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(58, 119, 16, 0.35) 0%, rgba(58, 119, 16, 0) 100%);
+  margin-bottom: 5px;
 }
 .tt-hint {
   font-size: 10px;
@@ -1408,16 +1399,18 @@ body {
   margin-bottom: 6px;
 }
 .ip-tip-desc mark {
-  display: inline-block;
+  display: inline;
   background: #f0f7e9;
   color: #1a2e10;
   font-weight: 700;
-  padding: 0 5px;
-  margin: 0 1px;
-  border-radius: 4px;
+  padding: 0 3px;
+  margin: 0;
+  border-radius: 3px;
   font-feature-settings: 'tnum' 1;
   border: 1px solid rgba(58, 119, 16, 0.18);
   line-height: 1.3;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .ip-tip-year {
   display: inline-flex;
