@@ -2,22 +2,36 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+const ICONS = {
+  bulb: `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M9 14a4 4 0 1 1 6 0c-.6.7-1 1.6-1 2.5V18h-4v-1.5c0-.9-.4-1.8-1-2.5z"/></svg>`,
+  dollar: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  utensils: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z"/></svg>`,
+  bus: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6v6"/><path d="M16 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`,
+  home: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+};
+
 export function generateFactSheetHTML(geo) {
-  const title = `Fact Sheet: ${geo.name}`;
   const nameUpper = geo.name.toUpperCase();
 
   return `
-    <button class="print-button" onclick="window.print()">Save PDF</button>
     <div class="fact-sheet-container">
       <div class="fs-header">
         <img src="${import.meta.env.BASE_URL}assets/logo.png" class="fs-logo" alt="Hawaii Appleseed" onerror="this.style.display='none'">
-        <div class="fs-header-title">${esc(title)}</div>
+        <div class="fs-header-text">
+          <div class="fs-kicker">Fact Sheet</div>
+          <h1 class="fs-header-title">${esc(geo.name)}</h1>
+        </div>
+        <button class="fs-print-btn" onclick="window.print()">${ICONS.download}<span>Save PDF</span></button>
       </div>
 
       <div class="fs-main">
         <div class="fs-did-you-know">
-          <h3>Did you know?</h3>
-          <p>${esc(geo.aliceFraction)} (${esc(geo.aliceRate)}) are employed, yet struggling to make ends meet.</p>
+          <div class="fs-did-you-know-icon">${ICONS.bulb}</div>
+          <div>
+            <h3>Did you know?</h3>
+            <p>${esc(geo.aliceFraction)} (${esc(geo.aliceRate)}) are employed, yet struggling to make ends meet.</p>
+          </div>
         </div>
 
         <div class="fs-stats-row">
@@ -39,7 +53,7 @@ export function generateFactSheetHTML(geo) {
 
         <div class="fs-grid">
           <div class="fs-card">
-            <h3>Tax Credits</h3>
+            <h3><span class="fs-card-icon">${ICONS.dollar}</span>Tax Credits</h3>
             <h4>Child Tax Credit (CTC)</h4>
             <ul>
               <li>Families receive an average of <span class="fs-hi">${esc(geo.ctcAvg)}</span> per year, with a participation rate of <span class="fs-hi">${esc(geo.ctcRate)}</span>.</li>
@@ -55,7 +69,7 @@ export function generateFactSheetHTML(geo) {
           </div>
 
           <div class="fs-card">
-            <h3>Food Security</h3>
+            <h3><span class="fs-card-icon">${ICONS.utensils}</span>Food Security</h3>
             <h4>SNAP</h4>
             <ul>
               <li>About <strong>${esc(geo.snapRate)}</strong> of households participate in SNAP.</li>
@@ -72,7 +86,7 @@ export function generateFactSheetHTML(geo) {
 
         <div class="fs-grid fs-grid-second">
           <div class="fs-card">
-            <h3>Transportation</h3>
+            <h3><span class="fs-card-icon">${ICONS.bus}</span>Transportation</h3>
             <ul>
               <li>Average travel time to work: <strong>${esc(geo.travelTime)} minutes</strong>.</li>
               <li><strong>${esc(geo.transitPct)}</strong> of workers use public transportation.</li>
@@ -81,7 +95,7 @@ export function generateFactSheetHTML(geo) {
           </div>
 
           <div class="fs-card">
-            <h3>Housing</h3>
+            <h3><span class="fs-card-icon">${ICONS.home}</span>Housing</h3>
             <ul>
               <li><strong>${esc(geo.renterRate)} of households</strong> are renters, with a median rent of <span class="fs-hi">${esc(geo.medianRent)}</span> per month.</li>
               <li><strong>${esc(geo.rentBurden)}</strong> of renters (${esc(geo.rentBurdenFraction)}) are cost-burdened, spending more than 30% of income on housing.</li>
@@ -93,7 +107,7 @@ export function generateFactSheetHTML(geo) {
 
       <div class="fs-footer">
         <div class="fs-footer-brand">
-          <img src="${import.meta.env.BASE_URL}assets/logo.png" alt="" onerror="this.style.display='none'" style="height:30px">
+          <img src="${import.meta.env.BASE_URL}assets/logo.png" alt="" onerror="this.style.display='none'" style="height:28px">
           <span>HAWAIʻI APPLESEED<br><small>CENTER FOR LAW &amp; ECONOMIC JUSTICE</small></span>
         </div>
         <div class="fs-footer-url">www.hiappleseed.org/data-dashboard</div>
