@@ -576,17 +576,24 @@ body {
   vector-effect: non-scaling-stroke;
   shape-rendering: geometricPrecision;
 }
-/* Hover state: the geo "lights up" via brightness/saturation/contrast
-   boost — no border, no shadow. The existing color reacts. */
+/* Hover state: clean white stroke "pops" the boundary — instantly readable
+   as "this is the one being inspected" without changing the choropleth
+   color. paint-order ensures the stroke sits on top of the fill so the
+   line stays crisp. */
 .leaflet-interactive.geo-hover {
-  filter: brightness(1.08) saturate(1.25) contrast(1.05);
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-opacity: 1;
+  paint-order: fill stroke;
 }
 /* Selected feature: a strong shadow lifts the geo off the map WITHOUT
    darkening the fill itself. Uses the #geoSelectedShadow SVG filter
    defined inline in index.html — feComposite operator="out" subtracts
    the source from the blurred shadow, so the halo only exists outside
-   the shape. Fill renders clean on top, fill-opacity stays at default. */
+   the shape. fill-opacity:1 keeps the fill vibrant (no AA bleed and
+   no perceived darkening from the heavy halo). */
 .leaflet-interactive.geo-selected {
+  fill-opacity: 1;
   filter: url(#geoSelectedShadow);
 }
 .leaflet-reset-zoom {

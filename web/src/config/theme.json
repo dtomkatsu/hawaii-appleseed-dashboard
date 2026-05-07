@@ -43,7 +43,7 @@
     "zoom_snap": 0,
     "zoom_delta": 0.5,
     "zoom_animation_threshold": 4,
-    "smooth_sensitivity": 1.5,
+    "smooth_sensitivity": 2.2,
     "smooth_pinch_sensitivity": 0.025,
     "fade_animation": true,
     "marker_zoom_animation": true,
