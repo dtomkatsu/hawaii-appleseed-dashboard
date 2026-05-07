@@ -110,16 +110,27 @@
              operator="out"), so the shadow only exists OUTSIDE the shape.
              The fill renders clean on top, with no darkening. -->
         <filter id="geoSelectedShadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
-          <feOffset in="blur" dx="0" dy="5" result="offsetBlur"/>
-          <feComposite in="offsetBlur" in2="SourceAlpha" operator="out" result="outerShadow"/>
-          <feColorMatrix in="outerShadow" type="matrix"
-            values="0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 1.4 0" result="darkShadow"/>
+          <!-- Layer 1: tight contact shadow — small blur, close offset, dark -->
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="blur1"/>
+          <feOffset in="blur1" dx="0" dy="3" result="offset1"/>
+          <feComposite in="offset1" in2="SourceAlpha" operator="out" result="outer1"/>
+          <feColorMatrix in="outer1" type="matrix"
+            values="0 0 0 0 0.04
+                    0 0 0 0 0.08
+                    0 0 0 0 0.02
+                    0 0 0 2.2 0" result="shadow1"/>
+          <!-- Layer 2: soft lifted shadow — large blur, bigger offset, lighter -->
+          <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur2"/>
+          <feOffset in="blur2" dx="0" dy="9" result="offset2"/>
+          <feComposite in="offset2" in2="SourceAlpha" operator="out" result="outer2"/>
+          <feColorMatrix in="outer2" type="matrix"
+            values="0 0 0 0 0.10
+                    0 0 0 0 0.22
+                    0 0 0 0 0.04
+                    0 0 0 0.80 0" result="shadow2"/>
           <feMerge>
-            <feMergeNode in="darkShadow"/>
+            <feMergeNode in="shadow2"/>
+            <feMergeNode in="shadow1"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
