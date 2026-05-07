@@ -81,6 +81,26 @@
                    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(51,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
           <feDisplacementMap in="vDisp" in2="hMap" scale="15" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
+        <!-- Outer-only drop shadow for selected geos. CSS filter:drop-shadow()
+             renders the source on top of the shadow, so a translucent fill
+             lets the shadow bleed through and darkens the geo. This filter
+             explicitly subtracts SourceAlpha from the blurred shadow (feComposite
+             operator="out"), so the shadow only exists OUTSIDE the shape.
+             The fill renders clean on top, with no darkening. -->
+        <filter id="geoSelectedShadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+          <feOffset in="blur" dx="0" dy="5" result="offsetBlur"/>
+          <feComposite in="offsetBlur" in2="SourceAlpha" operator="out" result="outerShadow"/>
+          <feColorMatrix in="outerShadow" type="matrix"
+            values="0 0 0 0 0
+                    0 0 0 0 0
+                    0 0 0 0 0
+                    0 0 0 1.4 0" result="darkShadow"/>
+          <feMerge>
+            <feMergeNode in="darkShadow"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
     </svg>
     <main class="app-main">

@@ -581,15 +581,13 @@ body {
 .leaflet-interactive.geo-hover {
   filter: brightness(1.08) saturate(1.25) contrast(1.05);
 }
-/* Selected feature: geo fades back slightly while a strong shadow lifts it
-   off the map. fill-opacity is an SVG presentation attribute overridable by
-   CSS; it's already in the transition list above so it animates smoothly. */
+/* Selected feature: a strong shadow lifts the geo off the map WITHOUT
+   darkening the fill itself. Uses the #geoSelectedShadow SVG filter
+   defined inline in index.html — feComposite operator="out" subtracts
+   the source from the blurred shadow, so the halo only exists outside
+   the shape. Fill renders clean on top, fill-opacity stays at default. */
 .leaflet-interactive.geo-selected {
-  fill-opacity: 0.42;
-  filter:
-    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.48))
-    drop-shadow(0 5px 10px rgba(0, 0, 0, 0.30))
-    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
+  filter: url(#geoSelectedShadow);
 }
 .leaflet-reset-zoom {
   display: flex !important;
