@@ -581,14 +581,15 @@ body {
 .leaflet-interactive.geo-hover {
   filter: brightness(1.08) saturate(1.25) contrast(1.05);
 }
-/* Selected feature: pronounced "lifting" effect via stacked drop-shadow
-   filters. Replaces the persistent bold black border. Wins over .geo-hover
-   via being declared after, in case both classes are momentarily present. */
+/* Selected feature: geo fades back slightly while a strong shadow lifts it
+   off the map. fill-opacity is an SVG presentation attribute overridable by
+   CSS; it's already in the transition list above so it animates smoothly. */
 .leaflet-interactive.geo-selected {
+  fill-opacity: 0.42;
   filter:
-    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.26))
-    drop-shadow(0 3px 5px rgba(0, 0, 0, 0.16))
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.10));
+    drop-shadow(0 14px 22px rgba(0, 0, 0, 0.48))
+    drop-shadow(0 5px 10px rgba(0, 0, 0, 0.30))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
 }
 .leaflet-reset-zoom {
   display: flex !important;
