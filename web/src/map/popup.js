@@ -179,13 +179,19 @@ export function bindFeature(feature, layer) {
           }
         });
       }
-      // Hover state is purely a CSS filter (brightness + saturation boost).
-      // No border, no setStyle change — the geo's existing color "lights up".
+      // Hover state is purely a CSS filter (inner ring).
       // Skipped for the selected geo so it doesn't compete with the lift.
       if (e.target !== selectedLayer) {
         setHoverClass(e.target, true);
       }
       e.target.bringToFront();
+      // Re-promote the selected layer above the hovered one so its outer
+      // shadow always renders ON TOP of the hovered geo's effects. Without
+      // this, the hovered geo (last bringToFront) would sit above the
+      // selected in DOM order and clip its halo.
+      if (selectedLayer && selectedLayer !== e.target) {
+        selectedLayer.bringToFront();
+      }
     },
     mouseout: (e) => {
       setHoverClass(e.target, false);
