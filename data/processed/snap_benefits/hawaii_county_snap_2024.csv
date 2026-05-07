@@ -1,0 +1,5 @@
+NAME,state,geoid,snap_households_adjusted,snap_household_rate,snap_participation_rate,snap_benefit_monthly_per_household,snap_benefit_annual_per_household,snap_benefits_annual_total
+HAWAII,15,15001,21612,0.2918,0.2918,730.58,8766.98,189471972.0
+HONOLULU,15,15003,49016,0.1446,0.1446,744.03,8928.4,437634264.0
+KAUAI,15,15007,4357,0.1844,0.1844,718.67,8624.06,37575012.0
+MAUI,15,15009,8787,0.1574,0.1574,739.88,8878.57,78015984.0

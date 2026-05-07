@@ -61,7 +61,7 @@
     "snap": {
       "label": "SNAP Benefits",
       "short_label": "USDA SNAP Data",
-      "year": 2023,
+      "year": 2024,
       "fetch_method": "manual",
       "description": "SNAP benefit data must be obtained manually from Hawaii DHS or USDA FNS reports.",
       "instructions": "Download SNAP household and benefit data from Hawaii DHS (https://humanservices.hawaii.gov/bessd/snap/) or USDA FNS state data. Save CSVs to data/processed/snap_benefits/ following the naming pattern below. Required columns: geoid, snap_household_rate, snap_benefit_annual_per_household, snap_benefits_annual_total.",
