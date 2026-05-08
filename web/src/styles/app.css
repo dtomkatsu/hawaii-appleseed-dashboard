@@ -590,7 +590,7 @@ body {
 
    Sides are intentionally NOT feathered (sidebar/info-panel sit there).
 
-   Stacking: z-index 500 — above leaflet panes but below legend (1000),
+   Stacking: z-index 500 — above MapLibre canvas but below legend (1000),
    info-panel (1001), and controls-bar (1100). pointer-events: none
    keeps map clicks intact. */
 .map-wrap::before {
@@ -640,67 +640,48 @@ body {
      the panel's left edge. */
   right: 360px;
 }
-.leaflet-container {
-  background: white !important;
+/* MapLibre canvas container: hide native cursor (we render a DOM cursor circle). */
+.maplibregl-map,
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  background: transparent !important;
   cursor: none !important;
 }
-.leaflet-container * {
+.maplibregl-map * {
   cursor: none !important;
 }
-/* Hint browser to use a dedicated compositing layer for the SVG overlay
-   during transform animations. Reduces sub-pixel blur from CSS-scale. */
-.leaflet-overlay-pane svg {
-  will-change: transform;
-}
-.leaflet-interactive:focus {
+.maplibregl-canvas:focus {
   outline: none;
 }
-/* Smooth animation when feature styles change on hover. SVG presentation
-   attributes (stroke-width, stroke, fill-opacity) transition correctly in
-   modern browsers. fill is intentionally NOT transitioned so variable/
-   color-scheme switches update instantly. */
-.leaflet-interactive {
-  transition:
-    stroke-width 0.18s ease-out,
-    stroke 0.18s ease-out,
-    fill-opacity 0.18s ease-out,
-    filter 0.28s ease-out;
-  /* Sharpness hints for smoothWheelZoom CSS-scale animation. The renderer
-     CSS-scales the SVG container during the gesture (rather than re-
-     projecting paths), so without these hints, strokes/edges blur. */
-  vector-effect: non-scaling-stroke;
-  shape-rendering: geometricPrecision;
+/* Lift native MapLibre controls above the glass-strip overlay (z-index 500)
+   so the zoom/reset buttons render crisply rather than being smeared by the
+   strip's backdrop-filter. Controls keep their own native cursor. */
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  z-index: 600;
 }
-/* Hover state: a soft inner ring drawn JUST INSIDE the boundary (via
-   #geoHoverRing SVG filter in index.html). Doesn't touch the natural
-   outline stroke, doesn't enter the outer-shadow zone used by the
-   selected state, and doesn't change fill color. */
-.leaflet-interactive.geo-hover {
-  filter: url(#geoHoverRing);
+.maplibregl-ctrl-top-left *,
+.maplibregl-ctrl-top-right *,
+.maplibregl-ctrl-bottom-left *,
+.maplibregl-ctrl-bottom-right * {
+  cursor: pointer !important;
 }
-/* Selected feature: a strong shadow lifts the geo off the map WITHOUT
-   darkening the fill itself. Uses the #geoSelectedShadow SVG filter
-   defined inline in index.html — feComposite operator="out" subtracts
-   the source from the blurred shadow, so the halo only exists outside
-   the shape. fill-opacity:1 keeps the fill vibrant (no AA bleed and
-   no perceived darkening from the heavy halo). */
-.leaflet-interactive.geo-selected {
-  fill-opacity: 1;
-  filter: url(#geoSelectedShadow);
-}
-.leaflet-reset-zoom {
+/* Reset-view button styled to match MapLibre's stock controls. */
+.maplibre-reset-zoom {
   display: flex !important;
   align-items: center;
   justify-content: center;
-  width: 30px !important;
-  height: 30px !important;
+  width: 29px !important;
+  height: 29px !important;
   background: white;
   color: #444;
   cursor: pointer;
   border: none;
   padding: 0;
 }
-.leaflet-reset-zoom:hover {
+.maplibre-reset-zoom:hover {
   color: var(--primary);
   background: #f4f4f4;
 }

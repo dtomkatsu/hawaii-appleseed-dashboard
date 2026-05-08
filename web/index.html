@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hawaii Appleseed Data Dashboard</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- maplibre-gl.css is imported from JS (in mapInstance.js) so Vite bundles it locally. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -80,57 +80,6 @@
           <feImage preserveAspectRatio="none" result="hMap"
                    href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' preserveAspectRatio='none'><linearGradient id='g'><stop offset='0' stop-color='rgb(205,128,128)'/><stop offset='0.5' stop-color='rgb(128,128,128)'/><stop offset='1' stop-color='rgb(51,128,128)'/></linearGradient><rect width='1' height='1' fill='url(%23g)'/></svg>"/>
           <feDisplacementMap in="vDisp" in2="hMap" scale="15" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-        <!-- Inner dark ring for hovered geos. Lives ENTIRELY INSIDE the
-             path: erode the alpha to make a slightly smaller "core",
-             subtract that from the original alpha to get a thin ring along
-             the inner edge of the boundary, and tint it dark. Sits in the
-             unused space between the fill interior and the boundary stroke,
-             so it doesn't replace the natural outline and doesn't bleed
-             into the outer-shadow zone used by the selected state. -->
-        <filter id="geoHoverRing" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB">
-          <feMorphology in="SourceAlpha" operator="erode" radius="1.5" result="inner"/>
-          <feComposite in="SourceAlpha" in2="inner" operator="out" result="ring"/>
-          <feColorMatrix in="ring" type="matrix"
-            values="0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0
-                    0 0 0 0 0" result="darkRing"/>
-          <feMerge>
-            <feMergeNode in="SourceGraphic"/>
-            <feMergeNode in="darkRing"/>
-          </feMerge>
-        </filter>
-        <!-- Outer-only drop shadow for selected geos. CSS filter:drop-shadow()
-             renders the source on top of the shadow, so a translucent fill
-             lets the shadow bleed through and darkens the geo. This filter
-             explicitly subtracts SourceAlpha from the blurred shadow (feComposite
-             operator="out"), so the shadow only exists OUTSIDE the shape.
-             The fill renders clean on top, with no darkening. -->
-        <filter id="geoSelectedShadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
-          <!-- Layer 1: tight contact shadow — small blur, close offset, dark -->
-          <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="blur1"/>
-          <feOffset in="blur1" dx="0" dy="3" result="offset1"/>
-          <feComposite in="offset1" in2="SourceAlpha" operator="out" result="outer1"/>
-          <feColorMatrix in="outer1" type="matrix"
-            values="0 0 0 0 0.04
-                    0 0 0 0 0.08
-                    0 0 0 0 0.02
-                    0 0 0 2.2 0" result="shadow1"/>
-          <!-- Layer 2: soft lifted shadow — large blur, bigger offset, lighter -->
-          <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur2"/>
-          <feOffset in="blur2" dx="0" dy="9" result="offset2"/>
-          <feComposite in="offset2" in2="SourceAlpha" operator="out" result="outer2"/>
-          <feColorMatrix in="outer2" type="matrix"
-            values="0 0 0 0 0.10
-                    0 0 0 0 0.22
-                    0 0 0 0 0.04
-                    0 0 0 0.80 0" result="shadow2"/>
-          <feMerge>
-            <feMergeNode in="shadow2"/>
-            <feMergeNode in="shadow1"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
         </filter>
       </defs>
     </svg>

@@ -103,7 +103,7 @@ async function main() {
       document.getElementById('tab-data').hidden = tab !== 'data';
       if (tab === 'map') {
         const map = getMap();
-        if (map) map.invalidateSize();
+        if (map) map.resize();
       }
       if (tab === 'data') {
         await initAnalysis(config);
