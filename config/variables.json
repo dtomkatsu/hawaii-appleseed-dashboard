@@ -423,15 +423,15 @@
       "show_in_default_metrics": true,
       "is_special_variable": true,
       "color_thresholds": [
-        8500,
-        8650,
+        6500,
+        7500,
+        8200,
         8700,
-        8800,
-        8850,
-        8900,
-        8920,
-        8950,
-        8990
+        9000,
+        9300,
+        9700,
+        10200,
+        11000
       ],
       "csv_column": "snap_benefit_annual_per_household",
       "legend_direction": "neutral",
