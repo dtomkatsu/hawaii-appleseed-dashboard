@@ -1,26 +1,35 @@
 #!/usr/bin/env python3
 """Backfill 2024 SNAP data for state, county, house district, and senate district.
 
-Replicates the methodology from
-``ACS_SNAP households by legislative district (2023).xlsx``: ACS underreports
-SNAP participation, so we scale each district's ACS-reported SNAP household
-count to match the authoritative USDA county totals while preserving the
-district's proportional share within its county (Ratio Leg:Island).
+ACS systematically underreports SNAP participation, so we scale each district's
+ACS-reported SNAP household count to match the authoritative USDA county totals
+while preserving the district's proportional share within its county
+(Ratio Leg:Island). USDA only publishes per-HH benefit dollars at the county
+level, so to give districts plausible per-HH variation we weight each district's
+per-HH benefit by ACS average household size — a proxy for federal SNAP
+allotment, which is roughly linear in HH size.
 
 For every legislative district::
 
-    K  = district_ACS_snap_HH / sum(ACS_snap_HH for districts in same county)
-    snap_households_adjusted = USDA_county_snap_HH * K           # Excel col L
-    snap_household_rate      = snap_households_adjusted / district_total_HH
-    avg_monthly_benefit      = USDA_county_issuance / USDA_county_snap_HH  # per county
-    snap_benefit_annual_per_household = avg_monthly_benefit * 12
-    snap_benefits_annual_total        = snap_households_adjusted * avg_monthly_benefit * 12
+    K        = district_ACS_snap_HH / sum(ACS_snap_HH for districts in same county)
+    adj_HH   = USDA_county_snap_HH * K                           # corrected HH count
+    rate     = adj_HH / district_total_HH
+
+    # HH-size-weighted per-HH benefit, calibrated so the K-weighted
+    # county sum equals the USDA county per-HH amount:
+    S        = sum_d (size_d * K_d)                              # K-weighted county avg size
+    monthly  = (USDA_county_issuance / USDA_county_snap_HH) * (size_d / S)
+    annual   = monthly * 12
+    total_$  = adj_HH * annual                                   # district SNAP $ / yr
+
+By construction, sum_d (adj_HH_d * annual_d) = USDA county total dollars.
 
 Inputs
 ------
 * ACS 2024 5-year via Census API
-    - B22001_001E: total households (universe of "received SNAP last 12 months")
+    - B22001_001E: total households
     - B22001_002E: households that received SNAP
+    - B25010_001E: average household size (occupied housing units)
 * USDA bi-annual JUL 2024 county-level data
     Path: ``~/Downloads/snap-zip-fns388a-2/JUL 2024.xlsx``
 * GeoJSON files in ``web/public/data`` for the district->county crosswalk
@@ -30,8 +39,7 @@ Outputs
 -------
 * Augments ``data/processed/hawaii_*_acs_2024.csv`` with two new columns
   (total_households, snap_households).
-* Writes 4 SNAP CSVs to ``data/processed/snap_benefits/hawaii_*_snap_2024.csv``
-  matching the 2023 file schemas.
+* Writes 4 SNAP CSVs to ``data/processed/snap_benefits/hawaii_*_snap_2024.csv``.
 
 See ``data/processed/snap_benefits/METHODOLOGY.md`` for the full writeup.
 """
@@ -54,10 +62,14 @@ GEOJSON_DIR = ROOT / 'web' / 'public' / 'data'
 YEAR = 2024
 USDA_FILE = Path.home() / 'Downloads' / 'snap-zip-fns388a-2' / 'JUL 2024.xlsx'
 
-# ACS variables — table B22001 "Receipt of food stamps/SNAP in past 12 months"
+# ACS variables
+#   B22001 — Receipt of food stamps/SNAP in past 12 months
+#   B25010_001E — Average household size of occupied housing units (used to
+#     vary district-level per-HH SNAP benefit; see compute_district_rows).
 TOTAL_HH = 'B22001_001E'
 SNAP_HH = 'B22001_002E'
-ACS_VARS = [TOTAL_HH, SNAP_HH]
+AVG_HH_SIZE = 'B25010_001E'
+ACS_VARS = [TOTAL_HH, SNAP_HH, AVG_HH_SIZE]
 
 # Maps the GeoJSON `county` property (and the substate-region label in the
 # JUL 2024 Excel) to the canonical county FIPS suffix used in ``geoid``.
@@ -223,8 +235,25 @@ def compute_district_rows(
     crosswalk: dict[str, str],
     usda_by_county: dict[str, dict],
 ) -> tuple[list[dict], dict[str, dict]]:
-    """Apply the Leg:Island ratio per county, return rows + per-county sum diagnostic."""
-    # Group ACS SNAP HH by county
+    """Per-district SNAP rows with HH-size-weighted per-HH benefit.
+
+    Two-step calculation, applied independently within each county:
+
+    1. **Leg:Island ratio K** distributes the USDA county SNAP HH count down
+       to districts: ``snap_households_adjusted = USDA_county_HH × K``.
+       (K = district_ACS_snap / county_ACS_snap_sum.)
+
+    2. **HH-size weighting** distributes the USDA county *per-HH benefit* to
+       districts using ACS avg HH size as a proxy for federal SNAP allotment
+       (which scales with HH size). Calibrated so the K-weighted sum of
+       per-HH benefits within a county equals the county per-HH benefit:
+
+           per_HH_d = county_per_HH × (size_d / S)
+           where S = Σ_d (size_d × K_d)
+
+       This guarantees Σ_d (per_HH_d × adj_HH_d) = USDA county total dollars.
+    """
+    # Group ACS SNAP HH by county to compute Leg:Island ratios.
     acs_sum_by_county: dict[str, int] = {c: 0 for c in usda_by_county}
     for geoid, county in crosswalk.items():
         acs = acs_rows_by_geoid.get(geoid)
@@ -232,28 +261,41 @@ def compute_district_rows(
             sys.exit(f'No ACS data for {level} geoid {geoid}')
         acs_sum_by_county[county] += int(acs['snap_households'])
 
+    # Pre-compute K and HH-size weighted sum S per county.
+    ratio_k_by_geoid: dict[str, float] = {}
+    s_by_county: dict[str, float] = {c: 0.0 for c in usda_by_county}
+    for geoid, county in crosswalk.items():
+        acs = acs_rows_by_geoid[geoid]
+        district_acs_snap = int(acs['snap_households'])
+        county_acs_sum = acs_sum_by_county[county]
+        k = district_acs_snap / county_acs_sum if county_acs_sum else 0.0
+        ratio_k_by_geoid[geoid] = k
+        avg_size = float(acs['avg_hh_size'])
+        s_by_county[county] += avg_size * k
+
     rows = []
-    diagnostic = {c: {'sum_adjusted': 0.0, 'count': 0} for c in usda_by_county}
+    diagnostic = {c: {'sum_adjusted': 0.0, 'sum_total_$': 0.0, 'count': 0}
+                  for c in usda_by_county}
     for geoid, county in sorted(crosswalk.items()):
         acs = acs_rows_by_geoid[geoid]
         usda = usda_by_county[county]
         district_acs_snap = int(acs['snap_households'])
         district_total_hh = int(acs['total_households'])
-        county_acs_sum = acs_sum_by_county[county]
+        avg_size = float(acs['avg_hh_size'])
+        ratio_k = ratio_k_by_geoid[geoid]
+        s = s_by_county[county]
 
-        if county_acs_sum > 0:
-            ratio_k = district_acs_snap / county_acs_sum
-        else:
-            ratio_k = 0.0
         snap_adj = usda['snap_households'] * ratio_k
-        monthly_benefit = (
+        county_monthly = (
             usda['monthly_issuance'] / usda['snap_households']
             if usda['snap_households']
             else 0.0
         )
+        size_factor = avg_size / s if s > 0 else 1.0
+        monthly_benefit = county_monthly * size_factor
         annual_benefit = monthly_benefit * 12
         rate = snap_adj / district_total_hh if district_total_hh else 0.0
-        total_benefits = snap_adj * monthly_benefit * 12
+        total_benefits = snap_adj * annual_benefit
 
         district_num = geoid[2:].lstrip('0') or '0'
         rows.append({
@@ -265,6 +307,8 @@ def compute_district_rows(
             'snap_households': district_acs_snap,
             'snap_households_adjusted': round(snap_adj, 2),
             'ratio_leg_island': round(ratio_k, 6),
+            'avg_hh_size': round(avg_size, 2),
+            'size_factor': round(size_factor, 4),
             'snap_household_rate': round(rate, 4),
             'snap_participation_rate': round(rate, 4),
             'snap_benefit_monthly_per_household': round(monthly_benefit, 2),
@@ -273,6 +317,7 @@ def compute_district_rows(
             'usda_county': county,
         })
         diagnostic[county]['sum_adjusted'] += snap_adj
+        diagnostic[county]['sum_total_$'] += total_benefits
         diagnostic[county]['count'] += 1
     return rows, diagnostic
 
@@ -362,6 +407,7 @@ DISTRICT_FIELDS = [
     'NAME', 'state', 'district', 'geoid',
     'snap_households_adjusted',
     'ratio_leg_island',
+    'avg_hh_size', 'size_factor',
     'snap_household_rate', 'snap_participation_rate',
     'snap_benefit_monthly_per_household', 'snap_benefit_annual_per_household',
     'snap_benefits_annual_total',
@@ -394,6 +440,7 @@ def main() -> int:
                 'name': r['NAME'],
                 'total_households': r[TOTAL_HH],
                 'snap_households': r[SNAP_HH],
+                'avg_hh_size': r[AVG_HH_SIZE],
             }
         acs_by_level[level] = by_geoid
         print(f'  {level}: {len(by_geoid)} geographies')
@@ -426,12 +473,15 @@ def main() -> int:
         rows, diag = compute_district_rows(level, acs_by_level[level], crosswalk, usda)
         out = SNAP_DIR / f'hawaii_{level}_district_snap_2024.csv'
         write_csv(out, DISTRICT_FIELDS, rows)
-        # Verify per-county sum equals USDA county total (should be exact within float).
+        # Verify per-county sums match USDA totals (HH count and $).
         for county, d in diag.items():
             usda_hh = usda[county]['snap_households']
-            print(f'    {level} {county}: {d["count"]} districts, '
-                  f'sum_adjusted={d["sum_adjusted"]:.1f}, USDA={usda_hh:,} '
-                  f'(delta={d["sum_adjusted"]-usda_hh:+.1f})')
+            usda_annual = usda[county]['monthly_issuance'] * 12
+            print(f'    {level} {county}: {d["count"]} districts | '
+                  f'HH adj={d["sum_adjusted"]:.1f} (USDA={usda_hh:,}, '
+                  f'Δ={d["sum_adjusted"]-usda_hh:+.1f}) | '
+                  f'$={d["sum_total_$"]:,.0f} (USDA=${usda_annual:,.0f}, '
+                  f'Δ=${d["sum_total_$"]-usda_annual:+,.0f})')
 
     print('\nDone.')
     return 0

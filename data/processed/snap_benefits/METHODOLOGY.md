@@ -39,6 +39,37 @@ sub-county resolution). Within each county, the per-district `snap_households_ad
 values sum exactly back to the USDA county total — see the run-time diagnostic
 that the backfill script prints at the end.
 
+## Per-HH benefit: HH-size weighting
+
+USDA only reports SNAP issuance dollars at the county level. If we redistributed
+them with the same Leg:Island ratio K, the per-HH amount would collapse to a
+single county constant — every district within a county would show the same
+average benefit. To restore plausible district-level variation we weight each
+district's per-HH benefit by **average household size** (ACS `B25010_001E`),
+since the federal SNAP allotment scales roughly linearly with HH size (the
+2024 max for a 1-person HH is $291/mo, for 4-person it's $973/mo).
+
+For each district within a county:
+
+```
+S          = Σ_d (size_d × K_d)                       # K-weighted county avg size
+size_factor = size_d / S                              # district's deviation from county
+monthly    = (USDA_county_issuance / USDA_county_HH) × size_factor
+```
+
+Calibrated so the K-weighted sum of district per-HH benefits equals the county
+per-HH benefit. By construction, `Σ_d (adj_HH_d × monthly_d × 12)` exactly
+equals the USDA county annual issuance — see the run-time diagnostic.
+
+Caveats:
+* B25010 reports avg HH size for *all* households, not specifically SNAP
+  recipients. SNAP HHs differ in size from the population average, but the
+  *relative* differences between districts within a county track reasonably.
+* This is a model output, not a measurement. For tight per-district benefit
+  comparisons, prefer `snap_household_rate` (rate-of-receipt, which uses ACS
+  district HH directly) or `snap_benefits_annual_total` (county totals
+  redistributed by HH share).
+
 ## Worked example (2024)
 
 Senate District 1 is in Hawaii County.
@@ -52,10 +83,14 @@ Senate District 1 is in Hawaii County.
 | **snap_households_adjusted** | **6,537** | 21,612 × 0.30249 |
 | District total HH | 19,872 | Census API, B22001_001E |
 | **snap_household_rate** | **0.329** | 6,537 / 19,872 |
+| District avg HH size | 2.81 | Census API, B25010_001E |
+| K-weighted county avg HH size S | ~2.71 | Σ_d (size_d × K_d) within Hawaii County |
+| size_factor | 1.035 | 2.81 / 2.71 |
 | USDA Hawaii County monthly issuance | $15,789,331 | JUL 2024 |
-| Monthly avg benefit per HH (county-level) | $730.58 | $15,789,331 / 21,612 |
-| **snap_benefit_annual_per_household** | **$8,766.98** | $730.58 × 12 |
-| **snap_benefits_annual_total** | **$57,313,943** | 6,537 × $730.58 × 12 |
+| County avg monthly per HH | $730.58 | $15,789,331 / 21,612 |
+| District monthly per HH | $755.92 | $730.58 × 1.035 |
+| **snap_benefit_annual_per_household** | **$9,071.07** | $755.92 × 12 |
+| **snap_benefits_annual_total** | **$59,289,489** | 6,537 × $755.92 × 12 |
 
 ## Per-level formulas
 
@@ -84,16 +119,21 @@ snap_benefits_annual_total   = USDA_county_issuance × 12
 K                            = district_ACS_snap_HH / county_ACS_snap_HH_sum
 snap_households_adjusted     = USDA_county_snap_HH × K
 snap_household_rate          = snap_households_adjusted / district_total_HH
-snap_benefit_monthly_per_HH  = USDA_county_issuance / USDA_county_snap_HH   # county-wide value
-snap_benefits_annual_total   = snap_households_adjusted × monthly × 12
+S                            = Σ_d (size_d × K_d)                          # county K-weighted avg HH size
+size_factor                  = district_avg_HH_size / S
+snap_benefit_monthly_per_HH  = (USDA_county_issuance / USDA_county_snap_HH) × size_factor
+snap_benefit_annual_per_HH   = monthly × 12
+snap_benefits_annual_total   = snap_households_adjusted × annual
 ```
 
 ## Inputs
 
-1. **ACS 5-year via Census API** — table B22001 ("Receipt of food stamps/SNAP
-   in past 12 months").
-   * `B22001_001E` = total households (universe)
-   * `B22001_002E` = households that received SNAP
+1. **ACS 5-year via Census API**:
+   * Table B22001 ("Receipt of food stamps/SNAP in past 12 months")
+     * `B22001_001E` = total households (universe)
+     * `B22001_002E` = households that received SNAP
+   * Table B25010 ("Average household size of occupied housing units")
+     * `B25010_001E` = avg HH size — used to vary district per-HH benefit
 
    Pulled for state / county / state legislative district lower chamber /
    state legislative district upper chamber, all `state:15`. No API key
