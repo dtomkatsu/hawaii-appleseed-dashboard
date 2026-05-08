@@ -61,9 +61,10 @@ function colorExpression(variable, scheme) {
 
 function fillLayerIds(level) {
   return [
+    `${level}-shadow-drop`,
+    `${level}-shadow-glow`,
     `${level}-fill`,
     `${level}-line`,
-    `${level}-selected-halo`,
     `${level}-selected`,
     `${level}-hover`,
   ];
@@ -78,7 +79,75 @@ function ensureSourceAndLayers(map, level, data) {
     promoteId: 'GEOID',
   });
 
-  // Fill — colored by current variable. Slight extra opacity boost when selected.
+  // Directional drop shadow — translated dark fill offset down/right, suggesting
+  // light from the upper-left. fill-translate doesn't accept feature-state, so
+  // every feature paints translated and only the selected one is made visible
+  // via feature-state on fill-opacity. Sits at the bottom so the colored fill
+  // covers the parts that would otherwise show through under the polygon, and
+  // only the offset rim sticks out down-right — that's the drop shadow.
+  map.addLayer({
+    id: `${level}-shadow-drop`,
+    type: 'fill',
+    source: level,
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': '#000000',
+      // Translate scales with zoom so a 5px offset doesn't engulf tiny
+      // polygons at low zoom. fill-translate accepts interpolate-by-zoom
+      // (it just doesn't accept feature-state, hence the opacity trick below).
+      'fill-translate': [
+        'interpolate', ['linear'], ['zoom'],
+        5, ['literal', [1, 2]],
+        8, ['literal', [2, 3]],
+        12, ['literal', [3, 5]],
+      ],
+      'fill-translate-anchor': 'viewport',
+      'fill-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false], 0.32,
+        0,
+      ],
+    },
+  });
+
+  // Outer glow halo — blurred line along the polygon edge. Renders BELOW the
+  // colored fill so the inside half is hidden and only the outer rim reads as
+  // an ambient shadow around the lifted polygon.
+  // Width and blur scale with zoom: at zoom 5 a 14px halo would overwhelm a
+  // tiny island polygon, so values stay small there and grow as you zoom in.
+  map.addLayer({
+    id: `${level}-shadow-glow`,
+    type: 'line',
+    source: level,
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': '#000000',
+      'line-blur': [
+        'interpolate', ['linear'], ['zoom'],
+        5, 1.5,
+        8, 4,
+        12, 9,
+      ],
+      'line-width': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false],
+        ['interpolate', ['linear'], ['zoom'],
+          5, 3,
+          8, 7,
+          12, 14,
+        ],
+        0,
+      ],
+      'line-opacity': [
+        'case',
+        ['boolean', ['feature-state', 'selected'], false], 0.22,
+        0,
+      ],
+    },
+  });
+
+  // Fill — colored by current variable. Selected gets full opacity so the
+  // shadow layers below stay hidden under the polygon body.
   map.addLayer({
     id: `${level}-fill`,
     type: 'fill',
@@ -103,28 +172,6 @@ function ensureSourceAndLayers(map, level, data) {
     paint: {
       'line-color': '#aaaaaa',
       'line-width': 1,
-    },
-  });
-
-  // Selected halo: a wide, soft outline below the strong outline. Feature-state driven.
-  map.addLayer({
-    id: `${level}-selected-halo`,
-    type: 'line',
-    source: level,
-    layout: { visibility: 'none' },
-    paint: {
-      'line-color': '#000000',
-      'line-blur': 6,
-      'line-width': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false], 12,
-        0,
-      ],
-      'line-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false], 0.22,
-        0,
-      ],
     },
   });
 
