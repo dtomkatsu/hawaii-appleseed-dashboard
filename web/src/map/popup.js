@@ -1,70 +1,58 @@
-import L from 'leaflet';
 import { getState, setState } from '../state/store.js';
 import { showInfoPanel } from '../ui/infoPanel.js';
+import { getMap } from './mapInstance.js';
 
 let VARIABLES = null;
 let REP_DATA = {};
-let selectedLayer = null;
+
+const boundLevels = new Set();
+let tooltipEl = null;
+let hoveredFeature = null;       // { level, id }
+let selectedFeature = null;      // { level, id }
 let isAnimating = false;
 let animationListenersBound = false;
-
-function closeAllTooltips(map) {
-  if (!map) return;
-  map.eachLayer((l) => {
-    if (l.closeTooltip) l.closeTooltip();
-  });
-}
-
-function ensureAnimationListeners(map) {
-  if (animationListenersBound || !map) return;
-  map.on('movestart zoomstart', () => {
-    isAnimating = true;
-    closeAllTooltips(map);
-  });
-  map.on('moveend zoomend', () => {
-    isAnimating = false;
-  });
-  animationListenersBound = true;
-}
-
-const SmartTooltip = L.Tooltip.extend({
-  _updatePosition() {
-    if (this._map && this._container) {
-      const map = this._map;
-      const latlng = this._latlng || (this._source && this._source.getCenter && this._source.getCenter());
-      if (latlng) {
-        const layerPoint = map.latLngToLayerPoint(latlng);
-        const containerPoint = map.layerPointToContainerPoint(layerPoint);
-        const tooltipHeight = this._container.offsetHeight || 100;
-        const tooltipWidth = this._container.offsetWidth || 200;
-        const mapSize = map.getSize();
-        const margin = 10;
-
-        let dir = 'top';
-        if (containerPoint.y - tooltipHeight - margin < 0) dir = 'bottom';
-        if (dir === 'top' && containerPoint.y + margin > mapSize.y) dir = 'bottom';
-
-        if (containerPoint.x - tooltipWidth / 2 < margin) dir = 'right';
-        else if (containerPoint.x + tooltipWidth / 2 > mapSize.x - margin) dir = 'left';
-
-        this.options.direction = dir;
-        this.options.offset = L.point(
-          dir === 'left' ? -10 : dir === 'right' ? 10 : 0,
-          dir === 'top' ? -10 : dir === 'bottom' ? 10 : 0
-        );
-      }
-    }
-    L.Tooltip.prototype._updatePosition.call(this);
-  },
-});
 
 export function initPopup(variablesConfig, repData) {
   VARIABLES = variablesConfig.variables;
   REP_DATA = repData || {};
 }
 
-export function clearSelectedLayer() {
-  selectedLayer = null;
+function ensureTooltipEl(map) {
+  if (tooltipEl) return tooltipEl;
+  tooltipEl = document.createElement('div');
+  tooltipEl.className = 'custom-tooltip map-tooltip';
+  tooltipEl.style.cssText = [
+    'position:absolute',
+    'left:0',
+    'top:0',
+    'pointer-events:none',
+    'z-index:1100',
+    'opacity:0',
+    'transition:opacity 0.12s ease-out',
+    'will-change:transform',
+  ].join(';');
+  const container = map.getContainer();
+  container.appendChild(tooltipEl);
+  return tooltipEl;
+}
+
+function hideTooltip() {
+  if (!tooltipEl) return;
+  tooltipEl.style.opacity = '0';
+}
+
+function showTooltip() {
+  if (!tooltipEl) return;
+  tooltipEl.style.opacity = '1';
+}
+
+function ensureAnimationListeners(map) {
+  if (animationListenersBound) return;
+  map.on('movestart', () => { isAnimating = true; hideTooltip(); });
+  map.on('zoomstart', () => { isAnimating = true; hideTooltip(); });
+  map.on('moveend', () => { isAnimating = false; });
+  map.on('zoomend', () => { isAnimating = false; });
+  animationListenersBound = true;
 }
 
 function cleanName(rawName) {
@@ -149,158 +137,152 @@ function buildTooltipContent(properties) {
   return html;
 }
 
-function setSelectedClass(layer, on) {
-  const path = layer && layer._path;
-  if (!path) return;
-  if (on) path.classList.add('geo-selected');
-  else path.classList.remove('geo-selected');
+function positionTooltip(map, point) {
+  if (!tooltipEl) return;
+  const w = tooltipEl.offsetWidth || 220;
+  const h = tooltipEl.offsetHeight || 100;
+  const size = { x: map.getContainer().clientWidth, y: map.getContainer().clientHeight };
+  const margin = 12;
+  const cursorOffset = 14;
+
+  // Default: above the cursor, centered.
+  let x = point.x - w / 2;
+  let y = point.y - h - cursorOffset;
+
+  // Vertical: flip below if it would clip the top.
+  if (y < margin) y = point.y + cursorOffset;
+
+  // Horizontal: clamp within viewport, but if cursor is near a side, swap to opposite.
+  if (point.x - w / 2 < margin) {
+    x = point.x + cursorOffset;
+  } else if (point.x + w / 2 > size.x - margin) {
+    x = point.x - w - cursorOffset;
+  }
+
+  // Final clamp.
+  x = Math.max(margin, Math.min(size.x - w - margin, x));
+  y = Math.max(margin, Math.min(size.y - h - margin, y));
+
+  tooltipEl.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
 }
 
-function setHoverClass(layer, on) {
-  const path = layer && layer._path;
-  if (!path) return;
-  if (on) path.classList.add('geo-hover');
-  else path.classList.remove('geo-hover');
+function setHoverState(map, level, id, on) {
+  if (id == null) return;
+  map.setFeatureState({ source: level, id }, { hover: on });
 }
 
-// Inner-ring hover effect fades in/out by animating the alpha of the
-// #geoHoverRing filter's feColorMatrix. CSS can't transition between
-// `none` and `url(...)` filters, so we drive the alpha directly via
-// requestAnimationFrame. Only one geo is hovered at a time, so a single
-// shared filter is fine.
-const RING_ALPHA = 0.28;
-const FADE_DURATION_MS = 220;
-let hoverAnimRaf = null;
-let hoverAlpha = 0;
-let hoverFadeoutTarget = null;
+function setSelectedState(map, level, id, on) {
+  if (id == null) return;
+  map.setFeatureState({ source: level, id }, { selected: on });
+}
 
-function setRingAlpha(value) {
-  hoverAlpha = value;
-  const matrix = document.querySelector('#geoHoverRing feColorMatrix');
-  if (matrix) {
-    matrix.setAttribute('values',
-      `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${value} 0`);
+export function clearSelectedLayer() {
+  const map = getMap();
+  if (map && selectedFeature) {
+    setSelectedState(map, selectedFeature.level, selectedFeature.id, false);
+  }
+  selectedFeature = null;
+  if (map && hoveredFeature) {
+    setHoverState(map, hoveredFeature.level, hoveredFeature.id, false);
+  }
+  hoveredFeature = null;
+  hideTooltip();
+}
+
+function clearHoverFor(map) {
+  if (hoveredFeature) {
+    setHoverState(map, hoveredFeature.level, hoveredFeature.id, false);
+    hoveredFeature = null;
   }
 }
 
-function animateRing(target, onDone) {
-  if (hoverAnimRaf) cancelAnimationFrame(hoverAnimRaf);
-  const start = hoverAlpha;
-  const startTime = performance.now();
-  function tick(now) {
-    const t = Math.min(1, (now - startTime) / FADE_DURATION_MS);
-    const eased = 1 - Math.pow(1 - t, 3);
-    setRingAlpha(start + (target - start) * eased);
-    if (t < 1) {
-      hoverAnimRaf = requestAnimationFrame(tick);
-    } else {
-      hoverAnimRaf = null;
-      if (onDone) onDone();
+function computeBounds(geometry) {
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  function visit(coords) {
+    if (typeof coords[0] === 'number') {
+      const [lng, lat] = coords;
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
+      return;
     }
+    for (const c of coords) visit(c);
   }
-  hoverAnimRaf = requestAnimationFrame(tick);
+  if (geometry && geometry.coordinates) visit(geometry.coordinates);
+  if (!isFinite(minLng) || !isFinite(minLat)) return null;
+  return [[minLng, minLat], [maxLng, maxLat]];
 }
 
-export function bindFeature(feature, layer) {
-  layer.on({
-    mouseover: (e) => {
-      // Defensive sweep: close any other tooltips and clear any stuck
-      // geo-hover classes on other features. Guards against DOM-reorder
-      // cascades that fail to fire mouseout.
-      const map = e.target._map;
-      if (map) {
-        map.eachLayer((l) => {
-          if (l === e.target) return;
-          if (l.closeTooltip) l.closeTooltip();
-          if (l._path && l !== selectedLayer) {
-            l._path.classList.remove('geo-hover');
-          }
-        });
-      }
-      // Hover state is purely a CSS filter (inner ring).
-      // Skipped for the selected geo so it doesn't compete with the lift.
-      if (e.target !== selectedLayer) {
-        setHoverClass(e.target, true);
-        // Cancel any pending fade-out class removal — we're hovering again
-        hoverFadeoutTarget = null;
-        animateRing(RING_ALPHA);
-      }
-      // Only bring the hovered to front when there's no selected. If there
-      // is a selected layer, leave DOM order alone so the selected stays
-      // last (on top). Reshuffling DOM mid-hover causes the browser to
-      // re-run hit-tests, which can intermittently steal pointer events
-      // from the hovered path and break subsequent clicks.
-      if (!selectedLayer) {
-        e.target.bringToFront();
-      }
-    },
-    mouseout: (e) => {
-      // Animate the ring out, then remove the hover class.
-      const path = e.target && e.target._path;
-      if (path && path.classList.contains('geo-hover')) {
-        const target = e.target;
-        hoverFadeoutTarget = target;
-        animateRing(0, () => {
-          if (hoverFadeoutTarget === target) {
-            setHoverClass(target, false);
-            hoverFadeoutTarget = null;
-          }
-        });
-      }
-      if (selectedLayer && selectedLayer !== e.target) selectedLayer.bringToFront();
-    },
-    tooltipopen: (e) => {
-      if (isAnimating || e.target === selectedLayer) e.target.closeTooltip();
-    },
-    click: (e) => {
-      const map = e.target._map;
-      ensureAnimationListeners(map);
-      closeAllTooltips(map);
-      if (selectedLayer && selectedLayer !== e.target) {
-        setSelectedClass(selectedLayer, false);
-      }
-      selectedLayer = e.target;
-      // Drop the hover class so the brightness boost doesn't compete with
-      // the lift effect on the selected geo.
-      setHoverClass(selectedLayer, false);
-      selectedLayer.bringToFront();
-      setSelectedClass(selectedLayer, true);
-      const props = e.target.feature.properties;
-      const id = props.GEOID || feature.id;
-      setState({ selectedFeatureId: id });
-      showInfoPanel(props);
-      try {
-        const bounds = e.target.getBounds();
-        if (bounds && bounds.isValid()) {
-          const panel = document.getElementById('info-panel');
-          const panelOpen = panel && panel.classList.contains('visible');
-          // Generous padding so the district has breathing room within the
-          // viewport (and the lift-shadow doesn't get clipped at edges).
-          const sidePad = 70;
-          const rightPad = panelOpen
-            ? (panel.getBoundingClientRect().width || 360) + sidePad
-            : sidePad;
-          e.target._map.flyToBounds(bounds, {
-            paddingTopLeft: [sidePad, sidePad],
-            paddingBottomRight: [rightPad, sidePad],
-            duration: 0.6,
-            // Cap zoom slightly lower so very small districts don't fill
-            // the viewport edge-to-edge — keeps surrounding context visible.
-            maxZoom: 13,
-          });
-        }
-      } catch (_) {
-        /* no-op */
-      }
-    },
+export function bindLayerInteraction(map, level) {
+  if (boundLevels.has(level)) return;
+  boundLevels.add(level);
+
+  ensureTooltipEl(map);
+  ensureAnimationListeners(map);
+
+  const fillId = `${level}-fill`;
+
+  map.on('mousemove', fillId, (e) => {
+    if (isAnimating) return;
+    if (!e.features || !e.features.length) return;
+    const feature = e.features[0];
+    const id = feature.id;
+    if (id == null) return;
+
+    if (!hoveredFeature || hoveredFeature.id !== id || hoveredFeature.level !== level) {
+      if (hoveredFeature) setHoverState(map, hoveredFeature.level, hoveredFeature.id, false);
+      hoveredFeature = { level, id };
+      setHoverState(map, level, id, true);
+      tooltipEl.innerHTML = buildTooltipContent(feature.properties);
+    }
+    positionTooltip(map, e.point);
+    showTooltip();
+    map.getCanvas().style.cursor = 'none';
   });
 
-  const tooltip = new SmartTooltip({
-    className: 'custom-tooltip',
-    direction: 'top',
-    offset: [0, -10],
-    sticky: true,
+  map.on('mouseleave', fillId, () => {
+    clearHoverFor(map);
+    hideTooltip();
   });
-  tooltip.setContent(() => buildTooltipContent(feature.properties));
-  layer.bindTooltip(tooltip);
+
+  map.on('click', fillId, (e) => {
+    if (!e.features || !e.features.length) return;
+    const feature = e.features[0];
+    const id = feature.id;
+    if (id == null) return;
+
+    // Drop hover so it doesn't compete with the selected styling.
+    clearHoverFor(map);
+    hideTooltip();
+
+    // Replace existing selection.
+    if (selectedFeature && (selectedFeature.id !== id || selectedFeature.level !== level)) {
+      setSelectedState(map, selectedFeature.level, selectedFeature.id, false);
+    }
+    selectedFeature = { level, id };
+    setSelectedState(map, level, id, true);
+
+    const props = feature.properties;
+    setState({ selectedFeatureId: props.GEOID || String(id) });
+    showInfoPanel(props);
+
+    const bounds = computeBounds(feature.geometry);
+    if (bounds) {
+      const panel = document.getElementById('info-panel');
+      const panelOpen = panel && panel.classList.contains('visible');
+      const sidePad = 70;
+      const rightPad = panelOpen
+        ? (panel.getBoundingClientRect().width || 360) + sidePad
+        : sidePad;
+      try {
+        map.fitBounds(bounds, {
+          padding: { top: sidePad, bottom: sidePad, left: sidePad, right: rightPad },
+          maxZoom: 13,
+          duration: 600,
+          essential: true,
+        });
+      } catch (_) { /* no-op */ }
+    }
+  });
 }

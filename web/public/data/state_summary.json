@@ -27,10 +27,10 @@
     "severe_rent_burden_rate": 26.28
   },
   "snap": {
-    "snap_household_count": "54955",
-    "snap_household_rate": 19.41,
-    "snap_benefit_annual_per_household": 9764.64,
-    "snap_benefits_annual_total": 926937745.92
+    "snap_household_count": null,
+    "snap_household_rate": 17.01,
+    "snap_benefit_annual_per_household": 8865.7,
+    "snap_benefits_annual_total": 742697232.0
   },
   "tax_credits": {
     "ctc_avg_amount": 1039.2409240924092,
