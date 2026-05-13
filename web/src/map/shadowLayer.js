@@ -38,6 +38,11 @@ const SHADOW_RGB = [0.0, 0.0, 0.0];
 const SHADOW_MAX_ALPHA = 0.55;
 const FADE_MS = 300;
 const GEOM_CACHE_MAX = 32;
+// Render the blur FBOs at 1/SCALE per axis. The shadow is intentionally blurry,
+// so 2× downscale (4× fewer fragments) is visually indistinguishable but
+// drops per-frame GPU work dramatically during zoom. Blur kernel and composite
+// offset are expressed in canvas pixels so the visual is scale-independent.
+const FBO_DOWNSCALE = 2;
 
 // ─── Shader sources ────────────────────────────────────────────────────────
 
@@ -374,7 +379,11 @@ class ShadowLayer {
   _ensureFBOs() {
     const gl = this.gl;
     if (!gl) return;
-    const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
+    // Half-resolution (or whatever FBO_DOWNSCALE dictates). Bilinear filtering
+    // during the composite upscale is free and the result is indistinguishable
+    // from a full-res blur because the blur itself softens any aliasing.
+    const w = Math.max(1, (gl.drawingBufferWidth  / FBO_DOWNSCALE) | 0);
+    const h = Math.max(1, (gl.drawingBufferHeight / FBO_DOWNSCALE) | 0);
     if (w === this.fboWidth && h === this.fboHeight && this.fboA && this.fboB) return;
     destroyFBO(gl, this.fboA);
     destroyFBO(gl, this.fboB);
@@ -463,8 +472,10 @@ class ShadowLayer {
     this.lastTs = now;
     const dir = Math.sign(this.targetOpacity - this.opacity);
     this.opacity = Math.max(0, Math.min(1, this.opacity + dir * dt / FADE_MS));
-    if (this.opacity !== this.targetOpacity) this.map.triggerRepaint();
-    else this.lastTs = null;
+    // Note: do NOT triggerRepaint() from here. Repaints fired inside render()
+    // are coalesced/dropped by MapLibre; _startAnimationPump's external rAF
+    // loop drives the fade reliably.
+    if (this.opacity === this.targetOpacity) this.lastTs = null;
     return 1 - Math.pow(1 - this.opacity, 3); // ease-out cubic
   }
 
@@ -503,26 +514,29 @@ class ShadowLayer {
       gl.drawElements(gl.TRIANGLES, this.currentGeom.indexCount, this.currentGeom.indexType, 0);
       gl.disableVertexAttribArray(this.maskAttribPos);
 
-      // Pass 2: horizontal blur — A → B
+      // u_direction is expressed in canvas-pixel UV units so the blur reach in
+      // screen pixels stays constant regardless of FBO_DOWNSCALE. (One UV unit
+      // spans drawingBufferWidth screen pixels for the eventual composite.)
+      const blurStepX = (BLUR_RADIUS_PX / 8) / gl.drawingBufferWidth;
+      const blurStepY = (BLUR_RADIUS_PX / 8) / gl.drawingBufferHeight;
+
+      // Pass 2: horizontal blur — A → B. No clear: the fullscreen quad
+      // overwrites every pixel of FBO B.
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboB.fbo);
       gl.viewport(0, 0, w, h);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(this.blurProgram);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.fboA.tex);
       gl.uniform1i(this.blurUniTex, 0);
-      gl.uniform2f(this.blurUniDir, (BLUR_RADIUS_PX / 8) / w, 0);
+      gl.uniform2f(this.blurUniDir, blurStepX, 0);
       this._drawQuad(this.blurAttribQuad);
 
-      // Pass 3: vertical blur — B → A
+      // Pass 3: vertical blur — B → A. Same: no clear needed, quad overwrites.
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboA.fbo);
       gl.viewport(0, 0, w, h);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.bindTexture(gl.TEXTURE_2D, this.fboB.tex);
       gl.uniform1i(this.blurUniTex, 0);
-      gl.uniform2f(this.blurUniDir, 0, (BLUR_RADIUS_PX / 8) / h);
+      gl.uniform2f(this.blurUniDir, 0, blurStepY);
       this._drawQuad(this.blurAttribQuad);
 
       // Restore GL state for MapLibre's subsequent layer pipeline.
@@ -553,8 +567,11 @@ class ShadowLayer {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.fboA.tex);
       gl.uniform1i(this.compUniTex, 0);
+      // Offset is in canvas-pixel UV units so the shadow displacement in screen
+      // pixels stays constant regardless of FBO_DOWNSCALE.
       gl.uniform2f(this.compUniOffset,
-        OFFSET_PX[0] / this.fboWidth, -OFFSET_PX[1] / this.fboHeight);
+        OFFSET_PX[0] / gl.drawingBufferWidth,
+        -OFFSET_PX[1] / gl.drawingBufferHeight);
       gl.uniform3f(this.compUniColor, SHADOW_RGB[0], SHADOW_RGB[1], SHADOW_RGB[2]);
       gl.uniform1f(this.compUniOpacity, finalOpacity);
       gl.enable(gl.BLEND);
