@@ -88,17 +88,11 @@ export function createMap(containerId, theme) {
   const CURSOR_VAL = `url("data:image/svg+xml;base64,${CURSOR_B64}") 12 12, auto`;
   if (containerId) {
     const styleEl = document.createElement('style');
-    // Cover every MapLibre cursor-state class + the inner canvas with both
-    // !important and high specificity (ID + multiple classes) so MapLibre's
-    // CSS-class-driven cursor changes can never win.
+    // Single rule with !important — beats MapLibre's class-driven cursor states
+    // (grab / grabbing / pointer) without enumerating each one, so style-recalc
+    // on MapLibre's class toggles stays cheap.
     styleEl.textContent =
-      `#${containerId} .maplibregl-canvas-container,
-       #${containerId} .maplibregl-canvas-container.maplibregl-interactive,
-       #${containerId} .maplibregl-canvas-container.maplibregl-interactive:active,
-       #${containerId} .maplibregl-canvas-container.maplibregl-interactive.maplibregl-track-pointer,
-       #${containerId} .maplibregl-canvas {
-         cursor: ${CURSOR_VAL} !important;
-       }`;
+      `#${containerId} .maplibregl-canvas-container { cursor: ${CURSOR_VAL} !important; }`;
     document.head.appendChild(styleEl);
   }
 
