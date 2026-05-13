@@ -28,7 +28,7 @@ const selectedCase = (whenSelected, whenNot = 0) => [
   whenNot,
 ];
 
-// Shadow stack: 8 fill duplicates of the polygon, each offset progressively
+// Shadow stack: 3 fill duplicates of the polygon, each offset progressively
 // further down/right with decreasing opacity. Stacked, they integrate into a
 // smooth directional drop shadow. Pure fills (not lines) avoid the spike/star
 // artifacts that line-translate produces along detailed coastline geometry
@@ -36,14 +36,9 @@ const selectedCase = (whenSelected, whenNot = 0) => [
 // All gated on feature-state 'selected' via opacity.
 // Array order = render order (bottom of stack first → ends up below the fill).
 const SHADOW_SPECS = [
-  { suffix: 'shadow-8', translate: [16, 22], opacity: 0.02 },
-  { suffix: 'shadow-7', translate: [12, 17], opacity: 0.04 },
-  { suffix: 'shadow-6', translate: [9,  13], opacity: 0.07 },
-  { suffix: 'shadow-5', translate: [7,  10], opacity: 0.10 },
-  { suffix: 'shadow-4', translate: [5,   7], opacity: 0.14 },
-  { suffix: 'shadow-3', translate: [3,   5], opacity: 0.18 },
-  { suffix: 'shadow-2', translate: [2,   3], opacity: 0.23 },
-  { suffix: 'shadow-1', translate: [1,   1], opacity: 0.28 },
+  { suffix: 'shadow-3', translate: [9, 13], opacity: 0.06 },
+  { suffix: 'shadow-2', translate: [5,  7], opacity: 0.14 },
+  { suffix: 'shadow-1', translate: [2,  3], opacity: 0.26 },
 ];
 
 // Some variables carry text-prefixed numeric values (e.g., cep_display = "5/9 CEP
