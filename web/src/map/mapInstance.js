@@ -73,18 +73,24 @@ export function createMap(containerId, theme) {
   // Dev only: expose the map on window for in-browser debugging.
   if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__map = mapInstance;
 
-  // Grey circle cursor — native OS cursor via SVG data URI. Hotspot at the
-  // center of the 24×24 SVG (12, 12). Updated by the compositor at hardware
-  // refresh rate without any JS or layout work per pointer move. Falls back to
-  // `auto` over child elements that set their own cursor (e.g. control buttons).
-  const CURSOR_SVG =
-    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>" +
-      "<circle cx='12' cy='12' r='10' " +
-        "fill='%238c8c8c' fill-opacity='0.25' " +
-        "stroke='%23646464' stroke-opacity='0.55' stroke-width='1.5'/>" +
-    "</svg>";
-  if (container) {
-    container.style.cursor = `url("data:image/svg+xml;utf8,${CURSOR_SVG}") 12 12, auto`;
+  // Grey circle cursor — native OS cursor via base64 SVG data URI.
+  // Uses !important injected into a <style> tag so it beats MapLibre's inline
+  // cursor mutations (grab/grabbing/pointer) on .maplibregl-canvas-container.
+  // Hotspot at center of 24×24 SVG (12, 12). Falls back to `auto` so control
+  // buttons can still show their own cursors via a higher-specificity rule.
+  const CURSOR_SVG_SRC =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">' +
+      '<circle cx="12" cy="12" r="10" ' +
+        'fill="#8c8c8c" fill-opacity="0.25" ' +
+        'stroke="#646464" stroke-opacity="0.55" stroke-width="1.5"/>' +
+    '</svg>';
+  const CURSOR_B64 = btoa(CURSOR_SVG_SRC);
+  const CURSOR_VAL = `url("data:image/svg+xml;base64,${CURSOR_B64}") 12 12, auto`;
+  if (containerId) {
+    const styleEl = document.createElement('style');
+    styleEl.textContent =
+      `#${containerId} .maplibregl-canvas-container { cursor: ${CURSOR_VAL} !important; }`;
+    document.head.appendChild(styleEl);
   }
 
   return mapInstance;
