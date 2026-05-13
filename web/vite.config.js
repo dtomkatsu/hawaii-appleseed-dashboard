@@ -18,5 +18,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
     open: true,
+    host: '0.0.0.0',
   },
 }));

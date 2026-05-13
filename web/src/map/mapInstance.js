@@ -74,22 +74,31 @@ export function createMap(containerId, theme) {
   if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__map = mapInstance;
 
   // Grey circle cursor — native OS cursor via base64 SVG data URI.
-  // Uses !important injected into a <style> tag so it beats MapLibre's inline
-  // cursor mutations (grab/grabbing/pointer) on .maplibregl-canvas-container.
-  // Hotspot at center of 24×24 SVG (12, 12). Falls back to `auto` so control
-  // buttons can still show their own cursors via a higher-specificity rule.
+  // Hotspot at center of 24×24 SVG (12, 12). Covers the inner canvas as well
+  // as the canvas-container with all three MapLibre cursor-state classes
+  // (interactive / track-pointer / :active grabbing) so our cursor wins
+  // regardless of which state MapLibre toggles into.
   const CURSOR_SVG_SRC =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">' +
-      '<circle cx="12" cy="12" r="10" ' +
-        'fill="#8c8c8c" fill-opacity="0.25" ' +
-        'stroke="#646464" stroke-opacity="0.55" stroke-width="1.5"/>' +
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">' +
+      '<circle cx="12" cy="12" r="9.5" ' +
+        'fill="rgba(140,140,140,0.35)" ' +
+        'stroke="rgba(40,40,40,0.85)" stroke-width="1.5"/>' +
     '</svg>';
   const CURSOR_B64 = btoa(CURSOR_SVG_SRC);
   const CURSOR_VAL = `url("data:image/svg+xml;base64,${CURSOR_B64}") 12 12, auto`;
   if (containerId) {
     const styleEl = document.createElement('style');
+    // Cover every MapLibre cursor-state class + the inner canvas with both
+    // !important and high specificity (ID + multiple classes) so MapLibre's
+    // CSS-class-driven cursor changes can never win.
     styleEl.textContent =
-      `#${containerId} .maplibregl-canvas-container { cursor: ${CURSOR_VAL} !important; }`;
+      `#${containerId} .maplibregl-canvas-container,
+       #${containerId} .maplibregl-canvas-container.maplibregl-interactive,
+       #${containerId} .maplibregl-canvas-container.maplibregl-interactive:active,
+       #${containerId} .maplibregl-canvas-container.maplibregl-interactive.maplibregl-track-pointer,
+       #${containerId} .maplibregl-canvas {
+         cursor: ${CURSOR_VAL} !important;
+       }`;
     document.head.appendChild(styleEl);
   }
 
