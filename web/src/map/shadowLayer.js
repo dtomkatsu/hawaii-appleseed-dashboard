@@ -490,8 +490,9 @@ class ShadowLayer {
     if (this.targetOpacity === 0 && this.opacity === 0) return;
     if (!this.currentGeom || !this.fboA || !this.fboB) return;
 
-    // Save MapLibre's VAO; bind ours. On WebGL1 there are no VAOs so we skip.
-    const prevVAO = this.isWebGL2 ? gl.getParameter(gl.VERTEX_ARRAY_BINDING) : null;
+    // Bind our own VAO so our vertex attrib mutations stay isolated from
+    // MapLibre's VAOs. MapLibre always rebinds before its own draws, so
+    // restoring to null is sufficient (avoids the GPU-sync getParameter call).
     if (this.vao) gl.bindVertexArray(this.vao);
 
     try {
@@ -546,8 +547,9 @@ class ShadowLayer {
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.useProgram(null);
     } finally {
-      // Always restore MapLibre's VAO — even on throw.
-      if (this.vao) gl.bindVertexArray(prevVAO);
+      // Restore to null — MapLibre always rebinds its own VAO before drawing,
+      // so null is safe and avoids the GPU-stalling getParameter roundtrip.
+      if (this.vao) gl.bindVertexArray(null);
     }
   }
 
@@ -559,7 +561,6 @@ class ShadowLayer {
     const finalOpacity = eased * SHADOW_MAX_ALPHA;
     if (finalOpacity <= 0.001) return;
 
-    const prevVAO = this.isWebGL2 ? gl.getParameter(gl.VERTEX_ARRAY_BINDING) : null;
     if (this.vao) gl.bindVertexArray(this.vao);
 
     try {
@@ -578,7 +579,7 @@ class ShadowLayer {
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       this._drawQuad(this.compAttribQuad);
     } finally {
-      if (this.vao) gl.bindVertexArray(prevVAO);
+      if (this.vao) gl.bindVertexArray(null);
     }
   }
 

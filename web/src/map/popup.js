@@ -13,6 +13,11 @@ let selectedFeature = null;      // { level, id }
 let isAnimating = false;
 let animationListenersBound = false;
 
+// rAF throttle for tooltip position updates — caps layout reads+writes to
+// the display refresh rate instead of raw mousemove rate (100–200 Hz).
+let _moveRafId = null;
+let _lastMovePoint = null;
+
 export function initPopup(variablesConfig, repData) {
   VARIABLES = variablesConfig.variables;
   REP_DATA = repData || {};
@@ -232,19 +237,33 @@ export function bindLayerInteraction(map, level) {
     const id = feature.id;
     if (id == null) return;
 
+    // Hover state + content: update immediately on feature change only.
     if (!hoveredFeature || hoveredFeature.id !== id || hoveredFeature.level !== level) {
       if (hoveredFeature) setHoverState(map, hoveredFeature.level, hoveredFeature.id, false);
       hoveredFeature = { level, id };
       setHoverState(map, level, id, true);
       tooltipEl.innerHTML = buildTooltipContent(feature.properties);
     }
-    positionTooltip(map, e.point);
-    showTooltip();
+
+    // Position + show: rAF-throttled so layout reads/writes run at most once
+    // per display frame rather than at raw pointer rate (100–200 Hz).
     // Cursor is set on the map container via a native CSS url() cursor in
     // mapInstance.js — no per-mousemove style mutation needed here.
+    _lastMovePoint = e.point;
+    if (!_moveRafId) {
+      _moveRafId = requestAnimationFrame(() => {
+        _moveRafId = null;
+        if (_lastMovePoint) {
+          positionTooltip(map, _lastMovePoint);
+          showTooltip();
+        }
+      });
+    }
   });
 
   map.on('mouseleave', fillId, () => {
+    if (_moveRafId) { cancelAnimationFrame(_moveRafId); _moveRafId = null; }
+    _lastMovePoint = null;
     clearHoverFor(map);
     hideTooltip();
   });

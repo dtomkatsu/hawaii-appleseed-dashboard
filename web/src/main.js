@@ -2,7 +2,7 @@ import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
-import { setLayer, setVariable, setColorScheme, getFeatureProperties } from './map/layerManager.js';
+import { setLayer, setVariable, setColorScheme, getFeatureProperties, preloadAll } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
 import { initLegend, renderLegend } from './ui/legend.js';
 import { initSidebar, renderSidebar } from './ui/sidebar.js';
@@ -55,6 +55,9 @@ async function main() {
   renderLegend(s0.selectedVariable, s0.colorScheme);
   renderSidebar();
   writeToUrl();
+
+  // Preload remaining layers in the background so subsequent switches are instant.
+  preloadAll();
 
   // Update tab text nodes from ui_strings.json (preserves SVG icon child nodes)
   const tabs = config.uiStrings?.tabs || {};
