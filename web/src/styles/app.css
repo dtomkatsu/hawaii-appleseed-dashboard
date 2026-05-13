@@ -662,6 +662,14 @@ body {
 .maplibregl-ctrl-bottom-right {
   z-index: 600;
 }
+/* Push the top-left controls clear of the 42px glass strip so they don't
+   visually sit inside the blurred/highlighted top edge. (Their internal 10px
+   margin still applies, so the first button starts at y ≈ 50px.)
+   !important required because maplibre-gl.css is JS-imported and Vite injects
+   it as a <style> tag after our static <link>, giving it higher cascade order. */
+.maplibregl-ctrl-top-left {
+  top: 40px !important;
+}
 .maplibregl-ctrl-top-left *,
 .maplibregl-ctrl-top-right *,
 .maplibregl-ctrl-bottom-left *,

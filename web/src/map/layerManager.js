@@ -10,6 +10,42 @@ let currentLevel = null;
 let currentVariable = null;
 let currentScheme = null;
 
+const FADE_MS = 300;
+const pendingHide = new Map(); // level → setTimeout id
+
+// Opacity expressions as constants so fade-in can restore them after zeroing out.
+const FILL_OPACITY_EXPR = [
+  'case',
+  ['boolean', ['feature-state', 'selected'], false], 1.0,
+  0.75,
+];
+
+// Feature-state gated value: returns `whenSelected` if the feature has selected
+// state, else `whenNot` (0). Used for opacity, width, etc.
+const selectedCase = (whenSelected, whenNot = 0) => [
+  'case',
+  ['boolean', ['feature-state', 'selected'], false], whenSelected,
+  whenNot,
+];
+
+// Shadow stack: 8 fill duplicates of the polygon, each offset progressively
+// further down/right with decreasing opacity. Stacked, they integrate into a
+// smooth directional drop shadow. Pure fills (not lines) avoid the spike/star
+// artifacts that line-translate produces along detailed coastline geometry
+// where many small vertices make wide offset lines overshoot at every kink.
+// All gated on feature-state 'selected' via opacity.
+// Array order = render order (bottom of stack first → ends up below the fill).
+const SHADOW_SPECS = [
+  { suffix: 'shadow-8', translate: [16, 22], opacity: 0.02 },
+  { suffix: 'shadow-7', translate: [12, 17], opacity: 0.04 },
+  { suffix: 'shadow-6', translate: [9,  13], opacity: 0.07 },
+  { suffix: 'shadow-5', translate: [7,  10], opacity: 0.10 },
+  { suffix: 'shadow-4', translate: [5,   7], opacity: 0.14 },
+  { suffix: 'shadow-3', translate: [3,   5], opacity: 0.18 },
+  { suffix: 'shadow-2', translate: [2,   3], opacity: 0.23 },
+  { suffix: 'shadow-1', translate: [1,   1], opacity: 0.28 },
+];
+
 // Some variables carry text-prefixed numeric values (e.g., cep_display = "5/9 CEP
 // schools"). MapLibre's to-number returns NaN for those strings, so we mirror
 // every string-numeric property as `_num_<key>` (a real number) at cache time
@@ -61,8 +97,7 @@ function colorExpression(variable, scheme) {
 
 function fillLayerIds(level) {
   return [
-    `${level}-shadow-drop`,
-    `${level}-shadow-glow`,
+    ...SHADOW_SPECS.map((s) => `${level}-${s.suffix}`),
     `${level}-fill`,
     `${level}-line`,
     `${level}-selected`,
@@ -79,72 +114,25 @@ function ensureSourceAndLayers(map, level, data) {
     promoteId: 'GEOID',
   });
 
-  // Directional drop shadow — translated dark fill offset down/right, suggesting
-  // light from the upper-left. fill-translate doesn't accept feature-state, so
-  // every feature paints translated and only the selected one is made visible
-  // via feature-state on fill-opacity. Sits at the bottom so the colored fill
-  // covers the parts that would otherwise show through under the polygon, and
-  // only the offset rim sticks out down-right — that's the drop shadow.
-  map.addLayer({
-    id: `${level}-shadow-drop`,
-    type: 'fill',
-    source: level,
-    layout: { visibility: 'none' },
-    paint: {
-      'fill-color': '#000000',
-      // Translate scales with zoom so a 5px offset doesn't engulf tiny
-      // polygons at low zoom. fill-translate accepts interpolate-by-zoom
-      // (it just doesn't accept feature-state, hence the opacity trick below).
-      'fill-translate': [
-        'interpolate', ['linear'], ['zoom'],
-        5, ['literal', [1, 2]],
-        8, ['literal', [2, 3]],
-        12, ['literal', [3, 5]],
-      ],
-      'fill-translate-anchor': 'viewport',
-      'fill-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false], 0.32,
-        0,
-      ],
-    },
-  });
-
-  // Outer glow halo — blurred line along the polygon edge. Renders BELOW the
-  // colored fill so the inside half is hidden and only the outer rim reads as
-  // an ambient shadow around the lifted polygon.
-  // Width and blur scale with zoom: at zoom 5 a 14px halo would overwhelm a
-  // tiny island polygon, so values stay small there and grow as you zoom in.
-  map.addLayer({
-    id: `${level}-shadow-glow`,
-    type: 'line',
-    source: level,
-    layout: { visibility: 'none' },
-    paint: {
-      'line-color': '#000000',
-      'line-blur': [
-        'interpolate', ['linear'], ['zoom'],
-        5, 1.5,
-        8, 4,
-        12, 9,
-      ],
-      'line-width': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false],
-        ['interpolate', ['linear'], ['zoom'],
-          5, 3,
-          8, 7,
-          12, 14,
-        ],
-        0,
-      ],
-      'line-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false], 0.22,
-        0,
-      ],
-    },
-  });
+  // Soft drop shadow as a stack of offset fill duplicates (see SHADOW_SPECS).
+  // Each is the polygon translated down/right with decreasing opacity; the
+  // colored fill above covers the inner part so only the offset rim shows,
+  // and the stack integrates into a smooth directional shadow.
+  for (const spec of SHADOW_SPECS) {
+    map.addLayer({
+      id: `${level}-${spec.suffix}`,
+      type: 'fill',
+      source: level,
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-color': '#000000',
+        'fill-translate': spec.translate,
+        'fill-translate-anchor': 'viewport',
+        'fill-opacity': selectedCase(spec.opacity),
+        'fill-opacity-transition': { duration: FADE_MS, delay: 0 },
+      },
+    });
+  }
 
   // Fill — colored by current variable. Selected gets full opacity so the
   // shadow layers below stay hidden under the polygon body.
@@ -155,11 +143,8 @@ function ensureSourceAndLayers(map, level, data) {
     layout: { visibility: 'none' },
     paint: {
       'fill-color': '#cccccc',
-      'fill-opacity': [
-        'case',
-        ['boolean', ['feature-state', 'selected'], false], 1.0,
-        0.75,
-      ],
+      'fill-opacity': FILL_OPACITY_EXPR,
+      'fill-opacity-transition': { duration: FADE_MS, delay: 0 },
     },
   });
 
@@ -172,6 +157,8 @@ function ensureSourceAndLayers(map, level, data) {
     paint: {
       'line-color': '#aaaaaa',
       'line-width': 1,
+      'line-opacity': 1,
+      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
     },
   });
 
@@ -189,6 +176,7 @@ function ensureSourceAndLayers(map, level, data) {
         0,
       ],
       'line-opacity': 0.9,
+      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
     },
   });
 
@@ -209,6 +197,7 @@ function ensureSourceAndLayers(map, level, data) {
         0,
       ],
       'line-opacity': 0.6,
+      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
     },
   });
 
@@ -216,13 +205,57 @@ function ensureSourceAndLayers(map, level, data) {
   registeredLevels.add(level);
 }
 
-function setLevelVisibility(map, level, visible) {
+function restoreTargetOpacities(map, level) {
+  for (const spec of SHADOW_SPECS) {
+    const id = `${level}-${spec.suffix}`;
+    if (!map.getLayer(id)) continue;
+    map.setPaintProperty(id, 'fill-opacity', selectedCase(spec.opacity));
+  }
+  if (map.getLayer(`${level}-fill`))
+    map.setPaintProperty(`${level}-fill`, 'fill-opacity', FILL_OPACITY_EXPR);
+  if (map.getLayer(`${level}-line`))
+    map.setPaintProperty(`${level}-line`, 'line-opacity', 1);
+  if (map.getLayer(`${level}-selected`))
+    map.setPaintProperty(`${level}-selected`, 'line-opacity', 0.9);
+  if (map.getLayer(`${level}-hover`))
+    map.setPaintProperty(`${level}-hover`, 'line-opacity', 0.6);
+}
+
+function fadeInLevel(map, level) {
+  // Cancel any in-flight hide for this level
+  if (pendingHide.has(level)) {
+    clearTimeout(pendingHide.get(level));
+    pendingHide.delete(level);
+  }
+
   const ids = fillLayerIds(level);
   for (const id of ids) {
-    if (map.getLayer(id)) {
-      map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
-    }
+    if (!map.getLayer(id)) continue;
+    const layerType = map.getLayer(id).type;
+    if (layerType === 'fill') map.setPaintProperty(id, 'fill-opacity', 0);
+    else map.setPaintProperty(id, 'line-opacity', 0);
+    map.setLayoutProperty(id, 'visibility', 'visible');
   }
+
+  // Restore target opacities on the next frame so MapLibre animates from 0.
+  requestAnimationFrame(() => restoreTargetOpacities(map, level));
+}
+
+function fadeOutLevel(map, level) {
+  const ids = fillLayerIds(level);
+  for (const id of ids) {
+    if (!map.getLayer(id)) continue;
+    const layerType = map.getLayer(id).type;
+    if (layerType === 'fill') map.setPaintProperty(id, 'fill-opacity', 0);
+    else map.setPaintProperty(id, 'line-opacity', 0);
+  }
+  const tid = setTimeout(() => {
+    pendingHide.delete(level);
+    for (const id of ids) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+    }
+  }, FADE_MS + 50);
+  pendingHide.set(level, tid);
 }
 
 function applyColorExpression(map, level) {
@@ -244,12 +277,11 @@ export async function setLayer(level) {
   const apply = () => {
     ensureSourceAndLayers(map, level, cachedGeoJson.get(level));
 
-    // Hide previous level
     if (currentLevel && currentLevel !== level) {
-      setLevelVisibility(map, currentLevel, false);
+      fadeOutLevel(map, currentLevel);
     }
 
-    setLevelVisibility(map, level, true);
+    fadeInLevel(map, level);
     applyColorExpression(map, level);
 
     clearSelectedLayer();
@@ -260,6 +292,25 @@ export async function setLayer(level) {
     apply();
   } else {
     map.once('load', apply);
+  }
+}
+
+// Preload and register all level GeoJSON in the background so layer switches
+// are instant (no network wait) after initial load.
+export async function preloadAll() {
+  const map = getMap();
+  for (const level of LEVELS) {
+    if (cachedGeoJson.has(level)) continue;
+    try {
+      const data = await loadLayer(level);
+      preprocessFeatures(data);
+      cachedGeoJson.set(level, data);
+      if (map && map.isStyleLoaded()) {
+        ensureSourceAndLayers(map, level, data);
+      }
+    } catch (e) {
+      console.warn(`preloadAll: failed to load ${level}`, e);
+    }
   }
 }
 
