@@ -69,6 +69,9 @@ export function createMap(containerId, theme) {
   mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), 'top-left');
   mapInstance.addControl(new ResetControl(center, zoom), 'top-left');
 
+  // Dev only: expose the map on window for in-browser debugging.
+  if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__map = mapInstance;
+
   // Grey circle cursor — the canvas hides the native cursor; this DOM circle
   // follows the pointer in container coordinates.
   const cursorEl = document.createElement('div');

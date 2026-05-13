@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "earcut": "^3.0.2",
     "maplibre-gl": "^4.7.1",
     "plotly.js-dist-min": "^2.35.0"
   },

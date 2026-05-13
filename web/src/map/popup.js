@@ -1,6 +1,7 @@
 import { getState, setState } from '../state/store.js';
 import { showInfoPanel } from '../ui/infoPanel.js';
 import { getMap } from './mapInstance.js';
+import { setShadowFeature } from './shadowLayer.js';
 
 let VARIABLES = null;
 let REP_DATA = {};
@@ -182,6 +183,7 @@ export function clearSelectedLayer() {
     setSelectedState(map, selectedFeature.level, selectedFeature.id, false);
   }
   selectedFeature = null;
+  setShadowFeature(null, null); // fade out the WebGL drop shadow
   if (map && hoveredFeature) {
     setHoverState(map, hoveredFeature.level, hoveredFeature.id, false);
   }
@@ -262,6 +264,7 @@ export function bindLayerInteraction(map, level) {
     }
     selectedFeature = { level, id };
     setSelectedState(map, level, id, true);
+    setShadowFeature(level, feature); // push the new selection into the WebGL shadow layer
 
     const props = feature.properties;
     setState({ selectedFeatureId: props.GEOID || String(id) });

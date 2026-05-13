@@ -2,6 +2,7 @@ import { getMap } from './mapInstance.js';
 import { getThresholds, getSchemeColors } from './colors.js';
 import { loadLayer } from '../data/loader.js';
 import { bindLayerInteraction, clearSelectedLayer } from './popup.js';
+import { registerShadowLayer, setShadowFeature, SHADOW_LAYER_ID } from './shadowLayer.js';
 
 const LEVELS = ['state', 'county', 'house', 'senate'];
 const cachedGeoJson = new Map();
@@ -28,18 +29,10 @@ const selectedCase = (whenSelected, whenNot = 0) => [
   whenNot,
 ];
 
-// Shadow stack: 3 fill duplicates of the polygon, each offset progressively
-// further down/right with decreasing opacity. Stacked, they integrate into a
-// smooth directional drop shadow. Pure fills (not lines) avoid the spike/star
-// artifacts that line-translate produces along detailed coastline geometry
-// where many small vertices make wide offset lines overshoot at every kink.
-// All gated on feature-state 'selected' via opacity.
-// Array order = render order (bottom of stack first → ends up below the fill).
-const SHADOW_SPECS = [
-  { suffix: 'shadow-3', translate: [9, 13], opacity: 0.06 },
-  { suffix: 'shadow-2', translate: [5,  7], opacity: 0.14 },
-  { suffix: 'shadow-1', translate: [2,  3], opacity: 0.26 },
-];
+// The selected-feature drop shadow lives in a custom WebGL layer
+// (`./shadowLayer.js`) registered globally on the map — see
+// `registerShadowLayer()`. The legacy stacked fill-translate shadow has
+// been removed in favor of a true Gaussian blur.
 
 // Some variables carry text-prefixed numeric values (e.g., cep_display = "5/9 CEP
 // schools"). MapLibre's to-number returns NaN for those strings, so we mirror
@@ -92,7 +85,6 @@ function colorExpression(variable, scheme) {
 
 function fillLayerIds(level) {
   return [
-    ...SHADOW_SPECS.map((s) => `${level}-${s.suffix}`),
     `${level}-fill`,
     `${level}-line`,
     `${level}-selected`,
@@ -109,28 +101,9 @@ function ensureSourceAndLayers(map, level, data) {
     promoteId: 'GEOID',
   });
 
-  // Soft drop shadow as a stack of offset fill duplicates (see SHADOW_SPECS).
-  // Each is the polygon translated down/right with decreasing opacity; the
-  // colored fill above covers the inner part so only the offset rim shows,
-  // and the stack integrates into a smooth directional shadow.
-  for (const spec of SHADOW_SPECS) {
-    map.addLayer({
-      id: `${level}-${spec.suffix}`,
-      type: 'fill',
-      source: level,
-      layout: { visibility: 'none' },
-      paint: {
-        'fill-color': '#000000',
-        'fill-translate': spec.translate,
-        'fill-translate-anchor': 'viewport',
-        'fill-opacity': selectedCase(spec.opacity),
-        'fill-opacity-transition': { duration: FADE_MS, delay: 0 },
-      },
-    });
-  }
-
-  // Fill — colored by current variable. Selected gets full opacity so the
-  // shadow layers below stay hidden under the polygon body.
+  // Fill — colored by current variable. The drop shadow lives in a separate
+  // global custom WebGL layer (`./shadowLayer.js`); we just make sure it
+  // remains below this fill via `map.moveLayer` after registration.
   map.addLayer({
     id: `${level}-fill`,
     type: 'fill',
@@ -201,11 +174,6 @@ function ensureSourceAndLayers(map, level, data) {
 }
 
 function restoreTargetOpacities(map, level) {
-  for (const spec of SHADOW_SPECS) {
-    const id = `${level}-${spec.suffix}`;
-    if (!map.getLayer(id)) continue;
-    map.setPaintProperty(id, 'fill-opacity', selectedCase(spec.opacity));
-  }
   if (map.getLayer(`${level}-fill`))
     map.setPaintProperty(`${level}-fill`, 'fill-opacity', FILL_OPACITY_EXPR);
   if (map.getLayer(`${level}-line`))
@@ -272,6 +240,14 @@ export async function setLayer(level) {
   const apply = () => {
     ensureSourceAndLayers(map, level, cachedGeoJson.get(level));
 
+    // Register the global shadow layer (idempotent) and keep it strictly
+    // below the active level's colored fill so the shadow renders under
+    // the polygon body.
+    registerShadowLayer(map);
+    if (map.getLayer(SHADOW_LAYER_ID) && map.getLayer(`${level}-fill`)) {
+      map.moveLayer(SHADOW_LAYER_ID, `${level}-fill`);
+    }
+
     if (currentLevel && currentLevel !== level) {
       fadeOutLevel(map, currentLevel);
     }
@@ -280,6 +256,7 @@ export async function setLayer(level) {
     applyColorExpression(map, level);
 
     clearSelectedLayer();
+    setShadowFeature(level, null); // clear any prior selection's shadow
     currentLevel = level;
   };
 
