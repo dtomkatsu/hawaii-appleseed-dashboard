@@ -240,7 +240,8 @@ export function bindLayerInteraction(map, level) {
     }
     positionTooltip(map, e.point);
     showTooltip();
-    map.getCanvas().style.cursor = 'none';
+    // Cursor is set on the map container via a native CSS url() cursor in
+    // mapInstance.js — no per-mousemove style mutation needed here.
   });
 
   map.on('mouseleave', fillId, () => {

@@ -72,32 +72,19 @@ export function createMap(containerId, theme) {
   // Dev only: expose the map on window for in-browser debugging.
   if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__map = mapInstance;
 
-  // Grey circle cursor — the canvas hides the native cursor; this DOM circle
-  // follows the pointer in container coordinates.
-  const cursorEl = document.createElement('div');
-  cursorEl.style.cssText = [
-    'position:absolute',
-    'width:20px',
-    'height:20px',
-    'border-radius:50%',
-    'background:rgba(140,140,140,0.25)',
-    'border:1.5px solid rgba(100,100,100,0.55)',
-    'pointer-events:none',
-    'transform:translate(-50%,-50%)',
-    'z-index:1000',
-    'display:none',
-    'transition:opacity 0.1s',
-  ].join(';');
+  // Grey circle cursor — native OS cursor via SVG data URI. Hotspot at the
+  // center of the 24×24 SVG (12, 12). Updated by the compositor at hardware
+  // refresh rate without any JS or layout work per pointer move. Falls back to
+  // `auto` over child elements that set their own cursor (e.g. control buttons).
+  const CURSOR_SVG =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>" +
+      "<circle cx='12' cy='12' r='10' " +
+        "fill='%238c8c8c' fill-opacity='0.25' " +
+        "stroke='%23646464' stroke-opacity='0.55' stroke-width='1.5'/>" +
+    "</svg>";
   if (container) {
-    container.style.cursor = 'none';
-    container.appendChild(cursorEl);
+    container.style.cursor = `url("data:image/svg+xml;utf8,${CURSOR_SVG}") 12 12, auto`;
   }
-  mapInstance.on('mousemove', (e) => {
-    cursorEl.style.left = e.point.x + 'px';
-    cursorEl.style.top = e.point.y + 'px';
-    cursorEl.style.display = 'block';
-  });
-  mapInstance.on('mouseout', () => { cursorEl.style.display = 'none'; });
 
   return mapInstance;
 }
