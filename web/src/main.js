@@ -4,6 +4,7 @@ import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
 import { setLayer, setVariable, setColorScheme, getFeatureProperties, preloadAll } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
+import { initDiag } from './map/diag.js';
 import { initLegend, renderLegend } from './ui/legend.js';
 import { initSidebar, renderSidebar } from './ui/sidebar.js';
 import { initInfoPanel, showInfoPanel } from './ui/infoPanel.js';
@@ -19,6 +20,7 @@ async function main() {
   initPopup(config.variables, repData);
 
   createMap('main-map', config.theme);
+  initDiag();
 
   readFromUrl();
   const s0 = getState();
