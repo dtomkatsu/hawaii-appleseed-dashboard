@@ -32,11 +32,11 @@ import { getFeatureById } from './layerManager.js';
 export const SHADOW_LAYER_ID = 'selection-shadow';
 
 // Visual tuning knobs.
-const BLUR_RADIUS_PX = 12;
-const OFFSET_PX = [6, 8];
+const BLUR_RADIUS_PX = 18;
+const OFFSET_PX = [10, 16];
 const SHADOW_RGB = [0.0, 0.0, 0.0];
-const SHADOW_MAX_ALPHA = 0.55;
-const FADE_MS = 300;
+const SHADOW_MAX_ALPHA = 0.85;
+const FADE_MS = 140;
 const GEOM_CACHE_MAX = 32;
 // Render the blur FBOs at 1/SCALE per axis. The shadow is intentionally blurry,
 // so 2× downscale (4× fewer fragments) is visually indistinguishable but
@@ -269,10 +269,6 @@ class ShadowLayer {
     this.lastTs = null;
     this._rafId = null;
 
-    // Lazy add/remove.
-    this._keepAlive = false;    // true → onRemove keeps GL resources alive
-    this._needsRemoval = false; // true → remove from map after fade-out
-
     // Event listener refs.
     this._onResize = null;
     this._onContextLost = null;
@@ -329,13 +325,6 @@ class ShadowLayer {
   onRemove(map, gl) {
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
     this._detachListeners();
-
-    if (this._keepAlive) {
-      // Programmatic lazy removal — keep GL resources for next re-add.
-      this._keepAlive = false;
-      this.map = null;
-      return;
-    }
 
     // Full teardown.
     if (this.vao)        { gl.deleteVertexArray(this.vao); this.vao = null; }
@@ -397,14 +386,14 @@ class ShadowLayer {
 
   setFeature(level, feature) {
     if (!feature) {
+      // No-op if already idle — avoids tearing down the pre-warmed layer
+      // every time setLayer fires `setShadowFeature(level, null)` to clear
+      // any prior selection during a level switch.
+      if (this.opacity === 0 && this.targetOpacity === 0) return;
       this.targetOpacity = 0;
-      this._needsRemoval = true;
       this._startAnimationPump();
       return;
     }
-
-    // New selection cancels any in-flight removal.
-    this._needsRemoval = false;
 
     const id = String(feature.id ?? feature.properties?.GEOID ?? '');
     if (!id) return;
@@ -449,16 +438,12 @@ class ShadowLayer {
     if (this._rafId || !this.map) return;
     const tick = () => {
       this._rafId = null;
-      if (this.opacity === this.targetOpacity) {
-        // Settled. If fade-out just completed, lazily remove from map stack.
-        if (this._needsRemoval && this.opacity === 0
-            && this.map && this.map.getLayer(SHADOW_LAYER_ID)) {
-          this._needsRemoval = false;
-          this._keepAlive = true;
-          this.map.removeLayer(SHADOW_LAYER_ID);
-        }
-        return;
-      }
+      // Settled — just stop the pump. The layer stays in the map stack
+      // (pre-warmed at registration time) so shader/FBO state survives
+      // across selections without per-click add cost. prerender bails
+      // when opacity === targetOpacity === 0, so leaving the layer
+      // attached is free.
+      if (this.opacity === this.targetOpacity) return;
       this.map.triggerRepaint();
       this._rafId = requestAnimationFrame(tick);
     };
@@ -636,6 +621,21 @@ export function registerShadowLayer(map) {
   _map = map;
   if (!_instance) _instance = new ShadowLayer();
   return _instance;
+}
+
+// Pre-warm the GL resources by adding the (idle, opacity=0) layer to the map
+// stack now, so shader compile + FBO creation happens during level setup
+// rather than the first click — eliminating the visible appearance delay.
+// The prerender hook is a no-op while no feature is selected, so adding
+// early costs nothing per frame.
+export function prewarmShadowLayer(beforeLayerId) {
+  if (SHADOW_DISABLED || !_map || !_instance) return;
+  if (_map.getLayer(SHADOW_LAYER_ID)) return; // already added
+  if (beforeLayerId && _map.getLayer(beforeLayerId)) {
+    _map.addLayer(_instance, beforeLayerId);
+  } else {
+    _map.addLayer(_instance);
+  }
 }
 
 export function setShadowFeature(level, feature) {

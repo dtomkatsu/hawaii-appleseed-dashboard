@@ -2,7 +2,7 @@ import { getMap } from './mapInstance.js';
 import { getThresholds, getSchemeColors } from './colors.js';
 import { loadLayer } from '../data/loader.js';
 import { bindLayerInteraction, clearSelectedLayer } from './popup.js';
-import { registerShadowLayer, setShadowFeature, SHADOW_LAYER_ID } from './shadowLayer.js';
+import { registerShadowLayer, prewarmShadowLayer, setShadowFeature, SHADOW_LAYER_ID } from './shadowLayer.js';
 import { FLAGS } from './perfFlags.js';
 
 // When ?notrans=1 strip the 300ms opacity transitions; when ?nofade=1 also
@@ -25,9 +25,13 @@ const FADE_MS = 300;
 const pendingHide = new Map(); // level → setTimeout id
 
 // Opacity expressions as constants so fade-in can restore them after zeroing out.
+// 0.75 idle → 0.92 on hover → 1.0 when selected. Combined with the
+// fill-opacity-transition (300ms) this gives a soft "brighten" feel when the
+// cursor enters a geo — no extra layer needed.
 const FILL_OPACITY_EXPR = [
   'case',
   ['boolean', ['feature-state', 'selected'], false], 1.0,
+  ['boolean', ['feature-state', 'hover'], false], 0.92,
   0.75,
 ];
 
@@ -140,25 +144,29 @@ function ensureSourceAndLayers(map, level, data) {
     },
   });
 
-  // Selected: strong inner outline.
+  // Selected: thin, soft inner outline. Kept subtle so the drop shadow
+  // does the heavy visual lifting and the polygon "lifts off" the map
+  // without a heavy black border competing for attention.
   map.addLayer({
     id: `${level}-selected`,
     type: 'line',
     source: level,
     layout: { visibility: 'none' },
     paint: {
-      'line-color': '#222222',
+      'line-color': '#333333',
       'line-width': [
         'case',
-        ['boolean', ['feature-state', 'selected'], false], 2.5,
+        ['boolean', ['feature-state', 'selected'], false], 1.25,
         0,
       ],
-      'line-opacity': 0.9,
+      'line-opacity': 0.5,
       ...LINE_TRANSITION_PAINT,
     },
   });
 
-  // Hover: thin dark inner ring on hover, suppressed when selected.
+  // Hover: thin, light inner ring + opacity bump on the fill (see
+  // FILL_OPACITY_EXPR). Suppressed when selected so the selection
+  // outline doesn't fight a hover ring.
   map.addLayer({
     id: `${level}-hover`,
     type: 'line',
@@ -171,10 +179,10 @@ function ensureSourceAndLayers(map, level, data) {
         ['all',
           ['boolean', ['feature-state', 'hover'], false],
           ['!', ['boolean', ['feature-state', 'selected'], false]],
-        ], 2,
+        ], 1.25,
         0,
       ],
-      'line-opacity': 0.6,
+      'line-opacity': 0.45,
       ...LINE_TRANSITION_PAINT,
     },
   });
@@ -189,9 +197,9 @@ function restoreTargetOpacities(map, level) {
   if (map.getLayer(`${level}-line`))
     map.setPaintProperty(`${level}-line`, 'line-opacity', 1);
   if (map.getLayer(`${level}-selected`))
-    map.setPaintProperty(`${level}-selected`, 'line-opacity', 0.9);
+    map.setPaintProperty(`${level}-selected`, 'line-opacity', 0.5);
   if (map.getLayer(`${level}-hover`))
-    map.setPaintProperty(`${level}-hover`, 'line-opacity', 0.6);
+    map.setPaintProperty(`${level}-hover`, 'line-opacity', 0.45);
 }
 
 function fadeInLevel(map, level) {
@@ -250,10 +258,12 @@ export async function setLayer(level) {
   const apply = () => {
     ensureSourceAndLayers(map, level, cachedGeoJson.get(level));
 
-    // Register the global shadow layer (idempotent) and keep it strictly
+    // Register the global shadow layer (idempotent) and pre-warm it so the
+    // first click has no shader-compile / FBO-create delay. Keep it strictly
     // below the active level's colored fill so the shadow renders under
     // the polygon body.
     registerShadowLayer(map);
+    prewarmShadowLayer(`${level}-fill`);
     if (map.getLayer(SHADOW_LAYER_ID) && map.getLayer(`${level}-fill`)) {
       map.moveLayer(SHADOW_LAYER_ID, `${level}-fill`);
     }
