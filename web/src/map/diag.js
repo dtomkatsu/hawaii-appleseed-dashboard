@@ -113,7 +113,10 @@ function dump() {
 }
 
 export function initDiag() {
-  if (typeof window === 'undefined' || !import.meta.env?.DEV) return;
+  if (typeof window === 'undefined') return;
+  // Opt-in only (?diag=1). The capture-phase mousemove listener and continuous
+  // rAF FPS sampler add measurable per-frame work that we don't want on by
+  // default — even in dev.
   startFps();
   attachMouseMoveCounter();
   // Map may not exist yet — poll briefly.

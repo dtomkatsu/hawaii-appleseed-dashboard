@@ -2,7 +2,7 @@ import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
-import { setLayer, setVariable, setColorScheme, getFeatureProperties, preloadAll } from './map/layerManager.js';
+import { setLayer, setVariable, setColorScheme, getFeatureProperties } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
 import { initDiag } from './map/diag.js';
 import { initLegend, renderLegend } from './ui/legend.js';
@@ -20,7 +20,11 @@ async function main() {
   initPopup(config.variables, repData);
 
   createMap('main-map', config.theme);
-  initDiag();
+  // Diagnostics are opt-in via URL param (?diag=1) to avoid an always-on
+  // capture-phase mousemove listener + perpetual rAF FPS sampler.
+  if (typeof window !== 'undefined' && /[?&]diag=1\b/.test(window.location.search)) {
+    initDiag();
+  }
 
   readFromUrl();
   const s0 = getState();
@@ -58,8 +62,9 @@ async function main() {
   renderSidebar();
   writeToUrl();
 
-  // Preload remaining layers in the background so subsequent switches are instant.
-  preloadAll();
+  // No background preload: it was causing main-thread contention (worker tile
+  // messages during user interaction → micro-stutters). Layers load on-demand
+  // when the user switches; the network fetch is fast enough.
 
   // Update tab text nodes from ui_strings.json (preserves SVG icon child nodes)
   const tabs = config.uiStrings?.tabs || {};

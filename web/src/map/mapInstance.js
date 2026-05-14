@@ -63,7 +63,6 @@ export function createMap(containerId, theme) {
     dragRotate: false,
     pitchWithRotate: false,
     touchZoomRotate: true,
-    pixelRatio: Math.min(window.devicePixelRatio ?? 1, 1.5),
   });
   mapInstance.touchZoomRotate?.disableRotation();
 
