@@ -36,7 +36,12 @@ const BLUR_RADIUS_PX = 18;
 const OFFSET_PX = [10, 16];
 const SHADOW_RGB = [0.0, 0.0, 0.0];
 const SHADOW_MAX_ALPHA = 0.85;
-const FADE_MS = 140;
+// Asymmetric fade: snap-on (0ms) so the shadow lands the moment you
+// click — the pre-warmed layer is ready immediately, no reason to
+// stall it behind a fade-in. Fade-off (180ms) is graceful so deselects
+// don't pop.
+const FADE_IN_MS = 0;
+const FADE_OUT_MS = 180;
 const GEOM_CACHE_MAX = 32;
 // Render the blur FBOs at 1/SCALE per axis. The shadow is intentionally blurry,
 // so 2× downscale (4× fewer fragments) is visually indistinguishable but
@@ -427,7 +432,16 @@ class ShadowLayer {
     this.currentId = id;
     this.currentGeom = g;
     this.targetOpacity = 1;
-    this._startAnimationPump();
+    if (FADE_IN_MS <= 0) {
+      // Instant: snap to full opacity right now and force the very next
+      // frame to paint the shadow. Skips the ~2-rAF gap incurred by the
+      // animation pump (rAF → tick → triggerRepaint → render).
+      this.opacity = 1;
+      this.lastTs = null;
+      if (this.map) this.map.triggerRepaint();
+    } else {
+      this._startAnimationPump();
+    }
   }
 
   // ── Animation pump ────────────────────────────────────────────────────────
@@ -456,7 +470,12 @@ class ShadowLayer {
     const dt = this.lastTs ? Math.min(now - this.lastTs, 50) : 16;
     this.lastTs = now;
     const dir = Math.sign(this.targetOpacity - this.opacity);
-    this.opacity = Math.max(0, Math.min(1, this.opacity + dir * dt / FADE_MS));
+    const fadeMs = dir > 0 ? FADE_IN_MS : FADE_OUT_MS;
+    if (fadeMs <= 0) {
+      this.opacity = this.targetOpacity;
+    } else {
+      this.opacity = Math.max(0, Math.min(1, this.opacity + dir * dt / fadeMs));
+    }
     // Note: do NOT triggerRepaint() from here. Repaints fired inside render()
     // are coalesced/dropped by MapLibre; _startAnimationPump's external rAF
     // loop drives the fade reliably.
