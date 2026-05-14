@@ -640,11 +640,7 @@ body {
      the panel's left edge. */
   right: 360px;
 }
-/* MapLibre canvas + container: transparent background only.
-   Cursor is set via JS (mapInstance.js) using a native CSS url() cursor —
-   the old `cursor: none` rules were removed when the fake-DOM-cursor was
-   retired. Leaving them in caused the new SVG cursor to flicker off over
-   non-canvas children of .maplibregl-map and induced compositor churn. */
+/* MapLibre canvas + container: transparent background. Default OS cursor. */
 .maplibregl-map,
 .maplibregl-canvas-container,
 .maplibregl-canvas {
