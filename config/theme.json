@@ -45,7 +45,7 @@
     "zoom_animation_threshold": 4,
     "smooth_sensitivity": 2.2,
     "smooth_pinch_sensitivity": 0.025,
-    "fade_animation": true,
+    "fade_animation": false,
     "marker_zoom_animation": true,
     "container_height": "70vh",
     "container_min_height": "500px",
