@@ -571,6 +571,7 @@ body {
   background: white;
   flex: 1;
   min-height: 0;
+  max-height: clamp(400px, 58vh, 620px);
 }
 .map-container {
   width: 100%;

@@ -38,8 +38,8 @@
   },
 
   "map": {
-    "center": [20.7984, -156.3319],
-    "zoom": 7,
+    "center": [20.65, -157.65],
+    "zoom": 6.8,
     "zoom_snap": 0,
     "zoom_delta": 0.5,
     "zoom_animation_threshold": 4,

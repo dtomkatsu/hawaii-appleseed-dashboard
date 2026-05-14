@@ -39,9 +39,9 @@ export function createMap(containerId, theme) {
 
   const mapCfg = (theme && theme.map) || {};
   // theme.json stores center as [lat, lng] (Leaflet order). MapLibre wants [lng, lat].
-  const themeCenter = mapCfg.center || [20.7984, -156.3319];
+  const themeCenter = mapCfg.center || [20.65, -157.65];
   const center = [themeCenter[1], themeCenter[0]];
-  const zoom = mapCfg.zoom || 7;
+  const zoom = mapCfg.zoom || 6.8;
   const background = (theme && theme.background) || '#fcfcf9';
 
   const container = document.getElementById(containerId);
