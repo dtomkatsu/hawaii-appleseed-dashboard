@@ -618,22 +618,21 @@ class ShadowLayer {
 let _instance = null;
 let _map = null;
 
-// The custom WebGL drop-shadow is disabled by default. Stress testing
-// (web/src/map/diag.js + /tmp/diag-test/run-stress.js) showed it produces
-// occasional 30+ms long frames when the layer is in the map stack during
-// pan/wheel-zoom, even with the isMoving() prerender bail. With the layer
-// force-removed, 32,000+ frames during sustained interaction = 0 long frames.
+// The custom WebGL drop-shadow is enabled by default. It can be force-
+// disabled with `?noshadow=1` for A/B testing or as an escape hatch.
 //
-// Opt-in via `?shadow=1` (dev/testing) until a non-stuttering implementation
-// is built (e.g. baking the shadow once into a static texture, or moving the
-// entire pipeline off the prerender hook).
-const SHADOW_ENABLED =
-  typeof window !== 'undefined' && /[?&]shadow=1\b/.test(window.location.search);
+// Earlier in development the layer was thought to cause pan/zoom jank,
+// but the actual culprit turned out to be MapLibre's built-in wheel-zoom
+// handler (see web/src/map/smoothWheelZoom.js). With the wheel handler
+// replaced and the prerender's isMoving() bail in place, the shadow no
+// longer introduces measurable stutter.
+const SHADOW_DISABLED =
+  typeof window !== 'undefined' && /[?&]noshadow=1\b/.test(window.location.search);
 
 // Store the map reference and create the layer instance. Does NOT immediately
 // add the layer to the map stack — that happens lazily in setShadowFeature.
 export function registerShadowLayer(map) {
-  if (!map || !SHADOW_ENABLED) return;
+  if (!map || SHADOW_DISABLED) return;
   _map = map;
   if (!_instance) _instance = new ShadowLayer();
   return _instance;
