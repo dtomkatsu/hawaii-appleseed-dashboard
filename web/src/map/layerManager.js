@@ -3,6 +3,16 @@ import { getThresholds, getSchemeColors } from './colors.js';
 import { loadLayer } from '../data/loader.js';
 import { bindLayerInteraction, clearSelectedLayer } from './popup.js';
 import { registerShadowLayer, setShadowFeature, SHADOW_LAYER_ID } from './shadowLayer.js';
+import { FLAGS } from './perfFlags.js';
+
+// When ?notrans=1 strip the 300ms opacity transitions; when ?nofade=1 also
+// skip the layer-switch fade-in/fade-out animation.
+const TRANSITION_PAINT = FLAGS.noTransitions
+  ? {}
+  : { 'fill-opacity-transition': { duration: 300, delay: 0 } };
+const LINE_TRANSITION_PAINT = FLAGS.noTransitions
+  ? {}
+  : { 'line-opacity-transition': { duration: 300, delay: 0 } };
 
 const LEVELS = ['state', 'county', 'house', 'senate'];
 const cachedGeoJson = new Map();
@@ -112,7 +122,7 @@ function ensureSourceAndLayers(map, level, data) {
     paint: {
       'fill-color': '#cccccc',
       'fill-opacity': FILL_OPACITY_EXPR,
-      'fill-opacity-transition': { duration: FADE_MS, delay: 0 },
+      ...TRANSITION_PAINT,
     },
   });
 
@@ -126,7 +136,7 @@ function ensureSourceAndLayers(map, level, data) {
       'line-color': '#aaaaaa',
       'line-width': 1,
       'line-opacity': 1,
-      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
+      ...LINE_TRANSITION_PAINT,
     },
   });
 
@@ -144,7 +154,7 @@ function ensureSourceAndLayers(map, level, data) {
         0,
       ],
       'line-opacity': 0.9,
-      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
+      ...LINE_TRANSITION_PAINT,
     },
   });
 
@@ -165,11 +175,11 @@ function ensureSourceAndLayers(map, level, data) {
         0,
       ],
       'line-opacity': 0.6,
-      'line-opacity-transition': { duration: FADE_MS, delay: 0 },
+      ...LINE_TRANSITION_PAINT,
     },
   });
 
-  bindLayerInteraction(map, level);
+  if (!FLAGS.noHover) bindLayerInteraction(map, level);
   registeredLevels.add(level);
 }
 

@@ -1,3 +1,4 @@
+import './map/perfFlags.js'; // must be first — applies CSS kills before paint
 import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';

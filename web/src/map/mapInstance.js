@@ -1,5 +1,7 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { FLAGS } from './perfFlags.js';
+import { installSmoothWheelZoom } from './smoothWheelZoom.js';
 
 let mapInstance = null;
 
@@ -45,7 +47,7 @@ export function createMap(containerId, theme) {
   const container = document.getElementById(containerId);
   if (container) container.style.backgroundColor = 'white';
 
-  mapInstance = new maplibregl.Map({
+  const mapOpts = {
     container: containerId,
     style: {
       version: 8,
@@ -63,11 +65,25 @@ export function createMap(containerId, theme) {
     dragRotate: false,
     pitchWithRotate: false,
     touchZoomRotate: true,
-  });
+  };
+  if (FLAGS.lowDpr != null && !Number.isNaN(FLAGS.lowDpr)) {
+    mapOpts.pixelRatio = FLAGS.lowDpr;
+  }
+  mapInstance = new maplibregl.Map(mapOpts);
   mapInstance.touchZoomRotate?.disableRotation();
 
-  mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), 'top-left');
-  mapInstance.addControl(new ResetControl(center, zoom), 'top-left');
+  if (!FLAGS.noNav) {
+    mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), 'top-left');
+    mapInstance.addControl(new ResetControl(center, zoom), 'top-left');
+  }
+
+  // Replace MapLibre's built-in wheel-zoom handler with a custom rAF-driven
+  // one that produces 0% zoom-progression stalls (the built-in handler
+  // stalls every ~3rd frame during continuous wheel input). Opt out with
+  // ?stock=1 for A/B testing.
+  if (!FLAGS.stockWheelZoom) {
+    installSmoothWheelZoom(mapInstance);
+  }
 
   // Dev only: expose the map on window for in-browser debugging.
   if (typeof window !== 'undefined' && import.meta.env?.DEV) window.__map = mapInstance;
