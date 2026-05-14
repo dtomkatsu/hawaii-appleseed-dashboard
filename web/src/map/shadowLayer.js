@@ -494,14 +494,13 @@ class ShadowLayer {
     if (this.targetOpacity === 0 && this.opacity === 0) return;
     if (!this.currentGeom || !this.fboA || !this.fboB) return;
 
-    // Skip the (expensive) 3-pass mask+blur rebuild while the camera is
-    // animating (pan / wheel-zoom / fitBounds easing). MapLibre fires render
-    // ticks every frame during isMoving(), and at high zoom the mask draw
-    // can hit non-deterministic spikes that produce 100-500ms long frames.
-    // We omit `render` too (see below) so the shadow simply disappears during
-    // motion and reappears as soon as the camera settles — a much better
-    // perceptual trade than a stuttering pan.
-    if (this.map && this.map.isMoving && this.map.isMoving()) return;
+    // Note: previously we bailed when `map.isMoving()` returned true to dodge
+    // pan/zoom stutter. That bail also fired during the post-click fitBounds
+    // animation, making the shadow invisible for ~600ms — exactly when the
+    // user wants to see their selection confirmed. With smoothWheelZoom in
+    // place and the layer pre-warmed, the 3-pass pipeline (~5-8ms typical)
+    // fits in frame budget. If a specific motion path turns out to stutter,
+    // narrow the bail there rather than globally.
 
     // Bind our own VAO so our vertex attrib mutations stay isolated from
     // MapLibre's VAOs. MapLibre always rebinds before its own draws, so
@@ -571,11 +570,8 @@ class ShadowLayer {
     if (this.opacity === 0 && this.targetOpacity === 0) return;
     if (!this.currentGeom || !this.fboA) return;
 
-    // Companion to the prerender skip-while-moving: the cached FBO_A holds
-    // the shadow texture baked at the *previous* camera pose; compositing it
-    // at the new pose would draw the shadow at the wrong location. Easier to
-    // omit the composite entirely until the camera stops.
-    if (this.map && this.map.isMoving && this.map.isMoving()) return;
+    // No isMoving bail here — see matching comment in prerender(). The shadow
+    // now follows the camera throughout pan/zoom/fitBounds animations.
 
     const finalOpacity = eased * SHADOW_MAX_ALPHA;
     if (finalOpacity <= 0.001) return;
