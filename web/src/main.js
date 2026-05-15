@@ -79,14 +79,27 @@ async function main() {
   setTabText(document.querySelector('.main-tab[data-tab="map"]'), tabs.map);
   setTabText(document.querySelector('.main-tab[data-tab="data"]'), tabs.data);
 
-  // "Open" button: always visible in the controls-bar top-right.
-  // Opens the same URL (preserving hash state) in a new top-level tab.
-  const fsBtn = document.getElementById('fullscreen-btn');
-  if (fsBtn) {
-    fsBtn.hidden = false;
-    fsBtn.addEventListener('click', () => {
-      window.open(window.location.href, '_blank', 'noopener');
-    });
+  // "Open" button: only visible when embedded in an iframe.
+  // Click opens the same URL (preserving hash state) in a new top-level tab.
+  try {
+    const isEmbedded = window.self !== window.top;
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn && isEmbedded) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', () => {
+        window.open(window.location.href, '_blank', 'noopener');
+      });
+    }
+  } catch (_) {
+    // Cross-origin frame access throws — in that case we are embedded,
+    // so still show the button.
+    const fsBtn = document.getElementById('fullscreen-btn');
+    if (fsBtn) {
+      fsBtn.hidden = false;
+      fsBtn.addEventListener('click', () => {
+        window.open(window.location.href, '_blank', 'noopener');
+      });
+    }
   }
 
   // Tab switching
