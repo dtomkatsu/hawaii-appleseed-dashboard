@@ -84,26 +84,25 @@ body {
   overflow: hidden;
 }
 
-/* ========== "Open" button (only visible when embedded in iframe) ========== */
+/* ========== "Open" button — floats over top-right of controls-bar ========== */
 .fullscreen-btn {
   position: absolute;
-  top: 50%;
-  right: 16px;
-  transform: translateY(-50%);
-  z-index: 10;
+  top: 12px;
+  right: 18px;
+  z-index: 1200; /* above controls-bar (1100) */
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 12px 6px 10px;
-  border: 1px solid rgba(107, 158, 120, 0.45);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 5px 11px 5px 9px;
+  border: 1px solid rgba(107, 158, 120, 0.35);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72);
   color: #2a5a0c;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.09);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
@@ -168,6 +167,7 @@ body {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  position: relative; /* anchor for .fullscreen-btn */
 }
 
 #tab-data {
@@ -573,12 +573,6 @@ body {
   background: white;
   flex: 1;
   min-height: 0;
-  max-height: 62vh; /* cap so map doesn't fill the entire tall viewport */
-}
-@media (max-width: 960px) {
-  /* On narrow windows the viewport is already height-constrained;
-     let the map fill the remaining space naturally. */
-  .map-wrap { max-height: none; }
 }
 .map-container {
   width: 100%;
@@ -716,6 +710,9 @@ body {
   z-index: 1000;
   min-width: 110px;
   max-width: 144px;
+  max-height: calc(100% - 210px); /* keep clear of zoom/reset controls (~150px from top) */
+  overflow-y: auto;
+  scrollbar-width: thin;
   font-size: 12px;
   /* Liquid-glass panel filter (whole-element, refracts at all four
      rims) + glass-clarity color stack. Replaces the prior plain
