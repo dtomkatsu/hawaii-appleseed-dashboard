@@ -92,24 +92,34 @@ body {
   z-index: 1200; /* above controls-bar (1100) */
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 11px 5px 9px;
-  border: 1px solid rgba(107, 158, 120, 0.35);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 8px;
+  padding: 9px 18px 9px 15px;
+  border: 1.5px solid rgba(58, 119, 16, 0.55);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: #2a5a0c;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   white-space: nowrap;
 }
+.fullscreen-btn svg {
+  width: 17px;
+  height: 17px;
+}
 .fullscreen-btn:hover {
-  background: #3a7710;
+  background: rgba(58, 119, 16, 0.95);
   color: #fff;
   border-color: #3a7710;
+}
+.fullscreen-btn:active {
+  transform: translateY(1px);
 }
 .fullscreen-btn:focus-visible {
   outline: 2px solid #6B9E78;
