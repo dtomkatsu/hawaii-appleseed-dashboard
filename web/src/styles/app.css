@@ -574,6 +574,11 @@ body {
   flex: 1;
   min-height: 0;
 }
+/* When embedded in an iframe the 100dvh body can be very tall (e.g. 900px).
+   Cap the map so the controls + map don't feel stretched out. */
+.is-embedded .map-wrap {
+  max-height: 60vh;
+}
 .map-container {
   width: 100%;
   height: 100%;
