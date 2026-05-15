@@ -79,6 +79,14 @@ async function main() {
   setTabText(document.querySelector('.main-tab[data-tab="map"]'), tabs.map);
   setTabText(document.querySelector('.main-tab[data-tab="data"]'), tabs.data);
 
+  // "Open in new tab" button — always visible on the map overlay.
+  const openBtn = document.getElementById('open-in-tab-btn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      window.open(window.location.href, '_blank', 'noopener');
+    });
+  }
+
   // Full Screen button: only visible when embedded in an iframe.
   // Click opens the same URL (preserving hash state) in a new top-level tab.
   try {

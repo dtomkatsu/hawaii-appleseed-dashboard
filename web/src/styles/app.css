@@ -691,10 +691,45 @@ body {
   background: #f4f4f4;
 }
 
+/* Open-in-new-tab button — always-visible overlay, top-right of map.
+   Sits at z-index 600 alongside MapLibre's native controls (zoom, reset
+   are top-left; this lives top-right so there's no collision). */
+.open-in-tab-btn {
+  position: absolute;
+  top: 48px; /* below the 42px glass top-strip */
+  right: 10px;
+  z-index: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10), 0 0 0 0.5px rgba(0,0,0,0.05);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2a3a2a;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  line-height: 1;
+}
+.open-in-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--primary-dark);
+}
+.open-in-tab-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .map-legend {
   position: absolute;
   bottom: 20px;
-  left: 20px;
+  right: 20px;  /* moved from left: 20px → right side, away from top-left zoom controls */
   /* Lower bg alpha than before (0.72 → 0.55) so the underlying
      refraction reads through the panel — text stays readable thanks
      to the legend's own internal text contrast on the map. */
@@ -961,6 +996,15 @@ body {
 .map-wrap:has(.info-panel.visible) .info-panel-glass-rim {
   visibility: visible;
   transform: translateX(0);
+}
+
+/* Legend and Open button share the right side with the info-panel.
+   Fade them out while the panel is open so they don't compete for space. */
+.map-wrap:has(.info-panel.visible) .map-legend,
+.map-wrap:has(.info-panel.visible) .open-in-tab-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 .info-panel .ip-header {
