@@ -1,0 +1,785 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.858,
+          21.307
+        ]
+      },
+      "properties": {
+        "city": "Honolulu",
+        "county": "Honolulu",
+        "millionaire_count": 157
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.45,
+          20.762
+        ]
+      },
+      "properties": {
+        "city": "Kihei",
+        "county": "Maui",
+        "millionaire_count": 85
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.996,
+          19.64
+        ]
+      },
+      "properties": {
+        "city": "Kailua-Kona",
+        "county": "Hawaiʻi",
+        "millionaire_count": 74
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.677,
+          20.875
+        ]
+      },
+      "properties": {
+        "city": "Lahaina",
+        "county": "Maui",
+        "millionaire_count": 60
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.668,
+          20.027
+        ]
+      },
+      "properties": {
+        "city": "Kamuela",
+        "county": "Hawaiʻi",
+        "millionaire_count": 34
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.948,
+          19.621
+        ]
+      },
+      "properties": {
+        "city": "Holualoa",
+        "county": "Hawaiʻi",
+        "millionaire_count": 18
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.74,
+          21.392
+        ]
+      },
+      "properties": {
+        "city": "Kailua",
+        "county": "Honolulu",
+        "millionaire_count": 16
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.467,
+          21.906
+        ]
+      },
+      "properties": {
+        "city": "Koloa",
+        "county": "Kauaʻi",
+        "millionaire_count": 15
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.404,
+          22.211
+        ]
+      },
+      "properties": {
+        "city": "Kilauea",
+        "county": "Kauaʻi",
+        "millionaire_count": 12
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.343,
+          20.789
+        ]
+      },
+      "properties": {
+        "city": "Kula",
+        "county": "Maui",
+        "millionaire_count": 9
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.371,
+          20.902
+        ]
+      },
+      "properties": {
+        "city": "Paʻia",
+        "county": "Maui",
+        "millionaire_count": 8
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.499,
+          22.207
+        ]
+      },
+      "properties": {
+        "city": "Hanalei",
+        "county": "Kauaʻi",
+        "millionaire_count": 7
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.103,
+          21.594
+        ]
+      },
+      "properties": {
+        "city": "Haleʻiwa",
+        "county": "Honolulu",
+        "millionaire_count": 6
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.799,
+          21.402
+        ]
+      },
+      "properties": {
+        "city": "Kaneʻohe",
+        "county": "Honolulu",
+        "millionaire_count": 6
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.487,
+          22.22
+        ]
+      },
+      "properties": {
+        "city": "Princeville",
+        "county": "Kauaʻi",
+        "millionaire_count": 5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.319,
+          22.075
+        ]
+      },
+      "properties": {
+        "city": "Kapaʻa",
+        "county": "Kauaʻi",
+        "millionaire_count": 4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.475,
+          20.89
+        ]
+      },
+      "properties": {
+        "city": "Kahului",
+        "county": "Maui",
+        "millionaire_count": 4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.952,
+          21.681
+        ]
+      },
+      "properties": {
+        "city": "Kahuku",
+        "county": "Honolulu",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.058,
+          21.336
+        ]
+      },
+      "properties": {
+        "city": "Kapolei",
+        "county": "Honolulu",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.789,
+          19.927
+        ]
+      },
+      "properties": {
+        "city": "Waikoloa",
+        "county": "Hawaiʻi",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.085,
+          19.703
+        ]
+      },
+      "properties": {
+        "city": "Hilo",
+        "county": "Hawaiʻi",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.918,
+          20.827
+        ]
+      },
+      "properties": {
+        "city": "Lanaʻi City",
+        "county": "Maui",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.928,
+          19.522
+        ]
+      },
+      "properties": {
+        "city": "Kealakekua",
+        "county": "Hawaiʻi",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.834,
+          20.241
+        ]
+      },
+      "properties": {
+        "city": "Hawi",
+        "county": "Hawaiʻi",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.317,
+          20.916
+        ]
+      },
+      "properties": {
+        "city": "Haʻiku",
+        "county": "Maui",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.443,
+          20.687
+        ]
+      },
+      "properties": {
+        "city": "Wailea",
+        "county": "Maui",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.475,
+          20.89
+        ]
+      },
+      "properties": {
+        "city": "Maui",
+        "county": "Maui",
+        "millionaire_count": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.024,
+          21.094
+        ]
+      },
+      "properties": {
+        "city": "Kaunakakai",
+        "county": "Maui",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.529,
+          21.927
+        ]
+      },
+      "properties": {
+        "city": "Kalaheo",
+        "county": "Kauaʻi",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.314,
+          20.857
+        ]
+      },
+      "properties": {
+        "city": "Makawao",
+        "county": "Maui",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.928,
+          21.645
+        ]
+      },
+      "properties": {
+        "city": "Laʻie",
+        "county": "Honolulu",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.314,
+          22.143
+        ]
+      },
+      "properties": {
+        "city": "Anahola",
+        "county": "Kauaʻi",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.182,
+          21.443
+        ]
+      },
+      "properties": {
+        "city": "Waiʻanae",
+        "county": "Honolulu",
+        "millionaire_count": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.007,
+          21.316
+        ]
+      },
+      "properties": {
+        "city": "ʻEwa Beach",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.918,
+          20.827
+        ]
+      },
+      "properties": {
+        "city": "Lanaʻi",
+        "county": "Maui",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.934,
+          21.382
+        ]
+      },
+      "properties": {
+        "city": "ʻAiea",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.985,
+          19.832
+        ]
+      },
+      "properties": {
+        "city": "Kukiʻo",
+        "county": "Hawaiʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.711,
+          21.974
+        ]
+      },
+      "properties": {
+        "city": "Kekaha",
+        "county": "Kauaʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.131,
+          21.577
+        ]
+      },
+      "properties": {
+        "city": "Waialua",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.301,
+          22.118
+        ]
+      },
+      "properties": {
+        "city": "Kealia",
+        "county": "Kauaʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.009,
+          21.387
+        ]
+      },
+      "properties": {
+        "city": "Waipahu",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.38,
+          22.18
+        ]
+      },
+      "properties": {
+        "city": "Koʻolau Ranch",
+        "county": "Kauaʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.972,
+          19.832
+        ]
+      },
+      "properties": {
+        "city": "Kaʻupulehu",
+        "county": "Hawaiʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.106,
+          19.838
+        ]
+      },
+      "properties": {
+        "city": "Pepeʻekeo",
+        "county": "Hawaiʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.799,
+          20.232
+        ]
+      },
+      "properties": {
+        "city": "Kapaʻau",
+        "county": "Hawaiʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.504,
+          20.89
+        ]
+      },
+      "properties": {
+        "city": "Wailuku",
+        "county": "Maui",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.961,
+          21.451
+        ]
+      },
+      "properties": {
+        "city": "Mililani",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.722,
+          21.336
+        ]
+      },
+      "properties": {
+        "city": "Waimanalo",
+        "county": "Honolulu",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.668,
+          21.957
+        ]
+      },
+      "properties": {
+        "city": "Waimea",
+        "county": "Kauaʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.991,
+          20.76
+        ]
+      },
+      "properties": {
+        "city": "Hana",
+        "county": "Maui",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -154.946,
+          19.493
+        ]
+      },
+      "properties": {
+        "city": "Pahoa",
+        "county": "Hawaiʻi",
+        "millionaire_count": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -157.094,
+          21.169
+        ]
+      },
+      "properties": {
+        "city": "Hoʻolehua",
+        "county": "Maui",
+        "millionaire_count": 1
+      }
+    }
+  ]
+}
