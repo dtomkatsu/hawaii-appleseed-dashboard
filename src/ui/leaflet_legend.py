@@ -90,6 +90,15 @@ const legendManager = {
                     : '$' + (from/1000000).toFixed(1) + 'M-' + (grades[i+1]/1000000).toFixed(1) + 'M';
                 labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 15px; height: 15px; margin-right: 5px; display: inline-block; border: 1px solid #666;"></i>' + range + '</div>');
             }
+        } else if (SELECTED_VARIABLE === 'millionaires') {
+            // Marker-count thresholds (count of millionaires per town).
+            grades = [1, 3, 5, 10, 25, 50, 75, 100, 150];
+            for (let i = 0; i < grades.length; i++) {
+                const from = grades[i];
+                const isLast = i === grades.length - 1;
+                const range = isLast ? from + '+' : from + '-' + (grades[i+1] - 1);
+                labels.push('<div class="legend-item"><i style="background:' + colors[i] + '; width: 14px; height: 14px; margin-right: 6px; display: inline-block; border-radius: 50%; border: 1px solid #1f2d3d;"></i>' + range + '</div>');
+            }
         } else if (SELECTED_VARIABLE.includes('poverty') || SELECTED_VARIABLE.includes('rate')) {
             grades = [5, 10, 15, 20, 25, 30, 35, 40, 45];
             for (let i = 0; i < grades.length; i++) {

@@ -351,7 +351,7 @@ class LeafletMapComponent:
 
     def _get_javascript_code(self, map_id: str, geojson_str: str, selected_variable: str,
                            variable_display_name: str, color_scheme: str, show_side_panel: bool = True,
-                           rep_data_json: str = "{}") -> str:
+                           rep_data_json: str = "{}", points_data_json: str = "null") -> str:
         """Generate JavaScript code for the map.
 
         The JS is composed from _get_js_config (constants) plus the main body
@@ -361,6 +361,9 @@ class LeafletMapComponent:
         return f"""
         (function() {{
             {js_config}
+
+            // City-point payload (e.g. Millionaires layer). Null for choropleth-only variables.
+            const POINTS_DATA = {points_data_json};
             
             // Utility functions
             const utils = {{
@@ -974,9 +977,93 @@ class LeafletMapComponent:
                 style: mapHandlers.style,
                 onEachFeature: mapHandlers.onEachFeature
             }}).addTo(map);
-            
+
             map.fitBounds(geoJsonLayer.getBounds(), {{ animate: false }});
             console.log('AFTER fitBounds zoom:', map.getZoom());
+
+            // ── City-point overlay (e.g. Millionaires) ──────────────────
+            // When POINTS_DATA is provided, suppress the choropleth fill +
+            // interactivity and draw circle markers per town instead. Marker
+            // radius scales with count via a sqrt curve so a 150-millionaire
+            // city doesn't dwarf a 1-millionaire one beyond readability.
+            let pointsLayer = null;
+            if (POINTS_DATA !== null && Array.isArray(POINTS_DATA) && POINTS_DATA.length > 0) {{
+                // Mute the choropleth (no per-county color), but keep a clearly
+                // visible island fill so users can still recognize the geography
+                // under the markers — this map has no tile basemap.
+                geoJsonLayer.setStyle({{
+                    fillColor: '#b8cdaf',
+                    fillOpacity: 1.0,
+                    color: '#5c7757',
+                    opacity: 1.0,
+                    weight: 1.5
+                }});
+                // Disable pointer events on each choropleth path so clicks
+                // pass through to the markers (or the map background).
+                geoJsonLayer.eachLayer(function(l) {{
+                    if (l._path) {{ l._path.style.pointerEvents = 'none'; }}
+                    if (l.unbindTooltip) {{ l.unbindTooltip(); }}
+                    if (l.unbindPopup) {{ l.unbindPopup(); }}
+                    if (l.off) {{ l.off(); }}
+                }});
+
+                // Marker radius scales with count (sqrt curve) AND with zoom
+                // level. circleMarker is screen-space, so without the zoom
+                // boost, single-millionaire dots stay 5px no matter how far
+                // the user zooms in — practically invisible on a zoomed island.
+                // The boost lifts the minimum (and the whole scale) as zoom
+                // grows past the fit-to-bounds zoom (~7), capped so a high-
+                // count marker never dwarfs a zoomed-in town.
+                function computeMarkerRadius(count, zoom) {{
+                    const base = Math.max(5, Math.min(20, 3 + Math.sqrt(count) * 1.4));
+                    const zoomBoost = 1 + Math.max(0, zoom - 7) * 0.28;
+                    return Math.min(32, base * zoomBoost);
+                }}
+
+                pointsLayer = L.featureGroup();
+                POINTS_DATA.forEach(function(p) {{
+                    const count = Number(p.millionaire_count) || 0;
+                    const fillColor = utils.getColorForValue(count);
+                    const marker = L.circleMarker([p.lat, p.lon], {{
+                        // Initial radius assumes the fit-to-bounds zoom (~7);
+                        // the zoomend handler below will correct after fitBounds.
+                        radius: computeMarkerRadius(count, 7),
+                        fillColor: fillColor,
+                        fillOpacity: 0.85,
+                        // Dark slate stroke so the palest 1-2 markers stay
+                        // visible against white ocean / sage island at any
+                        // zoom — a white stroke disappeared on those bins.
+                        color: '#1f2d3d',
+                        weight: 1.25,
+                        opacity: 0.95
+                    }});
+                    marker._millionaireCount = count;  // stashed for re-scaling
+                    const cityEsc = String(p.city).replace(/</g, '&lt;');
+                    const countStr = count.toLocaleString();
+                    const noun = count === 1 ? 'millionaire' : 'millionaires';
+                    const tooltipHtml =
+                        '<div class="tt-name">' + cityEsc + '</div>' +
+                        '<div class="tt-stat">' + countStr + ' ' + noun + '</div>';
+                    marker.bindTooltip(tooltipHtml, {{
+                        className: 'custom-tooltip',
+                        direction: 'top',
+                        offset: [0, -4]
+                    }});
+                    pointsLayer.addLayer(marker);
+                }});
+                pointsLayer.addTo(map);
+
+                map.on('zoomend', function() {{
+                    const z = map.getZoom();
+                    pointsLayer.eachLayer(function(m) {{
+                        if (m._millionaireCount !== undefined && m.setRadius) {{
+                            m.setRadius(computeMarkerRadius(m._millionaireCount, z));
+                        }}
+                    }});
+                }});
+
+                map.fitBounds(pointsLayer.getBounds().pad(0.08), {{ animate: false }});
+            }}
             
             // Import legend functionality
             {get_legend_js()}
@@ -1008,7 +1095,12 @@ class LeafletMapComponent:
                 container.onclick = function(e) {{
                     e.preventDefault();
                     e.stopPropagation();
-                    map.fitBounds(geoJsonLayer.getBounds());
+                    // In city-points mode, snap to the points bounds rather
+                    // than the (now-invisible) choropleth bounds.
+                    const targetBounds = pointsLayer
+                        ? pointsLayer.getBounds().pad(0.08)
+                        : geoJsonLayer.getBounds();
+                    map.fitBounds(targetBounds);
                     if (selectedLayer) {{ geoJsonLayer.resetStyle(selectedLayer); selectedLayer = null; }}
                     closeInfoPanel();
                 }};
@@ -1192,7 +1284,7 @@ class LeafletMapComponent:
         )
 
 
-_CODE_VERSION = "2026-04-25-v31"  # Bump to bust @st.cache_data after code changes
+_CODE_VERSION = "2026-04-25-v37"  # Bump to bust @st.cache_data after code changes
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def _load_rep_data_json() -> str:
@@ -1238,6 +1330,7 @@ def _build_cached_map_html(
     map_id: str,
     show_side_panel: bool,
     rep_data_json: str = "{}",
+    points_data_json: str = "null",
     _code_version: str = _CODE_VERSION
 ) -> str:
     """Build and cache the complete HTML string for the map component.
@@ -1251,7 +1344,7 @@ def _build_cached_map_html(
     js_code = component._get_javascript_code(
         map_id, geojson_str, selected_variable,
         variable_display_name, color_scheme, show_side_panel,
-        rep_data_json
+        rep_data_json, points_data_json
     )
 
     current_color_scheme = color_scheme
@@ -1300,7 +1393,8 @@ def create_leaflet_map(
     active_layer: str = "Counties",
     map_height: int = 500,
     key: Optional[str] = None,
-    show_side_panel: bool = True
+    show_side_panel: bool = True,
+    points_data: Optional[list] = None,
 ) -> None:
     """
     Create a Leaflet map component in Streamlit.
@@ -1317,6 +1411,9 @@ def create_leaflet_map(
         map_height: Height of the map in pixels
         key: Unique key for the component
         show_side_panel: Whether to show the JavaScript info panel (default True)
+        points_data: Optional list of {city, county, lat, lon, millionaire_count}
+            dicts. When provided, the choropleth fill is suppressed and circle
+            markers are drawn at each city's coords.
 
     Returns:
         None
@@ -1338,6 +1435,9 @@ def create_leaflet_map(
     # Load legislator data from CSVs (cached)
     rep_data_json = _load_rep_data_json()
 
+    # Serialize points payload (or "null") for the JS template
+    points_data_json = json.dumps(points_data) if points_data else "null"
+
     # Build or retrieve cached HTML
     component_html = _build_cached_map_html(
         geojson_str=geojson_str,
@@ -1347,7 +1447,8 @@ def create_leaflet_map(
         map_height=map_height,
         map_id=map_id,
         show_side_panel=show_side_panel,
-        rep_data_json=rep_data_json
+        rep_data_json=rep_data_json,
+        points_data_json=points_data_json,
     )
 
     # Render component

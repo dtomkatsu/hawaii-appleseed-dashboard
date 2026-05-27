@@ -21,6 +21,22 @@ from config.variable_registry import (
     get_all_variables,
 )
 
+
+@st.cache_data(show_spinner=False)
+def _load_points_data(csv_filename: str) -> list:
+    """Load a city-points CSV (e.g. millionaires_by_city.csv) as a list of dicts
+    for injection into the Leaflet component.
+
+    Returns [] when the file is missing rather than raising, so a missing
+    dataset just hides the layer rather than breaking the dashboard.
+    """
+    csv_path = Path(__file__).parent.parent.parent / 'data' / 'processed' / csv_filename
+    if not csv_path.exists():
+        logger.warning(f"Points CSV not found: {csv_path}")
+        return []
+    df = pd.read_csv(csv_path)
+    return df.to_dict(orient='records')
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -934,6 +950,16 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         # Default to alice_rate if nothing is selected, but don't update session state to avoid loops
         map_variable = 'alice_rate'
     
+    # If the selected variable renders as city points (e.g. Millionaires),
+    # load the points payload so the JS component can draw circle markers
+    # instead of (only) the choropleth.
+    var_meta = get_all_variables().get(map_variable, {})
+    points_data = None
+    if var_meta.get('render_type') == 'city_points':
+        csv_filename = var_meta.get('points_csv')
+        if csv_filename:
+            points_data = _load_points_data(csv_filename)
+
     # Create the map with built-in JavaScript info panel
     create_leaflet_map(
         geojson_data=geojson_data,
@@ -943,7 +969,8 @@ def create_leaflet_map_view(debug_info: bool = False) -> None:
         active_layer=active_layer,
         map_height=500,
         key=f"map-{active_layer}-{map_variable}-{color_scheme}",
-        show_side_panel=True  # Enable the JavaScript panel as a popup-style panel
+        show_side_panel=True,  # Enable the JavaScript panel as a popup-style panel
+        points_data=points_data,
     )
 
     # Source attribution for the currently-selected variable. Auto-updates
