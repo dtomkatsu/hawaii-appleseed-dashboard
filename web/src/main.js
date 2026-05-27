@@ -81,8 +81,12 @@ async function main() {
   setTabText(document.querySelector('.main-tab[data-tab="data"]'), tabs.data);
 
   // Detect iframe embedding — drives both the "Open" button and layout tweaks.
+  // Also honors ?embed=1 so the embed view can be previewed without an iframe.
   let isEmbedded = false;
   try { isEmbedded = window.self !== window.top; } catch (_) { isEmbedded = true; }
+  if (!isEmbedded && /[?&]embed=1\b/.test(window.location.search)) {
+    isEmbedded = true;
+  }
 
   if (isEmbedded) {
     document.body.classList.add('is-embedded');

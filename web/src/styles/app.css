@@ -589,6 +589,22 @@ body {
 .is-embedded .map-wrap {
   max-height: 60vh;
 }
+
+/* Embed mode: strip chrome so the host page's iframe is just the map +
+   legend. Triggered automatically inside an iframe, or via ?embed=1 for
+   previewing without an iframe wrapper. Keeps: the map, the legend, and
+   the "Open" button (escape hatch to the full dashboard). Hides: top
+   tabs, controls bar (host selects variable via ?var=…), color-scheme
+   picker inside the legend. */
+.is-embedded .main-tabs,
+.is-embedded .controls-bar,
+.is-embedded .legend-color-scheme {
+  display: none !important;
+}
+.is-embedded .map-wrap {
+  max-height: none;
+  height: 100dvh;
+}
 .map-container {
   width: 100%;
   height: 100%;
