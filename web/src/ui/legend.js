@@ -95,11 +95,18 @@ export function renderLegend(varKey, scheme) {
     isCurrency && grades[0] >= 1000 ? 1000 : 1;
   const decimals = divisor > 1 ? pickDecimalsForGrades(grades, divisor) : 0;
 
+  // Variables that render as circle markers (e.g. Millionaires) get round
+  // swatches with a dark slate border that mirrors the on-map stroke.
+  const isPoints = meta?.render_type === 'points';
+  const swatchStyle = isPoints
+    ? 'border-radius:50%;border:1px solid #1f2d3d;'
+    : '';
+
   let html = '';
   for (let i = 0; i < grades.length; i++) {
     const range = formatRange(grades[i], grades[i + 1], dataType, decimals);
     const c = colors[Math.min(i, colors.length - 1)];
-    html += `<div class="legend-item"><i style="background:${c}"></i><span>${range}</span></div>`;
+    html += `<div class="legend-item"><i style="background:${c};${swatchStyle}"></i><span>${range}</span></div>`;
   }
 
   itemsEl.innerHTML = html;

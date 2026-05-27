@@ -1,9 +1,29 @@
 import { getMap } from './mapInstance.js';
 import { getThresholds, getSchemeColors } from './colors.js';
-import { loadLayer } from '../data/loader.js';
-import { bindLayerInteraction, clearSelectedLayer } from './popup.js';
+import { loadLayer, fetchJson } from '../data/loader.js';
+import { bindLayerInteraction, bindPointsInteraction, clearSelectedLayer } from './popup.js';
 import { registerShadowLayer, prewarmShadowLayer, setShadowFeature, SHADOW_LAYER_ID } from './shadowLayer.js';
 import { FLAGS } from './perfFlags.js';
+
+// Variables config — needed to look up render_type / points_data per variable.
+// Set once at boot via initLayerManager(config.variables).
+let VARIABLES = null;
+export function initLayerManager(variablesConfig) {
+  VARIABLES = variablesConfig?.variables || null;
+}
+
+function isPointsVariable(varKey) {
+  return VARIABLES?.[varKey]?.render_type === 'points';
+}
+
+// Tracks the currently-rendered city-points layer (Millionaires-style data).
+// Null when no points variable is active.
+let pointsLayerActive = null; // { layerId, sourceId, varKey, countField }
+
+// Muted backdrop fill applied to the choropleth when points mode is active —
+// the underlying islands stay recognizable since this map has no tile basemap.
+const POINTS_MODE_MUTED_FILL = '#b8cdaf';
+const POINTS_MODE_MUTED_LINE = '#5c7757';
 
 // When ?notrans=1 strip the 300ms opacity transitions; when ?nofade=1 also
 // skip the layer-switch fade-in/fade-out animation.
@@ -241,8 +261,130 @@ function fadeOutLevel(map, level) {
 
 function applyColorExpression(map, level) {
   if (!map.getLayer(`${level}-fill`)) return;
-  const expr = colorExpression(currentVariable, currentScheme);
-  map.setPaintProperty(`${level}-fill`, 'fill-color', expr);
+  // In points mode, the choropleth becomes a muted sage backdrop so the
+  // circle markers carry all the data signal. Otherwise paint by variable.
+  if (pointsLayerActive) {
+    map.setPaintProperty(`${level}-fill`, 'fill-color', POINTS_MODE_MUTED_FILL);
+    if (map.getLayer(`${level}-line`)) {
+      map.setPaintProperty(`${level}-line`, 'line-color', POINTS_MODE_MUTED_LINE);
+    }
+  } else {
+    map.setPaintProperty(`${level}-fill`, 'fill-color', colorExpression(currentVariable, currentScheme));
+    if (map.getLayer(`${level}-line`)) {
+      map.setPaintProperty(`${level}-line`, 'line-color', '#aaaaaa');
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// City-points layer (Millionaires-style) — circle markers per town
+//
+// Driven by variables.json entries with `render_type: "points"` and
+// `points_data: "<file>.json"` (a GeoJSON FeatureCollection in
+// /public/data/). Markers scale with sqrt(count) and grow with zoom via
+// a MapLibre `interpolate` expression so single-count dots stay legible
+// when zoomed into one island, without dwarfing islands at fit-bounds.
+// ---------------------------------------------------------------------------
+
+function buildCircleRadiusExpr(countField) {
+  // base = max(5, min(20, 3 + sqrt(count) * 1.4))  — the "fit-bounds" size
+  const sqrtCount = ['sqrt', ['to-number', ['coalesce', ['get', countField], 0]]];
+  const base = ['max', 5, ['min', 20, ['+', 3, ['*', sqrtCount, 1.4]]]];
+  return [
+    'interpolate', ['linear'], ['zoom'],
+    6,  base,
+    11, ['min', 32, ['*', base, 1.75]],
+    14, ['min', 36, ['*', base, 2.5]],
+  ];
+}
+
+function buildCircleColorExpr(countField, thresholds, colors) {
+  const value = ['to-number', ['coalesce', ['get', countField], 0]];
+  const step = ['step', value, colors[0]];
+  for (let i = 0; i < thresholds.length; i++) {
+    step.push(thresholds[i], colors[Math.min(i + 1, colors.length - 1)]);
+  }
+  return step;
+}
+
+async function showPointsLayer(map, varKey) {
+  const meta = VARIABLES?.[varKey];
+  if (!meta || meta.render_type !== 'points') return;
+
+  // If a different points variable is already up, swap it out.
+  if (pointsLayerActive && pointsLayerActive.varKey !== varKey) {
+    removePointsLayer(map);
+  }
+  // Same variable already active — just refresh paint (scheme may have changed).
+  if (pointsLayerActive && pointsLayerActive.varKey === varKey) {
+    updatePointsPaint(map);
+    return;
+  }
+
+  const sourceId = `points-source-${varKey}`;
+  const layerId = `points-${varKey}`;
+  const dataPath = meta.points_data || `${varKey}.json`;
+  const countField = meta.csv_column || 'value';
+
+  let data;
+  try {
+    data = await fetchJson(`/data/${dataPath}`);
+  } catch (err) {
+    console.error(`Points layer load failed for ${varKey}:`, err);
+    return;
+  }
+
+  if (!map.getSource(sourceId)) {
+    map.addSource(sourceId, { type: 'geojson', data });
+  }
+
+  const colors = getSchemeColors(currentScheme);
+  const thresholds = getThresholds(varKey);
+
+  map.addLayer({
+    id: layerId,
+    type: 'circle',
+    source: sourceId,
+    paint: {
+      'circle-radius': buildCircleRadiusExpr(countField),
+      'circle-color': buildCircleColorExpr(countField, thresholds, colors),
+      'circle-opacity': 0.85,
+      'circle-stroke-color': '#1f2d3d',
+      'circle-stroke-width': 1.25,
+      'circle-stroke-opacity': 0.95,
+    },
+  });
+
+  pointsLayerActive = { layerId, sourceId, varKey, countField };
+
+  // Hover tooltip on the circles — city + count, no PII.
+  bindPointsInteraction(map, layerId);
+
+  // Mute the underlying choropleth now that points are carrying the signal.
+  if (currentLevel) applyColorExpression(map, currentLevel);
+}
+
+function updatePointsPaint(map) {
+  if (!pointsLayerActive) return;
+  const { layerId, varKey, countField } = pointsLayerActive;
+  if (!map.getLayer(layerId)) return;
+  const colors = getSchemeColors(currentScheme);
+  const thresholds = getThresholds(varKey);
+  map.setPaintProperty(layerId, 'circle-color', buildCircleColorExpr(countField, thresholds, colors));
+}
+
+function removePointsLayer(map) {
+  if (!pointsLayerActive) return;
+  const { layerId, sourceId } = pointsLayerActive;
+  if (map.getLayer(layerId)) map.removeLayer(layerId);
+  if (map.getSource(sourceId)) map.removeSource(sourceId);
+  pointsLayerActive = null;
+  // Restore data-driven choropleth fill on the active level.
+  if (currentLevel) applyColorExpression(getMap(), currentLevel);
+}
+
+export function isPointsModeActive() {
+  return !!pointsLayerActive;
 }
 
 export async function setLayer(level) {
@@ -309,8 +451,27 @@ export async function preloadAll() {
 export function setVariable(varKey) {
   currentVariable = varKey;
   const map = getMap();
-  if (!map || !currentLevel) return;
-  applyColorExpression(map, currentLevel);
+  if (!map) return;
+
+  const apply = () => {
+    if (!currentLevel) return;
+    if (isPointsVariable(varKey)) {
+      showPointsLayer(map, varKey);
+    } else {
+      if (pointsLayerActive) removePointsLayer(map);
+      applyColorExpression(map, currentLevel);
+    }
+  };
+
+  // Initial-load race: setVariable may fire before setLayer's deferred
+  // map.once('load', ...) callback runs, leaving currentLevel = null.
+  // Defer too so the order ends up: style-loads → setLayer apply →
+  // setVariable apply (points-layer added on top of choropleth).
+  if (map.isStyleLoaded() && currentLevel) {
+    apply();
+  } else {
+    map.once('load', apply);
+  }
 }
 
 export function setColorScheme(scheme) {
@@ -318,6 +479,7 @@ export function setColorScheme(scheme) {
   const map = getMap();
   if (!map || !currentLevel) return;
   applyColorExpression(map, currentLevel);
+  if (pointsLayerActive) updatePointsPaint(map);
 }
 
 export function getCurrentVariable() {

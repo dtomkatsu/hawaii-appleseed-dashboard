@@ -17,16 +17,21 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 import pandas as pd
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_XLSX = Path.home() / "Downloads" / "HI HNW.xlsx"
 SHEET_NAME = "advanced-search-results"
 HEADER_ROW = 5
-OUTPUT_CSV = Path(__file__).resolve().parent.parent / "data" / "processed" / "millionaires_by_city.csv"
+OUTPUT_CSV = REPO_ROOT / "data" / "processed" / "millionaires_by_city.csv"
+# GeoJSON for the Vite/MapLibre dashboard. Loaded at runtime via
+# web/src/data/loader.js → fetched from /data/millionaires.json.
+OUTPUT_GEOJSON = REPO_ROOT / "web" / "public" / "data" / "millionaires.json"
 
 
 # (lat, lon, county) for every primary town that appears in the source data.
@@ -192,7 +197,29 @@ def main() -> int:
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(OUTPUT_CSV, index=False)
 
+    # Emit GeoJSON FeatureCollection for MapLibre to consume directly.
+    # No PII enters this file — only city/county/count + the coordinates
+    # we picked from HAWAII_TOWN_COORDS.
+    features = []
+    for row in out.itertuples(index=False):
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(row.lon), float(row.lat)],
+            },
+            "properties": {
+                "city": row.city,
+                "county": row.county,
+                "millionaire_count": int(row.millionaire_count),
+            },
+        })
+    OUTPUT_GEOJSON.parent.mkdir(parents=True, exist_ok=True)
+    with OUTPUT_GEOJSON.open("w", encoding="utf-8") as f:
+        json.dump({"type": "FeatureCollection", "features": features}, f, ensure_ascii=False, indent=2)
+
     print(f"Wrote {OUTPUT_CSV}")
+    print(f"Wrote {OUTPUT_GEOJSON}")
     print(f"  Source rows:           {total_rows}")
     print(f"  Excluded (no town):    {null_residence}")
     print(f"  Aggregated cities:     {len(out)}")

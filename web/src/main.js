@@ -3,7 +3,7 @@ import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
-import { setLayer, setVariable, setColorScheme, getFeatureProperties } from './map/layerManager.js';
+import { setLayer, setVariable, setColorScheme, getFeatureProperties, initLayerManager } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
 import { initDiag } from './map/diag.js';
 import { initLegend, renderLegend } from './ui/legend.js';
@@ -19,6 +19,7 @@ async function main() {
   initSidebar(config.variables);
   initInfoPanel(config.variables);
   initPopup(config.variables, repData);
+  initLayerManager(config.variables);
 
   createMap('main-map', config.theme);
   // Diagnostics are opt-in via URL param (?diag=1) to avoid an always-on

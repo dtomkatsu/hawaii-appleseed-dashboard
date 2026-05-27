@@ -7,6 +7,7 @@ let VARIABLES = null;
 let REP_DATA = {};
 
 const boundLevels = new Set();
+const boundPointsLayers = new Set();
 let tooltipEl = null;
 let hoveredFeature = null;       // { level, id }
 let selectedFeature = null;      // { level, id }
@@ -307,5 +308,59 @@ export function bindLayerInteraction(map, level) {
         });
       } catch (_) { /* no-op */ }
     }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Points-layer interaction (Millionaires-style city markers)
+//
+// Simpler than the polygon path: just a hover tooltip showing
+// `<city>: <count> <noun>`. No info-panel open on click — the marker
+// itself is the deliverable. Privacy: never reads name/org/age/gender
+// (those fields don't exist in the source GeoJSON anyway).
+// ---------------------------------------------------------------------------
+
+function buildPointsTooltipContent(properties) {
+  const city = properties.city || 'Unknown';
+  const count = Number(properties.millionaire_count) || 0;
+  const noun = count === 1 ? 'millionaire' : 'millionaires';
+  return `<div class="tt-name">${escapeHtml(city)}</div>` +
+         `<div class="tt-stat-card">` +
+         `<div class="tt-stat-value">${count.toLocaleString()} ${noun}</div>` +
+         `</div>`;
+}
+
+export function bindPointsInteraction(map, layerId) {
+  if (boundPointsLayers.has(layerId)) return;
+  boundPointsLayers.add(layerId);
+
+  ensureTooltipEl(map);
+  ensureAnimationListeners(map);
+
+  map.on('mousemove', layerId, (e) => {
+    if (isAnimating) return;
+    if (!e.features || !e.features.length) return;
+    const feature = e.features[0];
+
+    map.getCanvas().style.cursor = 'pointer';
+    tooltipEl.innerHTML = buildPointsTooltipContent(feature.properties);
+
+    _lastMovePoint = e.point;
+    if (!_moveRafId) {
+      _moveRafId = requestAnimationFrame(() => {
+        _moveRafId = null;
+        if (_lastMovePoint) {
+          positionTooltip(map, _lastMovePoint);
+          showTooltip();
+        }
+      });
+    }
+  });
+
+  map.on('mouseleave', layerId, () => {
+    if (_moveRafId) { cancelAnimationFrame(_moveRafId); _moveRafId = null; }
+    _lastMovePoint = null;
+    map.getCanvas().style.cursor = '';
+    hideTooltip();
   });
 }
