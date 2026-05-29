@@ -4,7 +4,10 @@ Uses direct Census API calls to fetch ACS data
 """
 import os
 import pandas as pd
-import geopandas as gpd
+try:
+    import geopandas as gpd  # optional; only needed for geometry-enabled exports
+except ImportError:
+    gpd = None
 import logging
 import requests
 import json
@@ -134,8 +137,12 @@ class ACSDataFetcher:
                 
             raise ConnectionError(error_msg) from e
     
+    # The Census API caps each request at 50 variables (including NAME). Keep a
+    # safety margin so NAME + geography predicates always fit.
+    _MAX_VARS_PER_REQUEST = 45
+
     def get_acs_data(
-        self, 
+        self,
         variables: List[str],
         level: str = 'tract',
         state: str = '15',
@@ -143,8 +150,55 @@ class ACSDataFetcher:
         geometry: bool = False,
         standardize_geoids: bool = True
     ) -> pd.DataFrame:
+        """Fetch ACS data, transparently batching requests past the API's 50-var cap.
+
+        Splits ``variables`` into chunks of at most ``_MAX_VARS_PER_REQUEST``,
+        fetches each chunk, merges the raw results on the standardized ``geoid``,
+        then computes derived metrics once over the combined frame.
+        """
+        if len(variables) <= self._MAX_VARS_PER_REQUEST:
+            return self._get_acs_data_single(
+                variables, level, state, county, geometry, standardize_geoids
+            )
+
+        chunks = [
+            variables[i:i + self._MAX_VARS_PER_REQUEST]
+            for i in range(0, len(variables), self._MAX_VARS_PER_REQUEST)
+        ]
+        merged = None
+        for chunk in chunks:
+            part = self._get_acs_data_single(
+                chunk, level, state, county, geometry,
+                standardize_geoids, derive=False,
+            )
+            if part is None or part.empty:
+                continue
+            if merged is None:
+                merged = part
+            elif 'geoid' in merged.columns and 'geoid' in part.columns:
+                new_cols = ['geoid'] + [c for c in part.columns if c not in merged.columns]
+                merged = merged.merge(part[new_cols], on='geoid', how='outer')
+            else:
+                # Fallback: positional concat of the new columns only.
+                new_cols = [c for c in part.columns if c not in merged.columns]
+                merged = pd.concat([merged, part[new_cols]], axis=1)
+
+        if merged is None:
+            return pd.DataFrame()
+        return self.calculate_poverty_rate(merged)
+
+    def _get_acs_data_single(
+        self,
+        variables: List[str],
+        level: str = 'tract',
+        state: str = '15',
+        county: str = None,
+        geometry: bool = False,
+        standardize_geoids: bool = True,
+        derive: bool = True,
+    ) -> pd.DataFrame:
         """Fetch ACS data for specified variables using the Census API directly.
-        
+
         Args:
             variables: List of ACS variable codes
             level: Geographic level ('tract', 'block group', 'county', 'state_lower', 'state_upper')
@@ -152,10 +206,12 @@ class ACSDataFetcher:
             county: County FIPS code (required for tract and block group levels)
             geometry: Whether to include geometry in the output (not supported in direct API)
             standardize_geoids: Whether to standardize GEOIDs to match existing map files
-            
+            derive: Whether to compute derived metrics (set False when batching; the
+                caller derives once over the merged frame)
+
         Returns:
             DataFrame with the requested ACS data
-            
+
         Raises:
             ValueError: If required parameters are missing or invalid
             ConnectionError: If there's an error connecting to the Census API
@@ -386,6 +442,14 @@ class ACSDataFetcher:
                 'b25064_001e': 'median_rent',  # Added median rent variable
                 'b08301_001e': 'total_workers',  # Total workers 16 years and over
                 'b08301_010e': 'public_transit_workers',  # Workers using public transportation
+                'b08301_018e': 'bicycle_workers',  # Workers commuting by bicycle
+                'b08301_019e': 'walked_workers',  # Workers commuting by walking
+                'b08201_001e': 'veh_hh_total',  # Total households (B08201 universe)
+                'b08201_002e': 'veh_hh_0',  # Households with no vehicle
+                'b08201_003e': 'veh_hh_1',  # Households with 1 vehicle
+                'b08201_004e': 'veh_hh_2',  # Households with 2 vehicles
+                'b08201_005e': 'veh_hh_3',  # Households with 3 vehicles
+                'b08201_006e': 'veh_hh_4plus',  # Households with 4+ vehicles
                 'b02001_001e': 'race_total_pop',
                 'b02008_001e': 'white_aoic',
                 'b02009_001e': 'black_aoic',
@@ -408,9 +472,11 @@ class ACSDataFetcher:
                 if not df.empty:
                     f.write(f"First row: {df.iloc[0].to_dict()}\n")
             
-            # Calculate poverty rate and other metrics
-            df = self.calculate_poverty_rate(df)
-            
+            # Calculate poverty rate and other metrics (skipped when batching;
+            # the caller derives once over the merged frame)
+            if derive:
+                df = self.calculate_poverty_rate(df)
+
             return df
             
         except Exception as e:
@@ -525,6 +591,30 @@ class ACSDataFetcher:
             total_workers = sum(df[c] for c in commute_buckets)
             df['travel_time_to_work_minutes'] = (
                 total_time / total_workers.replace(0, np.nan)
+            ).round(2)
+
+        # Average vehicles available per household — weighted mean over the
+        # B08201 (Household Size by Vehicles Available) marginal buckets. The
+        # top bucket is open-ended ("4 or more"); we floor it at 4, which
+        # slightly underestimates the true mean.
+        veh_bucket_weights = {
+            'veh_hh_0': 0.0,
+            'veh_hh_1': 1.0,
+            'veh_hh_2': 2.0,
+            'veh_hh_3': 3.0,
+            'veh_hh_4plus': 4.0,
+        }
+        if all(c in df.columns for c in veh_bucket_weights) and 'veh_hh_total' in df.columns:
+            weighted = sum(df[c] * w for c, w in veh_bucket_weights.items())
+            df['avg_vehicles_per_household'] = (
+                weighted / df['veh_hh_total'].replace(0, np.nan)
+            ).round(2)
+
+        # Active-transportation commute share: (walked + bicycle) / total
+        # workers (B08301_001E universe) × 100.
+        if all(c in df.columns for c in ('walked_workers', 'bicycle_workers', 'total_workers')):
+            df['active_transportation_pct'] = _safe_div(
+                df['walked_workers'] + df['bicycle_workers'], df['total_workers']
             ).round(2)
 
         # ── Legacy branches below (unchanged) — these reference older column

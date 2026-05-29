@@ -81,6 +81,7 @@ function formatValue(value, dataType) {
     return '$' + Math.round(num).toLocaleString();
   }
   if (dataType === 'minutes') return num.toFixed(1) + ' min';
+  if (dataType === 'decimal') return num.toFixed(1);
   if (dataType === 'count') return num.toLocaleString();
   return num.toLocaleString();
 }

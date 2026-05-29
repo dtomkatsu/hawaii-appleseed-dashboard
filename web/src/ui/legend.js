@@ -29,6 +29,7 @@ function formatRange(from, next, dataType, decimals) {
   const isPct = dataType === 'percentage' || /rate|pct|percent/.test(dataType || '');
   const isCurrency = dataType === 'currency' || /income|value|benefit|amount/.test(dataType || '');
   const isCount = dataType === 'count';
+  const isDecimal = dataType === 'decimal';
 
   if (next === undefined) {
     if (isPct) return `${from}%+`;
@@ -39,9 +40,11 @@ function formatRange(from, next, dataType, decimals) {
       return `$${from.toLocaleString()}+`;
     }
     if (isCount) return `${from.toLocaleString()}+`;
+    if (isDecimal) return `${from.toFixed(1)}+`;
     return `${from}+`;
   }
 
+  if (isDecimal) return `${from.toFixed(1)}-${next.toFixed(1)}`;
   if (isPct) return `${from}-${next}%`;
   if (isCurrency) {
     if (from >= 1_000_000 && decimals < 2) {
