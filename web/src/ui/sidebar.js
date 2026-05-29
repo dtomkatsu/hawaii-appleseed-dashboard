@@ -135,6 +135,10 @@ function buildHousingCascadeItems() {
   return out;
 }
 
+function buildHealthCascadeItems() {
+  return variablesForGroup('health').map(leaf);
+}
+
 function buildGeographyCascadeItems() {
   return LAYERS.map((l) => ({ key: `layer:${l.key}`, label: l.label }));
 }
@@ -328,6 +332,7 @@ export function renderSidebar() {
   const econItems = buildEconCascadeItems();
   const foodItems = buildFoodCascadeItems();
   const housingItems = buildHousingCascadeItems();
+  const healthItems = buildHealthCascadeItems();
 
   const layerKey = `layer:${s.activeLayer}`;
   const variableKey = s.selectedVariable;
@@ -368,8 +373,17 @@ export function renderSidebar() {
     'Select Variable',
     false,
   );
+  const healthCol = renderColumn(
+    'health',
+    GROUPS?.health?.label || 'Health',
+    'tag-outline',
+    healthItems,
+    variableKey,
+    'Select Variable',
+    false,
+  );
 
-  root.innerHTML = geoCol + econCol + foodCol + housingCol;
+  root.innerHTML = geoCol + econCol + foodCol + housingCol + healthCol;
 
   root.querySelectorAll('a[data-cascade-key]').forEach((a) => {
     a.addEventListener('click', (e) => {

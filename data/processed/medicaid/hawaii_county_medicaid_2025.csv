@@ -1,0 +1,5 @@
+geoid,name,county,medquest_enrollment,population,medicaid_enrollment,medicaid_rate
+15001,"Hawaii County, Hawaii",HAWAII,86422.8,202960,86423,42.58
+15003,"Honolulu County, Hawaii",HONOLULU,247212.1,969622,247212,25.5
+15007,"Kauai County, Hawaii",KAUAI,23320.0,72935,23320,31.97
+15009,"Maui County, Hawaii",MAUI,52657.7,162774,52658,32.35

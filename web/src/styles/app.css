@@ -216,7 +216,7 @@ body {
 /* ========== Controls bar (above map) ========== */
 .controls-bar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   /* Tightened bottom padding so the map starts directly beneath the dropdown
      triggers instead of sitting in a band of empty white. */

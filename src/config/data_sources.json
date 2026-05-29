@@ -155,6 +155,26 @@
         "eitc_participation_rate",
         "state_eitc_avg_amount"
       ]
+    },
+    "medicaid": {
+      "label": "Medicaid Enrollment (MedQuest, ACS-calibrated)",
+      "short_label": "Hawaii MedQuest",
+      "year": 2025,
+      "fetch_method": "manual",
+      "description": "Administrative Medicaid managed-care enrollment from Hawaii MedQuest, calibrated to ACS table C27007 to reach legislative-district granularity. State/county rates are pure MedQuest / ACS population; House/Senate districts rake the ACS Medicaid-coverage shape to each MedQuest county control total. medicaid_rate flows into the merged GeoJSON via the augmented ACS CSVs (data_source 'acs' in variables.json) — this entry documents provenance only; no separate loader is used.",
+      "instructions": "Download the latest annual enrollment report (Managed Care By Island table) from https://medquest.hawaii.gov/en/resources/reports.html. Transcribe the 12 monthly island counts into data/raw/medquest_enrollment_{year}.csv (columns: island, jan..dec; each month's 6 islands must sum to that month's 'Medicaid Managed Care Total'). Update MEDQUEST_YEAR in scripts/build_medicaid_2025.py, then run: python scripts/build_medicaid_2025.py (re-run after any ACS refresh, which overwrites the ACS CSVs).",
+      "file_patterns": {
+        "state": "hawaii_state_medicaid_{year}.csv",
+        "county": "hawaii_county_medicaid_{year}.csv",
+        "house": "hawaii_house_district_medicaid_{year}.csv",
+        "senate": "hawaii_senate_district_medicaid_{year}.csv"
+      },
+      "subdirectory": "medicaid",
+      "required_columns": [
+        "geoid",
+        "medicaid_enrollment",
+        "medicaid_rate"
+      ]
     }
   }
 }

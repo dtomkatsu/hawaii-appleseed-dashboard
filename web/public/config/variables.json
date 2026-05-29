@@ -11,6 +11,10 @@
     "housing_transportation": {
       "label": "Housing & Transportation",
       "order": 3
+    },
+    "health": {
+      "label": "Health",
+      "order": 4
     }
   },
   "info_panel_categories": {
@@ -34,6 +38,9 @@
     },
     "Tax Credits": {
       "order": 7
+    },
+    "Health": {
+      "order": 8
     }
   },
   "fact_sheet_categories": {
@@ -130,6 +137,38 @@
       "csv_column": "poverty_rate",
       "legend_direction": "down",
       "source": "American Community Survey 2024",
+      "data_source": "acs"
+    },
+    "medicaid_rate": {
+      "display_name": "Medicaid Enrollment",
+      "display_name_long": "Medicaid Enrollment (%)",
+      "description": "Share of residents enrolled in **Medicaid**. Administrative **MedQuest** enrollment, distributed to legislative districts using the ACS Medicaid-coverage pattern (table C27007) calibrated to each county's MedQuest total.",
+      "data_type": "percentage",
+      "dropdown_group": "health",
+      "dropdown_label": "Medicaid Enrollment",
+      "dropdown_order": 1,
+      "info_panel_category": "Health",
+      "info_panel_label": "Medicaid Enrollment",
+      "info_panel_order": 1,
+      "show_in_dropdown": true,
+      "show_in_info_panel": true,
+      "show_in_fact_sheet": false,
+      "show_in_default_metrics": false,
+      "is_special_variable": false,
+      "color_thresholds": [
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50
+      ],
+      "csv_column": "medicaid_rate",
+      "legend_direction": "neutral",
+      "source": "Hawaii MedQuest 2025 (calibrated with ACS C27007)",
       "data_source": "acs"
     },
     "median_income": {
