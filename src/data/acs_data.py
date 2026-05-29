@@ -624,6 +624,102 @@ class ACSDataFetcher:
         if 'wfh_workers' in df.columns and 'total_workers' in df.columns:
             df['work_from_home_pct'] = _safe_div(df['wfh_workers'], df['total_workers']).round(2)
 
+        # ── Margins of error (90% CI) for the ACS-derived metrics above ────────
+        # Propagated from the published per-cell MOEs (the _M columns fetched
+        # alongside each _E estimate) using the Census ACS handbook formulas.
+        # Each <metric>_moe is in the same units as <metric> (percentage points
+        # for rates, dollars for medians, vehicles for the average, minutes for
+        # commute time). The info panel surfaces these on hover; values are
+        # otherwise unchanged.
+        def _moe(col):
+            """MOE column as a numeric Series, with Census jam values handled.
+            -555555555 marks a *controlled* estimate (no sampling error) → 0;
+            other negative sentinels (-222222222 "too few cases", etc.) mean the
+            MOE is not calculable → NaN. None if the column is absent."""
+            if col not in df.columns:
+                return None
+            s = pd.to_numeric(df[col], errors='coerce')
+            s = s.mask(s == -555555555, 0.0)
+            return s.where(s >= 0, np.nan)
+
+        def _moe_sum(*cols):
+            """sqrt(Σ MOE_i²) for a derived count that sums cells."""
+            ms = [_moe(c) for c in cols]
+            if any(m is None for m in ms):
+                return None
+            return np.sqrt(sum(m ** 2 for m in ms))
+
+        def _est(col):
+            """Estimate column as numeric (handles renamed or raw names)."""
+            return pd.to_numeric(df[col], errors='coerce') if col in df.columns else None
+
+        def moe_pct(num_moe, den_col, rate_col, den_moe):
+            """MOE (in percentage points) for rate = num/den×100 where num is a
+            subset of den. Uses the subset-proportion formula, falling back to
+            the ratio formula element-wise where the radicand goes negative."""
+            den = _est(den_col)
+            if num_moe is None or den is None or den_moe is None or rate_col not in df.columns:
+                return None
+            p = pd.to_numeric(df[rate_col], errors='coerce') / 100.0
+            rad = num_moe ** 2 - (p ** 2) * (den_moe ** 2)
+            rad = rad.where(rad >= 0, num_moe ** 2 + (p ** 2) * (den_moe ** 2))
+            return (np.sqrt(rad) / den.replace(0, np.nan) * 100).round(2)
+
+        def moe_ratio(num_moe, den_col, ratio_col, den_moe):
+            """MOE for ratio = num/den (num NOT a subset of den), same units as
+            the ratio. Used for vehicles-per-household."""
+            den = _est(den_col)
+            if num_moe is None or den is None or den_moe is None or ratio_col not in df.columns:
+                return None
+            r = pd.to_numeric(df[ratio_col], errors='coerce')
+            return (np.sqrt(num_moe ** 2 + (r ** 2) * (den_moe ** 2)) / den.replace(0, np.nan)).round(2)
+
+        def _set_moe(name, series):
+            if series is not None:
+                df[f'{name}_moe'] = series
+
+        # Direct estimates — MOE is the published _M as-is.
+        if _moe('b19013_001m') is not None: _set_moe('median_income', _moe('b19013_001m'))
+        if _moe('b25064_001m') is not None: _set_moe('median_rent', _moe('b25064_001m'))
+        if _moe('b25077_001m') is not None: _set_moe('median_home_value', _moe('b25077_001m'))
+
+        # Subset-proportion rates (numerator ⊂ denominator).
+        _set_moe('poverty_rate',          moe_pct(_moe('b17001_002m'), 'total_population',    'poverty_rate',          _moe('b17001_001m')))
+        _set_moe('unemployment_rate',     moe_pct(_moe('b23025_005m'), 'b23025_003e',         'unemployment_rate',     _moe('b23025_003m')))
+        _set_moe('renter_rate',           moe_pct(_moe('b25003_003m'), 'total_housing_units', 'renter_rate',           _moe('b25003_001m')))
+        _set_moe('severe_rent_burden_rate', moe_pct(_moe('b25070_010m'), 'b25070_001e',       'severe_rent_burden_rate', _moe('b25070_001m')))
+        _set_moe('rent_burden_rate',      moe_pct(_moe_sum('b25070_007m','b25070_008m','b25070_009m','b25070_010m'), 'b25070_001e', 'rent_burden_rate', _moe('b25070_001m')))
+        _set_moe('vacancy_rate',          moe_pct(_moe('b25002_003m'), 'occupancy_universe',  'vacancy_rate',          _moe('b25002_001m')))
+        _set_moe('public_transportation_pct', moe_pct(_moe('b08301_010m'), 'total_workers',   'public_transportation_pct', _moe('b08301_001m')))
+        _set_moe('zero_vehicle_household_pct', moe_pct(_moe('b08201_002m'), 'veh_hh_total',   'zero_vehicle_household_pct', _moe('b08201_001m')))
+        _set_moe('work_from_home_pct',    moe_pct(_moe('b08301_021m'), 'total_workers',       'work_from_home_pct',    _moe('b08301_001m')))
+        _set_moe('active_transportation_pct', moe_pct(_moe_sum('b08301_018m','b08301_019m'), 'total_workers', 'active_transportation_pct', _moe('b08301_001m')))
+        _set_moe('college_educated_pct',  moe_pct(_moe('b15003_022m'), 'pop_25_plus',         'college_educated_pct',  _moe('b15003_001m')))
+        _set_moe('high_school_or_higher_pct', moe_pct(_moe_sum('b15003_017m','b15003_018m','b15003_019m','b15003_020m','b15003_021m','b15003_022m','b15003_023m','b15003_024m','b15003_025m'), 'pop_25_plus', 'high_school_or_higher_pct', _moe('b15003_001m')))
+        _set_moe('white_pct',             moe_pct(_moe('b02008_001m'), 'race_total_pop',      'white_pct',             _moe('b02001_001m')))
+        _set_moe('black_pct',             moe_pct(_moe('b02009_001m'), 'race_total_pop',      'black_pct',             _moe('b02001_001m')))
+        _set_moe('asian_pct',             moe_pct(_moe('b02011_001m'), 'race_total_pop',      'asian_pct',             _moe('b02001_001m')))
+        _set_moe('nhpi_pct',              moe_pct(_moe('b02012_001m'), 'race_total_pop',      'nhpi_pct',              _moe('b02001_001m')))
+        _set_moe('hispanic_pct',          moe_pct(_moe('b03002_012m'), 'hispanic_universe',   'hispanic_pct',          _moe('b03002_001m')))
+
+        # Vehicles per household — ratio (aggregate vehicles ÷ households).
+        _set_moe('avg_vehicles_per_household', moe_ratio(_moe('b25046_001m'), 'veh_hh_total', 'avg_vehicles_per_household', _moe('b08201_001m')))
+
+        # Average commute time — ratio of a weighted bucket sum to the bucket
+        # count (approximate: bucket midpoints carry no error of their own).
+        commute_moe_cols = {
+            'b08303_008m': 32.0, 'b08303_009m': 37.0, 'b08303_010m': 42.0,
+            'b08303_011m': 52.0, 'b08303_012m': 74.5, 'b08303_013m': 95.0,
+        }
+        if all(_moe(c) is not None for c in commute_moe_cols) and 'travel_time_to_work_minutes' in df.columns:
+            num_moe = np.sqrt(sum((mid * _moe(c)) ** 2 for c, mid in commute_moe_cols.items()))
+            den = sum(_est(c[:-1] + 'e') for c in commute_moe_cols)
+            den_moe = np.sqrt(sum(_moe(c) ** 2 for c in commute_moe_cols))
+            r = pd.to_numeric(df['travel_time_to_work_minutes'], errors='coerce')
+            df['travel_time_to_work_minutes_moe'] = (
+                np.sqrt(num_moe ** 2 + (r ** 2) * (den_moe ** 2)) / den.replace(0, np.nan)
+            ).round(2)
+
         # ── Legacy branches below (unchanged) — these reference older column
         # names that are not produced by the current rename dict and will
         # simply be no-ops for our data.

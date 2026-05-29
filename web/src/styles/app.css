@@ -1462,6 +1462,25 @@ body {
   background: #52796F;
   flex-shrink: 0;
 }
+.ip-tip-moe {
+  margin: 6px 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2f3e46;
+}
+.ip-tip-moe-ci {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #84a98c;
+  margin-left: 4px;
+}
+.ip-tip-moe-na {
+  font-weight: 500;
+  font-style: italic;
+  color: #6b7b76;
+}
 
 /* ========== Misc ========== */
 .error-banner {

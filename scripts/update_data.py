@@ -101,6 +101,11 @@ def cmd_fetch_acs(year: int, api_key: str):
 
     acs = ACSDataFetcher(api_key=api_key, year=year)
     census_vars = list(get_census_variables("acs").keys())
+    # Also request the margin-of-error (_M) column for each estimate (_E) so
+    # derived metrics can propagate ACS 90% sampling error. The fetcher batches
+    # past the API's 50-variable cap, so the doubled list is fine.
+    moe_vars = [v[:-1] + "M" for v in census_vars if v.endswith("E")]
+    census_vars = census_vars + moe_vars
 
     geo_levels = ["state", "county", "house", "senate"]
     # Map our level keys to what ACSDataFetcher expects

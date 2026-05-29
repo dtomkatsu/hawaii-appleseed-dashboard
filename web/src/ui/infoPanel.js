@@ -65,10 +65,13 @@ function bindMetricTooltips(panel) {
     const desc = el.getAttribute('data-desc') || '';
     const year = el.getAttribute('data-year') || '';
     const label = el.getAttribute('data-label') || '';
-    if (!desc && !year) return;
+    const moe = el.getAttribute('data-moe') || '';
+    const note = el.getAttribute('data-moe-note') || '';
+    if (!desc && !year && !moe && !note) return;
     tip.innerHTML = `
       ${label ? `<div class="ip-tip-title">${escapeHtml(label)}</div>` : ''}
       ${desc ? `<div class="ip-tip-desc">${renderDescription(desc)}</div>` : ''}
+      ${moeTipHtml(moe, note)}
       ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${escapeHtml(year)}</div>` : ''}
     `;
     tip.classList.add('visible');
@@ -99,6 +102,44 @@ function formatValue(value, dataType) {
   if (dataType === 'decimal') return num.toFixed(1);
   if (dataType === 'count') return num.toLocaleString();
   return num.toLocaleString();
+}
+
+// Formats a margin of error in the metric's own units, prefixed with ±.
+// Returns '' if there is no usable MOE value.
+function formatMoe(moe, dataType) {
+  if (moe === undefined || moe === null || moe === '') return '';
+  const num = parseFloat(moe);
+  if (isNaN(num)) return '';
+  if (dataType === 'percentage' || /rate|pct|percent/.test(dataType || '')) return `± ${num.toFixed(1)}%`;
+  if (dataType === 'currency' || /income|value|benefit|amount/.test(dataType || '')) return `± $${Math.round(num).toLocaleString()}`;
+  if (dataType === 'minutes') return `± ${num.toFixed(1)} min`;
+  if (dataType === 'decimal') return `± ${num.toFixed(2)}`;
+  if (dataType === 'count') return `± ${Math.round(num).toLocaleString()}`;
+  return `± ${num.toLocaleString()}`;
+}
+
+// Honest note for statistics that have no sampling margin of error
+// (administrative counts and modeled estimates from non-ACS sources).
+function moeNote(dataSource) {
+  if (dataSource === 'snap' || dataSource === 'cep') return 'Administrative data — no sampling margin of error';
+  if (dataSource === 'alice' || dataSource === 'tax_credits') return 'Modeled estimate — margin of error not published';
+  return 'Margin of error not available';
+}
+
+// Resolves the {moe, note} pair for a variable + feature: a formatted ±MOE
+// string for ACS metrics that carry one, otherwise an explanatory note.
+function moeFor(meta, properties) {
+  const col = meta.csv_column || meta.key;
+  const raw = col ? properties[`${col}_moe`] : undefined;
+  const moe = formatMoe(raw, meta.data_type);
+  return moe ? { moe, note: '' } : { moe: '', note: moeNote(meta.data_source) };
+}
+
+// Tooltip markup for the MOE line (either the ± value at 90% CI, or the note).
+function moeTipHtml(moe, note) {
+  if (moe) return `<div class="ip-tip-moe">${escapeHtml(moe)} <span class="ip-tip-moe-ci">90% confidence</span></div>`;
+  if (note) return `<div class="ip-tip-moe ip-tip-moe-na">${escapeHtml(note)}</div>`;
+  return '';
 }
 
 function variablesByCategory() {
@@ -162,6 +203,9 @@ export function showInfoPanel(properties) {
   const selectedValue = formatValue(properties[s.selectedVariable], selectedVar?.data_type);
   const selectedDesc = selectedVar?.description || '';
   const selectedYear = extractYear(selectedVar?.source);
+  const selectedMoe = selectedVar
+    ? moeFor({ ...selectedVar, key: s.selectedVariable }, properties)
+    : { moe: '', note: '' };
 
   const grouped = variablesByCategory();
   const cats = Object.entries(CATEGORIES || {})
@@ -182,12 +226,15 @@ export function showInfoPanel(properties) {
       const desc = m.description || '';
       const year = extractYear(m.source);
       const label = m.info_panel_label || m.display_name || '';
+      const { moe, note } = moeFor(m, properties);
       body += `
         <div class="ip-metric ${isSelected ? 'selected' : ''}"
              tabindex="0"
              data-desc="${escapeHtml(desc)}"
              data-year="${escapeHtml(year)}"
-             data-label="${escapeHtml(label)}">
+             data-label="${escapeHtml(label)}"
+             data-moe="${escapeHtml(moe)}"
+             data-moe-note="${escapeHtml(note)}">
           <div class="ip-metric-value">${escapeHtml(displayValue)}</div>
           <div class="ip-metric-label">${escapeHtml(label)}</div>
         </div>`;
@@ -217,7 +264,9 @@ export function showInfoPanel(properties) {
          tabindex="0"
          data-desc="${escapeHtml(selectedDesc)}"
          data-year="${escapeHtml(selectedYear)}"
-         data-label="${escapeHtml(selectedDisplayName)}">
+         data-label="${escapeHtml(selectedDisplayName)}"
+         data-moe="${escapeHtml(selectedMoe.moe)}"
+         data-moe-note="${escapeHtml(selectedMoe.note)}">
       <div class="ip-headline-band">
         <span class="ip-headline-name">${escapeHtml(selectedDisplayName)}</span>
       </div>
@@ -251,10 +300,13 @@ function bindHeadlineTooltip(el) {
     const desc = el.getAttribute('data-desc') || '';
     const year = el.getAttribute('data-year') || '';
     const label = el.getAttribute('data-label') || '';
-    if (!desc && !year) return;
+    const moe = el.getAttribute('data-moe') || '';
+    const note = el.getAttribute('data-moe-note') || '';
+    if (!desc && !year && !moe && !note) return;
     tip.innerHTML = `
       ${label ? `<div class="ip-tip-title">${label}</div>` : ''}
       ${desc ? `<div class="ip-tip-desc">${desc}</div>` : ''}
+      ${moeTipHtml(moe, note)}
       ${year ? `<div class="ip-tip-year"><span class="ip-tip-year-dot"></span>Data Year ${year}</div>` : ''}
     `;
     tip.classList.add('visible');

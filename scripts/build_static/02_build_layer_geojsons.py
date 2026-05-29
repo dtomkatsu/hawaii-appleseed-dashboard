@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -61,6 +62,12 @@ def main() -> int:
             print(f'  ! No tabular data for {level.value}; writing geometry only')
             enriched = geojson
         else:
+            # Drop raw per-cell ACS margin-of-error columns (e.g. b17001_002m):
+            # the front-end only consumes the propagated <metric>_moe columns, so
+            # the raw _M cells are dead weight in the public payload.
+            raw_moe = [c for c in df.columns if re.fullmatch(r'b\d+_\d+m', str(c).lower())]
+            if raw_moe:
+                df = df.drop(columns=raw_moe)
             enriched = geo_processor.merge_geojson_with_data(geojson, df, level)
 
         out_path = OUTPUT_DIR / f'{level.value}.geojson'
