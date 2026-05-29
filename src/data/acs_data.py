@@ -440,10 +440,12 @@ class ACSDataFetcher:
                 'b25003_003e': 'renter_occupied',
                 'b25003_001e': 'total_housing_units',
                 'b25064_001e': 'median_rent',  # Added median rent variable
+                'b25046_001e': 'aggregate_vehicles',  # Aggregate vehicles available (B25046)
                 'b08301_001e': 'total_workers',  # Total workers 16 years and over
                 'b08301_010e': 'public_transit_workers',  # Workers using public transportation
                 'b08301_018e': 'bicycle_workers',  # Workers commuting by bicycle
                 'b08301_019e': 'walked_workers',  # Workers commuting by walking
+                'b08301_021e': 'wfh_workers',  # Workers who worked from home
                 'b08201_001e': 'veh_hh_total',  # Total households (B08201 universe)
                 'b08201_002e': 'veh_hh_0',  # Households with no vehicle
                 'b08201_003e': 'veh_hh_1',  # Households with 1 vehicle
@@ -571,9 +573,12 @@ class ACSDataFetcher:
         if 'b23025_005e' in df.columns and 'b23025_003e' in df.columns:
             df['unemployment_rate'] = _safe_div(df['b23025_005e'], df['b23025_003e']).round(2)
 
-        # Public transportation commute share: B08301_010E / B08303_001E × 100
-        if 'public_transit_workers' in df.columns and 'b08303_001e' in df.columns:
-            df['public_transportation_pct'] = _safe_div(df['public_transit_workers'], df['b08303_001e']).round(2)
+        # Public transportation commute share: B08301_010E / B08301_001E × 100.
+        # Uses the B08301 means-of-transportation universe (all workers 16+,
+        # including work-from-home) so transit/active/WFH shares are all scaled
+        # against the same denominator and are directly comparable.
+        if 'public_transit_workers' in df.columns and 'total_workers' in df.columns:
+            df['public_transportation_pct'] = _safe_div(df['public_transit_workers'], df['total_workers']).round(2)
 
         # Mean commute time (minutes) among workers with ≥30-min commute —
         # weighted average of the B08303 buckets we fetched, using bucket
@@ -593,22 +598,19 @@ class ACSDataFetcher:
                 total_time / total_workers.replace(0, np.nan)
             ).round(2)
 
-        # Average vehicles available per household — weighted mean over the
-        # B08201 (Household Size by Vehicles Available) marginal buckets. The
-        # top bucket is open-ended ("4 or more"); we floor it at 4, which
-        # slightly underestimates the true mean.
-        veh_bucket_weights = {
-            'veh_hh_0': 0.0,
-            'veh_hh_1': 1.0,
-            'veh_hh_2': 2.0,
-            'veh_hh_3': 3.0,
-            'veh_hh_4plus': 4.0,
-        }
-        if all(c in df.columns for c in veh_bucket_weights) and 'veh_hh_total' in df.columns:
-            weighted = sum(df[c] * w for c, w in veh_bucket_weights.items())
+        # Average vehicles available per household — exact mean from the
+        # Census-computed aggregate (B25046) ÷ households (B08201_001E). This
+        # avoids the open-ended-bucket bias of summing B08201 marginals (the
+        # "4 or more" category has no upper bound).
+        if 'aggregate_vehicles' in df.columns and 'veh_hh_total' in df.columns:
             df['avg_vehicles_per_household'] = (
-                weighted / df['veh_hh_total'].replace(0, np.nan)
+                df['aggregate_vehicles'] / df['veh_hh_total'].replace(0, np.nan)
             ).round(2)
+
+        # Zero-vehicle households: B08201_002E / B08201_001E × 100. The share of
+        # households with no vehicle — a direct transportation-access indicator.
+        if 'veh_hh_0' in df.columns and 'veh_hh_total' in df.columns:
+            df['zero_vehicle_household_pct'] = _safe_div(df['veh_hh_0'], df['veh_hh_total']).round(2)
 
         # Active-transportation commute share: (walked + bicycle) / total
         # workers (B08301_001E universe) × 100.
@@ -616,6 +618,11 @@ class ACSDataFetcher:
             df['active_transportation_pct'] = _safe_div(
                 df['walked_workers'] + df['bicycle_workers'], df['total_workers']
             ).round(2)
+
+        # Work-from-home share: B08301_021E / B08301_001E × 100. Same
+        # means-of-transportation universe as the transit/active shares.
+        if 'wfh_workers' in df.columns and 'total_workers' in df.columns:
+            df['work_from_home_pct'] = _safe_div(df['wfh_workers'], df['total_workers']).round(2)
 
         # ── Legacy branches below (unchanged) — these reference older column
         # names that are not produced by the current rename dict and will
