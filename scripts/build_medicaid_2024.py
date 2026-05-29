@@ -24,10 +24,11 @@ lines, since counties are whole islands):
     Oahu->Honolulu, Hawaii->Hawaii, Kauai->Kauai, Maui+Molokai+Lanai->Maui.
     Kalawao County (pop ~67) has no MedQuest figure -> medicaid_rate left null.
 
-Island counts come from data/raw/medquest_enrollment_2025.csv (12 monthly
-managed-care counts per island, transcribed from the 2025 MedQuest report). We
-use the 12-month average for stability -- the report footnote warns counts
-fluctuate up to 6 months from retroactive adjustments.
+Island counts come from data/raw/medquest_enrollment_2024.csv (12 monthly
+managed-care counts per island for calendar year 2024, transcribed from the
+MedQuest enrollment report published January 2025). We use the 12-month average
+for stability -- the report footnote warns counts fluctuate up to 6 months from
+retroactive adjustments.
 
 Population denominators are read (read-only) from the existing processed ACS
 CSVs (total_population), so the rate is consistent with every other dashboard
@@ -64,7 +65,7 @@ GEOJSON_DIR = ROOT / 'web' / 'public' / 'data'
 RAW = ROOT / 'data' / 'raw'
 
 ACS_YEAR = 2024
-MEDQUEST_YEAR = 2025
+MEDQUEST_YEAR = 2024  # calendar year of enrollment (report published Jan 2025)
 MEDQUEST_CSV = RAW / f'medquest_enrollment_{MEDQUEST_YEAR}.csv'
 
 # Census API now requires a key for data queries; reuse the project default
@@ -214,10 +215,10 @@ def load_crosswalk(level: str) -> dict[str, str]:
 def write_detail_csv(level: str, rows: list[dict], fields: list[str]) -> None:
     MEDICAID_DIR.mkdir(parents=True, exist_ok=True)
     name = {
-        'state': 'hawaii_state_medicaid_2025.csv',
-        'county': 'hawaii_county_medicaid_2025.csv',
-        'house': 'hawaii_house_district_medicaid_2025.csv',
-        'senate': 'hawaii_senate_district_medicaid_2025.csv',
+        'state': f'hawaii_state_medicaid_{MEDQUEST_YEAR}.csv',
+        'county': f'hawaii_county_medicaid_{MEDQUEST_YEAR}.csv',
+        'house': f'hawaii_house_district_medicaid_{MEDQUEST_YEAR}.csv',
+        'senate': f'hawaii_senate_district_medicaid_{MEDQUEST_YEAR}.csv',
     }[level]
     path = MEDICAID_DIR / name
     with open(path, 'w', encoding='utf-8', newline='') as f:

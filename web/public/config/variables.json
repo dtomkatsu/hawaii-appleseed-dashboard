@@ -168,7 +168,7 @@
       ],
       "csv_column": "medicaid_rate",
       "legend_direction": "neutral",
-      "source": "Hawaii MedQuest 2025 (calibrated with ACS C27007)",
+      "source": "Hawaii MedQuest 2024 (calibrated with ACS C27007)",
       "data_source": "medicaid"
     },
     "median_income": {

@@ -744,7 +744,7 @@ class SNAPDataLoader(BaseDataLoader):
 class MedicaidDataLoader(BaseDataLoader):
     """Loader for Medicaid enrollment data (MedQuest, ACS-calibrated).
 
-    Reads the per-level CSVs written by scripts/build_medicaid_2025.py into
+    Reads the per-level CSVs written by scripts/build_medicaid_2024.py into
     data/processed/medicaid/. Kept independent of the ACS loader so an ACS
     refresh can never silently drop the medicaid columns.
     """
