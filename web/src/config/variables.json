@@ -71,7 +71,7 @@
     "medicaid_rate": {
       "display_name": "Medicaid Enrollment",
       "display_name_long": "Medicaid Enrollment (%)",
-      "description": "Share of residents enrolled in Medicaid. Administrative MedQuest enrollment, distributed to legislative districts using the ACS Medicaid-coverage pattern (table C27007) calibrated to each county's MedQuest total.",
+      "description": "Share of residents enrolled in Medicaid. State and county figures are administrative MedQuest enrollment counts. Legislative-district values are modeled estimates — the ACS Medicaid-coverage pattern (table C27007) calibrated to each county's MedQuest total — and should be read as approximate.",
       "data_type": "percentage",
       "dropdown_group": "health",
       "dropdown_label": "Medicaid Enrollment (%)",
@@ -98,7 +98,7 @@
       "csv_column": "medicaid_rate",
       "legend_direction": "neutral",
       "source": "Hawaii MedQuest 2025 (calibrated with ACS C27007)",
-      "data_source": "acs"
+      "data_source": "medicaid"
     },
     "alice_rate": {
       "display_name": "ALICE Households",

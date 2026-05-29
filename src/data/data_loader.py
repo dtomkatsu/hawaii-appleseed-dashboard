@@ -30,6 +30,7 @@ class DataType(Enum):
     ALICE = "alice"
     SNAP = "snap"
     CEP = "cep"  # Community Eligibility Provision data
+    MEDICAID = "medicaid"  # MedQuest enrollment, ACS-calibrated
 
 
 @dataclass
@@ -104,8 +105,8 @@ class DataMerger:
     def _merge_district_data(self, base_data: pd.DataFrame, merge_data: pd.DataFrame,
                            data_type: DataType) -> pd.DataFrame:
         """Merge district-level data."""
-        # Use geoid-based merge for SNAP and CEP data if geoid column exists
-        if data_type in [DataType.SNAP, DataType.CEP] and 'geoid' in merge_data.columns:
+        # Use geoid-based merge for SNAP, CEP and Medicaid data if geoid column exists
+        if data_type in [DataType.SNAP, DataType.CEP, DataType.MEDICAID] and 'geoid' in merge_data.columns:
             return self._merge_by_geoid(base_data, merge_data, data_type)
         
         return self._merge_by_district(base_data, merge_data, data_type)
@@ -176,7 +177,10 @@ class DataMerger:
         elif data_type == DataType.CEP:
             cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
             return base_cols + [col for col in cep_cols if col in merge_data.columns]
-        
+        elif data_type == DataType.MEDICAID:
+            med_cols = ['medicaid_enrollment', 'medicaid_rate']
+            return base_cols + [col for col in med_cols if col in merge_data.columns]
+
         return base_cols
     
     def _find_district_column(self, df: pd.DataFrame) -> Optional[str]:
@@ -214,7 +218,10 @@ class DataMerger:
             cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
             for col in cep_cols:
                 self._set_value(df, col, source_row.get(col), target_idx)
-    
+        elif data_type == DataType.MEDICAID:
+            for col in ('medicaid_enrollment', 'medicaid_rate'):
+                self._set_value(df, col, source_row.get(col), target_idx)
+
     def _initialize_columns_by_type(self, df: pd.DataFrame, data_type: DataType):
         """Initialize columns in DataFrame based on data type."""
         if data_type == DataType.ALICE:
@@ -227,8 +234,11 @@ class DataMerger:
             cep_cols = ['total_schools', 'cep_schools', 'cep_percentage', 'cep_display']
             for col in cep_cols:
                 df[col] = None
-    
-    def _set_value(self, df: pd.DataFrame, column: str, value: Any, 
+        elif data_type == DataType.MEDICAID:
+            for col in ('medicaid_enrollment', 'medicaid_rate'):
+                df[col] = None
+
+    def _set_value(self, df: pd.DataFrame, column: str, value: Any,
                   target_idx: Optional[int] = None):
         """Set value in DataFrame column."""
         if target_idx is not None:
@@ -731,6 +741,50 @@ class SNAPDataLoader(BaseDataLoader):
         return geoid_str
 
 
+class MedicaidDataLoader(BaseDataLoader):
+    """Loader for Medicaid enrollment data (MedQuest, ACS-calibrated).
+
+    Reads the per-level CSVs written by scripts/build_medicaid_2025.py into
+    data/processed/medicaid/. Kept independent of the ACS loader so an ACS
+    refresh can never silently drop the medicaid columns.
+    """
+
+    def load_data(self, geo_level: GeoLevel) -> Optional[pd.DataFrame]:
+        """Load Medicaid data for a geographic level."""
+        if not self._validate_geo_level(geo_level):
+            logger.error(f"Invalid geographic level for Medicaid: {geo_level}")
+            return None
+
+        # data_dir already points to the medicaid/ directory.
+        file_path = self.data_dir / self.config.file_patterns[geo_level.value]
+        if not file_path.exists():
+            logger.error(f"Medicaid data file not found: {file_path}")
+            return None
+
+        try:
+            df = pd.read_csv(file_path, dtype={'geoid': str})
+            df = self._standardize_medicaid_data(df, geo_level)
+            logger.debug(f"Loaded Medicaid {geo_level.value} data: {df.shape}")
+            return df
+        except Exception as e:
+            logger.error(f"Error loading Medicaid {geo_level.value} data: {e}")
+            return None
+
+    def _standardize_medicaid_data(self, df: pd.DataFrame, geo_level: GeoLevel) -> pd.DataFrame:
+        """Standardize Medicaid data for merging.
+
+        County rows are matched by uppercase NAME (the same key SNAP uses);
+        the detail CSV carries the island/county name in a `county` column,
+        so expose it as NAME. District rows merge by geoid (already present).
+        medicaid_rate is already on a 0-100 scale (like poverty_rate), so no
+        rescaling is applied.
+        """
+        df = df.copy()
+        if geo_level == GeoLevel.COUNTY and 'county' in df.columns and 'NAME' not in df.columns:
+            df['NAME'] = df['county'].astype(str).str.strip().str.upper()
+        return df
+
+
 class CEPDataLoader(BaseDataLoader):
     """Loader for Community Eligibility Provision (CEP) data."""
     
@@ -1177,18 +1231,23 @@ class DataLoader:
         # CEP data — filenames resolved from data_sources.json
         cep_config = DataConfig(_patterns('cep'))
 
+        # Medicaid data — year-stamped filenames resolved from data_sources.json
+        medicaid_config = DataConfig(_patterns('medicaid'))
+
         # Initialize loaders
         self.acs_loader = ACSDataLoader(self.data_dir, acs_config)
         self.alice_loader = ALICEDataLoader(self.data_dir / 'alice', alice_config)
         self.snap_loader = SNAPDataLoader(self.data_dir / 'snap_benefits', snap_config)
         self.cep_loader = CEPDataLoader(self.data_dir / 'cep_schools', cep_config)
-        
+        self.medicaid_loader = MedicaidDataLoader(self.data_dir / 'medicaid', medicaid_config)
+
         # Map data types to their loaders
         self.loaders = {
             DataType.ACS: self.acs_loader,
             DataType.ALICE: self.alice_loader,
             DataType.SNAP: self.snap_loader,
             DataType.CEP: self.cep_loader,
+            DataType.MEDICAID: self.medicaid_loader,
         }
     
     def _get_geo_name_mapping(self) -> Dict[str, Dict[str, str]]:
@@ -1245,6 +1304,7 @@ class DataLoader:
         alice_data = self.data_cache.get(f"{DataType.ALICE.value}_{geo_level}")
         snap_data = self.data_cache.get(f"{DataType.SNAP.value}_{geo_level}")
         cep_data = self.data_cache.get(f"{DataType.CEP.value}_{geo_level}")
+        medicaid_data = self.data_cache.get(f"{DataType.MEDICAID.value}_{geo_level}")
 
         # Start with ACS data as base
         merged_data = acs_data.copy() if acs_data is not None else None
@@ -1266,6 +1326,15 @@ class DataLoader:
             logger.debug(f"Merging CEP data for {geo_level}, shape: {cep_data.shape}")
             merged_data = self.merger.merge_datasets(merged_data, cep_data, geo_enum, DataType.CEP)
             logger.debug(f"After CEP merge, shape: {merged_data.shape}")
+
+        if merged_data is not None and medicaid_data is not None:
+            logger.debug(f"Merging Medicaid data for {geo_level}, shape: {medicaid_data.shape}")
+            merged_data = self.merger.merge_datasets(merged_data, medicaid_data, geo_enum, DataType.MEDICAID)
+            logger.debug(f"After Medicaid merge, shape: {merged_data.shape}")
+        elif merged_data is not None and medicaid_data is None:
+            # Medicaid load failed/unavailable — still initialize columns so the
+            # GeoJSON always carries medicaid_rate (as None) rather than missing it.
+            self.merger._initialize_columns_by_type(merged_data, DataType.MEDICAID)
 
         # Cache the merged result for subsequent calls
         if merged_data is not None:

@@ -29,20 +29,24 @@ managed-care counts per island, transcribed from the 2025 MedQuest report). We
 use the 12-month average for stability -- the report footnote warns counts
 fluctuate up to 6 months from retroactive adjustments.
 
-Population denominators are read from the existing processed ACS CSVs
-(total_population), so the rate is consistent with every other dashboard metric.
+Population denominators are read (read-only) from the existing processed ACS
+CSVs (total_population), so the rate is consistent with every other dashboard
+metric.
 
 Outputs
 -------
-* Augments data/processed/hawaii_{state,counties,house_districts,
-  senate_districts}_acs_2024.csv in place with two columns:
+* Writes per-level CSVs to data/processed/medicaid/ :
       medicaid_enrollment   (calibrated count)
       medicaid_rate         (percentage, 0-100 scale -- like poverty_rate)
-* Writes detail CSVs to data/processed/medicaid/ for provenance/inspection.
+  These are the canonical source for the metric. They are merged into the
+  layer GeoJSON by an independent MedicaidDataLoader (DataType.MEDICAID), so an
+  ACS refresh can no longer silently drop the medicaid columns -- the two data
+  sources are decoupled.
 
-Re-run this AFTER any ACS refresh (scripts/update_data.py overwrites the ACS
-CSVs and would drop the medicaid columns), and annually when a new MedQuest
-report posts (update data/raw/medquest_enrollment_<year>.csv and MEDQUEST_YEAR).
+Re-run this annually when a new MedQuest report posts (update
+data/raw/medquest_enrollment_<year>.csv and MEDQUEST_YEAR), and after any ACS
+refresh if you want the population denominators to track the new ACS vintage.
+Then run scripts/build_static/02_build_layer_geojsons.py to rebuild the GeoJSON.
 """
 from __future__ import annotations
 
@@ -204,36 +208,8 @@ def load_crosswalk(level: str) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Augment ACS CSVs in place
+# Write per-level detail CSVs (the canonical medicaid source)
 # ---------------------------------------------------------------------------
-
-def augment_acs_csv(level: str, by_geoid: dict[str, dict]) -> None:
-    path = PROCESSED / ACS_FILE[level]
-    fieldnames, rows = read_acs_csv(level)
-    added = []
-    for col in ('medicaid_enrollment', 'medicaid_rate'):
-        if col not in fieldnames:
-            fieldnames.append(col)
-            added.append(col)
-    updated = 0
-    for r in rows:
-        m = by_geoid.get(r.get('geoid', ''))
-        if m is None:
-            # Leave blank (-> NaN -> JSON null) for geos without a figure
-            # (e.g. Kalawao County). _add_data_to_properties maps NaN to None.
-            r.setdefault('medicaid_enrollment', '')
-            r.setdefault('medicaid_rate', '')
-            continue
-        r['medicaid_enrollment'] = m['medicaid_enrollment']
-        r['medicaid_rate'] = m['medicaid_rate']
-        updated += 1
-    with open(path, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-    print(f'  augmented {path.name}: {updated}/{len(rows)} rows, '
-          f'cols {added or "(already present)"}')
-
 
 def write_detail_csv(level: str, rows: list[dict], fields: list[str]) -> None:
     MEDICAID_DIR.mkdir(parents=True, exist_ok=True)
@@ -270,7 +246,6 @@ def main() -> int:
               f'sum coverage={sum(acs_medicaid[lvl].values()):,}')
 
     print('\n[3/5] Computing state + county rates (pure MedQuest / ACS pop)...')
-    augment = {lvl: {} for lvl in LEVELS}
     detail = {lvl: [] for lvl in LEVELS}
 
     # State
@@ -278,8 +253,6 @@ def main() -> int:
     srow = state_rows[0]
     spop = int(srow['total_population'])
     srate = round(100.0 * state_total / spop, 2)
-    augment['state'][srow['geoid']] = {
-        'medicaid_enrollment': round(state_total), 'medicaid_rate': srate}
     detail['state'].append({
         'geoid': srow['geoid'], 'name': srow['name'],
         'medquest_enrollment': round(state_total, 1), 'population': spop,
@@ -298,8 +271,6 @@ def main() -> int:
             continue
         enroll = medquest[county]
         rate = round(100.0 * enroll / pop, 2)
-        augment['county'][g] = {'medicaid_enrollment': round(enroll),
-                                'medicaid_rate': rate}
         detail['county'].append({
             'geoid': g, 'name': r['name'], 'county': county,
             'medquest_enrollment': round(enroll, 1), 'population': pop,
@@ -326,8 +297,6 @@ def main() -> int:
             enroll = medquest[county] * k
             pop = pop_by_geoid[g]
             rate = round(100.0 * enroll / pop, 2) if pop else 0.0
-            augment[level][g] = {'medicaid_enrollment': round(enroll),
-                                 'medicaid_rate': rate}
             detail[level].append({
                 'geoid': g, 'name': name_by_geoid[g], 'county': county,
                 'acs_medicaid_coverage': med.get(g, 0),
@@ -341,10 +310,7 @@ def main() -> int:
             print(f'    {level} {c:9s}: sum enroll={check[c]:>11,.1f} '
                   f'(MedQuest={medquest[c]:>11,.1f}, delta={delta:+.1f})')
 
-    print('\n[5/5] Augmenting ACS CSVs + writing detail CSVs...')
-    for level in LEVELS:
-        augment_acs_csv(level, augment[level])
-
+    print('\n[5/5] Writing per-level medicaid CSVs (data/processed/medicaid/)...')
     write_detail_csv('state', detail['state'],
                      ['geoid', 'name', 'medquest_enrollment', 'population',
                       'medicaid_enrollment', 'medicaid_rate'])
