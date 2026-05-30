@@ -21,6 +21,9 @@ export function readFromUrl() {
     const v = params.get(shortKey(k));
     if (v) patch[k] = v;
   }
+  // Reliability toggle is a boolean — coerce rather than store the raw string.
+  const rel = params.get('rel');
+  if (rel === '1' || rel === 'true') patch.showReliability = true;
   if (Object.keys(patch).length) setState(patch);
 }
 
@@ -28,6 +31,8 @@ export function writeToUrl() {
   const s = getState();
   const params = new URLSearchParams();
   for (const k of KEYS) params.set(shortKey(k), s[k]);
+  // Only emit rel when on, to keep the default URL clean.
+  if (s.showReliability) params.set('rel', '1');
   const newHash = '#' + params.toString();
   if (window.location.hash !== newHash) {
     history.replaceState(null, '', newHash);

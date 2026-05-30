@@ -11,12 +11,17 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # peaceiris/actions-gh-pages has no Node-24 major yet; force its JS action
+    # (and any other) onto the Node 24 runtime so the deploy survives GitHub's
+    # June 2026 removal of Node 20. actions/* are already on Node-24-native v6.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
