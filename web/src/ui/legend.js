@@ -40,11 +40,11 @@ function formatRange(from, next, dataType, decimals) {
       return `$${from.toLocaleString()}+`;
     }
     if (isCount) return `${from.toLocaleString()}+`;
-    if (isDecimal) return `${from.toFixed(1)}+`;
+    if (isDecimal) return `${from.toFixed(decimals)}+`;
     return `${from}+`;
   }
 
-  if (isDecimal) return `${from.toFixed(1)}-${next.toFixed(1)}`;
+  if (isDecimal) return `${from.toFixed(decimals)}-${next.toFixed(decimals)}`;
   if (isPct) return `${from}-${next}%`;
   if (isCurrency) {
     if (from >= 1_000_000 && decimals < 2) {
@@ -96,7 +96,10 @@ export function renderLegend(varKey, scheme) {
   const divisor =
     isCurrency && grades[0] >= 1_000_000 ? 1_000_000 :
     isCurrency && grades[0] >= 1000 ? 1000 : 1;
-  const decimals = divisor > 1 ? pickDecimalsForGrades(grades, divisor) : 0;
+  // Decimal-typed variables (e.g. vehicles per capita 0.45–0.78) need enough
+  // places that consecutive thresholds stay distinct — reuse the same chooser.
+  const decimals = divisor > 1 ? pickDecimalsForGrades(grades, divisor)
+    : dataType === 'decimal' ? pickDecimalsForGrades(grades, 1) : 0;
 
   // Variables that render as circle markers (e.g. Millionaires) get round
   // swatches with a dark slate border that mirrors the on-map stroke.

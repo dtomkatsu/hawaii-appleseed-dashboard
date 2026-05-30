@@ -441,6 +441,7 @@ class ACSDataFetcher:
                 'b25003_001e': 'total_housing_units',
                 'b25064_001e': 'median_rent',  # Added median rent variable
                 'b25046_001e': 'aggregate_vehicles',  # Aggregate vehicles available (B25046)
+                'b01003_001e': 'total_resident_population',  # Total population (B01003)
                 'b08013_001e': 'aggregate_travel_time',  # Aggregate travel time to work (B08013)
                 'b08301_001e': 'total_workers',  # Total workers 16 years and over
                 'b08301_010e': 'public_transit_workers',  # Workers using public transportation
@@ -600,6 +601,14 @@ class ACSDataFetcher:
                 df['aggregate_vehicles'] / df['veh_hh_total'].replace(0, np.nan)
             ).round(2)
 
+        # Vehicles per capita — aggregate vehicles (B25046) ÷ total population
+        # (B01003). Normalizes out household size, which the per-household
+        # average conflates (large multigenerational households inflate it).
+        if 'aggregate_vehicles' in df.columns and 'total_resident_population' in df.columns:
+            df['vehicles_per_capita'] = (
+                df['aggregate_vehicles'] / df['total_resident_population'].replace(0, np.nan)
+            ).round(2)
+
         # Zero-vehicle households: B08201_002E / B08201_001E × 100. The share of
         # households with no vehicle — a direct transportation-access indicator.
         if 'veh_hh_0' in df.columns and 'veh_hh_total' in df.columns:
@@ -703,6 +712,7 @@ class ACSDataFetcher:
 
         # Ratios (numerator NOT a subset of denominator), same units as the value.
         _set_moe('avg_vehicles_per_household', moe_ratio(_moe('b25046_001m'), 'veh_hh_total', 'avg_vehicles_per_household', _moe('b08201_001m')))
+        _set_moe('vehicles_per_capita', moe_ratio(_moe('b25046_001m'), 'total_resident_population', 'vehicles_per_capita', _moe('b01003_001m')))
         _set_moe('travel_time_to_work_minutes', moe_ratio(_moe('b08013_001m'), 'b08303_001e', 'travel_time_to_work_minutes', _moe('b08303_001m')))
 
         # ── Legacy branches below (unchanged) — these reference older column
