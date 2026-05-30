@@ -113,6 +113,43 @@ export function renderLegend(varKey, scheme) {
   }
 
   itemsEl.innerHTML = html;
+
+  updateReliabilityControl(varKey);
+}
+
+let reliabilityBound = false;
+
+// Wires the reliability checkbox: binds the toggle once, reflects current
+// state, disables it for non-ACS variables (no MOE to assess), and renders the
+// two-tier hatch key when active.
+function updateReliabilityControl(varKey) {
+  const cb = document.getElementById('reliability-toggle');
+  if (!cb) return;
+  const s = getState();
+  const isAcs = VARIABLES?.[varKey]?.data_source === 'acs';
+
+  if (!reliabilityBound) {
+    cb.addEventListener('change', (e) => setState({ showReliability: e.target.checked }));
+    reliabilityBound = true;
+  }
+
+  cb.checked = !!s.showReliability;
+  cb.disabled = !isAcs;
+  const wrap = cb.closest('.legend-reliability-toggle');
+  if (wrap) {
+    wrap.classList.toggle('disabled', !isAcs);
+    wrap.title = isAcs ? '' : 'Reliability flags are only available for Census (ACS) estimates';
+  }
+
+  const key = document.getElementById('reliability-key');
+  if (key) {
+    const show = s.showReliability && isAcs;
+    key.hidden = !show;
+    key.innerHTML = show
+      ? `<div class="rel-key-row"><span class="rel-key-swatch rel-caution"></span>Higher uncertainty (CV 15–30%)</div>
+         <div class="rel-key-row"><span class="rel-key-swatch rel-unreliable"></span>Unreliable (CV &gt; 30%)</div>`
+      : '';
+  }
 }
 
 function capitalize(s) {

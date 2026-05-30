@@ -844,6 +844,65 @@ body {
   border-color: var(--primary);
 }
 
+/* ========== Reliability toggle ========== */
+.legend-reliability {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.legend-reliability-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.legend-reliability-toggle input {
+  cursor: pointer;
+  margin: 0;
+}
+.legend-reliability-toggle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.legend-reliability-toggle.disabled input {
+  cursor: not-allowed;
+}
+.legend-reliability-key {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rel-key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+.rel-key-swatch {
+  width: 16px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.96);
+}
+/* Mirror the on-map hatch tiers: single diagonal for caution, cross-hatch for unreliable. */
+.rel-key-swatch.rel-caution {
+  background-image: repeating-linear-gradient(45deg, rgba(40,50,56,0.5) 0 1px, transparent 1px 4px);
+}
+.rel-key-swatch.rel-unreliable {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(40,50,56,0.65) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(40,50,56,0.65) 0 1px, transparent 1px 3px);
+}
+.is-embedded .legend-reliability {
+  display: none !important;
+}
+
 /* ========== Custom tooltip (hover) ========== */
 .custom-tooltip {
   background: rgba(255, 255, 255, 0.99);

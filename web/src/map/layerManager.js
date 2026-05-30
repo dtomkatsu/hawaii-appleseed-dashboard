@@ -40,6 +40,85 @@ const registeredLevels = new Set();
 let currentLevel = null;
 let currentVariable = null;
 let currentScheme = null;
+let reliabilityOn = false;
+
+// ── Reliability hatch overlay ───────────────────────────────────────────────
+// Opt-in (checkbox) diagonal-hatch overlay marking districts whose ACS estimate
+// for the active variable is statistically shaky. Two tiers by coefficient of
+// variation (CV = (MOE/1.645)/|value|): caution 15–30% (sparse single hatch),
+// unreliable >30% (denser cross-hatch). Computed client-side from the value and
+// its <var>_moe column — no data change. A near-zero guard skips tiny estimates
+// (where CV explodes but the absolute error is immaterial).
+const RELIABILITY_PATTERN_CAUTION = 'reliability-hatch-caution';
+const RELIABILITY_PATTERN_UNRELIABLE = 'reliability-hatch-unreliable';
+const CV_CAUTION = 0.15;
+const CV_UNRELIABLE = 0.30;
+let hatchPatternsReady = false;
+
+function makeHatchImage({ size, spacing, cross, alpha }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+  ctx.strokeStyle = `rgba(40, 50, 56, ${alpha})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = -size; i < size * 2; i += spacing) {
+    ctx.moveTo(i, 0); ctx.lineTo(i + size, size);        // "\" diagonal
+    if (cross) { ctx.moveTo(i + size, 0); ctx.lineTo(i, size); } // "/" diagonal
+  }
+  ctx.stroke();
+  const img = ctx.getImageData(0, 0, size, size);
+  return { width: size, height: size, data: new Uint8Array(img.data.buffer) };
+}
+
+function registerHatchPatterns(map) {
+  if (hatchPatternsReady) return;
+  if (!map.hasImage(RELIABILITY_PATTERN_CAUTION)) {
+    map.addImage(RELIABILITY_PATTERN_CAUTION,
+      makeHatchImage({ size: 12, spacing: 6, cross: false, alpha: 0.40 }), { pixelRatio: 2 });
+  }
+  if (!map.hasImage(RELIABILITY_PATTERN_UNRELIABLE)) {
+    map.addImage(RELIABILITY_PATTERN_UNRELIABLE,
+      makeHatchImage({ size: 12, spacing: 4, cross: true, alpha: 0.55 }), { pixelRatio: 2 });
+  }
+  hatchPatternsReady = true;
+}
+
+// Reliability flags only apply to Census (ACS) variables that carry a margin of
+// error. Other sources (SNAP/ALICE/tax credits) have no sampling MOE to assess.
+function variableHasMoe(varKey) {
+  return VARIABLES?.[varKey]?.data_source === 'acs';
+}
+
+function cvExpression(variable) {
+  // CV = (MOE / 1.645) / max(|value|, ε)
+  return ['/',
+    ['/', ['to-number', ['get', `${variable}_moe`]], 1.645],
+    ['max', ['abs', ['to-number', ['get', variable]]], 1e-9],
+  ];
+}
+
+function reliabilityFilter(variable) {
+  const thresholds = getThresholds(variable) || [];
+  const floor = (thresholds[0] || 0) * 0.5; // near-zero guard anchored to scale
+  return [
+    'all',
+    ['has', variable],
+    ['has', `${variable}_moe`],
+    ['==', ['typeof', ['get', variable]], 'number'],
+    ['==', ['typeof', ['get', `${variable}_moe`]], 'number'],
+    ['>=', ['abs', ['to-number', ['get', variable]]], floor],
+    ['>', cvExpression(variable), CV_CAUTION],
+  ];
+}
+
+function reliabilityPatternExpr(variable) {
+  return ['case',
+    ['>', cvExpression(variable), CV_UNRELIABLE], RELIABILITY_PATTERN_UNRELIABLE,
+    RELIABILITY_PATTERN_CAUTION,
+  ];
+}
 
 const FADE_MS = 300;
 const pendingHide = new Map(); // level → setTimeout id
@@ -129,6 +208,8 @@ function fillLayerIds(level) {
 function ensureSourceAndLayers(map, level, data) {
   if (registeredLevels.has(level)) return;
 
+  registerHatchPatterns(map);
+
   map.addSource(level, {
     type: 'geojson',
     data,
@@ -148,6 +229,21 @@ function ensureSourceAndLayers(map, level, data) {
       'fill-opacity': FILL_OPACITY_EXPR,
       ...TRANSITION_PAINT,
     },
+  });
+
+  // Reliability hatch overlay — sits above the colored fill, below the
+  // outlines. Hidden by default; shown (and filtered to flagged features for
+  // the active variable) only when the reliability checkbox is on.
+  map.addLayer({
+    id: `${level}-reliability`,
+    type: 'fill',
+    source: level,
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-pattern': RELIABILITY_PATTERN_CAUTION,
+      'fill-opacity': 0.9,
+    },
+    filter: ['==', ['get', 'GEOID'], ' '], // matches nothing until applied
   });
 
   // Default outline
@@ -274,6 +370,39 @@ function applyColorExpression(map, level) {
       map.setPaintProperty(`${level}-line`, 'line-color', '#aaaaaa');
     }
   }
+}
+
+// Apply the reliability overlay for one level: visible only when the toggle is
+// on, the active variable is an ACS metric with MOE, and we're not in points
+// mode. When shown, the filter + pattern are rebuilt for the current variable.
+function applyReliability(map, level) {
+  const layerId = `${level}-reliability`;
+  if (!map.getLayer(layerId)) return;
+  const on = reliabilityOn && !pointsLayerActive && variableHasMoe(currentVariable);
+  if (!on) {
+    map.setLayoutProperty(layerId, 'visibility', 'none');
+    return;
+  }
+  map.setFilter(layerId, reliabilityFilter(currentVariable));
+  map.setPaintProperty(layerId, 'fill-pattern', reliabilityPatternExpr(currentVariable));
+  map.setLayoutProperty(layerId, 'visibility', 'visible');
+}
+
+// Re-apply across all levels: show the active level's overlay, hide the rest.
+function refreshReliability() {
+  const map = getMap();
+  if (!map) return;
+  for (const level of registeredLevels) {
+    if (level === currentLevel) applyReliability(map, level);
+    else if (map.getLayer(`${level}-reliability`)) {
+      map.setLayoutProperty(`${level}-reliability`, 'visibility', 'none');
+    }
+  }
+}
+
+export function setReliability(on) {
+  reliabilityOn = on;
+  refreshReliability();
 }
 
 // ---------------------------------------------------------------------------
@@ -420,6 +549,7 @@ export async function setLayer(level) {
     clearSelectedLayer();
     setShadowFeature(level, null); // clear any prior selection's shadow
     currentLevel = level;
+    refreshReliability();
   };
 
   if (map.isStyleLoaded()) {
@@ -461,6 +591,7 @@ export function setVariable(varKey) {
       if (pointsLayerActive) removePointsLayer(map);
       applyColorExpression(map, currentLevel);
     }
+    refreshReliability();
   };
 
   // Initial-load race: setVariable may fire before setLayer's deferred

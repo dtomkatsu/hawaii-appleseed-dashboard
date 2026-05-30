@@ -2,6 +2,7 @@ const state = {
   activeLayer: 'county',
   selectedVariable: 'alice_rate',
   colorScheme: 'blue',
+  showReliability: false,
   displayOptions: { showLabels: false, showLegend: true },
   selectedFeatureId: null,
 };
