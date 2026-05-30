@@ -441,6 +441,7 @@ class ACSDataFetcher:
                 'b25003_001e': 'total_housing_units',
                 'b25064_001e': 'median_rent',  # Added median rent variable
                 'b25046_001e': 'aggregate_vehicles',  # Aggregate vehicles available (B25046)
+                'b08013_001e': 'aggregate_travel_time',  # Aggregate travel time to work (B08013)
                 'b08301_001e': 'total_workers',  # Total workers 16 years and over
                 'b08301_010e': 'public_transit_workers',  # Workers using public transportation
                 'b08301_018e': 'bicycle_workers',  # Workers commuting by bicycle
@@ -580,22 +581,14 @@ class ACSDataFetcher:
         if 'public_transit_workers' in df.columns and 'total_workers' in df.columns:
             df['public_transportation_pct'] = _safe_div(df['public_transit_workers'], df['total_workers']).round(2)
 
-        # Mean commute time (minutes) among workers with ≥30-min commute —
-        # weighted average of the B08303 buckets we fetched, using bucket
-        # midpoints. This mirrors the metric stored in the 2023 CSVs.
-        commute_buckets = {
-            'b08303_008e': 32.0,   # 30-34 min
-            'b08303_009e': 37.0,   # 35-39 min
-            'b08303_010e': 42.0,   # 40-44 min
-            'b08303_011e': 52.0,   # 45-59 min
-            'b08303_012e': 74.5,   # 60-89 min
-            'b08303_013e': 95.0,   # 90+ min (open-ended; conservative midpoint)
-        }
-        if all(c in df.columns for c in commute_buckets):
-            total_time = sum(df[c] * midpoint for c, midpoint in commute_buckets.items())
-            total_workers = sum(df[c] for c in commute_buckets)
+        # Mean travel time to work (minutes) — exact mean from the Census
+        # aggregate (B08013) ÷ commuters (B08303_001E, workers who did not work
+        # from home). The prior bucket-midpoint version averaged only the
+        # ≥30-min buckets, overstating the mean badly (~47 vs ~26 min).
+        if 'aggregate_travel_time' in df.columns and 'b08303_001e' in df.columns:
+            commuters = pd.to_numeric(df['b08303_001e'], errors='coerce')
             df['travel_time_to_work_minutes'] = (
-                total_time / total_workers.replace(0, np.nan)
+                df['aggregate_travel_time'] / commuters.replace(0, np.nan)
             ).round(2)
 
         # Average vehicles available per household — exact mean from the
@@ -631,15 +624,19 @@ class ACSDataFetcher:
         # for rates, dollars for medians, vehicles for the average, minutes for
         # commute time). The info panel surfaces these on hover; values are
         # otherwise unchanged.
-        def _moe(col):
+        def _moe(col, controlled_zero=True):
             """MOE column as a numeric Series, with Census jam values handled.
-            -555555555 marks a *controlled* estimate (no sampling error) → 0;
-            other negative sentinels (-222222222 "too few cases", etc.) mean the
-            MOE is not calculable → NaN. None if the column is absent."""
+            For counts/totals, -555555555 marks a *controlled* estimate (no
+            sampling error) → 0. For medians, the same code instead means the
+            median falls in the lowest/highest interval so the MOE is not
+            calculable → NaN; pass controlled_zero=False there. All other
+            negative sentinels (-222222222 "too few cases", etc.) → NaN. Returns
+            None if the column is absent."""
             if col not in df.columns:
                 return None
             s = pd.to_numeric(df[col], errors='coerce')
-            s = s.mask(s == -555555555, 0.0)
+            if controlled_zero:
+                s = s.mask(s == -555555555, 0.0)
             return s.where(s >= 0, np.nan)
 
         def _moe_sum(*cols):
@@ -678,10 +675,12 @@ class ACSDataFetcher:
             if series is not None:
                 df[f'{name}_moe'] = series
 
-        # Direct estimates — MOE is the published _M as-is.
-        if _moe('b19013_001m') is not None: _set_moe('median_income', _moe('b19013_001m'))
-        if _moe('b25064_001m') is not None: _set_moe('median_rent', _moe('b25064_001m'))
-        if _moe('b25077_001m') is not None: _set_moe('median_home_value', _moe('b25077_001m'))
+        # Direct median estimates — MOE is the published _M as-is. Medians are
+        # never controlled, so a -555555555 here means "not calculable" (median
+        # in the top/bottom interval) → NaN, not zero error.
+        if _moe('b19013_001m', controlled_zero=False) is not None: _set_moe('median_income', _moe('b19013_001m', controlled_zero=False))
+        if _moe('b25064_001m', controlled_zero=False) is not None: _set_moe('median_rent', _moe('b25064_001m', controlled_zero=False))
+        if _moe('b25077_001m', controlled_zero=False) is not None: _set_moe('median_home_value', _moe('b25077_001m', controlled_zero=False))
 
         # Subset-proportion rates (numerator ⊂ denominator).
         _set_moe('poverty_rate',          moe_pct(_moe('b17001_002m'), 'total_population',    'poverty_rate',          _moe('b17001_001m')))
@@ -702,23 +701,9 @@ class ACSDataFetcher:
         _set_moe('nhpi_pct',              moe_pct(_moe('b02012_001m'), 'race_total_pop',      'nhpi_pct',              _moe('b02001_001m')))
         _set_moe('hispanic_pct',          moe_pct(_moe('b03002_012m'), 'hispanic_universe',   'hispanic_pct',          _moe('b03002_001m')))
 
-        # Vehicles per household — ratio (aggregate vehicles ÷ households).
+        # Ratios (numerator NOT a subset of denominator), same units as the value.
         _set_moe('avg_vehicles_per_household', moe_ratio(_moe('b25046_001m'), 'veh_hh_total', 'avg_vehicles_per_household', _moe('b08201_001m')))
-
-        # Average commute time — ratio of a weighted bucket sum to the bucket
-        # count (approximate: bucket midpoints carry no error of their own).
-        commute_moe_cols = {
-            'b08303_008m': 32.0, 'b08303_009m': 37.0, 'b08303_010m': 42.0,
-            'b08303_011m': 52.0, 'b08303_012m': 74.5, 'b08303_013m': 95.0,
-        }
-        if all(_moe(c) is not None for c in commute_moe_cols) and 'travel_time_to_work_minutes' in df.columns:
-            num_moe = np.sqrt(sum((mid * _moe(c)) ** 2 for c, mid in commute_moe_cols.items()))
-            den = sum(_est(c[:-1] + 'e') for c in commute_moe_cols)
-            den_moe = np.sqrt(sum(_moe(c) ** 2 for c in commute_moe_cols))
-            r = pd.to_numeric(df['travel_time_to_work_minutes'], errors='coerce')
-            df['travel_time_to_work_minutes_moe'] = (
-                np.sqrt(num_moe ** 2 + (r ** 2) * (den_moe ** 2)) / den.replace(0, np.nan)
-            ).round(2)
+        _set_moe('travel_time_to_work_minutes', moe_ratio(_moe('b08013_001m'), 'b08303_001e', 'travel_time_to_work_minutes', _moe('b08303_001m')))
 
         # ── Legacy branches below (unchanged) — these reference older column
         # names that are not produced by the current rename dict and will
