@@ -789,11 +789,13 @@
       "show_in_default_metrics": true,
       "is_special_variable": true,
       "color_thresholds": [
-        30,
-        35,
-        40,
-        45,
-        50
+        20,
+        23,
+        26,
+        29,
+        32,
+        36,
+        40
       ],
       "csv_column": "travel_time_to_work_minutes",
       "legend_direction": "neutral",
