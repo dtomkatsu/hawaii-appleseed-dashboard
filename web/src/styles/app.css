@@ -82,6 +82,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative; /* anchor for the absolutely-positioned .main-tabs strip */
 }
 
 /* ========== "Open" button — floats over top-right of controls-bar ========== */
@@ -128,14 +129,21 @@ body {
 .fullscreen-btn[hidden] { display: none !important; }
 
 /* ========== Main tab bar ========== */
+/* Folded into the top-left of the container as a compact floating strip rather
+   than a full-width band, so it reclaims ~34px of vertical space. It stays a
+   shared <nav> (outside both panes) so it persists when switching tabs; it's
+   absolutely positioned over .app-main's top-left, above the (empty) area over
+   the Geography dropdown on the map pane. */
 .main-tabs {
+  position: absolute;
+  top: 6px;
+  left: 16px;
+  z-index: 1300; /* above controls-bar (1100) and the Open button (1200) */
   display: flex;
   align-items: flex-end;
   gap: 0;
-  background: white;
-  border-bottom: 1px solid #e0e8dc;
-  padding: 0 16px;
-  flex-shrink: 0;
+  background: none;
+  padding: 0;
 }
 
 .main-tab {
@@ -168,6 +176,20 @@ body {
   font-weight: 600;
 }
 
+/* Below ~1024px the 4-column controls grid squishes and its "Choose your
+   variable" header slides left under the folded tab strip. There, revert the
+   tabs to a normal full-width band (the page scrolls, so the reclaimed height
+   matters less); the desktop view keeps the folded, space-saving layout. */
+@media (max-width: 1024px) {
+  .main-tabs {
+    position: static;
+    background: white;
+    border-bottom: 1px solid #e0e8dc;
+    padding: 0 16px;
+  }
+  #tab-data { padding-top: 20px; }
+}
+
 /* ========== Tab panes ========== */
 .tab-pane[hidden] { display: none !important; }
 
@@ -183,7 +205,9 @@ body {
 #tab-data {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 28px 40px;
+  /* extra top padding clears the floating .main-tabs strip (which overlaps the
+     top-left); the map pane needs no inset since that corner is empty there */
+  padding: 44px 28px 40px;
   min-height: 0;
 }
 
