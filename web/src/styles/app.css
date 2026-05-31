@@ -597,7 +597,6 @@ body {
    tabs, controls bar (host selects variable via ?var=…), color-scheme
    picker inside the legend. */
 .is-embedded .main-tabs,
-.is-embedded .controls-bar,
 .is-embedded .legend-color-scheme {
   display: none !important;
 }
