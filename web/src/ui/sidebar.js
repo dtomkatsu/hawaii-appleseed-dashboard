@@ -34,6 +34,9 @@ const CEP_KEYS = new Set(['cep_percentage', 'cep_display']);
 const TRANSPORTATION_KEYS = new Set([
   'travel_time_to_work_minutes',
   'public_transportation_pct',
+  'avg_vehicles_per_household',
+  'zero_vehicle_household_pct',
+  'vehicles_per_capita',
 ]);
 
 const GROUP_DESCRIPTIONS = {

@@ -149,7 +149,8 @@ body {
 .main-tab {
   background: none;
   border: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   padding: 8px 14px 7px;
   font-family: inherit;
   font-size: 13px;
@@ -157,7 +158,7 @@ body {
   color: #666;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
   margin-bottom: -1px;
   display: flex;
   align-items: center;
@@ -172,6 +173,7 @@ body {
 .main-tab:hover { color: var(--primary); }
 .main-tab.active {
   color: var(--primary);
+  background-color: var(--primary-bg);
   border-bottom-color: var(--primary);
   font-weight: 600;
 }
@@ -207,7 +209,7 @@ body {
   overflow-y: auto;
   /* extra top padding clears the floating .main-tabs strip (which overlaps the
      top-left); the map pane needs no inset since that corner is empty there */
-  padding: 44px 28px 40px;
+  padding: 80px 28px 40px;
   min-height: 0;
 }
 
