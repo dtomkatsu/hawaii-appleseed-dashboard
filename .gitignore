@@ -45,3 +45,6 @@ Thumbs.db
 # Node
 web/node_modules/
 web/dist/
+
+# Playwright MCP browser-test artifacts
+.playwright-mcp/
