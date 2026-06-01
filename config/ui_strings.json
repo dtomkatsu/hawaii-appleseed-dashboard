@@ -5,8 +5,8 @@
   "help_url": "https://www.hawaiiappleseed.org/",
 
   "tabs": {
-    "map": "\ud83d\uddfa\ufe0f Map View",
-    "data": "\ud83d\udcca Data Analysis"
+    "map": "Map",
+    "data": "Data"
   },
 
   "sidebar": {
