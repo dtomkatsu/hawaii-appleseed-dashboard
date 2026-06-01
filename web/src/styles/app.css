@@ -207,9 +207,10 @@ body {
 #tab-data {
   flex: 1;
   overflow-y: auto;
-  /* extra top padding clears the floating .main-tabs strip (which overlaps the
-     top-left); the map pane needs no inset since that corner is empty there */
-  padding: 80px 28px 40px;
+  /* top padding clears the floating .main-tabs strip (top:6px + ~32px tall ≈
+     38px) and leaves a ~20px buffer below it — matching the narrow-viewport
+     band gap. The map pane needs no inset since that corner is empty there. */
+  padding: 58px 28px 40px;
   min-height: 0;
 }
 
@@ -244,6 +245,14 @@ body {
   padding-bottom: 6px;
 }
 .ctrl-tag-wrap {
+  /* Reserve the two-line height ("Housing & Transportation" wraps in the
+     1025–1230px band) and vertically center the pill, so single-line and
+     wrapped tags share a common center instead of just a common top edge. */
+  display: flex;
+  align-items: center;
+  /* border-box: must fit the two-line tag (~2.7em) plus the 14px padding below,
+     so every column's wrap is the same height and the pills share a center. */
+  min-height: 3.6em;
   padding-bottom: 14px;
 }
 .ctrl-tag {
