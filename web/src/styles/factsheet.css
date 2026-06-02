@@ -17,8 +17,8 @@
 
 body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.45;
   color: var(--fs-text);
   background: var(--fs-page-bg);
   -webkit-font-smoothing: antialiased;
@@ -47,7 +47,7 @@ body {
   position: relative;
   background: var(--fs-primary-dark);
   color: white;
-  padding: 28px 36px;
+  padding: 15px 36px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -68,7 +68,7 @@ body {
 }
 .fs-header-text { min-width: 0; }
 .fs-kicker {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -105,14 +105,14 @@ body {
 }
 
 /* ── Main content ── */
-.fs-main { padding: 28px 36px 8px; }
+.fs-main { padding: 14px 36px 6px; }
 
 /* ── Did you know (solid dark callout, magazine pull-quote feel) ── */
 .fs-did-you-know {
   background: var(--fs-primary-dark);
   color: white;
-  padding: 22px 26px;
-  margin-bottom: 24px;
+  padding: 14px 24px;
+  margin-bottom: 8px;
   border-radius: 12px;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -131,7 +131,7 @@ body {
   flex-shrink: 0;
 }
 .fs-did-you-know h3 {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -139,9 +139,9 @@ body {
   margin-bottom: 6px;
 }
 .fs-did-you-know p {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 400;
-  line-height: 1.5;
+  line-height: 1.45;
   color: rgba(255, 255, 255, 0.78);
 }
 /* Did-you-know data hierarchy: big bold fraction (the headline data),
@@ -156,7 +156,7 @@ body {
   display: inline-block;
   margin: 0 6px 0 7px;
   padding: 1px 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--fs-primary-tint);
   background: rgba(255, 255, 255, 0.1);
@@ -174,26 +174,26 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 14px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 }
 .fs-stat-card {
   background: var(--fs-stat-bg);
   border-radius: 12px;
-  padding: 22px 18px 18px;
+  padding: 16px 18px 14px;
   text-align: center;
 }
 .fs-stat-number {
   display: block;
-  font-size: 40px;
+  font-size: 36px;
   font-weight: 900;
   letter-spacing: -0.025em;
   color: var(--fs-primary-dark);
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   font-feature-settings: 'tnum' 1;
 }
 .fs-stat-label {
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -213,7 +213,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   font-feature-settings: 'tnum' 1;
   letter-spacing: -0.005em;
@@ -223,11 +223,11 @@ body {
 .fs-stat-delta-down { color: #b04a1a; }
 .fs-stat-pct {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   opacity: 0.7;
 }
 .fs-stat-desc {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -239,7 +239,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 .fs-grid-second {
   page-break-inside: avoid;
@@ -248,18 +248,18 @@ body {
 .fs-card {
   background: var(--fs-card);
   border-radius: 12px;
-  padding: 22px 24px;
+  padding: 14px 22px;
   box-shadow: 0 1px 3px rgba(20, 30, 16, 0.04), 0 6px 18px rgba(20, 30, 16, 0.05);
   page-break-inside: avoid;
   break-inside: avoid;
 }
 .fs-card h3 {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--fs-primary-dark);
-  margin-bottom: 14px;
-  padding-bottom: 12px;
+  margin-bottom: 9px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--fs-rule);
   display: flex;
   align-items: center;
@@ -277,22 +277,22 @@ body {
   flex-shrink: 0;
 }
 .fs-card h4 {
-  font-size: 10px;
+  font-size: 11.5px;
   font-style: normal;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--fs-primary);
-  margin: 14px 0 7px;
+  margin: 9px 0 5px;
 }
 .fs-card h4:first-of-type { margin-top: 0; }
 .fs-card ul { list-style: none; padding: 0; }
 .fs-card ul li {
   position: relative;
   padding-left: 14px;
-  margin-bottom: 7px;
-  font-size: 13.5px;
-  line-height: 1.5;
+  margin-bottom: 5px;
+  font-size: 15px;
+  line-height: 1.4;
   color: var(--fs-text);
 }
 .fs-card ul li::before {
@@ -319,12 +319,12 @@ body {
 
 /* ── Footer ── */
 .fs-footer {
-  padding: 20px 36px 22px;
+  padding: 10px 36px 10px;
   border-top: 1px solid var(--fs-rule);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--fs-text-muted);
 }
 .fs-footer-brand {
@@ -334,12 +334,12 @@ body {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--fs-text);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .fs-footer-brand small {
   display: block;
   font-weight: 500;
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.16em;
   color: var(--fs-text-muted);
   margin-top: 2px;
@@ -352,7 +352,10 @@ body {
 
 /* ── Print ── */
 @media print {
-  @page { size: letter; margin: 0.5in; }
+  /* margin:0 so the 8.5x11in container maps 1:1 to the sheet — its own
+     36px side / header+footer padding act as the page margins. A nonzero
+     @page margin would shrink-to-fit the wider container and spill to p2. */
+  @page { size: letter; margin: 0; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: white !important; }
   .fs-print-btn { display: none !important; }
