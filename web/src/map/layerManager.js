@@ -598,7 +598,17 @@ export function setVariable(varKey) {
   // map.once('load', ...) callback runs, leaving currentLevel = null.
   // Defer too so the order ends up: style-loads → setLayer apply →
   // setVariable apply (points-layer added on top of choropleth).
-  if (map.isStyleLoaded() && currentLevel) {
+  //
+  // Gate on currentLevel, NOT isStyleLoaded(): setLayer's apply (which sets
+  // currentLevel) runs only once the style is loaded, so a non-null
+  // currentLevel means the map is ready for layer ops. Crucially, setLayer
+  // also just added the choropleth source, which flips isStyleLoaded() back to
+  // false while it streams in — the old `isStyleLoaded() && currentLevel` gate
+  // then fell through to once('load'), which silently no-ops because 'load'
+  // has already fired. That left deep-linked points variables (e.g. the
+  // Millionaires map embed via ?var=millionaires) stuck on the bare choropleth
+  // with no circles ever rendered.
+  if (currentLevel) {
     apply();
   } else {
     map.once('load', apply);
