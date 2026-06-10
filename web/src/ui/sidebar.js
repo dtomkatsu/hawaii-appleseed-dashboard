@@ -202,13 +202,12 @@ function renderCascade(rootKey, items, currentKey, placeholder) {
 }
 
 function renderColumn(rootKey, tag, tagStyle, items, currentKey, placeholder) {
-  // Filled pill = this column owns the current selection; outline = idle.
-  // (The passed tagStyle is a fallback; the live selection state wins.)
-  const owns = !!findLabelByKey(items, currentKey);
-  const stateStyle = owns ? 'tag-solid' : (tagStyle === 'tag-solid' ? 'tag-solid' : 'tag-outline');
+  // Pill style is fixed per column: Geography is solid, every topic is an
+  // identical outline pill (we no longer flip the owning topic to solid, so
+  // the four topics always read as a uniform set).
   return `
     <div class="ctrl-col">
-      <div class="ctrl-tag-wrap"><span class="ctrl-tag ${stateStyle}">${escapeHtml(tag)}</span></div>
+      <div class="ctrl-tag-wrap"><span class="ctrl-tag ${tagStyle}">${escapeHtml(tag)}</span></div>
       ${renderCascade(rootKey, items, currentKey, placeholder)}
     </div>`;
 }
@@ -327,6 +326,11 @@ function attachTooltipListeners(root) {
 export function renderSidebar() {
   const root = document.getElementById('controls-bar');
   if (!root) return;
+  // Selecting a variable re-renders the whole controls bar via innerHTML,
+  // which removes the currently-hovered node *without* firing its
+  // mouseleave — leaving the global tooltip stuck at opacity:1. Hide it
+  // (and cancel any pending show-timer) before we blow away the old DOM.
+  hideTooltip();
   const s = getState();
 
   const geoItems = buildGeographyCascadeItems();
@@ -379,7 +383,11 @@ export function renderSidebar() {
     'Select Variable',
     );
 
-  root.innerHTML = geoCol + econCol + foodCol + housingCol + healthCol;
+  // "Choose your variable" label sits in its own grid row above the four
+  // topic columns (CSS pins it to columns 2/-1, so it reads as a header for
+  // the variable pickers, not for the Geography selector).
+  const varHeader = '<div class="ctrl-header">Choose your variable</div>';
+  root.innerHTML = geoCol + varHeader + econCol + foodCol + housingCol + healthCol;
 
   root.querySelectorAll('a[data-cascade-key]').forEach((a) => {
     a.addEventListener('click', (e) => {

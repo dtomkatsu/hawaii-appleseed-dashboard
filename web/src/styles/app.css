@@ -231,27 +231,57 @@ body {
   z-index: 1100;
 }
 
-/* Desktop: map runs full-bleed behind; the toolbar floats over it as a
-   frosted card (Felt-style), below the segmented tab pill. */
+/* Desktop: the toolbar is a frosted card pinned to the top of the pane in
+   normal flow; the map fills the space *below* it rather than running
+   full-bleed behind it. The floating Map/Data tab pill occupies the empty
+   cell above the Geography column, so it doesn't need its own band. This
+   keeps the map and the slide-in info-panel ("sidebar") from extending up
+   past the menu bar. */
 @media (min-width: 1025px) {
-  #tab-map .map-wrap {
-    position: absolute;
-    inset: 0;
-  }
   #tab-map .controls-bar {
-    position: absolute;
-    top: 52px;
-    left: 14px;
-    right: 14px;
-    margin: 0;
-    background: rgba(255, 255, 255, 0.88);
+    margin: 0 14px 8px;
+    /* Top inset leaves room for the floating tab pill that overlaps the
+       top-left corner above the Geography column. */
+    padding-top: 44px;
+    background: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(14px) saturate(1.35);
     -webkit-backdrop-filter: blur(14px) saturate(1.35);
   }
-  /* Zoom / reset controls start below the floating toolbar */
+  /* Map now starts below the toolbar, so zoom/reset controls only need a
+     small inset from the map's own top edge. */
   #tab-map .maplibregl-ctrl-top-left {
-    margin-top: 168px;
+    margin-top: 12px;
   }
+}
+
+/* "Choose your variable" header — occupies the first grid row, spanning the
+   four topic columns (2 → end) so it labels the variable pickers without
+   sitting over the Geography selector. Small uppercase green caption with a
+   faint fading rule: present but quiet. */
+.ctrl-header {
+  grid-row: 1;
+  grid-column: 2 / -1;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2a5a0c;
+  font-family: Inter, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  padding-bottom: 9px;
+}
+.ctrl-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(200, 230, 176, 0.9), rgba(200, 230, 176, 0));
+}
+/* Columns drop to the second row so the header row clears above them. */
+.controls-bar > .ctrl-col {
+  grid-row: 2;
 }
 
 .ctrl-col {
@@ -313,8 +343,8 @@ body {
   align-items: center;
   padding: 0.5rem 0.75rem;
   min-height: 40px;
-  background-color: #ffffff;
-  border: 1px solid #dde6d8;
+  background-color: var(--primary-bg); /* light green tint (restored) */
+  border: 1px solid #cfe0c2;
   border-radius: 10px;
   color: var(--text-primary);
   cursor: pointer;
@@ -331,7 +361,7 @@ body {
 
 /* Empty ("Select Variable") columns recede so active selections lead */
 .cascade-root:has(.cascade-current.is-placeholder) .cascade-trigger {
-  background-color: #fbfcfa;
+  background-color: #f7fbf2; /* faint green — recedes but stays in the palette */
   box-shadow: none;
 }
 .cascade-root:hover > .cascade-trigger {
@@ -652,12 +682,10 @@ body {
 }
 
 /* Embed mode: strip chrome so the host page's iframe is just the map +
-   legend. Triggered automatically inside an iframe, or via ?embed=1 for
-   previewing without an iframe wrapper. Keeps: the map, the legend, and
-   the "Open" button (escape hatch to the full dashboard). Hides: top
-   tabs, controls bar (host selects variable via ?var=…), color-scheme
-   picker inside the legend. */
-.is-embedded .main-tabs,
+   legend, plus the Map/Data tabs and the "Open" button (escape hatch to
+   the full dashboard). Hides: the map-pane controls bar (host selects
+   variable via ?var=…) and the color-scheme picker inside the legend.
+   The tabs stay visible so embeds can still reach the Data view. */
 .is-embedded .controls-bar,
 .is-embedded .legend-color-scheme {
   display: none !important;
@@ -666,11 +694,14 @@ body {
 .is-embedded #tab-map .maplibregl-ctrl-top-left {
   margin-top: 0;
 }
-/* Slim identity chip replaces the full toolbar in embeds */
+/* Slim identity chip replaces the full toolbar in embeds. Centered along
+   the top so it clears the Map/Data tabs (top-left) and Open button
+   (top-right), both of which stay visible in embed mode. */
 .embed-chip {
   position: absolute;
   top: 12px;
-  left: 14px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 1200;
   display: inline-flex;
   align-items: center;

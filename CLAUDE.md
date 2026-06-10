@@ -5,6 +5,12 @@ description: Interactive data dashboard for Hawaii Appleseed with maps and visua
 
 # Hawaii Appleseed Data Dashboard
 
+> **Default working branch: `rebuild` (NOT `main`).**
+> Always start work on `rebuild` — check it out, pull, branch from, commit to,
+> and push to it unless explicitly told otherwise. The active app is the
+> **`web/` Vite frontend** (JS + MapLibre/Leaflet), not the legacy Streamlit app
+> described below. `gh-pages` is the built deploy branch — don't hand-edit it.
+
 An interactive data visualization dashboard built with Streamlit and Leaflet.js, visualizing demographics, economics, and policy data for Hawaii.
 
 ## Project Overview
