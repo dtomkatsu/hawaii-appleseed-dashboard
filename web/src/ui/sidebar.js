@@ -195,19 +195,20 @@ function renderCascade(rootKey, items, currentKey, placeholder) {
     <div class="cascade-root" data-cascade-root="${rootKey}">
       <div class="cascade-trigger">
         <span class="cascade-current ${isSelected ? 'is-selected' : 'is-placeholder'}">${escapeHtml(triggerText)}</span>
-        <span class="cascade-trigger-caret" aria-hidden="true">▾</span>
+        <span class="cascade-trigger-caret" aria-hidden="true"><svg viewBox="0 0 12 8" width="11" height="8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1.5l5 5 5-5"/></svg></span>
       </div>
       <ul class="cascade-menu">${renderItems(items)}</ul>
     </div>`;
 }
 
-function renderColumn(rootKey, tag, tagStyle, items, currentKey, placeholder, showHeader) {
-  const headerVisibility = showHeader ? '' : 'visibility: hidden;';
-  const headerBorder = showHeader ? 'border-bottom: 2px solid #c8e6b0;' : 'border-bottom: 2px solid transparent;';
+function renderColumn(rootKey, tag, tagStyle, items, currentKey, placeholder) {
+  // Filled pill = this column owns the current selection; outline = idle.
+  // (The passed tagStyle is a fallback; the live selection state wins.)
+  const owns = !!findLabelByKey(items, currentKey);
+  const stateStyle = owns ? 'tag-solid' : (tagStyle === 'tag-solid' ? 'tag-solid' : 'tag-outline');
   return `
     <div class="ctrl-col">
-      <div class="ctrl-header" style="${headerVisibility} ${headerBorder}">Choose your variable</div>
-      <div class="ctrl-tag-wrap"><span class="ctrl-tag ${tagStyle}">${escapeHtml(tag)}</span></div>
+      <div class="ctrl-tag-wrap"><span class="ctrl-tag ${stateStyle}">${escapeHtml(tag)}</span></div>
       ${renderCascade(rootKey, items, currentKey, placeholder)}
     </div>`;
 }
@@ -344,8 +345,7 @@ export function renderSidebar() {
     geoItems,
     layerKey,
     'Select Geography',
-    false,
-  );
+    );
   const econCol = renderColumn(
     'economic_security',
     GROUPS?.economic_security?.label || 'Economic Security',
@@ -353,8 +353,7 @@ export function renderSidebar() {
     econItems,
     variableKey,
     'Select Variable',
-    true,
-  );
+    );
   const foodCol = renderColumn(
     'food_security',
     GROUPS?.food_security?.label || 'Food Security',
@@ -362,8 +361,7 @@ export function renderSidebar() {
     foodItems,
     variableKey,
     'Select Variable',
-    false,
-  );
+    );
   const housingCol = renderColumn(
     'housing_transportation',
     GROUPS?.housing_transportation?.label || 'Housing & Transportation',
@@ -371,8 +369,7 @@ export function renderSidebar() {
     housingItems,
     variableKey,
     'Select Variable',
-    false,
-  );
+    );
   const healthCol = renderColumn(
     'health',
     GROUPS?.health?.label || 'Health',
@@ -380,8 +377,7 @@ export function renderSidebar() {
     healthItems,
     variableKey,
     'Select Variable',
-    false,
-  );
+    );
 
   root.innerHTML = geoCol + econCol + foodCol + housingCol + healthCol;
 
