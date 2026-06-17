@@ -104,15 +104,6 @@ async function main() {
         window.open(window.location.href, '_blank', 'noopener');
       });
     }
-
-    // Slim identity chip stands in for the hidden controls bar.
-    const mapPane = document.getElementById('tab-map');
-    if (mapPane && !mapPane.querySelector('.embed-chip')) {
-      const chip = document.createElement('div');
-      chip.className = 'embed-chip';
-      chip.textContent = 'Hawaiʻi Data Dashboard';
-      mapPane.appendChild(chip);
-    }
   }
 
   // Tab switching
