@@ -22,17 +22,10 @@ export function readFromUrl() {
     if (v) patch[k] = v;
   }
 
-  // Legacy deep-link: `?var=millionaires` used to make Millionaires a fill
-  // variable in its own right, muting the choropleth to a plain backdrop
-  // under the circles (the Millionaire Report embed still uses this URL).
-  // Millionaires is now an independent overlay instead of a variable, so
-  // redirect the old param onto the new overlay state — with the mute flag
-  // on, so the existing embed keeps its exact original look.
-  if (patch.selectedVariable === 'millionaires') {
-    delete patch.selectedVariable;
-    patch.showMillionaires = true;
-    patch.millionairesLegacyMuted = true;
-  }
+  // `?overlay=millionaires` layers the circles on top of whatever variable is
+  // selected. (`?var=millionaires` needs no special handling — Millionaires is
+  // a real dropdown variable again, so the generic `var` read above already
+  // reproduces the Millionaire Report embed's muted look.)
   if (params.get('overlay') === 'millionaires') {
     patch.showMillionaires = true;
   }

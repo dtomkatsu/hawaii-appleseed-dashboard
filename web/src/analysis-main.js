@@ -50,6 +50,10 @@ function buildControls() {
   const byGroup = {};
   for (const [key, v] of Object.entries(vars)) {
     if (!v.show_in_dropdown) continue;
+    // Points variables (Millionaires) are town-level markers, not a value per
+    // county/district — there is nothing to rank or tabulate by geography, so
+    // they'd render an all-empty chart and table. Map-only by design.
+    if (v.render_type === 'points') continue;
     if (!byGroup[v.dropdown_group]) byGroup[v.dropdown_group] = [];
     byGroup[v.dropdown_group].push({ key, ...v });
   }

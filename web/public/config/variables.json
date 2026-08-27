@@ -592,7 +592,7 @@
       "info_panel_order": null,
       "fact_sheet_category": null,
       "fact_sheet_label": null,
-      "show_in_dropdown": false,
+      "show_in_dropdown": true,
       "show_in_info_panel": false,
       "show_in_fact_sheet": false,
       "show_in_default_metrics": false,

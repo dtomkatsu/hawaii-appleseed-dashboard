@@ -1014,6 +1014,13 @@ body {
   cursor: pointer;
   margin: 0;
 }
+.legend-millionaires-toggle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.legend-millionaires-toggle.disabled input {
+  cursor: not-allowed;
+}
 .legend-millionaires-key {
   margin-top: 6px;
 }

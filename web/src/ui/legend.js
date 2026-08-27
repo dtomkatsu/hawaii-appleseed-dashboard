@@ -173,19 +173,31 @@ function updateMillionairesControl() {
     millionairesBound = true;
   }
 
-  cb.checked = !!s.showMillionaires;
+  // When Millionaires IS the selected variable the circles are the map's
+  // whole point, so the box reads checked and locks — unchecking it would
+  // leave a muted backdrop showing nothing. Pick another variable to get the
+  // checkbox back.
+  const isVariable = s.selectedVariable === 'millionaires';
+  cb.checked = isVariable || !!s.showMillionaires;
+  cb.disabled = isVariable;
+  const wrap = cb.closest('.legend-millionaires-toggle');
+  if (wrap) {
+    wrap.classList.toggle('disabled', isVariable);
+    wrap.title = isVariable
+      ? 'Millionaires is the selected variable — choose another variable to turn this off'
+      : '';
+  }
 
   const key = document.getElementById('millionaires-key');
   if (key) {
-    key.hidden = !s.showMillionaires;
-    // Legacy (muted-choropleth) mode colors circles from the scheme picker,
-    // same as the old dedicated-variable look — reflect that here instead of
-    // always showing the composed mode's fixed accent, so the swatch matches
-    // what's actually on the map.
-    const swatchColor = s.millionairesLegacyMuted
+    const showing = cb.checked;
+    key.hidden = !showing;
+    // Variable mode colors circles from the scheme picker; overlay mode uses
+    // the fixed accent. Mirror whichever is actually on the map.
+    const swatchColor = isVariable
       ? (getSchemeColors(s.colorScheme)[6] || '#2171b5')
       : '#ec7014';
-    key.innerHTML = s.showMillionaires
+    key.innerHTML = showing
       ? `<div class="rel-key-row"><span class="rel-key-swatch" style="border-radius:50%;background-color:${swatchColor};"></span>Circle size = number of millionaires</div>`
       : '';
   }
