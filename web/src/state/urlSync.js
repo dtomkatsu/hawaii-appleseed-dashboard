@@ -21,6 +21,22 @@ export function readFromUrl() {
     const v = params.get(shortKey(k));
     if (v) patch[k] = v;
   }
+
+  // Legacy deep-link: `?var=millionaires` used to make Millionaires a fill
+  // variable in its own right, muting the choropleth to a plain backdrop
+  // under the circles (the Millionaire Report embed still uses this URL).
+  // Millionaires is now an independent overlay instead of a variable, so
+  // redirect the old param onto the new overlay state — with the mute flag
+  // on, so the existing embed keeps its exact original look.
+  if (patch.selectedVariable === 'millionaires') {
+    delete patch.selectedVariable;
+    patch.showMillionaires = true;
+    patch.millionairesLegacyMuted = true;
+  }
+  if (params.get('overlay') === 'millionaires') {
+    patch.showMillionaires = true;
+  }
+
   // Reliability toggle is a boolean — coerce rather than store the raw string.
   const rel = params.get('rel');
   if (rel === '1' || rel === 'true') patch.showReliability = true;

@@ -992,6 +992,32 @@ body {
   display: none !important;
 }
 
+/* ========== Millionaires overlay toggle ==========
+   Deliberately NOT hidden in embed mode (unlike reliability, above) — the
+   Millionaire Report embeds this dashboard specifically to show the
+   overlay, so its own on/off switch needs to stay visible there. */
+.legend-millionaires {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.legend-millionaires-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.legend-millionaires-toggle input {
+  cursor: pointer;
+  margin: 0;
+}
+.legend-millionaires-key {
+  margin-top: 6px;
+}
+
 /* ========== Custom tooltip (hover) ========== */
 .custom-tooltip {
   background: rgba(255, 255, 255, 0.99);

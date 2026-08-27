@@ -3,7 +3,7 @@ import { loadConfig, loadRepData } from './data/loader.js';
 import { initAnalysis } from './analysis-main.js';
 import { initColors } from './map/colors.js';
 import { createMap, getMap } from './map/mapInstance.js';
-import { setLayer, setVariable, setColorScheme, setReliability, getFeatureProperties, initLayerManager } from './map/layerManager.js';
+import { setLayer, setVariable, setColorScheme, setReliability, setMillionairesOverlay, getFeatureProperties, initLayerManager } from './map/layerManager.js';
 import { initPopup } from './map/popup.js';
 import { initDiag } from './map/diag.js';
 import { initLegend, renderLegend } from './ui/legend.js';
@@ -31,16 +31,25 @@ async function main() {
   readFromUrl();
   const s0 = getState();
 
+  // The legacy muted-choropleth look (millionairesLegacyMuted) hides the
+  // real selectedVariable's fill entirely, so its legend would be actively
+  // misleading here — title and ramp for a variable that isn't even drawn.
+  // Show the millionaires legend instead, matching what's actually on
+  // screen (exactly what the old `?var=millionaires` embed showed when
+  // Millionaires WAS selectedVariable, before it became an overlay).
+  const legendVarKey = (state) =>
+    (state.showMillionaires && state.millionairesLegacyMuted) ? 'millionaires' : state.selectedVariable;
+
   subscribe(async (state, changed) => {
     if ('activeLayer' in changed) {
       await setLayer(state.activeLayer);
       setVariable(state.selectedVariable);
       setColorScheme(state.colorScheme);
-      renderLegend(state.selectedVariable, state.colorScheme);
+      renderLegend(legendVarKey(state), state.colorScheme);
     }
     if ('selectedVariable' in changed) {
       setVariable(state.selectedVariable);
-      renderLegend(state.selectedVariable, state.colorScheme);
+      renderLegend(legendVarKey(state), state.colorScheme);
       // If a geo is selected and the info panel is open, re-render it so the
       // headline reflects the newly chosen variable.
       const panel = document.getElementById('info-panel');
@@ -51,11 +60,15 @@ async function main() {
     }
     if ('colorScheme' in changed) {
       setColorScheme(state.colorScheme);
-      renderLegend(state.selectedVariable, state.colorScheme);
+      renderLegend(legendVarKey(state), state.colorScheme);
     }
     if ('showReliability' in changed) {
       setReliability(state.showReliability);
-      renderLegend(state.selectedVariable, state.colorScheme);
+      renderLegend(legendVarKey(state), state.colorScheme);
+    }
+    if ('showMillionaires' in changed) {
+      setMillionairesOverlay(state.showMillionaires, { muteChoropleth: state.millionairesLegacyMuted });
+      renderLegend(legendVarKey(state), state.colorScheme);
     }
     writeToUrl();
     renderSidebar();
@@ -65,7 +78,8 @@ async function main() {
   setVariable(s0.selectedVariable);
   setColorScheme(s0.colorScheme);
   setReliability(s0.showReliability);
-  renderLegend(s0.selectedVariable, s0.colorScheme);
+  setMillionairesOverlay(s0.showMillionaires, { muteChoropleth: s0.millionairesLegacyMuted });
+  renderLegend(legendVarKey(s0), s0.colorScheme);
   renderSidebar();
   writeToUrl();
 

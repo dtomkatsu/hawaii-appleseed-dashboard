@@ -118,6 +118,7 @@ export function renderLegend(varKey, scheme) {
   itemsEl.innerHTML = html;
 
   updateReliabilityControl(varKey);
+  updateMillionairesControl();
 }
 
 let reliabilityBound = false;
@@ -151,6 +152,41 @@ function updateReliabilityControl(varKey) {
     key.innerHTML = show
       ? `<div class="rel-key-row"><span class="rel-key-swatch rel-caution"></span>Higher uncertainty (CV 15–30%)</div>
          <div class="rel-key-row"><span class="rel-key-swatch rel-unreliable"></span>Unreliable (CV &gt; 30%)</div>`
+      : '';
+  }
+}
+
+let millionairesBound = false;
+
+// Wires the "Show millionaires" checkbox: binds once, reflects current
+// state, and shows a compact key (circle = accent color, size = count) only
+// while the overlay is on. Unlike reliability, this control stays visible in
+// embed mode — the Millionaire Report embeds the dashboard specifically to
+// show this overlay, so hiding its own on/off switch there would be wrong.
+function updateMillionairesControl() {
+  const cb = document.getElementById('millionaires-toggle');
+  if (!cb) return;
+  const s = getState();
+
+  if (!millionairesBound) {
+    cb.addEventListener('change', (e) => setState({ showMillionaires: e.target.checked }));
+    millionairesBound = true;
+  }
+
+  cb.checked = !!s.showMillionaires;
+
+  const key = document.getElementById('millionaires-key');
+  if (key) {
+    key.hidden = !s.showMillionaires;
+    // Legacy (muted-choropleth) mode colors circles from the scheme picker,
+    // same as the old dedicated-variable look — reflect that here instead of
+    // always showing the composed mode's fixed accent, so the swatch matches
+    // what's actually on the map.
+    const swatchColor = s.millionairesLegacyMuted
+      ? (getSchemeColors(s.colorScheme)[6] || '#2171b5')
+      : '#ec7014';
+    key.innerHTML = s.showMillionaires
+      ? `<div class="rel-key-row"><span class="rel-key-swatch" style="border-radius:50%;background-color:${swatchColor};"></span>Circle size = number of millionaires</div>`
       : '';
   }
 }

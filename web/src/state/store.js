@@ -3,6 +3,12 @@ const state = {
   selectedVariable: 'alice_rate',
   colorScheme: 'blue',
   showReliability: false,
+  // Millionaires circle overlay — independent of selectedVariable so it can
+  // sit on top of any choropleth instead of replacing it. legacyMuted is set
+  // only via the old `?var=millionaires` deep link (see urlSync.js) and
+  // preserves that link's original muted-choropleth look.
+  showMillionaires: false,
+  millionairesLegacyMuted: false,
   displayOptions: { showLabels: false, showLegend: true },
   selectedFeatureId: null,
 };

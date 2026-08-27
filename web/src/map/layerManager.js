@@ -12,18 +12,24 @@ export function initLayerManager(variablesConfig) {
   VARIABLES = variablesConfig?.variables || null;
 }
 
-function isPointsVariable(varKey) {
-  return VARIABLES?.[varKey]?.render_type === 'points';
-}
+// Tracks the currently-rendered Millionaires circle overlay. Null when off.
+let pointsLayerActive = null; // { layerId, sourceId, countField, legacy }
 
-// Tracks the currently-rendered city-points layer (Millionaires-style data).
-// Null when no points variable is active.
-let pointsLayerActive = null; // { layerId, sourceId, varKey, countField }
-
-// Muted backdrop fill applied to the choropleth when points mode is active —
-// the underlying islands stay recognizable since this map has no tile basemap.
+// Muted backdrop fill applied to the choropleth in the legacy embed look
+// (millionairesLegacyMuted) — the underlying islands stay recognizable since
+// this map has no tile basemap.
 const POINTS_MODE_MUTED_FILL = '#b8cdaf';
 const POINTS_MODE_MUTED_LINE = '#5c7757';
+
+// Fixed accent ramp for the composed overlay (circles on top of a real
+// choropleth) — deliberately NOT tied to colorScheme, since the circles need
+// to read as "millionaires" regardless of which of the 4 scheme hues the
+// choropleth underneath is using. ColorBrewer YlOrBr-9, distinct from all of
+// blue/green/red/purple in theme.json.
+const MILLIONAIRES_ACCENT_COLORS = [
+  '#ffffe5', '#fff7bc', '#fee391', '#fec44f', '#fe9929',
+  '#ec7014', '#cc4c02', '#993404', '#662506',
+];
 
 // When ?notrans=1 strip the 300ms opacity transitions; when ?nofade=1 also
 // skip the layer-switch fade-in/fade-out animation.
@@ -357,9 +363,9 @@ function fadeOutLevel(map, level) {
 
 function applyColorExpression(map, level) {
   if (!map.getLayer(`${level}-fill`)) return;
-  // In points mode, the choropleth becomes a muted sage backdrop so the
-  // circle markers carry all the data signal. Otherwise paint by variable.
-  if (pointsLayerActive) {
+  // Only the legacy embed look mutes the choropleth to a backdrop — the
+  // composed overlay leaves the real variable's fill untouched underneath.
+  if (pointsLayerActive?.legacy) {
     map.setPaintProperty(`${level}-fill`, 'fill-color', POINTS_MODE_MUTED_FILL);
     if (map.getLayer(`${level}-line`)) {
       map.setPaintProperty(`${level}-line`, 'line-color', POINTS_MODE_MUTED_LINE);
@@ -373,12 +379,13 @@ function applyColorExpression(map, level) {
 }
 
 // Apply the reliability overlay for one level: visible only when the toggle is
-// on, the active variable is an ACS metric with MOE, and we're not in points
-// mode. When shown, the filter + pattern are rebuilt for the current variable.
+// on, the active variable is an ACS metric with MOE, and the choropleth isn't
+// muted by the legacy Millionaires look (composed mode leaves it eligible —
+// the real variable is still on screen under the circles).
 function applyReliability(map, level) {
   const layerId = `${level}-reliability`;
   if (!map.getLayer(layerId)) return;
-  const on = reliabilityOn && !pointsLayerActive && variableHasMoe(currentVariable);
+  const on = reliabilityOn && !pointsLayerActive?.legacy && variableHasMoe(currentVariable);
   if (!on) {
     map.setLayoutProperty(layerId, 'visibility', 'none');
     return;
@@ -406,14 +413,21 @@ export function setReliability(on) {
 }
 
 // ---------------------------------------------------------------------------
-// City-points layer (Millionaires-style) — circle markers per town
+// Millionaires circle overlay — circle markers per town, layered on top of
+// whatever choropleth variable is active (or, in the legacy embed look,
+// muting it — see the `legacy` flag threaded through below).
 //
-// Driven by variables.json entries with `render_type: "points"` and
-// `points_data: "<file>.json"` (a GeoJSON FeatureCollection in
-// /public/data/). Markers scale with sqrt(count) and grow with zoom via
-// a MapLibre `interpolate` expression so single-count dots stay legible
-// when zoomed into one island, without dwarfing islands at fit-bounds.
+// Driven by the `millionaires` entry in variables.json (`render_type:
+// "points"`, `points_data: "<file>.json"`, a GeoJSON FeatureCollection in
+// /public/data/). Markers scale with sqrt(count) and grow with zoom via a
+// MapLibre `interpolate` expression so single-count dots stay legible when
+// zoomed into one island, without dwarfing islands at fit-bounds.
+//
+// Independent of selectedVariable/setVariable — driven by setMillionairesOverlay,
+// called from main.js off showMillionaires/millionairesLegacyMuted state.
 // ---------------------------------------------------------------------------
+
+const MILLIONAIRES_VAR_KEY = 'millionaires';
 
 function buildCircleRadiusExpr(countField) {
   // base = max(5, min(20, 3 + sqrt(count) * 1.4))  — the "fit-bounds" size
@@ -436,30 +450,36 @@ function buildCircleColorExpr(countField, thresholds, colors) {
   return step;
 }
 
-async function showPointsLayer(map, varKey) {
-  const meta = VARIABLES?.[varKey];
+// legacy: true → scheme-tied color (matches the old muted-backdrop look
+// exactly). false → fixed accent ramp, since the circles now sit on top of a
+// real, differently-colored choropleth and need to read as their own thing.
+function pointsColors(legacy) {
+  return legacy ? getSchemeColors(currentScheme) : MILLIONAIRES_ACCENT_COLORS;
+}
+
+async function showMillionairesOverlay(map, legacy) {
+  const meta = VARIABLES?.[MILLIONAIRES_VAR_KEY];
   if (!meta || meta.render_type !== 'points') return;
 
-  // If a different points variable is already up, swap it out.
-  if (pointsLayerActive && pointsLayerActive.varKey !== varKey) {
-    removePointsLayer(map);
-  }
-  // Same variable already active — just refresh paint (scheme may have changed).
-  if (pointsLayerActive && pointsLayerActive.varKey === varKey) {
+  // Already up: just refresh paint for the (possibly changed) legacy mode.
+  if (pointsLayerActive) {
+    pointsLayerActive.legacy = legacy;
     updatePointsPaint(map);
+    if (currentLevel) applyColorExpression(map, currentLevel);
+    refreshReliability();
     return;
   }
 
-  const sourceId = `points-source-${varKey}`;
-  const layerId = `points-${varKey}`;
-  const dataPath = meta.points_data || `${varKey}.json`;
+  const sourceId = `points-source-${MILLIONAIRES_VAR_KEY}`;
+  const layerId = `points-${MILLIONAIRES_VAR_KEY}`;
+  const dataPath = meta.points_data || `${MILLIONAIRES_VAR_KEY}.json`;
   const countField = meta.csv_column || 'value';
 
   let data;
   try {
     data = await fetchJson(`/data/${dataPath}`);
   } catch (err) {
-    console.error(`Points layer load failed for ${varKey}:`, err);
+    console.error('Millionaires overlay load failed:', err);
     return;
   }
 
@@ -467,8 +487,8 @@ async function showPointsLayer(map, varKey) {
     map.addSource(sourceId, { type: 'geojson', data });
   }
 
-  const colors = getSchemeColors(currentScheme);
-  const thresholds = getThresholds(varKey);
+  const colors = pointsColors(legacy);
+  const thresholds = getThresholds(MILLIONAIRES_VAR_KEY);
 
   map.addLayer({
     id: layerId,
@@ -484,36 +504,65 @@ async function showPointsLayer(map, varKey) {
     },
   });
 
-  pointsLayerActive = { layerId, sourceId, varKey, countField };
+  pointsLayerActive = { layerId, sourceId, countField, legacy };
 
   // Hover tooltip on the circles — city + count, no PII.
   bindPointsInteraction(map, layerId);
 
-  // Mute the underlying choropleth now that points are carrying the signal.
+  // Legacy look mutes the choropleth underneath; composed mode leaves it be.
   if (currentLevel) applyColorExpression(map, currentLevel);
+  refreshReliability();
 }
 
 function updatePointsPaint(map) {
   if (!pointsLayerActive) return;
-  const { layerId, varKey, countField } = pointsLayerActive;
+  const { layerId, countField, legacy } = pointsLayerActive;
   if (!map.getLayer(layerId)) return;
-  const colors = getSchemeColors(currentScheme);
-  const thresholds = getThresholds(varKey);
+  const colors = pointsColors(legacy);
+  const thresholds = getThresholds(MILLIONAIRES_VAR_KEY);
   map.setPaintProperty(layerId, 'circle-color', buildCircleColorExpr(countField, thresholds, colors));
 }
 
-function removePointsLayer(map) {
+function removeMillionairesOverlay(map) {
   if (!pointsLayerActive) return;
   const { layerId, sourceId } = pointsLayerActive;
   if (map.getLayer(layerId)) map.removeLayer(layerId);
   if (map.getSource(sourceId)) map.removeSource(sourceId);
   pointsLayerActive = null;
-  // Restore data-driven choropleth fill on the active level.
+  // Restore data-driven choropleth fill on the active level (no-op if it
+  // was never muted, i.e. we're coming out of composed mode).
   if (currentLevel) applyColorExpression(getMap(), currentLevel);
+  refreshReliability();
 }
 
 export function isPointsModeActive() {
   return !!pointsLayerActive;
+}
+
+// Public entry point for the "Show millionaires" legend checkbox and the
+// legacy `?var=millionaires` / new `?overlay=millionaires` URL params (see
+// urlSync.js + main.js). Mirrors setVariable's initial-load race guard:
+// the map may not have a `currentLevel` yet (style/choropleth still
+// loading), so defer to map.once('load', ...) in that case rather than
+// silently no-op'ing — this is exactly what left the old embed showing a
+// bare choropleth with no circles before that guard existed.
+export function setMillionairesOverlay(on, { muteChoropleth = false } = {}) {
+  const map = getMap();
+  if (!map) return;
+
+  const apply = () => {
+    if (on) {
+      showMillionairesOverlay(map, muteChoropleth);
+    } else {
+      removeMillionairesOverlay(map);
+    }
+  };
+
+  if (currentLevel) {
+    apply();
+  } else {
+    map.once('load', apply);
+  }
 }
 
 export async function setLayer(level) {
@@ -545,6 +594,15 @@ export async function setLayer(level) {
 
     fadeInLevel(map, level);
     applyColorExpression(map, level);
+
+    // ensureSourceAndLayers just added this level's fill/line/reliability
+    // layers, which land on top of the stack by default — above the
+    // Millionaires overlay if it was already active from a prior level.
+    // Re-assert it above everything so switching geography (e.g. Counties
+    // → House Districts) doesn't bury the circles under the new fill.
+    if (pointsLayerActive && map.getLayer(pointsLayerActive.layerId)) {
+      map.moveLayer(pointsLayerActive.layerId);
+    }
 
     clearSelectedLayer();
     setShadowFeature(level, null); // clear any prior selection's shadow
@@ -585,19 +643,16 @@ export function setVariable(varKey) {
 
   const apply = () => {
     if (!currentLevel) return;
-    if (isPointsVariable(varKey)) {
-      showPointsLayer(map, varKey);
-    } else {
-      if (pointsLayerActive) removePointsLayer(map);
-      applyColorExpression(map, currentLevel);
-    }
+    applyColorExpression(map, currentLevel);
     refreshReliability();
   };
 
   // Initial-load race: setVariable may fire before setLayer's deferred
-  // map.once('load', ...) callback runs, leaving currentLevel = null.
-  // Defer too so the order ends up: style-loads → setLayer apply →
-  // setVariable apply (points-layer added on top of choropleth).
+  // map.once('load', ...) callback runs, leaving currentLevel = null. Defer
+  // too so the order ends up: style-loads → setLayer apply → setVariable
+  // apply. (setMillionairesOverlay has its own copy of this same guard —
+  // it used to piggyback on this one back when Millionaires was reached via
+  // setVariable, but the two are independent now.)
   //
   // Gate on currentLevel, NOT isStyleLoaded(): setLayer's apply (which sets
   // currentLevel) runs only once the style is loaded, so a non-null
@@ -605,9 +660,7 @@ export function setVariable(varKey) {
   // also just added the choropleth source, which flips isStyleLoaded() back to
   // false while it streams in — the old `isStyleLoaded() && currentLevel` gate
   // then fell through to once('load'), which silently no-ops because 'load'
-  // has already fired. That left deep-linked points variables (e.g. the
-  // Millionaires map embed via ?var=millionaires) stuck on the bare choropleth
-  // with no circles ever rendered.
+  // has already fired.
   if (currentLevel) {
     apply();
   } else {
