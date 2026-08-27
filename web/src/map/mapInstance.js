@@ -72,6 +72,18 @@ export function createMap(containerId, theme) {
   mapInstance = new maplibregl.Map(mapOpts);
   mapInstance.touchZoomRotate?.disableRotation();
 
+  // Self-heal against container-size races (e.g. embedded in an iframe whose
+  // layout isn't settled yet when this constructor measures it — MapLibre
+  // falls back to a hardcoded 400x300 canvas and never grows out of it
+  // without an explicit resize()). Watching the container directly catches
+  // that first real layout pass plus any later reflow (iframe resize, tab
+  // becoming visible, etc.) without relying on call sites to remember to
+  // call map.resize() themselves.
+  if (container && typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => mapInstance.resize());
+    ro.observe(container);
+  }
+
   if (!FLAGS.noNav) {
     mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }), 'top-left');
     mapInstance.addControl(new ResetControl(center, zoom), 'top-left');
